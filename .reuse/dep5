@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: OS2MO-SDTool-Plus
+Upstream-Contact: Magenta ApS <info@magenta.dk>
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
+
+Files: pyproject.toml *poetry.lock *.md
+Copyright: Magenta ApS <https://magenta.dk>
+License: MPL-2.0
