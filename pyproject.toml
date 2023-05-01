@@ -15,6 +15,7 @@ raclients = "^3.1.4"
 ra-utils = "^1.13.9"
 deepdiff = "^6.3.0"
 anytree = "^2.8.0"
+pydantic = "^1.10.7"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"

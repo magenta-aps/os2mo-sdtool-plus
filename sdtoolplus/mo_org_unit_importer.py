@@ -1,12 +1,16 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import logging
+import uuid
+from functools import cache
 
+import anytree
 import click
 from anytree import RenderTree
 from anytree.importer import DictImporter
 from deepdiff import DeepDiff
 from gql import gql
+from pydantic import AnyHttpUrl
 from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 
@@ -18,12 +22,8 @@ class MOOrgTreeImport:
     def __init__(self, session):
         self.session = session
 
-    def visit_all(self, visitor):
-        roots = self._build_trees(self.get_org_units())
-        for root in roots:
-            self._visit_subtree(visitor, root)
-
-    def get_org_uuid(self):
+    @cache
+    def get_org_uuid(self) -> str:
         doc = self.session.execute(
             gql(
                 """
@@ -37,7 +37,8 @@ class MOOrgTreeImport:
         )
         return doc["org"]["uuid"]
 
-    def get_org_units(self):
+    @cache
+    def get_org_units(self) -> list[dict]:
         doc = self.session.execute(
             gql(
                 """
@@ -55,7 +56,20 @@ class MOOrgTreeImport:
         )
         return [n["objects"][0] for n in doc["org_units"]]
 
-    def _build_trees(self, nodes):
+    def as_anytree_root(self) -> anytree.Node:
+        importer = DictImporter()
+        return importer.import_(self.as_single_tree())
+
+    def as_single_tree(self) -> dict:
+        root = {
+            "uuid": self.get_org_uuid(),
+            "parent_uuid": None,
+            "name": "<root>",
+            "children": self._build_trees(self.get_org_units()),
+        }
+        return root
+
+    def _build_trees(self, nodes) -> list[dict]:
         # Based on: https://stackoverflow.com/a/72497630
 
         root_org_uuid = self.get_org_uuid()
@@ -87,23 +101,28 @@ class MOOrgTreeImport:
         # nodes, and so on.
         return [nodes[idx] for idx in root_idxs]
 
-    def _visit_subtree(self, visitor, node, depth=0, path=None):
-        if path is None:
-            path = [node["name"]]
-
-        visitor(node, depth=depth, path=path)
-
-        # Visit child nodes, if any
-        if "children" in node:
-            sorted_children = sorted(node["children"], key=lambda child: child["name"])
-            for child_node in sorted_children:
-                path_copy = path + [child_node["name"]]
-                self._visit_subtree(
-                    visitor, child_node, depth=depth + 1, path=path_copy
-                )
-
-    def visitor(self, node, path, depth):
-        print("{}{}".format("\t" * depth, path))
+    # def visit_all(self, visitor):
+    #     roots = self._build_trees(self.get_org_units())
+    #     for root in roots:
+    #         self._visit_subtree(visitor, root)
+    #
+    # def visitor(self, node, path, depth):
+    #     print("{}{}".format("\t" * depth, path))
+    #
+    # def _visit_subtree(self, visitor, node, depth=0, path=None):
+    #     if path is None:
+    #         path = [node["name"]]
+    #
+    #     visitor(node, depth=depth, path=path)
+    #
+    #     # Visit child nodes, if any
+    #     if "children" in node:
+    #         sorted_children = sorted(node["children"], key=lambda child: child["name"])
+    #         for child_node in sorted_children:
+    #             path_copy = path + [child_node["name"]]
+    #             self._visit_subtree(
+    #                 visitor, child_node, depth=depth + 1, path=path_copy
+    #             )
 
 
 @click.command()
@@ -117,7 +136,7 @@ def main(
     client_id: str,
     client_secret: str,
     auth_realm: str,
-    auth_server: str,
+    auth_server: AnyHttpUrl,
 ) -> None:
     job_settings = JobSettings()
     job_settings.start_logging_based_on_settings()
@@ -132,23 +151,22 @@ def main(
         httpx_client_kwargs={"timeout": None},
     )
 
-    mo_org_tree_import = MOOrgTreeImport(session)
+    mo_import = MOOrgTreeImport(session)
+    mo_root = mo_import.as_anytree_root()
+    print(RenderTree(mo_root))
 
-    # Display as tree on console
-    mo_org_tree_import.visit_all(mo_org_tree_import.visitor)
-
-    # Import to AnyTree
-    importer = DictImporter()
-    for subtree in mo_org_tree_import._build_trees(mo_org_tree_import.get_org_units()):
-        root = importer.import_(subtree)
-        print(RenderTree(root))
+    sd_import = DictImporter()
+    sd_root = sd_import.import_(
+        {
+            "uuid": str(uuid.uuid4()),
+            "parent_uuid": None,
+            "name": "<root>",
+            "children": [],
+        }
+    )
 
     # Compare to SD org unit tree
-    deepdiff = DeepDiff(
-        mo_org_tree_import._build_trees(mo_org_tree_import.get_org_units()),
-        [],  # SD org unit tree goes here :)
-        ignore_order=True,
-    )
+    deepdiff = DeepDiff(mo_root, sd_root, ignore_order=True)
     print(deepdiff.pretty())
 
 
