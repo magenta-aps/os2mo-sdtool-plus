@@ -28,9 +28,9 @@ class MOOrgTreeImport:
             gql(
                 """
                 query GetOrgUUID {
-                  org {
-                    uuid
-                  }
+                    org {
+                        uuid
+                    }
                 }
                 """
             )
@@ -90,39 +90,16 @@ class MOOrgTreeImport:
             if focus_node["uuid"] in parent_id_vals:
                 focus_node["children"] = []
 
-            for i in nodes:
-                if i["parent_uuid"] == focus_node["uuid"]:
-                    focus_node["children"].append(i)
-                    root_nodes.append(i)
+            for node in nodes:
+                if node["parent_uuid"] == focus_node["uuid"]:
+                    focus_node["children"].append(node)
+                    root_nodes.append(node)
 
             root_nodes.remove(focus_node)
 
         # Return roots containing child nodes, each child node containing its child
         # nodes, and so on.
         return [nodes[idx] for idx in root_idxs]
-
-    # def visit_all(self, visitor):
-    #     roots = self._build_trees(self.get_org_units())
-    #     for root in roots:
-    #         self._visit_subtree(visitor, root)
-    #
-    # def visitor(self, node, path, depth):
-    #     print("{}{}".format("\t" * depth, path))
-    #
-    # def _visit_subtree(self, visitor, node, depth=0, path=None):
-    #     if path is None:
-    #         path = [node["name"]]
-    #
-    #     visitor(node, depth=depth, path=path)
-    #
-    #     # Visit child nodes, if any
-    #     if "children" in node:
-    #         sorted_children = sorted(node["children"], key=lambda child: child["name"])
-    #         for child_node in sorted_children:
-    #             path_copy = path + [child_node["name"]]
-    #             self._visit_subtree(
-    #                 visitor, child_node, depth=depth + 1, path=path_copy
-    #             )
 
 
 @click.command()
