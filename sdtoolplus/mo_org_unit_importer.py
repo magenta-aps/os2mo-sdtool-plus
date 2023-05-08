@@ -5,6 +5,7 @@ from functools import cache
 import anytree
 from anytree.importer import DictImporter
 from gql import gql
+from more_itertools import one
 
 
 class MOOrgTreeImport:
@@ -43,7 +44,7 @@ class MOOrgTreeImport:
                 """
             )
         )
-        return [n["objects"][0] for n in doc["org_units"]]
+        return [one(n["objects"]) for n in doc["org_units"]]
 
     def as_anytree_root(self) -> anytree.Node:
         importer = DictImporter()
