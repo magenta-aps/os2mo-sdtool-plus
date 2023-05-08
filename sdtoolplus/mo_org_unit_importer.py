@@ -80,10 +80,13 @@ class MOOrgTreeImport:
             if focus_node["uuid"] in parent_id_vals:
                 focus_node["children"] = []
 
-            for node in nodes:
-                if node["parent_uuid"] == focus_node["uuid"]:
-                    focus_node["children"].append(node)
-                    root_nodes.append(node)
+            focus_node_children = filter(
+                lambda node: node["parent_uuid"] == focus_node["uuid"],
+                nodes,
+            )
+            for node in focus_node_children:
+                focus_node["children"].append(node)
+                root_nodes.append(node)
 
             root_nodes.remove(focus_node)
 
