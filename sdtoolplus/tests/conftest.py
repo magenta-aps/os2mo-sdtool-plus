@@ -6,10 +6,11 @@ import pytest
 
 from graphql.language.ast import DocumentNode
 
+from ..mo_org_unit_importer import OrgUnitUUID
+
 
 class _MockGraphQLSession:
-    expected_org_uuid = str(uuid.uuid4())
-    parent_uuid = str(uuid.uuid4())
+    expected_org_uuid: OrgUnitUUID = uuid.uuid4()
 
     def __init__(self) -> None:
         self._get_org_uuid_response = {"org": {"uuid": self.expected_org_uuid}}
@@ -27,19 +28,20 @@ class _MockGraphQLSession:
             raise ValueError("unknown query name %r" % name)
 
     def get_org_units(self) -> list[dict]:
+        def org_unit(uuid, parent_uuid):
+            return {
+                "uuid": uuid,
+                "parent_uuid": parent_uuid,
+                "name": f"Name {uuid}",
+            }
+
         # Mock children of root org
-        org_units = [
-            {"uuid": self.parent_uuid, "parent_uuid": self.expected_org_uuid}
-            for _ in range(2)
-        ]
+        children = [org_unit(uuid.uuid4(), self.expected_org_uuid) for _ in range(2)]
+
         # Mock grandchildren (== children of parent org units)
-        org_units.extend(
-            [
-                {"uuid": str(uuid.uuid4()), "parent_uuid": self.parent_uuid}
-                for _ in range(2)
-            ]
-        )
-        return org_units
+        grandchildren = [org_unit(uuid.uuid4(), parent["uuid"]) for parent in children]
+
+        return children + grandchildren
 
 
 @pytest.fixture()

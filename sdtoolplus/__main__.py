@@ -13,38 +13,34 @@ To run:
 from uuid import uuid4
 
 import click
-from anytree.importer import DictImporter
 from pydantic import AnyHttpUrl
 from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 
 from .diff_org_trees import run_diff
 from .mo_org_unit_importer import MOOrgTreeImport
+from .mo_org_unit_importer import OrgUnit
+from .mo_org_unit_importer import OrgUnitUUID
 
 
-def _get_mock_sd_org_tree(mo_org_tree):
-    sd_import = DictImporter()
-    return sd_import.import_(
-        {
-            "uuid": mo_org_tree.get_org_uuid(),
-            "parent_uuid": None,
-            "name": "<root>",
-            "children": [
-                {
-                    "uuid": "f06ee470-9f17-566f-acbe-e938112d46d9",
-                    "parent_uuid": "3b866d97-0b1f-48e0-8078-686d96f430b3",
-                    "name": "Kolding Kommune II",
-                    "children": [],
-                },
-                {
-                    "uuid": str(uuid4()),
-                    "parent_uuid": "3b866d97-0b1f-48e0-8078-686d96f430b3",
-                    "name": "Something new ...",
-                    "children": [],
-                },
-            ],
-        }
+def _get_mock_sd_org_tree(mo_org_tree) -> OrgUnit:
+    mock_sd_root: OrgUnit = OrgUnit(
+        uuid=mo_org_tree.get_org_uuid(),
+        parent_uuid=None,
+        name="<root>",
     )
+    mock_sd_updated_child: OrgUnit = OrgUnit(
+        uuid=OrgUnitUUID("f06ee470-9f17-566f-acbe-e938112d46d9"),
+        parent_uuid=mo_org_tree.get_org_uuid(),
+        name="Kolding Kommune II",
+    )
+    mock_sd_new_child: OrgUnit = OrgUnit(
+        uuid=uuid4(),
+        parent_uuid=mo_org_tree.get_org_uuid(),
+        name="Something new",
+    )
+    mock_sd_root.children = [mock_sd_updated_child, mock_sd_new_child]
+    return mock_sd_root
 
 
 @click.command()
@@ -76,7 +72,7 @@ def main(
     mo_org_tree = MOOrgTreeImport(session)
     sd_org_tree = _get_mock_sd_org_tree(mo_org_tree)
 
-    run_diff(mo_org_tree.as_anytree_root(), sd_org_tree)
+    run_diff(mo_org_tree.as_single_tree(), sd_org_tree)
 
 
 if __name__ == "__main__":

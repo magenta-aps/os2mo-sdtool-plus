@@ -48,7 +48,7 @@ class OrgTreeDiff:
 
         # Emit removal operations
         for item in self.deepdiff.get("iterable_item_removed", []):
-            if item.get_root_key() == "descendants":
+            if item.get_root_key() == "children":
                 if item.t1.uuid not in already_emitted:
                     yield RemoveOperation(
                         uuid=item.t1.uuid,
@@ -60,7 +60,7 @@ class OrgTreeDiff:
         for iterable_name in ("attribute_removed", "values_changed"):
             iterable = self.deepdiff.get(iterable_name, [])
             for item in iterable:
-                if item.get_root_key() == "descendants":
+                if item.get_root_key() == "children":
                     attr = item.path().split(".")[-1]
                     if attr in ("name", "parent_uuid"):
                         yield UpdateOperation(
@@ -73,7 +73,7 @@ class OrgTreeDiff:
 
         # Emit add operations
         for item in self.deepdiff.get("iterable_item_added", []):
-            if item.get_root_key() == "descendants":
+            if item.get_root_key() == "children":
                 if item.t2.uuid not in already_emitted:
                     yield AddOperation(
                         obj=item.t2,
