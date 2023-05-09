@@ -43,20 +43,17 @@ class TestMOOrgTreeImport:
 
     def test_get_org_units(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
-        assert len(instance.get_org_units()) == len(mock_graphql_session.get_org_units())
+        assert instance.get_org_units() == (
+            mock_graphql_session.expected_children +
+            mock_graphql_session.expected_grandchildren
+        )
 
     def test_build_trees(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
         trees = instance._build_trees(
-            parse_obj_as(list[OrgUnit], mock_graphql_session.get_org_units())
+            parse_obj_as(list[OrgUnit], mock_graphql_session.tree_as_flat_list_of_dicts)
         )
-        assert len(trees) == 2
-        for tree in trees:
-            assert tree.uuid != mock_graphql_session.expected_org_uuid
-            assert tree.parent_uuid == mock_graphql_session.expected_org_uuid
-            for child in tree.children:
-                assert child.uuid != mock_graphql_session.expected_org_uuid
-                assert child.parent_uuid == tree.uuid
+        assert trees == mock_graphql_session.expected_trees
 
     @given(flat_org_units())
     def test_build_trees_robustness(
@@ -72,5 +69,5 @@ class TestMOOrgTreeImport:
         root = instance.as_single_tree()
         assert isinstance(root, OrgUnit)
         assert isinstance(root, anytree.AnyNode)
-        assert len(root.children) == 2
+        assert root.children == tuple(mock_graphql_session.expected_trees)
         assert root.is_root
