@@ -2,3 +2,6 @@
 */.coverage
 */.hypothesis/*
 
+# IDEs
+.idea
+
