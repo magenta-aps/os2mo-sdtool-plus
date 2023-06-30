@@ -1,12 +1,11 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from dataclasses import dataclass
-from dataclasses import field
 from functools import cache
 from typing import TypeAlias
 from uuid import UUID
 
 import anytree
+import pydantic
 from gql import gql
 from more_itertools import one
 from pydantic import parse_obj_as
@@ -16,12 +15,19 @@ OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 
 
-@dataclass
-class OrgUnit(anytree.AnyNode):
+class OrgUnit(pydantic.BaseModel, anytree.NodeMixin):
     uuid: OrgUnitUUID
     parent_uuid: OrgUnitUUID | None
     name: str
-    children: list["OrgUnit"] = field(default_factory=list)
+    child_org_units: list["OrgUnit"] = pydantic.Field(default_factory=list)
+
+    @property
+    def children(self):
+        return tuple(self.child_org_units)
+
+    @property
+    def is_leaf(self):
+        return self.child_org_units == []
 
 
 class MOOrgTreeImport:
@@ -69,7 +75,7 @@ class MOOrgTreeImport:
             uuid=self.get_org_uuid(),
             parent_uuid=None,
             name="<root>",
-            children=children,
+            child_org_units=children,
         )
         return root
 
@@ -92,7 +98,7 @@ class MOOrgTreeImport:
         while root_nodes:
             focus_node = root_nodes[0]
             if focus_node.uuid in parent_id_vals:
-                focus_node.children = []
+                focus_node.child_org_units = []
 
             focus_node_children = list(
                 filter(
@@ -100,7 +106,7 @@ class MOOrgTreeImport:
                     nodes,
                 )
             )
-            focus_node.children = focus_node_children
+            focus_node.child_org_units = focus_node_children
             for node in focus_node_children:
                 root_nodes.append(node)
 

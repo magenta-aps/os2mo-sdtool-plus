@@ -60,7 +60,7 @@ class _MockGraphQLSession:
     def expected_trees(self) -> list[OrgUnit]:
         children = deepcopy(self.expected_children)
         for child in children:
-            child.children = self.expected_grandchildren
+            child.child_org_units = self.expected_grandchildren
         return children
 
     @property
