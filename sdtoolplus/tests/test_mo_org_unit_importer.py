@@ -68,6 +68,7 @@ class TestMOOrgTreeImport:
         instance = MOOrgTreeImport(mock_graphql_session)
         root = instance.as_single_tree()
         assert isinstance(root, OrgUnit)
-        assert isinstance(root, anytree.AnyNode)
+        assert isinstance(root, anytree.NodeMixin)
         assert root.children == tuple(mock_graphql_session.expected_trees)
         assert root.is_root
+        assert [child.is_leaf for child in root.children]
