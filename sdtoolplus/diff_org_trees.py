@@ -7,6 +7,8 @@ from anytree import Node
 from deepdiff import DeepDiff
 from deepdiff.model import DiffLevel
 
+from sdtoolplus.mo_org_unit_importer import OrgUnit
+
 
 @dataclass
 class Operation:
@@ -31,7 +33,7 @@ class AddOperation(Operation):
 
 
 class OrgTreeDiff:
-    def __init__(self, mo_org_tree, sd_org_tree):
+    def __init__(self, mo_org_tree: OrgUnit, sd_org_tree: OrgUnit):
         self.deepdiff = DeepDiff(
             mo_org_tree,
             sd_org_tree,
