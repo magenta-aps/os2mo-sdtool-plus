@@ -1,6 +1,7 @@
 .coverage
 */.coverage
-*/.hypothesis/*
+**/.hypothesis/*
+**/__pycache__
 
 # IDEs
 .idea

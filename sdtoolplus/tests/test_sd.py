@@ -11,6 +11,7 @@ def test_build_tree():
     sd_org_json = {
         "RegionIdentifier": "RI",
         "InstitutionIdentifier": "II",
+        "InstitutionUUIDIdentifier": "00000000-0000-0000-0000-000000000000",
         "DepartmentStructureName": "Dep structure name",
         "OrganizationStructure": {
             "DepartmentLevelIdentifier": "Afdelings-niveau",
@@ -150,7 +151,6 @@ def test_build_tree():
     actual_tree = build_tree(
         sd_org,
         sd_departments,
-        UUID("00000000-0000-0000-0000-000000000000")
     )
 
     # Assert

@@ -108,7 +108,6 @@ def _process_node(
 def build_tree(
         sd_org: GetOrganizationResponse,
         sd_departments: GetDepartmentResponse,
-        org_uuid: UUID
 ) -> OrgUnitNode:
     """
     Build the SD organization unit tree structure.
@@ -116,14 +115,13 @@ def build_tree(
     Args:
         sd_org: the response from the SD endpoint GetOrganization
         sd_departments: the response from the SD endpoint GetDepartment
-        org_uuid: the UUID of the SD organization
 
     Returns:
         The SD organization unit tree structure.
     """
 
     root_node = OrgUnitNode(
-        uuid=org_uuid,
+        uuid=sd_org.InstitutionUUIDIdentifier,
         parent_uuid=None,
         name="<root>"
     )
