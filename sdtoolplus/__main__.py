@@ -13,10 +13,13 @@ To run:
 from uuid import uuid4
 
 import click
+from anytree import RenderTree
 from pydantic import AnyHttpUrl
 from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
+from sdclient.client import SDClient
 
+from sdtoolplus.sd.importer import get_sd_tree
 from .diff_org_trees import run_diff
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnit
@@ -49,30 +52,40 @@ def _get_mock_sd_org_tree(mo_org_tree) -> OrgUnit:
 @click.option("--client_secret", envvar="CLIENT_SECRET")
 @click.option("--auth_realm", envvar="AUTH_REALM", default="mo")
 @click.option("--auth_server", envvar="AUTH_SERVER")
+@click.option("--sd-username", envvar="SD_USERNAME")
+@click.option("--sd-password", envvar="SD_PASSWORD")
+@click.option("--sd-institution-identifier", envvar="SD_INSTITUTION_IDENTIFIER")
 def main(
     mora_base: str,
     client_id: str,
     client_secret: str,
     auth_realm: str,
     auth_server: AnyHttpUrl,
+    sd_username: str,
+    sd_password: str,
+    sd_institution_identifier: str
 ) -> None:
     job_settings = JobSettings()
     job_settings.start_logging_based_on_settings()
 
-    session = GraphQLClient(
-        url=f"{mora_base}/graphql/v3",
-        client_id=client_id,
-        client_secret=client_secret,
-        auth_realm=auth_realm,
-        auth_server=auth_server,
-        sync=True,
-        httpx_client_kwargs={"timeout": None},
-    )
+    # session = GraphQLClient(
+    #     url=f"{mora_base}/graphql/v3",
+    #     client_id=client_id,
+    #     client_secret=client_secret,
+    #     auth_realm=auth_realm,
+    #     auth_server=auth_server,
+    #     sync=True,
+    #     httpx_client_kwargs={"timeout": None},
+    # )
 
-    mo_org_tree = MOOrgTreeImport(session)
-    sd_org_tree = _get_mock_sd_org_tree(mo_org_tree)
+    sd_client = SDClient(sd_username, sd_password)
 
-    run_diff(mo_org_tree.as_single_tree(), sd_org_tree)
+    # mo_org_tree = MOOrgTreeImport(session)
+    sd_org_tree = get_sd_tree(sd_client, sd_institution_identifier)
+    # breakpoint()
+    print(RenderTree(sd_org_tree).by_attr("uuid"))
+
+#    run_diff(mo_org_tree.as_single_tree(), sd_org_tree)
 
 
 if __name__ == "__main__":
