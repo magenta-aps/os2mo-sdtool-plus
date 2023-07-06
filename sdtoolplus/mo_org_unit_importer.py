@@ -15,19 +15,51 @@ OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 
 
-class OrgUnit(pydantic.BaseModel, anytree.NodeMixin):
+class OrgUnit(pydantic.BaseModel):
     uuid: OrgUnitUUID
     parent_uuid: OrgUnitUUID | None
     name: str
-    child_org_units: list["OrgUnit"] = pydantic.Field(default_factory=list)
+
+
+class OrgUnitNode(anytree.AnyNode):
+    def __init__(
+        self,
+        uuid: OrgUnitUUID = None,
+        parent_uuid: OrgUnitUUID = None,
+        name: str = None,
+        parent: "OrgUnitNode" = None,
+        children: list["OrgUnitNode"] = None,
+    ):
+        super().__init__(parent=parent, children=children)
+        self._instance = OrgUnit(uuid=uuid, parent_uuid=parent_uuid, name=name)
+
+    @classmethod
+    def from_org_unit(cls, org_unit: OrgUnit) -> "OrgUnitNode":
+        return cls(
+            uuid=org_unit.uuid,
+            parent_uuid=org_unit.parent_uuid,
+            name=org_unit.name,
+        )
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.name}>"
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, OrgUnitNode):
+            return self._instance.uuid == other._instance.uuid
+        return super().__eq__(other)
 
     @property
-    def children(self):
-        return tuple(self.child_org_units)
+    def uuid(self) -> OrgUnitUUID:
+        return self._instance.uuid
 
     @property
-    def is_leaf(self):
-        return self.child_org_units == []
+    def parent_uuid(self) -> OrgUnitUUID:
+        return self._instance.parent_uuid
+
+    @property
+    def name(self) -> str:
+        return self._instance.name
 
 
 class MOOrgTreeImport:
@@ -69,17 +101,23 @@ class MOOrgTreeImport:
         org_units: list[dict] = [one(n["objects"]) for n in doc["org_units"]]
         return parse_obj_as(list[OrgUnit], org_units)
 
-    def as_single_tree(self) -> OrgUnit:
+    def as_single_tree(self) -> OrgUnitNode:
         children = self._build_trees(self.get_org_units())
-        root = OrgUnit(
+        root = OrgUnitNode(
             uuid=self.get_org_uuid(),
             parent_uuid=None,
             name="<root>",
-            child_org_units=children,
+            children=children,
         )
         return root
 
-    def _build_trees(self, nodes) -> list[OrgUnit]:
+    def _build_trees(self, org_units: list[OrgUnit]) -> list[OrgUnitNode]:
+        # Convert list of `OrgUnit` objects to list of `OrgUnitNode` objects
+        nodes = [OrgUnitNode.from_org_unit(org_unit) for org_unit in org_units]
+
+        # Mutate the list of `OrgUnitNodes` in order to reconstruct the tree structure
+        # given by the `uuid` and `parent_uuid` attributes.
+        #
         # Based on: https://stackoverflow.com/a/72497630
 
         root_org_uuid = self.get_org_uuid()
@@ -98,7 +136,7 @@ class MOOrgTreeImport:
         while root_nodes:
             focus_node = root_nodes[0]
             if focus_node.uuid in parent_id_vals:
-                focus_node.child_org_units = []
+                focus_node.children = []
 
             focus_node_children = list(
                 filter(
@@ -106,7 +144,7 @@ class MOOrgTreeImport:
                     nodes,
                 )
             )
-            focus_node.child_org_units = focus_node_children
+            focus_node.children = focus_node_children
             for node in focus_node_children:
                 root_nodes.append(node)
 
