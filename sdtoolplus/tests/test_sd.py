@@ -1,10 +1,8 @@
 from uuid import UUID
 
-from anytree import RenderTree
-
 from sdclient.responses import GetOrganizationResponse, GetDepartmentResponse
 
-from sdtoolplus.mo_org_unit_importer import OrgUnit
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.tree import build_tree
 
 
@@ -149,56 +147,64 @@ def test_build_tree():
     sd_org = GetOrganizationResponse.parse_obj(sd_org_json)
 
     # Act
-    tree = build_tree(
+    actual_tree = build_tree(
         sd_org,
         sd_departments,
         UUID("00000000-0000-0000-0000-000000000000")
     )
 
     # Assert
-    root = OrgUnit(
+    expected_tree = OrgUnitNode(
         uuid=UUID("00000000-0000-0000-0000-000000000000"),
         parent_uuid=None,
         name="<root>"
     )
-    dep1 = OrgUnit(
+    dep1 = OrgUnitNode(
         uuid=UUID("10000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("00000000-0000-0000-0000-000000000000"),
-        parent=root,
+        parent=expected_tree,
         name="Department 1"
     )
-    dep2 = OrgUnit(
+    dep2 = OrgUnitNode(
         uuid=UUID("20000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("10000000-0000-0000-0000-000000000000"),
         parent=dep1,
         name="Department 2"
     )
-    dep3 = OrgUnit(
+    dep3 = OrgUnitNode(
         uuid=UUID("30000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("20000000-0000-0000-0000-000000000000"),
         parent=dep2,
         name="Department 3"
     )
-    dep4 = OrgUnit(
+    dep4 = OrgUnitNode(
         uuid=UUID("40000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("20000000-0000-0000-0000-000000000000"),
         parent=dep2,
         name="Department 4"
     )
-    dep5 = OrgUnit(
+    dep5 = OrgUnitNode(
         uuid=UUID("50000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("10000000-0000-0000-0000-000000000000"),
         parent=dep1,
         name="Department 5"
     )
-    dep6 = OrgUnit(
+    dep6 = OrgUnitNode(
         uuid=UUID("60000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("50000000-0000-0000-0000-000000000000"),
         parent=dep5,
         name="Department 6"
     )
 
-    # Nice for debugging
-    # print(RenderTree(tree).by_attr("uuid"))
+    def assert_equal(node_a: OrgUnitNode, node_b: OrgUnitNode, depth: int = 0):
+        assert node_a == node_b
+        assert node_a.uuid == node_b.uuid
+        assert node_a.parent_uuid == node_b.parent_uuid
+        assert node_a.name == node_b.name
+        # Only displayed in case test fails
+        print("\t" * depth, node_a, node_b)
+        # Visit child nodes pair-wise
+        for child_a, child_b in zip(node_a.children, node_b.children):
+            assert_equal(child_a, child_b, depth=depth + 1)
 
-    assert root == tree
+    assert_equal(actual_tree, expected_tree)
