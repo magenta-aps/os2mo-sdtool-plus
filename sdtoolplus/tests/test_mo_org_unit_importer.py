@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from unittest.mock import patch
 
-import anytree
 from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
@@ -10,6 +9,7 @@ from pydantic import parse_obj_as
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnit
+from ..mo_org_unit_importer import OrgUnitNode
 
 
 @st.composite
@@ -43,10 +43,13 @@ class TestMOOrgTreeImport:
 
     def test_get_org_units(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
-        assert instance.get_org_units() == (
-            mock_graphql_session.expected_children +
-            mock_graphql_session.expected_grandchildren
-        )
+        assert instance.get_org_units() == [
+            OrgUnit(uuid=n.uuid, parent_uuid=n.parent_uuid, name=n.name)
+            for n in (
+                mock_graphql_session.expected_children +
+                mock_graphql_session.expected_grandchildren
+            )
+        ]
 
     def test_build_trees(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
@@ -67,8 +70,7 @@ class TestMOOrgTreeImport:
     def test_as_single_tree(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
         root = instance.as_single_tree()
-        assert isinstance(root, OrgUnit)
-        assert isinstance(root, anytree.NodeMixin)
+        assert isinstance(root, OrgUnitNode)
         assert root.children == tuple(mock_graphql_session.expected_trees)
         assert root.is_root
         assert [child.is_leaf for child in root.children]

@@ -10,6 +10,7 @@ from graphql.language.ast import DocumentNode
 
 from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnit
+from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 
 
@@ -19,16 +20,16 @@ class _MockGraphQLSession:
     _child_uuid: OrgUnitUUID = uuid.uuid4()
     _grandchild_uuid: OrgUnitUUID = uuid.uuid4()
 
-    expected_children: list[OrgUnit] = [
-        OrgUnit(
+    expected_children: list[OrgUnitNode] = [
+        OrgUnitNode(
             uuid=_child_uuid,
             parent_uuid=expected_org_uuid,
             name="Child",
         ),
     ]
 
-    expected_grandchildren: list[OrgUnit] = [
-        OrgUnit(
+    expected_grandchildren: list[OrgUnitNode] = [
+        OrgUnitNode(
             uuid=_grandchild_uuid,
             parent_uuid=_child_uuid,
             name="Grandchild",
@@ -57,10 +58,10 @@ class _MockGraphQLSession:
         }
 
     @property
-    def expected_trees(self) -> list[OrgUnit]:
+    def expected_trees(self) -> list[OrgUnitNode]:
         children = deepcopy(self.expected_children)
         for child in children:
-            child.child_org_units = self.expected_grandchildren
+            child.children = self.expected_grandchildren
         return children
 
     @property
