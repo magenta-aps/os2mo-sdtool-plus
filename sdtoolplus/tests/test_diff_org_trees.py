@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import uuid
+from unittest.mock import Mock
+
+import pytest
 from anytree.render import RenderTree
+from deepdiff.helper import CannotCompare
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -13,6 +18,7 @@ from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import MOOrgTreeImport
+from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
 
 
@@ -72,3 +78,75 @@ class TestOrgTreeDiff:
             ),
         ]
         assert actual_operations == expected_operations
+
+    @pytest.mark.parametrize(
+        "path,expected_result",
+        [
+            ("__", False),
+            ("a.b.c", False),
+            ("uuid", True),
+            ("_uuid", False),
+            ("children", True),
+            ("_children", True),
+        ]
+    )
+    def test_is_relevant(self, path: str, expected_result: bool):
+        instance = self._get_empty_instance()
+        actual_result = instance._is_relevant(None, path)
+        assert actual_result == expected_result
+
+    @pytest.mark.parametrize(
+        "x,y,expected_result",
+        [
+            (
+                OrgUnitNode(uuid=uuid.uuid4(), parent_uuid=uuid.uuid4(), name="X"),
+                OrgUnitNode(uuid=uuid.uuid4(), parent_uuid=uuid.uuid4(), name="Y"),
+                False,
+            ),
+            (
+                OrgUnitNode(uuid=SharedIdentifier.child_org_unit_uuid, parent_uuid=uuid.uuid4(), name="X"),
+                OrgUnitNode(uuid=SharedIdentifier.child_org_unit_uuid, parent_uuid=uuid.uuid4(), name="Y"),
+                True,
+            ),
+        ]
+    )
+    def test_compare_on_uuid(self, x, y, expected_result: bool):
+        instance = self._get_empty_instance()
+        assert instance._compare_on_uuid(x, y) == expected_result
+
+    def test_compare_on_uuid_raises_cannotcompare(self):
+        instance = self._get_empty_instance()
+        with pytest.raises(CannotCompare):
+            instance._compare_on_uuid(None, None)
+
+    def _get_empty_instance(self):
+        return OrgTreeDiff(
+            None,  # mo_org_tree,
+            None,  # sd_org_tree
+        )
+
+
+class TestOperation:
+    def test_has_diff_level_member(self):
+        operation = Operation()
+        assert operation._diff_level is None
+
+    def test_from_diff_level(self):
+        with pytest.raises(NotImplementedError):
+            Operation.from_diff_level(None)
+
+    def test_str(self):
+        operation = Operation()
+        with pytest.raises(NotImplementedError):
+            str(operation)
+
+
+class TestUpdateOperation:
+    def test_supported_attrs(self):
+        assert UpdateOperation._supported_attrs() == {"name"}
+
+    def test_from_diff_level_can_return_none(self):
+        diff_level = Mock()
+        diff_level.path = Mock()
+        diff_level.path.return_value = "a.b.c"
+        assert UpdateOperation.from_diff_level(diff_level) is None
