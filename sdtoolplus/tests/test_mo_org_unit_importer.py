@@ -6,6 +6,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
 
+from .conftest import SharedIdentifier
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
