@@ -5,16 +5,20 @@ from copy import deepcopy
 from itertools import chain
 
 import pytest
+from gql.transport.exceptions import TransportQueryError
 from graphql.language.ast import DocumentNode
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
+from ..mo_org_unit_importer import MOOrgTreeImport
+from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
-from ..mo_org_unit_importer import OrgUUID
+from ..sd.tree import build_tree
 
 
 class SharedIdentifier:
@@ -49,12 +53,14 @@ class _MockGraphQLSession:
         )
     ]
 
-    def execute(self, query: DocumentNode) -> dict:
+    def execute(self, query: DocumentNode, variable_values: dict[str] = None) -> dict:
         name = query.to_dict()["definitions"][0]["name"]["value"]
         if name == "GetOrgUUID":
             return self._mock_response_for_get_org_uuid
         elif name == "GetOrgUnits":
             return self._mock_response_for_get_org_units
+        elif name in ("RemoveOrgUnit", "UpdateOrgUnit", "AddOrgUnit"):
+            return {"name": name}
         else:
             raise ValueError("unknown query name %r" % name)
 
@@ -92,9 +98,19 @@ class _MockGraphQLSession:
         ]
 
 
+class _MockGraphQLSessionRaisingTransportQueryError:
+    def execute(self, query: DocumentNode, variable_values: dict[str] = None) -> dict:
+        raise TransportQueryError("testing")
+
+
 @pytest.fixture()
 def mock_graphql_session() -> _MockGraphQLSession:
     return _MockGraphQLSession()
+
+
+@pytest.fixture()
+def mock_graphql_session_raising_transportqueryerror() -> _MockGraphQLSessionRaisingTransportQueryError:
+    return _MockGraphQLSessionRaisingTransportQueryError()
 
 
 @pytest.fixture()
@@ -298,3 +314,19 @@ def mock_mo_org_unit_level_map(
 @pytest.fixture()
 def mock_mo_org_unit_type() -> MOClass:
     return MOClass(uuid=uuid.uuid4(), name="Enhed", user_key="Enhed")
+
+
+@pytest.fixture()
+def mock_org_tree_diff(
+    mock_graphql_session: _MockGraphQLSession,
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+) -> OrgTreeDiff:
+    # Construct MO and SD trees
+    mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+    )
+    # Construct tree diff
+    return OrgTreeDiff(mo_tree, sd_tree)

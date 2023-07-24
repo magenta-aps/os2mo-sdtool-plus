@@ -10,6 +10,7 @@ To run:
     $ python -m sdtoolplus
 
 """
+import logging
 from uuid import uuid4
 
 import click
@@ -19,6 +20,7 @@ from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient
 
+from .diff_org_trees import OrgTreeDiff
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
@@ -26,6 +28,10 @@ from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
+from .tree_diff_executor import TreeDiffExecutor
+
+
+logger = logging.getLogger(__name__)
 
 
 def _get_mock_sd_org_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
@@ -83,17 +89,36 @@ def main(
         sync=True,
         httpx_client_kwargs={"timeout": None},
     )
+
     mo_org_unit_type_map = MOOrgUnitTypeMap(session)
     mo_org_unit_type: MOClass = mo_org_unit_type_map[org_unit_type]
     mo_org_unit_level_map = MOOrgUnitLevelMap(session)
+
+    # Get actual MO tree
     mo_org_tree = MOOrgTreeImport(session)
 
-    sd_client = SDClient(sd_username, sd_password)
-    sd_org_tree = get_sd_tree(
-        sd_client, sd_institution_identifier, mo_org_unit_level_map
+    if sd_username and sd_password and sd_institution_identifier:
+        # Get actual SD tree
+        logger.info("Fetching SD org tree ...")
+        sd_client = SDClient(sd_username, sd_password)
+        sd_org_tree = get_sd_tree(
+            sd_client, sd_institution_identifier, mo_org_unit_level_map
+        )
+        print(RenderTree(sd_org_tree).by_attr("uuid"))
+    else:
+        logger.info("Using mock SD org tree")
+        # Mock SD tree (remove when appropriate)
+        sd_org_tree = _get_mock_sd_org_tree(mo_org_tree)
+
+    # Construct org tree diff
+    tree_diff = OrgTreeDiff(
+        mo_org_tree.as_single_tree(), sd_org_tree, mo_org_unit_type
     )
 
-    print(RenderTree(sd_org_tree).by_attr("uuid"))
+    # Execute org tree diff against current MO state
+    executor = TreeDiffExecutor(session, tree_diff)
+    for operation, mutation, result in executor.execute():
+        print(operation, result)
 
 
 if __name__ == "__main__":
