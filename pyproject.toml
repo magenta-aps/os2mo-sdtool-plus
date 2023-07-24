@@ -18,7 +18,7 @@ anytree = "^2.8.0"
 pydantic = "^1.10.7"
 more-itertools = ">=8.14.0"
 hypothesis = "^6.75.2"
-another-sd-client = "^1"
+another-sd-client = "^1.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.1"
