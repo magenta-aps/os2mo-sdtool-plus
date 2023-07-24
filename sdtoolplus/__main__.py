@@ -20,7 +20,6 @@ from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient
 
 from sdtoolplus.sd.importer import get_sd_tree
-from .diff_org_trees import run_diff
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnit
 from .mo_org_unit_importer import OrgUnitUUID
@@ -68,24 +67,21 @@ def main(
     job_settings = JobSettings()
     job_settings.start_logging_based_on_settings()
 
-    # session = GraphQLClient(
-    #     url=f"{mora_base}/graphql/v3",
-    #     client_id=client_id,
-    #     client_secret=client_secret,
-    #     auth_realm=auth_realm,
-    #     auth_server=auth_server,
-    #     sync=True,
-    #     httpx_client_kwargs={"timeout": None},
-    # )
+    session = GraphQLClient(
+        url=f"{mora_base}/graphql/v3",
+        client_id=client_id,
+        client_secret=client_secret,
+        auth_realm=auth_realm,
+        auth_server=auth_server,
+        sync=True,
+        httpx_client_kwargs={"timeout": None},
+    )
+    mo_org_tree = MOOrgTreeImport(session)
 
     sd_client = SDClient(sd_username, sd_password)
-
-    # mo_org_tree = MOOrgTreeImport(session)
     sd_org_tree = get_sd_tree(sd_client, sd_institution_identifier)
-    # breakpoint()
-    print(RenderTree(sd_org_tree).by_attr("uuid"))
 
-#    run_diff(mo_org_tree.as_single_tree(), sd_org_tree)
+    print(RenderTree(sd_org_tree).by_attr("uuid"))
 
 
 if __name__ == "__main__":
