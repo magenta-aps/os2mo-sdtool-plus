@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -13,6 +14,10 @@ from .mo_org_unit_importer import OrgUnitNode
 @dataclass
 class Operation:
     path: str
+
+# TODO: replace with configuration variable, or map from SD data
+# Current UUID corresponds to "org_unit_type" = "Afdeling" in MO dev data set
+DEFAULT_ORG_UNIT_TYPE_UUID = uuid.UUID("9d2ac723-d5e5-4e7f-9c7f-b207bd223bc2")
 
 
 @dataclass
