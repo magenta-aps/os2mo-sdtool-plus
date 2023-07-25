@@ -1,10 +1,15 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+
 [tool.poetry]
 name = "os2mo-sdtool-plus"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
-license = "n"
+description = "Synchronises organisation unit trees in MO with SD Løn"
+authors = ["Magenta ApS <info@magenta.dk>"]
 readme = "README.md"
+homepage = "https://magenta.dk/"
+repository = "https://git.magenta.dk/rammearkitektur/os2mo-sdtool-plus"
+keywords = ["os2mo", "sd"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
