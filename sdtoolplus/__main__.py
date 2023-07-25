@@ -19,10 +19,10 @@ from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient
 
-from sdtoolplus.sd.importer import get_sd_tree
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnit
 from .mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.sd.importer import get_sd_tree
 
 
 def _get_mock_sd_org_tree(mo_org_tree) -> OrgUnit:
@@ -62,7 +62,7 @@ def main(
     auth_server: AnyHttpUrl,
     sd_username: str,
     sd_password: str,
-    sd_institution_identifier: str
+    sd_institution_identifier: str,
 ) -> None:
     job_settings = JobSettings()
     job_settings.start_logging_based_on_settings()

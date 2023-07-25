@@ -128,9 +128,7 @@ class MOOrgTreeImport:
 
         # Child nodes
         parent_id_vals = {
-            node.parent_uuid
-            for node in nodes
-            if node.parent_uuid != root_org_uuid
+            node.parent_uuid for node in nodes if node.parent_uuid != root_org_uuid
         }
 
         while root_nodes:

@@ -5,13 +5,12 @@ from copy import deepcopy
 from itertools import chain
 
 import pytest
-
 from graphql.language.ast import DocumentNode
 
-from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
+from ..mo_org_unit_importer import OrgUUID
 
 
 class _MockGraphQLSession:

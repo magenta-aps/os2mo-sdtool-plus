@@ -3,17 +3,19 @@
 from uuid import UUID
 
 from more_itertools import one
+from sdclient.responses import Department
+from sdclient.responses import DepartmentReference
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-from sdclient.responses import GetOrganizationResponse, GetDepartmentResponse, \
-    DepartmentReference, Department
 
 
 def _create_node(
-        dep_uuid: UUID,
-        dep_name: str,
-        parent: OrgUnitNode,
-        existing_nodes: dict[UUID, OrgUnitNode]
+    dep_uuid: UUID,
+    dep_name: str,
+    parent: OrgUnitNode,
+    existing_nodes: dict[UUID, OrgUnitNode],
 ) -> OrgUnitNode:
     """
     Create a node in the SD AnyNode tree and add the node to the dict
@@ -30,10 +32,7 @@ def _create_node(
     """
 
     new_node = OrgUnitNode(
-        uuid=dep_uuid,
-        parent_uuid=parent.uuid,
-        parent=parent,
-        name=dep_name
+        uuid=dep_uuid, parent_uuid=parent.uuid, parent=parent, name=dep_name
     )
 
     existing_nodes[dep_uuid] = new_node
@@ -42,7 +41,7 @@ def _create_node(
 
 
 def _get_sd_departments_map(
-        sd_departments: GetDepartmentResponse
+    sd_departments: GetDepartmentResponse,
 ) -> dict[UUID, Department]:
     """
     A mapping from an SD department UUID to the SD departments itself.
@@ -61,10 +60,10 @@ def _get_sd_departments_map(
 
 
 def _process_node(
-        dep_ref: DepartmentReference,
-        root_node: OrgUnitNode,
-        sd_departments_map: dict[UUID, Department],
-        existing_nodes: dict[UUID, OrgUnitNode]
+    dep_ref: DepartmentReference,
+    root_node: OrgUnitNode,
+    sd_departments_map: dict[UUID, Department],
+    existing_nodes: dict[UUID, OrgUnitNode],
 ) -> OrgUnitNode:
     """
     Process a node in the SD "tree", i.e. process a node in the
@@ -92,10 +91,7 @@ def _process_node(
         parent_dep_ref = one(dep_ref.DepartmentReference)
 
         parent = _process_node(
-            parent_dep_ref,
-            root_node,
-            sd_departments_map,
-            existing_nodes
+            parent_dep_ref, root_node, sd_departments_map, existing_nodes
         )
 
         new_node = _create_node(dep_uuid, dep_name, parent, existing_nodes)
@@ -106,8 +102,8 @@ def _process_node(
 
 
 def build_tree(
-        sd_org: GetOrganizationResponse,
-        sd_departments: GetDepartmentResponse,
+    sd_org: GetOrganizationResponse,
+    sd_departments: GetDepartmentResponse,
 ) -> OrgUnitNode:
     """
     Build the SD organization unit tree structure.
@@ -121,16 +117,13 @@ def build_tree(
     """
 
     root_node = OrgUnitNode(
-        uuid=sd_org.InstitutionUUIDIdentifier,
-        parent_uuid=None,
-        name="<root>"
+        uuid=sd_org.InstitutionUUIDIdentifier, parent_uuid=None, name="<root>"
     )
 
     sd_departments_map = _get_sd_departments_map(sd_departments)
 
     existing_nodes = {}
     for dep_refs in one(sd_org.Organization).DepartmentReference:
-        _process_node(
-            dep_refs, root_node, sd_departments_map, existing_nodes)
+        _process_node(dep_refs, root_node, sd_departments_map, existing_nodes)
 
     return root_node

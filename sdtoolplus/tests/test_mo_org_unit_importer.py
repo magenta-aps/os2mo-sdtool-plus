@@ -7,9 +7,9 @@ from hypothesis import strategies as st
 from pydantic import parse_obj_as
 
 from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
+from ..mo_org_unit_importer import OrgUUID
 
 
 @st.composite
@@ -46,8 +46,8 @@ class TestMOOrgTreeImport:
         assert instance.get_org_units() == [
             OrgUnit(uuid=n.uuid, parent_uuid=n.parent_uuid, name=n.name)
             for n in (
-                mock_graphql_session.expected_children +
-                mock_graphql_session.expected_grandchildren
+                mock_graphql_session.expected_children
+                + mock_graphql_session.expected_grandchildren
             )
         ]
 

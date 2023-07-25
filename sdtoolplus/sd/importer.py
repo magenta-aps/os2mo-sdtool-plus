@@ -3,35 +3,37 @@
 from datetime import date
 
 from sdclient.client import SDClient
-from sdclient.requests import GetOrganizationRequest, GetDepartmentRequest
-from sdclient.responses import GetOrganizationResponse, GetDepartmentResponse
+from sdclient.requests import GetDepartmentRequest
+from sdclient.requests import GetOrganizationRequest
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnit
 from sdtoolplus.sd.tree import build_tree
 
 
 def get_sd_organization(
-        sd_client: SDClient,
-        institution_identifier: str,
-        activation_date: date,
-        deactivation_date: date
+    sd_client: SDClient,
+    institution_identifier: str,
+    activation_date: date,
+    deactivation_date: date,
 ) -> GetOrganizationResponse:
     # TODO: add docstring
     req = GetOrganizationRequest(
         InstitutionIdentifier=institution_identifier,
         ActivationDate=activation_date,
         DeactivationDate=deactivation_date,
-        UUIDIndicator=True
+        UUIDIndicator=True,
     )
 
     return sd_client.get_organization(req)
 
 
 def get_sd_departments(
-        sd_client: SDClient,
-        institution_identifier: str,
-        activation_date: date,
-        deactivation_date: date
+    sd_client: SDClient,
+    institution_identifier: str,
+    activation_date: date,
+    deactivation_date: date,
 ) -> GetDepartmentResponse:
     # TODO: add docstring
     req = GetDepartmentRequest(
@@ -39,7 +41,7 @@ def get_sd_departments(
         ActivationDate=activation_date,
         DeactivationDate=deactivation_date,
         DepartmentNameIndicator=True,
-        UUIDIndicator=True
+        UUIDIndicator=True,
     )
 
     return sd_client.get_department(req)
