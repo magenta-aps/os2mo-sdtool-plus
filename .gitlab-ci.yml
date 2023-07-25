@@ -51,7 +51,7 @@ workflow:
   <<: *install-deps
   needs: []
   stage: test
-  script: poetry run pytest tests/
+  script: poetry run pytest
 
 # ---------------------------------------------------------------------------
 # Lint
