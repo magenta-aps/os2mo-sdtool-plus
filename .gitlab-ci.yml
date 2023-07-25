@@ -1,69 +1,58 @@
---- # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Global
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.cache/pre-commit"
-
-cache:
-  key: "${CI_JOB_NAME}"
-  paths:
-    - .venv/
-    - .cache/pip
-    - .cache/pre-commit
+# SPDX-FileCopyrightText: Magenta ApS
+# SPDX-License-Identifier: MPL-2.0
 
 stages:
   - lint
+  - build
   - test
+  - coverage
   - release
   - deploy
 
-include:
-  - project: 'labs/salt-automation'
-    file:
-      - gitlab-ci-templates/common/conventional-commits.v1.yml
-      - gitlab-ci-templates/python/pypi-cc.v1.yml
 
+variables:
+  IMAGE_SHA: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+
+  PYTEST_COV_MODULE: sdtoolplus
+  PYTEST_COV_FAIL_UNDER: 50
+
+  PRECOMMIT_USE_POETRY: "true"
+  POETRY_VERSION: "1.3.1"
+
+  PRODUCT: os2mo
+  COMPONENT: sdtoolplus
+
+
+# Conditions
+#############
+.if-default-branch-refs: &if-default-branch-refs
+  if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+.if-tag: &if-tag
+  if: '$CI_COMMIT_TAG'
+
+.if-merge-request: &if-merge-request
+  if: '$CI_MERGE_REQUEST_IID'
+
+
+# Workflow
+###########
 workflow:
   rules:
-    - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == "master"
-    - if: $CI_MERGE_REQUEST_ID
+    - <<: *if-tag
+    - <<: *if-default-branch-refs
+    - <<: *if-merge-request
 
 
-# ---------------------------------------------------------------------------
-# Templates
-# ---------------------------------------------------------------------------
-.install-deps-template: &install-deps
-  before_script:
-    - pip install poetry
-    - poetry --version
-    - poetry config virtualenvs.in-project true
-    - poetry install -vv
-    - poetry run pre-commit install
-
-.lint-template: &lint
-  <<: *install-deps
-  image: python:3.11
-  stage: lint
-
-.test-template: &test # Coverage needed too
-  <<: *install-deps
-  needs: []
-  stage: test
-  script: poetry run pytest
-
-# ---------------------------------------------------------------------------
-# Lint
-# ---------------------------------------------------------------------------
-Lint Project:
-  <<: *lint
-  script:
-    - poetry run pre-commit run --all-files
-
-# ---------------------------------------------------------------------------
-# Test
-# ---------------------------------------------------------------------------
-Test on Python 3.11:
-  <<: *test
-  image: python:3.11
+include:
+  - project: labs/salt-automation
+    ref: master
+    file:
+      - /gitlab-ci-templates/common/rules.v1.yml
+      - /gitlab-ci-templates/common/pre-commit.v1.yml
+      - /gitlab-ci-templates/common/conventional-commits.v1.yml
+      - /gitlab-ci-templates/python/pytest.v1.yml
+      #- /gitlab-ci-templates/common/docker-build.v1.yml
+      #- /gitlab-ci-templates/common/docker-release.v1.yml
+      #- /gitlab-ci-templates/common/config-updater-salt.v1.yml
+      #- gitlab-ci-templates/common/config-updater-flux.v1.yml
