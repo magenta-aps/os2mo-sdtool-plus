@@ -21,6 +21,15 @@ repos:
           - httpx
           - pydantic
           - strawberry-graphql
+          - anytree
+          - gql
+          - more_itertools
+          - hypothesis
+          - deepdiff
+          - pytest
+          - click
+          - ra-utils
+          - raclients
 
 #  - repo: https://github.com/fsfe/reuse-tool
 #    rev: v1.0.0
