@@ -20,23 +20,23 @@ from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient  # type: ignore
 
 from .mo_org_unit_importer import MOOrgTreeImport
-from .mo_org_unit_importer import OrgUnit
+from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.importer import get_sd_tree
 
 
-def _get_mock_sd_org_tree(mo_org_tree) -> OrgUnit:
-    mock_sd_root: OrgUnit = OrgUnit(
+def _get_mock_sd_org_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
+    mock_sd_root: OrgUnitNode = OrgUnitNode(
         uuid=mo_org_tree.get_org_uuid(),
         parent_uuid=None,
         name="<root>",
     )
-    mock_sd_updated_child: OrgUnit = OrgUnit(
+    mock_sd_updated_child: OrgUnitNode = OrgUnitNode(
         uuid=OrgUnitUUID("f06ee470-9f17-566f-acbe-e938112d46d9"),
         parent_uuid=mo_org_tree.get_org_uuid(),
         name="Kolding Kommune II",
     )
-    mock_sd_new_child: OrgUnit = OrgUnit(
+    mock_sd_new_child: OrgUnitNode = OrgUnitNode(
         uuid=uuid4(),
         parent_uuid=mo_org_tree.get_org_uuid(),
         name="Something new",

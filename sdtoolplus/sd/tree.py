@@ -122,7 +122,7 @@ def build_tree(
 
     sd_departments_map = _get_sd_departments_map(sd_departments)
 
-    existing_nodes = {}
+    existing_nodes: dict[UUID, OrgUnitNode] = {}
     for dep_refs in one(sd_org.Organization).DepartmentReference:
         _process_node(dep_refs, root_node, sd_departments_map, existing_nodes)
 
