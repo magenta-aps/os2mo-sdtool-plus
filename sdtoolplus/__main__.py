@@ -13,11 +13,11 @@ To run:
 from uuid import uuid4
 
 import click
-from anytree import RenderTree
+from anytree import RenderTree  # type: ignore
 from pydantic import AnyHttpUrl
 from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
-from sdclient.client import SDClient
+from sdclient.client import SDClient  # type: ignore
 
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnit

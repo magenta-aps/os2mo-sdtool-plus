@@ -4,7 +4,7 @@ from functools import cache
 from typing import TypeAlias
 from uuid import UUID
 
-import anytree
+import anytree  # type: ignore
 import pydantic
 from gql import gql
 from more_itertools import one
