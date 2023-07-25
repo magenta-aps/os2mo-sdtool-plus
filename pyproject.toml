@@ -5,7 +5,6 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 license = "n"
 readme = "README.md"
-packages = [{include = "os2mo_sdtool_plus"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
