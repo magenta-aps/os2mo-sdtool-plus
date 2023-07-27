@@ -2,14 +2,14 @@
 
 [[package]]
 name = "another-sd-client"
-version = "1.4.0"
+version = "1.5.0"
 description = "Client for communicating with SD Løn"
 category = "main"
 optional = false
 python-versions = ">=3.11,<4.0"
 files = [
-    {file = "another_sd_client-1.4.0-py3-none-any.whl", hash = "sha256:8f11c6b3d11bbde97ddbd2e9968a22f584c9cf9fb2d6ed18edd8194136d35c7d"},
-    {file = "another_sd_client-1.4.0.tar.gz", hash = "sha256:4f426a74ea3239696b7d8973aa05ad6795c5990451d4556c8f80390dc6fe94a8"},
+    {file = "another_sd_client-1.5.0-py3-none-any.whl", hash = "sha256:9c39bcfc480eaef3f07461f08ec517e90141d31d651e209f4f6aaa94d65e4313"},
+    {file = "another_sd_client-1.5.0.tar.gz", hash = "sha256:da9847db74f7a9b451bcf9dfc30d23b75da8ac1473443a7e1cb152b295516d85"},
 ]
 
 [package.dependencies]
@@ -1690,4 +1690,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "55f6dee7a0df086ebb864efbd87d507bf1c3bbd76c253cc8d8ed81efba7abe9e"
+content-hash = "0abb91b31388a1b71b7f36030f75fb70897a4141ab2c56a61752c8f86cae756d"
