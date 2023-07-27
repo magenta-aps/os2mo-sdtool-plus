@@ -5,9 +5,9 @@ from uuid import UUID
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from .conftest import SharedIdentifier
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
+from .conftest import SharedIdentifier
 
 
 def test_build_tree(

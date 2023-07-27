@@ -100,10 +100,8 @@ def mock_sd_get_organization_response() -> GetOrganizationResponse:
             "DepartmentLevelIdentifier": "Afdelings-niveau",
             "DepartmentLevelReference": {
                 "DepartmentLevelIdentifier": "NY0-niveau",
-                "DepartmentLevelReference": {
-                    "DepartmentLevelIdentifier": "NY1-niveau"
-                }
-            }
+                "DepartmentLevelReference": {"DepartmentLevelIdentifier": "NY1-niveau"},
+            },
         },
         "Organization": [
             {
@@ -117,17 +115,21 @@ def mock_sd_get_organization_response() -> GetOrganizationResponse:
                         "DepartmentReference": [
                             {
                                 "DepartmentIdentifier": "NY0",
-                                "DepartmentUUIDIdentifier": str(SharedIdentifier.grandchild_org_unit_uuid),
+                                "DepartmentUUIDIdentifier": str(
+                                    SharedIdentifier.grandchild_org_unit_uuid
+                                ),
                                 "DepartmentLevelIdentifier": "NY0-niveau",
                                 "DepartmentReference": [
                                     {
                                         "DepartmentIdentifier": "NY1",
-                                        "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                                        "DepartmentUUIDIdentifier": str(
+                                            SharedIdentifier.child_org_unit_uuid
+                                        ),
                                         "DepartmentLevelIdentifier": "NY1-niveau",
                                     }
-                                ]
+                                ],
                             }
-                        ]
+                        ],
                     },
                     {
                         "DepartmentIdentifier": "Afd",
@@ -136,17 +138,21 @@ def mock_sd_get_organization_response() -> GetOrganizationResponse:
                         "DepartmentReference": [
                             {
                                 "DepartmentIdentifier": "NY0",
-                                "DepartmentUUIDIdentifier": str(SharedIdentifier.grandchild_org_unit_uuid),
+                                "DepartmentUUIDIdentifier": str(
+                                    SharedIdentifier.grandchild_org_unit_uuid
+                                ),
                                 "DepartmentLevelIdentifier": "NY0-niveau",
                                 "DepartmentReference": [
                                     {
                                         "DepartmentIdentifier": "NY1",
-                                        "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                                        "DepartmentUUIDIdentifier": str(
+                                            SharedIdentifier.child_org_unit_uuid
+                                        ),
                                         "DepartmentLevelIdentifier": "NY1-niveau",
                                     }
-                                ]
+                                ],
                             }
-                        ]
+                        ],
                     },
                     {
                         "DepartmentIdentifier": "Afd",
@@ -160,16 +166,18 @@ def mock_sd_get_organization_response() -> GetOrganizationResponse:
                                 "DepartmentReference": [
                                     {
                                         "DepartmentIdentifier": "NY1",
-                                        "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                                        "DepartmentUUIDIdentifier": str(
+                                            SharedIdentifier.child_org_unit_uuid
+                                        ),
                                         "DepartmentLevelIdentifier": "NY1-niveau",
                                     }
-                                ]
+                                ],
                             }
-                        ]
+                        ],
                     },
-                ]
+                ],
             }
-        ]
+        ],
     }
     sd_org = GetOrganizationResponse.parse_obj(sd_org_json)
     return sd_org
@@ -195,7 +203,9 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "NY0",
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "Department 2",
-                "DepartmentUUIDIdentifier": str(SharedIdentifier.grandchild_org_unit_uuid),
+                "DepartmentUUIDIdentifier": str(
+                    SharedIdentifier.grandchild_org_unit_uuid
+                ),
             },
             {
                 "ActivationDate": "1999-01-01",
@@ -203,7 +213,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "Afd",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 3",
-                "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000"
+                "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000",
             },
             {
                 "ActivationDate": "1999-01-01",
@@ -211,7 +221,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "Afd",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 4",
-                "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000"
+                "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000",
             },
             {
                 "ActivationDate": "1999-01-01",
@@ -219,7 +229,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "NY0",
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "Department 5",
-                "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000"
+                "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000",
             },
             {
                 "ActivationDate": "1999-01-01",
@@ -227,9 +237,9 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "Afd",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 6",
-                "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000"
+                "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000",
             },
-        ]
+        ],
     }
     sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
     return sd_departments
