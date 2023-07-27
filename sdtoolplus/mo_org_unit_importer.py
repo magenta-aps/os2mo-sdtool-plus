@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from functools import cache
+from typing import Self
 from typing import TypeAlias
 from uuid import UUID
 
@@ -24,11 +25,11 @@ class OrgUnit(pydantic.BaseModel):
 class OrgUnitNode(anytree.AnyNode):
     def __init__(
         self,
-        uuid: OrgUnitUUID = None,
-        parent_uuid: OrgUnitUUID = None,
-        name: str = None,
-        parent: "OrgUnitNode" = None,
-        children: list["OrgUnitNode"] = None,
+        uuid: OrgUnitUUID | None = None,
+        parent_uuid: OrgUnitUUID | None = None,
+        name: str | None = None,
+        parent: Self | None = None,
+        children: list["OrgUnitNode"] | None = None,
     ):
         super().__init__(parent=parent, children=children)
         self._instance = OrgUnit(uuid=uuid, parent_uuid=parent_uuid, name=name)
@@ -54,7 +55,7 @@ class OrgUnitNode(anytree.AnyNode):
         return self._instance.uuid
 
     @property
-    def parent_uuid(self) -> OrgUnitUUID:
+    def parent_uuid(self) -> OrgUnitUUID | None:
         return self._instance.parent_uuid
 
     @property
@@ -128,9 +129,7 @@ class MOOrgTreeImport:
 
         # Child nodes
         parent_id_vals = {
-            node.parent_uuid
-            for node in nodes
-            if node.parent_uuid != root_org_uuid
+            node.parent_uuid for node in nodes if node.parent_uuid != root_org_uuid
         }
 
         while root_nodes:

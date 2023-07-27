@@ -1,11 +1,15 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+
 [tool.poetry]
 name = "os2mo-sdtool-plus"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
-license = "n"
+description = "Synchronises organisation unit trees in MO with SD Løn"
+authors = ["Magenta ApS <info@magenta.dk>"]
 readme = "README.md"
-packages = [{include = "os2mo_sdtool_plus"}]
+homepage = "https://magenta.dk/"
+repository = "https://git.magenta.dk/rammearkitektur/os2mo-sdtool-plus"
+keywords = ["os2mo", "sd"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -18,11 +22,15 @@ anytree = "^2.8.0"
 pydantic = "^1.10.7"
 more-itertools = ">=8.14.0"
 hypothesis = "^6.75.2"
-another-sd-client = "^1.4.0"
+another-sd-client = "^1.5.0"
 
 [tool.poetry.group.dev.dependencies]
+
+[tool.poetry.group.test.dependencies]
+pre-commit = "^3.0.0"
 pytest = "^7.3.1"
-pytest-coverage = "^0.0"
+pytest-cov = "^4.0.0"
+pytest-split = "^0.8.1"
 
 [build-system]
 requires = ["poetry-core"]
