@@ -3,6 +3,7 @@
 import abc
 import datetime
 from textwrap import dedent
+from typing import Any
 from typing import Iterator
 
 from gql import gql
@@ -30,7 +31,7 @@ class Mutation(abc.ABC):
         raise NotImplementedError("must be implemented by subclass")
 
     @property
-    def query_args(self) -> dict[str]:
+    def query_args(self) -> dict[str, Any]:
         raise NotImplementedError("must be implemented by subclass")
 
 
@@ -49,7 +50,7 @@ class RemoveOrgUnitMutation(Mutation):
         )
 
     @property
-    def query_args(self) -> dict[str]:
+    def query_args(self) -> dict[str, Any]:
         return {"uuid": str(self.operation.uuid), "to": str(datetime.date.today())}
 
 
@@ -79,7 +80,7 @@ class UpdateOrgUnitMutation(Mutation):
         )
 
     @property
-    def query_args(self) -> dict[str]:
+    def query_args(self) -> dict[str, Any]:
         return {
             "uuid": str(self.operation.uuid),
             "name": self.operation.value,
@@ -115,7 +116,7 @@ class AddOrgUnitMutation(Mutation):
         )
 
     @property
-    def query_args(self) -> dict[str]:
+    def query_args(self) -> dict[str, Any]:
         return {
             "parent_uuid": str(self.operation.parent_uuid),
             "name": self.operation.name,
@@ -129,7 +130,9 @@ class TreeDiffExecutor:
         self._session = session
         self._tree_diff = tree_diff
 
-    def execute(self) -> Iterator[tuple[Operation, Mutation, dict[str] | Exception]]:
+    def execute(
+        self,
+    ) -> Iterator[tuple[Operation, Mutation, dict[str, Any] | Exception]]:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             try:

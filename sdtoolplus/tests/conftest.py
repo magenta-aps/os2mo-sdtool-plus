@@ -3,6 +3,7 @@
 import uuid
 from copy import deepcopy
 from itertools import chain
+from typing import Any
 
 import pytest
 from gql.transport.exceptions import TransportQueryError
@@ -15,9 +16,9 @@ from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUUID
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
+from ..mo_org_unit_importer import OrgUUID
 from ..sd.tree import build_tree
 
 
@@ -53,7 +54,9 @@ class _MockGraphQLSession:
         )
     ]
 
-    def execute(self, query: DocumentNode, variable_values: dict[str] = None) -> dict:
+    def execute(
+        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
+    ) -> dict:
         name = query.to_dict()["definitions"][0]["name"]["value"]
         if name == "GetOrgUUID":
             return self._mock_response_for_get_org_uuid
@@ -99,7 +102,9 @@ class _MockGraphQLSession:
 
 
 class _MockGraphQLSessionRaisingTransportQueryError:
-    def execute(self, query: DocumentNode, variable_values: dict[str] = None) -> dict:
+    def execute(
+        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
+    ) -> dict:
         raise TransportQueryError("testing")
 
 
@@ -109,7 +114,9 @@ def mock_graphql_session() -> _MockGraphQLSession:
 
 
 @pytest.fixture()
-def mock_graphql_session_raising_transportqueryerror() -> _MockGraphQLSessionRaisingTransportQueryError:
+def mock_graphql_session_raising_transportqueryerror() -> (
+    _MockGraphQLSessionRaisingTransportQueryError
+):
     return _MockGraphQLSessionRaisingTransportQueryError()
 
 
