@@ -9,8 +9,6 @@ from deepdiff.helper import CannotCompare
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from .conftest import _MockGraphQLSession
-from .conftest import SharedIdentifier
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import DEFAULT_ORG_UNIT_TYPE_UUID
 from ..diff_org_trees import Operation
@@ -20,6 +18,8 @@ from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
+from .conftest import _MockGraphQLSession
+from .conftest import SharedIdentifier
 
 
 class TestOrgTreeDiff:
@@ -34,7 +34,6 @@ class TestOrgTreeDiff:
         sd_tree = build_tree(
             mock_sd_get_organization_response,
             mock_sd_get_department_response,
-            SharedIdentifier.root_org_uuid,
         )
 
         # Construct tree diff
@@ -56,9 +55,17 @@ class TestOrgTreeDiff:
             # MO unit to be removed is indeed removed
             RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
             # MO unit "Grandchild" is renamed to "Department 2"
-            UpdateOperation(uuid=SharedIdentifier.grandchild_org_unit_uuid, attr="name", value="Department 2"),
+            UpdateOperation(
+                uuid=SharedIdentifier.grandchild_org_unit_uuid,
+                attr="name",
+                value="Department 2",
+            ),
             # MO unit "Child" is renamed to "Department 1"
-            UpdateOperation(uuid=SharedIdentifier.child_org_unit_uuid, attr="name", value="Department 1"),
+            UpdateOperation(
+                uuid=SharedIdentifier.child_org_unit_uuid,
+                attr="name",
+                value="Department 1",
+            ),
             # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
             AddOperation(
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
@@ -88,7 +95,7 @@ class TestOrgTreeDiff:
             ("_uuid", False),
             ("children", True),
             ("_children", True),
-        ]
+        ],
     )
     def test_is_relevant(self, path: str, expected_result: bool):
         instance = self._get_empty_instance()
@@ -104,11 +111,19 @@ class TestOrgTreeDiff:
                 False,
             ),
             (
-                OrgUnitNode(uuid=SharedIdentifier.child_org_unit_uuid, parent_uuid=uuid.uuid4(), name="X"),
-                OrgUnitNode(uuid=SharedIdentifier.child_org_unit_uuid, parent_uuid=uuid.uuid4(), name="Y"),
+                OrgUnitNode(
+                    uuid=SharedIdentifier.child_org_unit_uuid,
+                    parent_uuid=uuid.uuid4(),
+                    name="X",
+                ),
+                OrgUnitNode(
+                    uuid=SharedIdentifier.child_org_unit_uuid,
+                    parent_uuid=uuid.uuid4(),
+                    name="Y",
+                ),
                 True,
             ),
-        ]
+        ],
     )
     def test_compare_on_uuid(self, x, y, expected_result: bool):
         instance = self._get_empty_instance()

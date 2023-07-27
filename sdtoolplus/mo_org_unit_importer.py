@@ -88,7 +88,7 @@ class MOOrgTreeImport:
                 """
                 query GetOrgUnits {
                     org_units {
-                        objects {                            
+                        objects {
                             current {
                                 uuid
                                 parent_uuid
@@ -101,7 +101,8 @@ class MOOrgTreeImport:
             )
         )
         org_units: list[dict] = [
-            n["current"] for n in doc["org_units"]["objects"]
+            n["current"]
+            for n in doc["org_units"]["objects"]
             if n["current"] is not None
         ]
         return parse_obj_as(list[OrgUnit], org_units)

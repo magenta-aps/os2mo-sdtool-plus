@@ -88,7 +88,6 @@ class AddOperation(Operation):
 
 
 class OrgTreeDiff:
-
     def __init__(self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode):
         # "ID-based" difference between the two org trees. Used to find the org units
         # that need to be removed or updated.
@@ -102,10 +101,7 @@ class OrgTreeDiff:
         self.structural_deepdiff = self._get_deepdiff_instance(mo_org_tree, sd_org_tree)
 
     def _get_deepdiff_instance(
-        self,
-        mo_org_tree: OrgUnitNode,
-        sd_org_tree: OrgUnitNode,
-        **kwargs
+        self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode, **kwargs
     ) -> DeepDiff:
         return DeepDiff(
             mo_org_tree,
