@@ -3,9 +3,9 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 
-from anytree import Node  # type: ignore
-from deepdiff import DeepDiff  # type: ignore
-from deepdiff.model import DiffLevel  # type: ignore
+from anytree import Node
+from deepdiff import DeepDiff
+from deepdiff.model import DiffLevel
 
 from .mo_org_unit_importer import OrgUnitNode
 

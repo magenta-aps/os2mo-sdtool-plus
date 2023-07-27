@@ -16,7 +16,7 @@ repos:
     rev: v1.0.1
     hooks:
       - id: mypy
-        args: [ --config-file=pyproject.toml ]
+        args: [ "--ignore-missing-imports", "--config-file=pyproject.toml" ]
         additional_dependencies:
           - httpx
           - pydantic

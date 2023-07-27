@@ -3,10 +3,10 @@
 from uuid import UUID
 
 from more_itertools import one
-from sdclient.responses import Department  # type: ignore
-from sdclient.responses import DepartmentReference  # type: ignore
-from sdclient.responses import GetDepartmentResponse  # type: ignore
-from sdclient.responses import GetOrganizationResponse  # type: ignore
+from sdclient.responses import Department
+from sdclient.responses import DepartmentReference
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 

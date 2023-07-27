@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MPL-2.0
 from uuid import UUID
 
-from sdclient.responses import GetDepartmentResponse  # type: ignore
-from sdclient.responses import GetOrganizationResponse  # type: ignore
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.tree import build_tree

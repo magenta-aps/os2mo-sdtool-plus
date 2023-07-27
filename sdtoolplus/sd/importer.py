@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 
-from sdclient.client import SDClient  # type: ignore
-from sdclient.requests import GetDepartmentRequest  # type: ignore
-from sdclient.requests import GetOrganizationRequest  # type: ignore
-from sdclient.responses import GetDepartmentResponse  # type: ignore
-from sdclient.responses import GetOrganizationResponse  # type: ignore
+from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentRequest
+from sdclient.requests import GetOrganizationRequest
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnit
 from sdtoolplus.sd.tree import build_tree

@@ -5,7 +5,7 @@ from typing import Self
 from typing import TypeAlias
 from uuid import UUID
 
-import anytree  # type: ignore
+import anytree
 import pydantic
 from gql import gql
 from more_itertools import one
