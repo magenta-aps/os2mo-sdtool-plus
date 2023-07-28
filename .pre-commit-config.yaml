@@ -31,10 +31,10 @@ repos:
           - ra-utils
           - raclients
 
-#  - repo: https://github.com/fsfe/reuse-tool
-#    rev: v1.0.0
-#    hooks:
-#      - id: reuse
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v1.0.0
+    hooks:
+      - id: reuse
 
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
     rev: v4.3.0
