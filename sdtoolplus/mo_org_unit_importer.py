@@ -8,6 +8,7 @@ from uuid import UUID
 import anytree
 import pydantic
 from gql import gql
+from more_itertools import one
 from pydantic import parse_obj_as
 
 
@@ -89,22 +90,16 @@ class MOOrgTreeImport:
                 query GetOrgUnits {
                     org_units {
                         objects {
-                            current {
-                                uuid
-                                parent_uuid
-                                name
-                            }
+                            uuid
+                            parent_uuid
+                            name
                         }
                     }
                 }
                 """
             )
         )
-        org_units: list[dict] = [
-            n["current"]
-            for n in doc["org_units"]["objects"]
-            if n["current"] is not None
-        ]
+        org_units: list[dict] = [one(n["objects"]) for n in doc["org_units"]]
         return parse_obj_as(list[OrgUnit], org_units)
 
     def as_single_tree(self) -> OrgUnitNode:
