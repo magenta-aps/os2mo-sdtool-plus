@@ -50,8 +50,10 @@ class TestOrgTreeDiff:
             print(operation)
 
         # Compare actual emitted operations to expected operations
-        actual_operations: list[Operation] = list(tree_diff.get_operations())
-        expected_operations: list[Operation] = [
+        actual_operations: list[
+            AddOperation | UpdateOperation | RemoveOperation | None
+        ] = list(tree_diff.get_operations())
+        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation] = [
             # MO unit to be removed is indeed removed
             RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
             # MO unit "Grandchild" is renamed to "Department 2"
