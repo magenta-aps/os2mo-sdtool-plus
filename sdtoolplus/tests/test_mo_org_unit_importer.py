@@ -10,6 +10,7 @@ from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUUID
+from .conftest import SharedIdentifier
 
 
 @st.composite
@@ -38,7 +39,7 @@ def flat_org_units(draw, uuids=st.uuids()) -> tuple[OrgUUID, list[OrgUnit]]:
 class TestMOOrgTreeImport:
     def test_get_org_uuid(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
-        assert instance.get_org_uuid() == mock_graphql_session.expected_org_uuid
+        assert instance.get_org_uuid() == SharedIdentifier.root_org_uuid
         assert isinstance(instance.get_org_uuid(), OrgUUID)
 
     def test_get_org_units(self, mock_graphql_session):

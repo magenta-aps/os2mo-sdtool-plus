@@ -23,23 +23,23 @@ class SharedIdentifier:
 
 
 class _MockGraphQLSession:
-    expected_org_uuid: OrgUUID = uuid.uuid4()
-
-    _child_uuid: OrgUnitUUID = uuid.uuid4()
-    _grandchild_uuid: OrgUnitUUID = uuid.uuid4()
-
     expected_children: list[OrgUnitNode] = [
         OrgUnitNode(
-            uuid=_child_uuid,
-            parent_uuid=expected_org_uuid,
+            uuid=SharedIdentifier.child_org_unit_uuid,
+            parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
+        ),
+        OrgUnitNode(
+            uuid=SharedIdentifier.removed_org_unit_uuid,
+            parent_uuid=SharedIdentifier.root_org_uuid,
+            name="Child only in MO, should be removed",
         ),
     ]
 
     expected_grandchildren: list[OrgUnitNode] = [
         OrgUnitNode(
-            uuid=_grandchild_uuid,
-            parent_uuid=_child_uuid,
+            uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Grandchild",
         )
     ]
@@ -55,7 +55,7 @@ class _MockGraphQLSession:
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:
-        return {"org": {"uuid": self.expected_org_uuid}}
+        return {"org": {"uuid": SharedIdentifier.root_org_uuid}}
 
     @property
     def _mock_response_for_get_org_units(self) -> dict:
