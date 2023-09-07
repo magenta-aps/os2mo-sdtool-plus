@@ -102,7 +102,7 @@ class OrgTreeDiff:
     def __init__(self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode):
         # "ID-based" difference between the two org trees. Used to find the org units
         # that need to be removed or updated.
-        self.id_deepdiff = self._get_deepdiff_instance(
+        self.uuid_deepdiff = self._get_deepdiff_instance(
             mo_org_tree,
             sd_org_tree,
             iterable_compare_func=self._compare_on_uuid,
@@ -141,13 +141,13 @@ class OrgTreeDiff:
         self,
     ) -> Iterator[AddOperation | UpdateOperation | RemoveOperation | None]:
         # Emit removal operations from "id-based diff"
-        for item in self.id_deepdiff.get("iterable_item_removed", []):
+        for item in self.uuid_deepdiff.get("iterable_item_removed", []):
             if item.get_root_key() == "children":
                 yield RemoveOperation.from_diff_level(item)
 
         # Emit update operations from "id-based diff"
         for iterable_name in ("attribute_removed", "values_changed"):
-            iterable = self.id_deepdiff.get(iterable_name, [])
+            iterable = self.uuid_deepdiff.get(iterable_name, [])
             for item in iterable:
                 if item.get_root_key() == "children":
                     operation = UpdateOperation.from_diff_level(item)
