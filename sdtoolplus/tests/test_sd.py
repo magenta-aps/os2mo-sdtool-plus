@@ -14,7 +14,7 @@ def test_build_tree(
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response: GetDepartmentResponse,
 ):
-    # Construct the expected tree
+    # Arrange
     expected_tree = OrgUnitNode(
         uuid=SharedIdentifier.root_org_uuid,
         parent_uuid=None,
