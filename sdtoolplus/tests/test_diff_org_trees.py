@@ -98,6 +98,20 @@ class TestOrgTreeDiff:
         ],
     )
     def test_is_relevant(self, path: str, expected_result: bool):
+        """`OrgTreeDiff._is_relevant` is passed to the `DeepDiff` instances used by
+        `OrgTreeDiff`, and decides whether a given part of the `DeepDiff` tree is
+        relevant.
+
+        `DeepDiff` calls `_is_relevant`, passing it a `path` which corresponds to the
+        location in the tree to test for relevance.
+
+        We consider paths relevant if their last part:
+        - exactly match one of "uuid", "parent_uuid" or "name"
+        - or contains "children".
+
+        We consider paths irrelevant if they begin with `__` (= they come from the
+        `anytree`/`NodeMixin` API), or do not satisfy the above criteria otherwise.
+        """
         instance = self._get_empty_instance()
         actual_result = instance._is_relevant(None, path)
         assert actual_result == expected_result
