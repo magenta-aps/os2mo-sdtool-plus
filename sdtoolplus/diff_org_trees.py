@@ -4,6 +4,7 @@ import abc
 import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import Self
 
 from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
@@ -19,7 +20,7 @@ DEFAULT_ORG_UNIT_TYPE_UUID = uuid.UUID("9d2ac723-d5e5-4e7f-9c7f-b207bd223bc2")
 
 class Operation(abc.ABC):
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel):
+    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         """Given a `DiffLevel` instance, produce the relevant `Operation` instance.
 
         When overridden by subclasses, this method is expected to return either an
@@ -45,7 +46,7 @@ class RemoveOperation(Operation):
     uuid: uuid.UUID
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel):
+    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         instance = cls(uuid=diff_level.t1.uuid)
         instance._diff_level = diff_level
         return instance
@@ -61,7 +62,7 @@ class UpdateOperation(Operation):
     value: str
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel):
+    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         attr = diff_level.path().split(".")[-1]
         if attr in cls._supported_attrs():
             instance = cls(uuid=diff_level.up.t1.uuid, attr=attr, value=diff_level.t2)
@@ -84,7 +85,7 @@ class AddOperation(Operation):
     org_unit_type_uuid: uuid.UUID
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel):
+    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         instance = cls(
             parent_uuid=diff_level.up.up.t1.uuid,
             name=diff_level.t2.name,
@@ -134,7 +135,9 @@ class OrgTreeDiff:
             return x.uuid == y.uuid
         raise CannotCompare() from None
 
-    def get_operations(self) -> Iterator[Operation]:
+    def get_operations(
+        self,
+    ) -> Iterator[AddOperation | UpdateOperation | RemoveOperation | None]:
         # Emit removal operations from "id-based diff"
         for item in self.id_deepdiff.get("iterable_item_removed", []):
             if item.get_root_key() == "children":
