@@ -19,6 +19,15 @@ DEFAULT_ORG_UNIT_TYPE_UUID = uuid.UUID("9d2ac723-d5e5-4e7f-9c7f-b207bd223bc2")
 
 
 class Operation(abc.ABC):
+    """This class defines an `Operation` interface which *must* be implemented by the
+    subclasses of `Operation`.
+
+    To construct class instances, we use a class method `from_diff_level` (rather than
+    defining an `__init__` taking a `DiffLevel` instance as an argument), as the
+    `__init__` method is controlled by the `@dataclass` decorator used on
+    `RemoveOperation`, `AddOperation`, etc. (See subclasses below.)
+    """
+
     @classmethod
     def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         """Given a `DiffLevel` instance, produce the relevant `Operation` instance.
