@@ -20,9 +20,19 @@ DEFAULT_ORG_UNIT_TYPE_UUID = uuid.UUID("9d2ac723-d5e5-4e7f-9c7f-b207bd223bc2")
 class Operation(abc.ABC):
     @classmethod
     def from_diff_level(cls, diff_level: DiffLevel):
+        """Given a `DiffLevel` instance, produce the relevant `Operation` instance.
+
+        When overridden by subclasses, this method is expected to return either an
+        instance of that subclass, or None.
+
+        `DiffLevel` objects are part of the `deepdiff` API and represent individual
+        nodes in a given `DeepDiff` instance.
+        """
         raise NotImplementedError("must be implemented by subclass")
 
     def __str__(self):
+        """Return a string describing the concrete operation to perform, i.e. giving
+        details of what will be removed, updated or added."""
         raise NotImplementedError("must be implemented by subclass")
 
     def __init__(self):
