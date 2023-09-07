@@ -122,7 +122,8 @@ class OrgTreeDiff:
             **kwargs,
         )
 
-    def _is_relevant(self, node, path: str) -> bool:
+    @staticmethod
+    def _is_relevant(node, path: str) -> bool:
         name: str = path.split(".")[-1]
         if "__" in name:
             return False
@@ -130,7 +131,8 @@ class OrgTreeDiff:
             return True
         return False
 
-    def _compare_on_uuid(self, x, y, level: DiffLevel = None) -> bool:
+    @staticmethod
+    def _compare_on_uuid(x, y, level: DiffLevel = None) -> bool:
         if isinstance(x, OrgUnitNode) and isinstance(y, OrgUnitNode):
             return x.uuid == y.uuid
         raise CannotCompare() from None
