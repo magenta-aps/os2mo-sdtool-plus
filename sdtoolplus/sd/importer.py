@@ -8,7 +8,7 @@ from sdclient.requests import GetOrganizationRequest
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from sdtoolplus.mo_org_unit_importer import OrgUnit
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.tree import build_tree
 
 
@@ -47,7 +47,7 @@ def get_sd_departments(
     return sd_client.get_department(req)
 
 
-def get_sd_tree(sd_client: SDClient, institution_identifier: str) -> OrgUnit:
+def get_sd_tree(sd_client: SDClient, institution_identifier: str) -> OrgUnitNode:
     # TODO: add docstring
     today = date.today()
 
