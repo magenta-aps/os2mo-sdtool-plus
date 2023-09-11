@@ -18,7 +18,6 @@ from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
-from ..mo_org_unit_level import MOOrgUnitLevelMap
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
 from .conftest import SharedIdentifier
