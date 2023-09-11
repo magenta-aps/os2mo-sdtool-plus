@@ -15,6 +15,8 @@ from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
+from ..mo_org_unit_level import MOOrgUnitLevel
+from ..mo_org_unit_level import MOOrgUnitLevelMap
 
 
 class SharedIdentifier:

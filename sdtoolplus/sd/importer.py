@@ -10,6 +10,7 @@ from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_level import MOOrgUnitLevelMap
 from sdtoolplus.sd.tree import build_tree
 
 

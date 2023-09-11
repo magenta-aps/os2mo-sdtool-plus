@@ -12,6 +12,8 @@ from sdclient.responses import GetOrganizationResponse
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_level import MOOrgUnitLevel
+from sdtoolplus.mo_org_unit_level import MOOrgUnitLevelMap
 
 
 def _create_node(
