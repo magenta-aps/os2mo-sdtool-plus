@@ -7,6 +7,7 @@ from sdclient.responses import GetOrganizationResponse
 
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import OrgUnitNode
+from ..mo_org_unit_level import MOOrgUnitLevelMap
 from ..sd.tree import build_tree
 from .conftest import SharedIdentifier
 

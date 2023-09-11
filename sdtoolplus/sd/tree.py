@@ -12,6 +12,8 @@ from sdclient.responses import GetOrganizationResponse
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_level import MOOrgUnitLevel
+from sdtoolplus.mo_org_unit_level import MOOrgUnitLevelMap
 
 
 def _create_node(
@@ -31,6 +33,7 @@ def _create_node(
         dep_name: the SD department name
         dep_level_identifier: the SD department level identifier ("NY1", etc.)
         parent: the parent of this node
+        org_unit_level: the SD department level identifier ("NY1", etc.)
         existing_nodes: dictionary of already existing nodes
         mo_org_unit_level_map: dictionary-like object of MO org unit levels
 
