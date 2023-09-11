@@ -10,11 +10,11 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..diff_org_trees import AddOperation
-from ..diff_org_trees import DEFAULT_ORG_UNIT_TYPE_UUID
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
+from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
@@ -30,6 +30,7 @@ class TestOrgTreeDiff:
         mock_sd_get_organization_response: GetOrganizationResponse,
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
+        mock_mo_org_unit_type: MOClass,
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -40,7 +41,7 @@ class TestOrgTreeDiff:
         )
 
         # Construct tree diff
-        tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+        tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
 
         # If test fails, print diagnostic information
         print("MO Tree")
@@ -87,18 +88,18 @@ class TestOrgTreeDiff:
             AddOperation(
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 name="Department 3",
-                org_unit_type_uuid=DEFAULT_ORG_UNIT_TYPE_UUID,
+                org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             ),
             AddOperation(
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 name="Department 4",
-                org_unit_type_uuid=DEFAULT_ORG_UNIT_TYPE_UUID,
+                org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             ),
             # SD unit "Department 5" is added under MO unit "Child"
             AddOperation(
                 parent_uuid=SharedIdentifier.child_org_unit_uuid,
                 name="Department 5",
-                org_unit_type_uuid=DEFAULT_ORG_UNIT_TYPE_UUID,
+                org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             ),
         ]
         assert actual_operations == expected_operations
@@ -168,7 +169,8 @@ class TestOrgTreeDiff:
     def _get_empty_instance(self):
         return OrgTreeDiff(
             None,  # mo_org_tree,
-            None,  # sd_org_tree
+            None,  # sd_org_tree,
+            None,  # mo_org_unit_type
         )
 
 
@@ -179,7 +181,7 @@ class TestOperation:
 
     def test_from_diff_level(self):
         with pytest.raises(NotImplementedError):
-            Operation.from_diff_level(None)
+            Operation.from_diff_level(None, None)
 
     def test_str(self):
         operation = Operation()
@@ -195,4 +197,4 @@ class TestUpdateOperation:
         diff_level = Mock()
         diff_level.path = Mock()
         diff_level.path.return_value = "a.b.c"
-        assert UpdateOperation.from_diff_level(diff_level) is None
+        assert UpdateOperation.from_diff_level(diff_level, None) is None

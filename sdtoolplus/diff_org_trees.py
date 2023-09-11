@@ -10,12 +10,8 @@ from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
 from deepdiff.helper import CannotCompare
 
+from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
-
-
-# TODO: replace with configuration variable, or map from SD data
-# Current UUID corresponds to "org_unit_type" = "Afdeling" in MO dev data set
-DEFAULT_ORG_UNIT_TYPE_UUID = uuid.UUID("9d2ac723-d5e5-4e7f-9c7f-b207bd223bc2")
 
 
 class Operation(abc.ABC):
@@ -29,7 +25,11 @@ class Operation(abc.ABC):
     """
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
+    def from_diff_level(
+        cls,
+        diff_level: DiffLevel,
+        org_unit_type: MOClass,
+    ) -> Self | None:
         """Given a `DiffLevel` instance, produce the relevant `Operation` instance.
 
         When overridden by subclasses, this method is expected to return either an
@@ -55,7 +55,11 @@ class RemoveOperation(Operation):
     uuid: uuid.UUID
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
+    def from_diff_level(
+        cls,
+        diff_level: DiffLevel,
+        org_unit_type: MOClass,
+    ) -> Self | None:
         instance = cls(uuid=diff_level.t1.uuid)
         instance._diff_level = diff_level
         return instance
@@ -71,7 +75,11 @@ class UpdateOperation(Operation):
     value: str
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
+    def from_diff_level(
+        cls,
+        diff_level: DiffLevel,
+        org_unit_type: MOClass,
+    ) -> Self | None:
         attr = diff_level.path().split(".")[-1]
         if attr in cls._supported_attrs():
             instance = cls(
@@ -96,11 +104,15 @@ class AddOperation(Operation):
     org_unit_type_uuid: uuid.UUID
 
     @classmethod
-    def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
+    def from_diff_level(
+        cls,
+        diff_level: DiffLevel,
+        org_unit_type: MOClass,
+    ) -> Self | None:
         instance = cls(
             parent_uuid=diff_level.up.up.t1.uuid,
             name=diff_level.t2.name,
-            org_unit_type_uuid=DEFAULT_ORG_UNIT_TYPE_UUID,
+            org_unit_type_uuid=org_unit_type.uuid,
         )
         instance._diff_level = diff_level
         return instance
@@ -110,7 +122,12 @@ class AddOperation(Operation):
 
 
 class OrgTreeDiff:
-    def __init__(self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode):
+    def __init__(
+        self,
+        mo_org_tree: OrgUnitNode,
+        sd_org_tree: OrgUnitNode,
+        mo_org_unit_type: MOClass,
+    ):
         # "ID-based" difference between the two org trees. Used to find the org units
         # that need to be removed or updated.
         self.uuid_deepdiff = self._get_deepdiff_instance(
@@ -121,6 +138,8 @@ class OrgTreeDiff:
         # "Structural" difference between the two org trees. Used to find the org units
         # that need to be added.
         self.structural_deepdiff = self._get_deepdiff_instance(mo_org_tree, sd_org_tree)
+        # Class in MO `org_unit_type` facet to use when emitting operations
+        self._mo_org_unit_type = mo_org_unit_type
 
     def _get_deepdiff_instance(
         self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode, **kwargs
@@ -155,18 +174,20 @@ class OrgTreeDiff:
         # Emit removal operations from "id-based diff"
         for item in self.uuid_deepdiff.get("iterable_item_removed", []):
             if item.get_root_key() == "children":
-                yield RemoveOperation.from_diff_level(item)
+                yield RemoveOperation.from_diff_level(item, self._mo_org_unit_type)
 
         # Emit update operations from "id-based diff"
         for iterable_name in ("attribute_removed", "values_changed"):
             iterable = self.uuid_deepdiff.get(iterable_name, [])
             for item in iterable:
                 if item.get_root_key() == "children":
-                    operation = UpdateOperation.from_diff_level(item)
+                    operation = UpdateOperation.from_diff_level(
+                        item, self._mo_org_unit_type
+                    )
                     if operation:
                         yield operation
 
         # Emit add operations from "structural diff"
         for item in self.structural_deepdiff.get("iterable_item_added", []):
             if item.get_root_key() == "children":
-                yield AddOperation.from_diff_level(item)
+                yield AddOperation.from_diff_level(item, self._mo_org_unit_type)

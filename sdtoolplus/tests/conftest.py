@@ -11,6 +11,7 @@ from sdclient.responses import GetOrganizationResponse
 
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
+from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
@@ -292,3 +293,8 @@ def mock_mo_org_unit_level_map(
         for dep in mock_sd_get_department_response.Department
     ]
     return MockMOOrgUnitLevelMap(valid_dep_level_identifiers)
+
+
+@pytest.fixture()
+def mock_mo_org_unit_type() -> MOClass:
+    return MOClass(uuid=uuid.uuid4(), name="Enhed", user_key="Enhed")
