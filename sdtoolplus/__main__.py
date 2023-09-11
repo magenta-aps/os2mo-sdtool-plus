@@ -19,10 +19,11 @@ from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient
 
+from .mo_class import MOOrgUnitLevelMap
+from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
-from .mo_org_unit_level import MOOrgUnitLevelMap
 from sdtoolplus.sd.importer import get_sd_tree
 
 
@@ -79,6 +80,7 @@ def main(
         sync=True,
         httpx_client_kwargs={"timeout": None},
     )
+    mo_org_unit_type_map = MOOrgUnitTypeMap(session)
     mo_org_unit_level_map = MOOrgUnitLevelMap(session)
     mo_org_tree = MOOrgTreeImport(session)
 

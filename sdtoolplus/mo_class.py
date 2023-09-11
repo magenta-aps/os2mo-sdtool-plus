@@ -6,18 +6,22 @@ import pydantic
 from gql import gql
 
 
-class MOOrgUnitLevel(pydantic.BaseModel):
+class MOClass(pydantic.BaseModel):
     uuid: UUID
     user_key: str
     name: str
 
 
-class MOOrgUnitLevelMap:
+class MOClassMap:
     def __init__(self, session) -> None:
         self.session = session
-        self.classes = self._get_classes_in_facet("org_unit_level")
+        self.classes = self._get_classes_in_facet(self.facet_user_key)
 
-    def _get_classes_in_facet(self, facet_user_key: str) -> list[MOOrgUnitLevel]:
+    @property
+    def facet_user_key(self) -> str:
+        raise NotImplementedError("must be implemented by subclass")
+
+    def _get_classes_in_facet(self, facet_user_key: str) -> list[MOClass]:
         doc = self.session.execute(
             gql(
                 """
@@ -32,10 +36,22 @@ class MOOrgUnitLevelMap:
             ),
             {"facet_user_key": facet_user_key},
         )
-        return pydantic.parse_obj_as(list[MOOrgUnitLevel], doc["classes"])
+        return pydantic.parse_obj_as(list[MOClass], doc["classes"])
 
-    def __getitem__(self, item: str) -> MOOrgUnitLevel:
+    def __getitem__(self, item: str) -> MOClass:
         for cls in self.classes:
             if item in (cls.name, cls.user_key):
                 return cls
         raise KeyError(item)
+
+
+class MOOrgUnitLevelMap(MOClassMap):
+    @property
+    def facet_user_key(self) -> str:
+        return "org_unit_level"
+
+
+class MOOrgUnitTypeMap(MOClassMap):
+    @property
+    def facet_user_key(self) -> str:
+        return "org_unit_type"

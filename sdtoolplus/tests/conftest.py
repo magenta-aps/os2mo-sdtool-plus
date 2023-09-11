@@ -9,11 +9,11 @@ from graphql.language.ast import DocumentNode
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..mo_class import MOClass
+from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
-from ..mo_org_unit_level import MOOrgUnitLevel
-from ..mo_org_unit_level import MOOrgUnitLevelMap
 
 
 class SharedIdentifier:
@@ -274,7 +274,7 @@ def mock_graphql_session_get_classes_in_facet() -> _MockGraphQLSessionGetClasses
 class MockMOOrgUnitLevelMap(MOOrgUnitLevelMap):
     def __init__(self, department_level_identifiers: list[str]):
         self.classes = [
-            MOOrgUnitLevel(
+            MOClass(
                 uuid=uuid.uuid4(),
                 user_key=department_level_identifier,
                 name=department_level_identifier,
