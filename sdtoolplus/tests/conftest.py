@@ -9,10 +9,11 @@ from graphql.language.ast import DocumentNode
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
+from ..mo_org_unit_level import MOOrgUnitLevel
+from ..mo_org_unit_level import MOOrgUnitLevelMap
 
 
 class SharedIdentifier:
@@ -28,11 +29,13 @@ class _MockGraphQLSession:
             uuid=SharedIdentifier.child_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
+            org_unit_level_uuid=uuid.uuid4(),
         ),
         OrgUnitNode(
             uuid=SharedIdentifier.removed_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child only in MO, should be removed",
+            org_unit_level_uuid=uuid.uuid4(),
         ),
     ]
 
@@ -41,6 +44,7 @@ class _MockGraphQLSession:
             uuid=SharedIdentifier.grandchild_org_unit_uuid,
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Grandchild",
+            org_unit_level_uuid=uuid.uuid4(),
         )
     ]
 
@@ -79,6 +83,7 @@ class _MockGraphQLSession:
                 "uuid": str(node.uuid),
                 "parent_uuid": str(node.parent_uuid),
                 "name": node.name,
+                "org_unit_level_uuid": str(node.org_unit_level_uuid),
             }
             for node in chain(self.expected_children, self.expected_grandchildren)
         ]
@@ -243,3 +248,47 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
     }
     sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
     return sd_departments
+
+
+class _MockGraphQLSessionGetClassesInFacet:
+    class_names = [str("N%s") % num for num in range(9)]
+
+    def execute(self, query: DocumentNode, variable_values: dict) -> dict:
+        return {
+            "classes": [
+                {
+                    "uuid": str(uuid.uuid4()),
+                    "user_key": str(class_name),
+                    "name": str(class_name),
+                }
+                for class_name in self.class_names
+            ]
+        }
+
+
+@pytest.fixture()
+def mock_graphql_session_get_classes_in_facet() -> _MockGraphQLSessionGetClassesInFacet:
+    return _MockGraphQLSessionGetClassesInFacet()
+
+
+class MockMOOrgUnitLevelMap(MOOrgUnitLevelMap):
+    def __init__(self, department_level_identifiers: list[str]):
+        self.classes = [
+            MOOrgUnitLevel(
+                uuid=uuid.uuid4(),
+                user_key=department_level_identifier,
+                name=department_level_identifier,
+            )
+            for department_level_identifier in department_level_identifiers
+        ]
+
+
+@pytest.fixture()
+def mock_mo_org_unit_level_map(
+    mock_sd_get_department_response,
+) -> MockMOOrgUnitLevelMap:
+    valid_dep_level_identifiers: list[str] = [
+        dep.DepartmentLevelIdentifier
+        for dep in mock_sd_get_department_response.Department
+    ]
+    return MockMOOrgUnitLevelMap(valid_dep_level_identifiers)

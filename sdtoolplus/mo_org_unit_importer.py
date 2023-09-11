@@ -14,12 +14,14 @@ from pydantic import parse_obj_as
 
 OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
+OrgUnitLevelUUID: TypeAlias = UUID
 
 
 class OrgUnit(pydantic.BaseModel):
     uuid: OrgUnitUUID
     parent_uuid: OrgUnitUUID | None
     name: str
+    org_unit_level_uuid: OrgUnitLevelUUID | None
 
 
 class OrgUnitNode(anytree.AnyNode):
@@ -30,9 +32,15 @@ class OrgUnitNode(anytree.AnyNode):
         name: str | None = None,
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
+        org_unit_level_uuid: OrgUnitLevelUUID | None = None,
     ):
         super().__init__(parent=parent, children=children)
-        self._instance = OrgUnit(uuid=uuid, parent_uuid=parent_uuid, name=name)
+        self._instance = OrgUnit(
+            uuid=uuid,
+            parent_uuid=parent_uuid,
+            name=name,
+            org_unit_level_uuid=org_unit_level_uuid,
+        )
 
     @classmethod
     def from_org_unit(cls, org_unit: OrgUnit) -> "OrgUnitNode":
@@ -40,6 +48,7 @@ class OrgUnitNode(anytree.AnyNode):
             uuid=org_unit.uuid,
             parent_uuid=org_unit.parent_uuid,
             name=org_unit.name,
+            org_unit_level_uuid=org_unit.org_unit_level_uuid,
         )
 
     def __repr__(self):
@@ -61,6 +70,10 @@ class OrgUnitNode(anytree.AnyNode):
     @property
     def name(self) -> str:
         return self._instance.name
+
+    @property
+    def org_unit_level_uuid(self) -> OrgUnitLevelUUID | None:
+        return self._instance.org_unit_level_uuid
 
 
 class MOOrgTreeImport:
@@ -93,6 +106,7 @@ class MOOrgTreeImport:
                             uuid
                             parent_uuid
                             name
+                            org_unit_level_uuid
                         }
                     }
                 }
@@ -109,6 +123,7 @@ class MOOrgTreeImport:
             parent_uuid=None,
             name="<root>",
             children=children,
+            org_unit_level_uuid=None,
         )
         return root
 

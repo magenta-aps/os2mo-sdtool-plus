@@ -74,14 +74,16 @@ class UpdateOperation(Operation):
     def from_diff_level(cls, diff_level: DiffLevel) -> Self | None:
         attr = diff_level.path().split(".")[-1]
         if attr in cls._supported_attrs():
-            instance = cls(uuid=diff_level.up.t1.uuid, attr=attr, value=diff_level.t2)
+            instance = cls(
+                uuid=diff_level.up.t1.uuid, attr=attr, value=str(diff_level.t2)
+            )
             instance._diff_level = diff_level
             return instance
         return None
 
     @classmethod
     def _supported_attrs(cls) -> set[str]:
-        return {"name"}
+        return {"name", "org_unit_level_uuid"}
 
     def __str__(self):
         return f"Update {self._diff_level.up.t1} {self.attr} to {self.value}"
@@ -133,10 +135,11 @@ class OrgTreeDiff:
 
     @staticmethod
     def _is_relevant(node, path: str) -> bool:
+        known_attrs = ("uuid", "parent_uuid", "name", "org_unit_level_uuid")
         name: str = path.split(".")[-1]
         if "__" in name:
             return False
-        if name in ("uuid", "parent_uuid", "name") or "children" in name:
+        if name in known_attrs or "children" in name:
             return True
         return False
 

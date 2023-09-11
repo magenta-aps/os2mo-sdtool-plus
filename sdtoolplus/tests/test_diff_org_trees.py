@@ -17,6 +17,7 @@ from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
+from ..mo_org_unit_level import MOOrgUnitLevelMap
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
 from .conftest import SharedIdentifier
@@ -28,12 +29,14 @@ class TestOrgTreeDiff:
         mock_graphql_session: _MockGraphQLSession,
         mock_sd_get_organization_response: GetOrganizationResponse,
         mock_sd_get_department_response: GetDepartmentResponse,
+        mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
         sd_tree = build_tree(
             mock_sd_get_organization_response,
             mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
         )
 
         # Construct tree diff
@@ -62,11 +65,23 @@ class TestOrgTreeDiff:
                 attr="name",
                 value="Department 2",
             ),
+            # MO unit "Grandchild" has its org unit level changed to match SD
+            UpdateOperation(
+                uuid=SharedIdentifier.grandchild_org_unit_uuid,
+                attr="org_unit_level_uuid",
+                value=str(mock_mo_org_unit_level_map["NY0-niveau"].uuid),
+            ),
             # MO unit "Child" is renamed to "Department 1"
             UpdateOperation(
                 uuid=SharedIdentifier.child_org_unit_uuid,
                 attr="name",
                 value="Department 1",
+            ),
+            # MO unit "Child" has its org unit level changed to match SD
+            UpdateOperation(
+                uuid=SharedIdentifier.child_org_unit_uuid,
+                attr="org_unit_level_uuid",
+                value=str(mock_mo_org_unit_level_map["NY1-niveau"].uuid),
             ),
             # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
             AddOperation(
@@ -174,7 +189,7 @@ class TestOperation:
 
 class TestUpdateOperation:
     def test_supported_attrs(self):
-        assert UpdateOperation._supported_attrs() == {"name"}
+        assert UpdateOperation._supported_attrs() == {"name", "org_unit_level_uuid"}
 
     def test_from_diff_level_can_return_none(self):
         diff_level = Mock()
