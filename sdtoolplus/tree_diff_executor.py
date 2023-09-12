@@ -12,7 +12,7 @@ from graphql import DocumentNode
 from raclients.graph.client import GraphQLClient
 
 from .diff_org_trees import AddOperation
-from .diff_org_trees import Operation
+from .diff_org_trees import AnyOperation
 from .diff_org_trees import OrgTreeDiff
 from .diff_org_trees import RemoveOperation
 from .diff_org_trees import UpdateOperation
@@ -125,6 +125,9 @@ class AddOrgUnitMutation(Mutation):
         }
 
 
+AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | RemoveOrgUnitMutation
+
+
 class TreeDiffExecutor:
     def __init__(self, session: GraphQLClient, tree_diff: OrgTreeDiff):
         self._session = session
@@ -132,7 +135,7 @@ class TreeDiffExecutor:
 
     def execute(
         self,
-    ) -> Iterator[tuple[Operation, Mutation, dict[str, Any] | Exception]]:
+    ) -> Iterator[tuple[AnyOperation, AnyMutation, dict[str, Any] | Exception]]:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             try:
@@ -145,12 +148,12 @@ class TreeDiffExecutor:
             else:
                 yield operation, mutation, result
 
-    def execute_dry(self) -> Iterator[tuple[Operation, Mutation]]:
+    def execute_dry(self) -> Iterator[tuple[AnyOperation, AnyMutation]]:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             yield operation, mutation
 
-    def get_mutation(self, operation: Operation):
+    def get_mutation(self, operation: AnyOperation) -> AnyMutation:
         if isinstance(operation, RemoveOperation):
             return RemoveOrgUnitMutation(operation)
         if isinstance(operation, UpdateOperation):

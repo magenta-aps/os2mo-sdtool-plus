@@ -111,9 +111,7 @@ def main(
         sd_org_tree = _get_mock_sd_org_tree(mo_org_tree)
 
     # Construct org tree diff
-    tree_diff = OrgTreeDiff(
-        mo_org_tree.as_single_tree(), sd_org_tree, mo_org_unit_type
-    )
+    tree_diff = OrgTreeDiff(mo_org_tree.as_single_tree(), sd_org_tree, mo_org_unit_type)
 
     # Execute org tree diff against current MO state
     executor = TreeDiffExecutor(session, tree_diff)

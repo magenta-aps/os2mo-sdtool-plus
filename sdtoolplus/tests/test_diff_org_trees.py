@@ -10,6 +10,7 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..diff_org_trees import AddOperation
+from ..diff_org_trees import AnyOperation
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
@@ -54,9 +55,7 @@ class TestOrgTreeDiff:
             print(operation)
 
         # Compare actual emitted operations to expected operations
-        actual_operations: list[
-            AddOperation | UpdateOperation | RemoveOperation | None
-        ] = list(tree_diff.get_operations())
+        actual_operations: list[AnyOperation] = list(tree_diff.get_operations())
         expected_operations: list[AddOperation | UpdateOperation | RemoveOperation] = [
             # MO unit to be removed is indeed removed
             RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),

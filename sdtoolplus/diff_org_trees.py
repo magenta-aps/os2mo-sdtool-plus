@@ -123,6 +123,9 @@ class AddOperation(Operation):
         return f"Add {self._diff_level.t2} as child of MO org unit {self._diff_level.up.up.t1}"
 
 
+AnyOperation = AddOperation | UpdateOperation | RemoveOperation | None
+
+
 class OrgTreeDiff:
     def __init__(
         self,
@@ -172,7 +175,7 @@ class OrgTreeDiff:
 
     def get_operations(
         self,
-    ) -> Iterator[AddOperation | UpdateOperation | RemoveOperation | None]:
+    ) -> Iterator[AnyOperation]:
         # Emit removal operations from "id-based diff"
         for item in self.uuid_deepdiff.get("iterable_item_removed", []):
             if item.get_root_key() == "children":
