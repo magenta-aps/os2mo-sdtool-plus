@@ -328,12 +328,15 @@ def mock_org_tree_diff(
     mock_graphql_session: _MockGraphQLSession,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response: GetDepartmentResponse,
+    mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
+    mock_mo_org_unit_type: MOClass,
 ) -> OrgTreeDiff:
     # Construct MO and SD trees
     mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
     sd_tree = build_tree(
         mock_sd_get_organization_response,
         mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
     )
     # Construct tree diff
-    return OrgTreeDiff(mo_tree, sd_tree)
+    return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
