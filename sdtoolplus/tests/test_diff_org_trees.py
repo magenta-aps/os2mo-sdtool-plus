@@ -89,17 +89,20 @@ class TestOrgTreeDiff:
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 name="Department 3",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+                org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             ),
             AddOperation(
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 name="Department 4",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+                org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             ),
             # SD unit "Department 5" is added under MO unit "Child"
             AddOperation(
                 parent_uuid=SharedIdentifier.child_org_unit_uuid,
                 name="Department 5",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+                org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             ),
         ]
         assert actual_operations == expected_operations

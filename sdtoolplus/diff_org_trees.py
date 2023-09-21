@@ -102,6 +102,7 @@ class AddOperation(Operation):
     parent_uuid: uuid.UUID
     name: str
     org_unit_type_uuid: uuid.UUID
+    org_unit_level_uuid: uuid.UUID
 
     @classmethod
     def from_diff_level(
@@ -113,6 +114,7 @@ class AddOperation(Operation):
             parent_uuid=diff_level.up.up.t1.uuid,
             name=diff_level.t2.name,
             org_unit_type_uuid=org_unit_type.uuid,
+            org_unit_level_uuid=diff_level.t2.org_unit_level_uuid,
         )
         instance._diff_level = diff_level
         return instance
