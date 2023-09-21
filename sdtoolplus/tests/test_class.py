@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import pytest
 
+from ..mo_class import MOClass
 from ..mo_class import MOClassMap
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
@@ -22,12 +23,23 @@ class TestMOClassMap:
         self,
         mock_graphql_session_get_classes_in_facet: _MockGraphQLSessionGetClassesInFacet,
     ) -> None:
+        mock_class_data: list[dict] = _MockGraphQLSessionGetClassesInFacet.class_data
+        expected_class_0: MOClass = MOClass(
+            uuid=mock_class_data[0]["uuid"],
+            name=mock_class_data[0]["name"],
+            user_key=mock_class_data[0]["user_key"],
+        )
+        expected_class_1: MOClass = MOClass(
+            uuid=mock_class_data[1]["uuid"],
+            name=mock_class_data[1]["name"],
+            user_key=mock_class_data[1]["user_key"],
+        )
         instance: _MOClassMapImpl = _MOClassMapImpl(
             mock_graphql_session_get_classes_in_facet
         )
-        assert [(cls.name, cls.user_key) for cls in instance.classes] == [
-            (name, name) for name in _MockGraphQLSessionGetClassesInFacet.class_names
-        ]
+        assert len(instance.classes) == len(mock_class_data)
+        assert instance.classes[0] == expected_class_0
+        assert instance.classes[1] == expected_class_1
 
     def test_getitem(
         self,

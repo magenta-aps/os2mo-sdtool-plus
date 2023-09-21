@@ -252,19 +252,17 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
 
 
 class _MockGraphQLSessionGetClassesInFacet:
-    class_names = [str("N%s") % num for num in range(9)]
+    class_data = [
+        {
+            "uuid": str(uuid.uuid4()),
+            "user_key": str("N%s") % num,
+            "name": str("N%s") % num,
+        }
+        for num in range(2)
+    ]
 
     def execute(self, query: DocumentNode, variable_values: dict) -> dict:
-        return {
-            "classes": [
-                {
-                    "uuid": str(uuid.uuid4()),
-                    "user_key": str(class_name),
-                    "name": str(class_name),
-                }
-                for class_name in self.class_names
-            ]
-        }
+        return {"classes": self.class_data}
 
 
 @pytest.fixture()
