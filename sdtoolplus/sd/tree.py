@@ -29,8 +29,8 @@ def _create_node(
     Args:
         dep_uuid: the SD department UUID
         dep_name: the SD department name
+        dep_level_identifier: the SD department level identifier ("NY1", etc.)
         parent: the parent of this node
-        org_unit_level: the SD department level identifier ("NY1", etc.)
         existing_nodes: dictionary of already existing nodes
         mo_org_unit_level_map: dictionary-like object of MO org unit levels
 
