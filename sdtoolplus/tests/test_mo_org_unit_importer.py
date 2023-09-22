@@ -45,7 +45,12 @@ class TestMOOrgTreeImport:
     def test_get_org_units(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
         assert instance.get_org_units() == [
-            OrgUnit(uuid=n.uuid, parent_uuid=n.parent_uuid, name=n.name)
+            OrgUnit(
+                uuid=n.uuid,
+                parent_uuid=n.parent_uuid,
+                name=n.name,
+                org_unit_level_uuid=n.org_unit_level_uuid,
+            )
             for n in (
                 mock_graphql_session.expected_children
                 + mock_graphql_session.expected_grandchildren

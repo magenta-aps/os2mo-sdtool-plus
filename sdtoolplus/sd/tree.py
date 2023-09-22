@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import uuid
 from uuid import UUID
 
 from more_itertools import one
@@ -8,14 +9,18 @@ from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from sdtoolplus.mo_class import MOClass
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 
 
 def _create_node(
     dep_uuid: UUID,
     dep_name: str,
+    dep_level_identifier: str,
     parent: OrgUnitNode,
     existing_nodes: dict[UUID, OrgUnitNode],
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
     Create a node in the SD AnyNode tree and add the node to the dict
@@ -25,14 +30,22 @@ def _create_node(
         dep_uuid: the SD department UUID
         dep_name: the SD department name
         parent: the parent of this node
+        org_unit_level: the SD department level identifier ("NY1", etc.)
         existing_nodes: dictionary of already existing nodes
+        mo_org_unit_level_map: dictionary-like object of MO org unit levels
 
     Returns:
         The created node
     """
 
+    org_unit_level: MOClass = mo_org_unit_level_map[dep_level_identifier]
+
     new_node = OrgUnitNode(
-        uuid=dep_uuid, parent_uuid=parent.uuid, parent=parent, name=dep_name
+        uuid=dep_uuid,
+        parent_uuid=parent.uuid,
+        parent=parent,
+        name=dep_name,
+        org_unit_level_uuid=org_unit_level.uuid,
     )
 
     existing_nodes[dep_uuid] = new_node
@@ -64,6 +77,7 @@ def _process_node(
     root_node: OrgUnitNode,
     sd_departments_map: dict[UUID, Department],
     existing_nodes: dict[UUID, OrgUnitNode],
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
     Process a node in the SD "tree", i.e. process a node in the
@@ -83,6 +97,7 @@ def _process_node(
 
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
     dep_name = sd_departments_map[dep_uuid].DepartmentName
+    dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
@@ -91,19 +106,39 @@ def _process_node(
         parent_dep_ref = one(dep_ref.DepartmentReference)
 
         parent = _process_node(
-            parent_dep_ref, root_node, sd_departments_map, existing_nodes
+            parent_dep_ref,
+            root_node,
+            sd_departments_map,
+            existing_nodes,
+            mo_org_unit_level_map,
         )
 
-        new_node = _create_node(dep_uuid, dep_name, parent, existing_nodes)
+        new_node = _create_node(
+            dep_uuid,
+            dep_name,
+            dep_level_identifier,
+            parent,
+            existing_nodes,
+            mo_org_unit_level_map,
+        )
         return new_node
 
-    new_node = _create_node(dep_uuid, dep_name, root_node, existing_nodes)
+    new_node = _create_node(
+        dep_uuid,
+        dep_name,
+        dep_level_identifier,
+        root_node,
+        existing_nodes,
+        mo_org_unit_level_map,
+    )
+
     return new_node
 
 
 def build_tree(
     sd_org: GetOrganizationResponse,
     sd_departments: GetDepartmentResponse,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
     Build the SD organization unit tree structure.
@@ -117,13 +152,22 @@ def build_tree(
     """
 
     root_node = OrgUnitNode(
-        uuid=sd_org.InstitutionUUIDIdentifier, parent_uuid=None, name="<root>"
+        uuid=sd_org.InstitutionUUIDIdentifier,
+        parent_uuid=None,
+        name="<root>",
+        org_unit_level_uuid=None,
     )
 
     sd_departments_map = _get_sd_departments_map(sd_departments)
 
     existing_nodes: dict[UUID, OrgUnitNode] = {}
     for dep_refs in one(sd_org.Organization).DepartmentReference:
-        _process_node(dep_refs, root_node, sd_departments_map, existing_nodes)
+        _process_node(
+            dep_refs,
+            root_node,
+            sd_departments_map,
+            existing_nodes,
+            mo_org_unit_level_map,
+        )
 
     return root_node
