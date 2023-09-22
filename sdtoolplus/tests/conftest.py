@@ -264,11 +264,7 @@ class _MockGraphQLSessionGetClassesInFacet:
     ]
 
     def execute(self, query: DocumentNode, variable_values: dict) -> dict:
-        return {
-            "classes": {
-                "objects": [{"current": cls} for cls in self.class_data]
-            }
-        }
+        return {"classes": {"objects": [{"current": cls} for cls in self.class_data]}}
 
 
 @pytest.fixture()
