@@ -75,7 +75,7 @@ def main(
     job_settings.start_logging_based_on_settings()
 
     session = GraphQLClient(
-        url=f"{mora_base}/graphql/v3",
+        url=f"{mora_base}/graphql/v7",
         client_id=client_id,
         client_secret=client_secret,
         auth_realm=auth_realm,

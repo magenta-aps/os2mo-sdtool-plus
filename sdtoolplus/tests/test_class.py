@@ -41,7 +41,20 @@ class TestMOClassMap:
         assert instance.classes[0] == expected_class_0
         assert instance.classes[1] == expected_class_1
 
-    def test_getitem(
+    def test_getitem_returns_mo_class(
+        self,
+        mock_graphql_session_get_classes_in_facet: _MockGraphQLSessionGetClassesInFacet,
+    ):
+        instance: _MOClassMapImpl = _MOClassMapImpl(
+            mock_graphql_session_get_classes_in_facet
+        )
+        assert instance["N0"] == MOClass(
+            uuid=_MockGraphQLSessionGetClassesInFacet.class_data[0]["uuid"],
+            name=_MockGraphQLSessionGetClassesInFacet.class_data[0]["name"],
+            user_key=_MockGraphQLSessionGetClassesInFacet.class_data[0]["user_key"],
+        )
+
+    def test_getitem_raises_keyerror_on_unknown_key(
         self,
         mock_graphql_session_get_classes_in_facet: _MockGraphQLSessionGetClassesInFacet,
     ) -> None:
