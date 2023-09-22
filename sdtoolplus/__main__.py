@@ -19,10 +19,13 @@ from ra_utils.job_settings import JobSettings
 from raclients.graph.client import GraphQLClient
 from sdclient.client import SDClient
 
+from .mo_class import MOClass
+from .mo_class import MOOrgUnitLevelMap
+from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
-from sdtoolplus.sd.importer import get_sd_tree
+from .sd.importer import get_sd_tree
 
 
 def _get_mock_sd_org_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
@@ -35,11 +38,13 @@ def _get_mock_sd_org_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
         uuid=OrgUnitUUID("f06ee470-9f17-566f-acbe-e938112d46d9"),
         parent_uuid=mo_org_tree.get_org_uuid(),
         name="Kolding Kommune II",
+        org_unit_level_uuid=uuid4(),
     )
     mock_sd_new_child: OrgUnitNode = OrgUnitNode(
         uuid=uuid4(),
         parent_uuid=mo_org_tree.get_org_uuid(),
         name="Something new",
+        org_unit_level_uuid=uuid4(),
     )
     mock_sd_root.children = [mock_sd_updated_child, mock_sd_new_child]
     return mock_sd_root
@@ -54,6 +59,7 @@ def _get_mock_sd_org_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
 @click.option("--sd-username", envvar="SD_USERNAME")
 @click.option("--sd-password", envvar="SD_PASSWORD")
 @click.option("--sd-institution-identifier", envvar="SD_INSTITUTION_IDENTIFIER")
+@click.option("--org-unit-type", envvar="ORG_UNIT_TYPE", default="Enhed")
 def main(
     mora_base: str,
     client_id: str,
@@ -63,6 +69,7 @@ def main(
     sd_username: str,
     sd_password: str,
     sd_institution_identifier: str,
+    org_unit_type: str,
 ) -> None:
     job_settings = JobSettings()
     job_settings.start_logging_based_on_settings()
@@ -76,10 +83,15 @@ def main(
         sync=True,
         httpx_client_kwargs={"timeout": None},
     )
+    mo_org_unit_type_map = MOOrgUnitTypeMap(session)
+    mo_org_unit_type: MOClass = mo_org_unit_type_map[org_unit_type]
+    mo_org_unit_level_map = MOOrgUnitLevelMap(session)
     mo_org_tree = MOOrgTreeImport(session)
 
     sd_client = SDClient(sd_username, sd_password)
-    sd_org_tree = get_sd_tree(sd_client, sd_institution_identifier)
+    sd_org_tree = get_sd_tree(
+        sd_client, sd_institution_identifier, mo_org_unit_level_map
+    )
 
     print(RenderTree(sd_org_tree).by_attr("uuid"))
 
