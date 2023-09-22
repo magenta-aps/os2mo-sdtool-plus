@@ -38,16 +38,23 @@ class MOClassMap:
                 """
                 query GetClassesInFacet($facet_user_key: String!) {
                     classes(facet_user_keys: [$facet_user_key]) {
-                        uuid
-                        user_key
-                        name
+                        objects {
+                            current {
+                                uuid
+                                user_key
+                                name
+                            }
+                        }
                     }
                 }
                 """
             ),
             {"facet_user_key": facet_user_key},
         )
-        return pydantic.parse_obj_as(list[MOClass], doc["classes"])
+        return pydantic.parse_obj_as(
+            list[MOClass],
+            [cls["current"] for cls in doc["classes"]["objects"]],
+        )
 
     def __getitem__(self, item: str) -> MOClass:
         """Support dictionary-style item lookups on class name or `user_key`.

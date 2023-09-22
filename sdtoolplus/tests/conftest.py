@@ -65,9 +65,11 @@ class _MockGraphQLSession:
     @property
     def _mock_response_for_get_org_units(self) -> dict:
         return {
-            "org_units": [
-                {"objects": [elem]} for elem in self.tree_as_flat_list_of_dicts
-            ]
+            "org_units": {
+                "objects": [
+                    {"current": elem} for elem in self.tree_as_flat_list_of_dicts
+                ]
+            }
         }
 
     @property
@@ -262,7 +264,7 @@ class _MockGraphQLSessionGetClassesInFacet:
     ]
 
     def execute(self, query: DocumentNode, variable_values: dict) -> dict:
-        return {"classes": self.class_data}
+        return {"classes": {"objects": [{"current": cls} for cls in self.class_data]}}
 
 
 @pytest.fixture()
