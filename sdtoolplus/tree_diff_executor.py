@@ -9,6 +9,7 @@ from typing import Iterator
 from gql import gql
 from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
+from graphql import ExecutionResult
 from raclients.graph.client import GraphQLClient
 
 from .diff_org_trees import AddOperation
@@ -18,8 +19,13 @@ from .diff_org_trees import RemoveOperation
 from .diff_org_trees import UpdateOperation
 
 
+class UnsupportedMutation(Exception):
+    pass
+
+
 class Mutation(abc.ABC):
-    def __init__(self, operation):
+    def __init__(self, session: GraphQLClient, operation: AnyOperation):
+        self._session = session
         self.operation = operation
 
     @property
@@ -35,28 +41,22 @@ class Mutation(abc.ABC):
         raise NotImplementedError("must be implemented by subclass")
 
 
+    def execute(self) -> dict[str, Any] | ExecutionResult:
+        return self._session.execute(self.gql)
+
 class RemoveOrgUnitMutation(Mutation):
-    def __init__(self, operation: RemoveOperation):
-        super().__init__(operation)
+    def __init__(self, session: GraphQLClient, operation: RemoveOperation):
+        super().__init__(session, operation)
 
-    @property
-    def query(self):
-        return dedent(
-            """
-            mutation RemoveOrgUnit($uuid: UUID!, $to: DateTime!) {
-                org_unit_terminate(unit: {uuid: $uuid, to: $to}) { uuid }
-            }
-            """
+    def execute(self):
+        raise UnsupportedMutation(
+            f"cannot terminate org units ({self.operation.uuid=})"
         )
-
-    @property
-    def query_args(self) -> dict[str, Any]:
-        return {"uuid": str(self.operation.uuid), "to": str(datetime.date.today())}
 
 
 class UpdateOrgUnitMutation(Mutation):
-    def __init__(self, operation: UpdateOperation):
-        super().__init__(operation)
+    def __init__(self, session: GraphQLClient, operation: UpdateOperation):
+        super().__init__(session, operation)
 
     @property
     def query(self) -> str:
@@ -89,8 +89,8 @@ class UpdateOrgUnitMutation(Mutation):
 
 
 class AddOrgUnitMutation(Mutation):
-    def __init__(self, operation: AddOperation):
-        super().__init__(operation)
+    def __init__(self, session: GraphQLClient, operation: AddOperation):
+        super().__init__(session, operation)
 
     @property
     def query(self) -> str:
@@ -139,10 +139,9 @@ class TreeDiffExecutor:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             try:
-                result = self._session.execute(
-                    mutation.gql,
-                    variable_values=mutation.query_args,
-                )
+                result = mutation.execute()
+            except UnsupportedMutation as e:
+                yield operation, mutation, e
             except TransportQueryError as e:
                 yield operation, mutation, e
             else:
@@ -155,9 +154,9 @@ class TreeDiffExecutor:
 
     def get_mutation(self, operation: AnyOperation) -> AnyMutation:
         if isinstance(operation, RemoveOperation):
-            return RemoveOrgUnitMutation(operation)
+            return RemoveOrgUnitMutation(self._session, operation)
         if isinstance(operation, UpdateOperation):
-            return UpdateOrgUnitMutation(operation)
+            return UpdateOrgUnitMutation(self._session, operation)
         if isinstance(operation, AddOperation):
-            return AddOrgUnitMutation(operation)
+            return AddOrgUnitMutation(self._session, operation)
         raise ValueError("cannot get mutation for unknown operation %s" % operation)

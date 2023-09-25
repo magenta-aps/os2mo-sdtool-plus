@@ -15,6 +15,7 @@ from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import RemoveOrgUnitMutation
 from ..tree_diff_executor import TreeDiffExecutor
+from ..tree_diff_executor import UnsupportedMutation
 from ..tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
 from .conftest import _MockGraphQLSessionRaisingTransportQueryError
@@ -45,7 +46,7 @@ class TestTreeDiffExecutor:
             assert result is not None
             if isinstance(operation, RemoveOperation):
                 assert isinstance(mutation, RemoveOrgUnitMutation)
-                assert result == {"name": "RemoveOrgUnit"}
+                assert isinstance(result, UnsupportedMutation)
             if isinstance(operation, UpdateOperation):
                 assert isinstance(mutation, UpdateOrgUnitMutation)
                 assert result == {"name": "UpdateOrgUnit"}
@@ -63,7 +64,10 @@ class TestTreeDiffExecutor:
             mock_org_tree_diff,
         )
         for operation, mutation, result in tree_diff_executor.execute():
-            assert isinstance(result, TransportQueryError)
+            if isinstance(operation, RemoveOperation):
+                assert isinstance(result, UnsupportedMutation)
+            else:
+                assert isinstance(result, TransportQueryError)
 
     def test_execute_dry(self, mock_org_tree_diff: OrgTreeDiff):
         mock_session = Mock()
