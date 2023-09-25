@@ -8,6 +8,6 @@ Upstream-Contact: Magenta ApS <info@magenta.dk>
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
 
-Files: pyproject.toml *poetry.lock *.md
+Files: pyproject.toml *poetry.lock *.md *.graphql
 Copyright: Magenta ApS <https://magenta.dk>
 License: MPL-2.0

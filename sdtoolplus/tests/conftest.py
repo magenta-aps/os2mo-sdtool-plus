@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import os
 import uuid
 from copy import deepcopy
 from itertools import chain
@@ -7,6 +8,8 @@ from typing import Any
 
 import pytest
 from gql.transport.exceptions import TransportQueryError
+from graphql import build_schema as build_graphql_schema
+from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
@@ -14,12 +17,20 @@ from sdclient.responses import GetOrganizationResponse
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
-from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
 from ..sd.tree import build_tree
+
+
+_TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
+
+
+@pytest.fixture(scope="session")
+def graphql_testing_schema() -> GraphQLSchema:
+    with open(_TESTING_SCHEMA_PATH) as schema:
+        return build_graphql_schema(schema.read())
 
 
 class SharedIdentifier:
@@ -54,18 +65,30 @@ class _MockGraphQLSession:
         )
     ]
 
+    def __init__(self, schema: GraphQLSchema):
+        self.schema = schema
+
     def execute(
         self, query: DocumentNode, variable_values: dict[str, Any] | None = None
     ) -> dict:
-        name = query.to_dict()["definitions"][0]["name"]["value"]
-        if name == "GetOrgUUID":
-            return self._mock_response_for_get_org_uuid
-        elif name == "GetOrgUnits":
-            return self._mock_response_for_get_org_units
-        elif name in ("RemoveOrgUnit", "UpdateOrgUnit", "AddOrgUnit"):
-            return {"name": name}
+        definition: dict = query.to_dict()["definitions"][0]
+        if definition["name"] is not None:
+            # If we are executing a "named" query (== not using DSL), check the query
+            # name and return a suitable mock response.
+            name = definition["name"]["value"]
+            if name == "GetOrgUUID":
+                return self._mock_response_for_get_org_uuid
+            elif name == "GetOrgUnits":
+                return self._mock_response_for_get_org_units
+            else:
+                raise ValueError("unknown query name %r" % name)
+        elif definition["operation"] == "mutation":
+            # If we are executing a mutation (== probably using DSL), take the relevant
+            # data from the mutation request (e.g. name and arguments) and return them
+            # as a mock response that can be verified by tests.
+            return definition["selection_set"]["selections"][0]
         else:
-            raise ValueError("unknown query name %r" % name)
+            raise ValueError("unexpected query %r" % query.to_dict())
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:
@@ -101,7 +124,7 @@ class _MockGraphQLSession:
         ]
 
 
-class _MockGraphQLSessionRaisingTransportQueryError:
+class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSession):
     def execute(
         self, query: DocumentNode, variable_values: dict[str, Any] | None = None
     ) -> dict:
@@ -109,15 +132,15 @@ class _MockGraphQLSessionRaisingTransportQueryError:
 
 
 @pytest.fixture()
-def mock_graphql_session() -> _MockGraphQLSession:
-    return _MockGraphQLSession()
+def mock_graphql_session(graphql_testing_schema: GraphQLSchema) -> _MockGraphQLSession:
+    return _MockGraphQLSession(graphql_testing_schema)
 
 
 @pytest.fixture()
-def mock_graphql_session_raising_transportqueryerror() -> (
-    _MockGraphQLSessionRaisingTransportQueryError
-):
-    return _MockGraphQLSessionRaisingTransportQueryError()
+def mock_graphql_session_raising_transportqueryerror(
+    graphql_testing_schema: GraphQLSchema,
+) -> _MockGraphQLSessionRaisingTransportQueryError:
+    return _MockGraphQLSessionRaisingTransportQueryError(graphql_testing_schema)
 
 
 @pytest.fixture()

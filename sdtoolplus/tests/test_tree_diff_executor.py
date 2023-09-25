@@ -1,10 +1,12 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
-from unittest.mock import Mock
+from typing import Any
+from unittest.mock import patch
 
 import pytest
 from gql.transport.exceptions import TransportQueryError
+from graphql import GraphQLSchema
 
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import Operation
@@ -22,12 +24,18 @@ from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 
 
 class TestMutation:
-    def test_abstract_methods(self):
-        instance = Mutation(Operation())
+    def test_abstract_methods(
+        self,
+        graphql_testing_schema: GraphQLSchema,
+    ):
+        instance = Mutation(
+            _MockGraphQLSession(graphql_testing_schema),  # type: ignore
+            Operation(),  # type: ignore
+        )
         with pytest.raises(NotImplementedError):
-            instance.query
+            instance.dsl_mutation
         with pytest.raises(NotImplementedError):
-            instance.query_args
+            instance.dsl_mutation_input
 
 
 class TestTreeDiffExecutor:
@@ -49,10 +57,16 @@ class TestTreeDiffExecutor:
                 assert isinstance(result, UnsupportedMutation)
             if isinstance(operation, UpdateOperation):
                 assert isinstance(mutation, UpdateOrgUnitMutation)
-                assert result == {"name": "UpdateOrgUnit"}
+                self._assert_mutation_is(
+                    "org_unit_update",
+                    result,  # type: ignore
+                )
             if isinstance(operation, AddOperation):
                 assert isinstance(mutation, AddOrgUnitMutation)
-                assert result == {"name": "AddOrgUnit"}
+                self._assert_mutation_is(
+                    "org_unit_create",
+                    result,  # type: ignore
+                )
 
     def test_execute_handles_transportqueryerror(
         self,
@@ -69,18 +83,29 @@ class TestTreeDiffExecutor:
             else:
                 assert isinstance(result, TransportQueryError)
 
-    def test_execute_dry(self, mock_org_tree_diff: OrgTreeDiff):
-        mock_session = Mock()
-        tree_diff_executor = TreeDiffExecutor(mock_session, mock_org_tree_diff)
-        for operation, mutation in tree_diff_executor.execute_dry():
-            assert operation is not None
-            assert mutation is not None
-            tree_diff_executor._session.execute.assert_not_called()  # type: ignore
+    def test_execute_dry(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+    ):
+        with patch.object(mock_graphql_session, "execute") as mock_session_execute:
+            tree_diff_executor = TreeDiffExecutor(
+                mock_graphql_session,  # type: ignore
+                mock_org_tree_diff,
+            )
+            for operation, mutation in tree_diff_executor.execute_dry():
+                assert operation is not None
+                assert mutation is not None
+                mock_session_execute.assert_not_called()  # type: ignore
 
-    def test_get_mutation(self):
+    def test_get_mutation(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+    ):
         tree_diff_executor = TreeDiffExecutor(
-            None,  # type: ignore
-            None,  # type: ignore
+            mock_graphql_session,  # type: ignore
+            mock_org_tree_diff,
         )
 
         assert isinstance(
@@ -105,6 +130,7 @@ class TestTreeDiffExecutor:
                     parent_uuid=uuid.uuid4(),
                     name="foo",
                     org_unit_type_uuid=uuid.uuid4(),
+                    org_unit_level_uuid=uuid.uuid4(),
                 )
             ),
             AddOrgUnitMutation,
@@ -112,3 +138,10 @@ class TestTreeDiffExecutor:
 
         with pytest.raises(ValueError):
             tree_diff_executor.get_mutation(None)  # type: ignore
+
+    def _assert_mutation_is(
+        self,
+        expected_name: str,
+        actual_result: dict[str, Any],
+    ) -> None:
+        assert actual_result["name"]["value"] == expected_name

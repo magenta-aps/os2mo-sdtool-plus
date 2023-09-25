@@ -88,6 +88,7 @@ def main(
         auth_server=auth_server,
         sync=True,
         httpx_client_kwargs={"timeout": None},
+        fetch_schema_from_transport=True,
     )
 
     mo_org_unit_type_map = MOOrgUnitTypeMap(session)

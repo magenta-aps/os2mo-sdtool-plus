@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: MPL-2.0
 import abc
 import datetime
-from textwrap import dedent
 from typing import Any
 from typing import Iterator
 
-from gql import gql
+from gql.dsl import dsl_gql
+from gql.dsl import DSLMutation
+from gql.dsl import DSLSchema
+from gql.dsl import DSLType
 from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
 from graphql import ExecutionResult
@@ -27,22 +29,30 @@ class Mutation(abc.ABC):
     def __init__(self, session: GraphQLClient, operation: AnyOperation):
         self._session = session
         self.operation = operation
+        self._dsl_schema = self._get_dsl_schema()
 
     @property
     def gql(self) -> DocumentNode:
-        return gql(self.query)
+        return dsl_gql(self.dsl_mutation)
 
     @property
-    def query(self) -> str:
+    def dsl_mutation(self) -> DSLMutation:
         raise NotImplementedError("must be implemented by subclass")
 
     @property
-    def query_args(self) -> dict[str, Any]:
+    def dsl_mutation_input(self) -> dict[str, Any]:
         raise NotImplementedError("must be implemented by subclass")
 
+    @property
+    def _dsl_schema_mutation(self) -> DSLType:
+        return self._dsl_schema.Mutation
 
     def execute(self) -> dict[str, Any] | ExecutionResult:
         return self._session.execute(self.gql)
+
+    def _get_dsl_schema(self) -> DSLSchema:
+        return DSLSchema(self._session.schema)  # type: ignore
+
 
 class RemoveOrgUnitMutation(Mutation):
     def __init__(self, session: GraphQLClient, operation: RemoveOperation):
@@ -59,32 +69,18 @@ class UpdateOrgUnitMutation(Mutation):
         super().__init__(session, operation)
 
     @property
-    def query(self) -> str:
-        return dedent(
-            """
-            mutation UpdateOrgUnit(
-                $uuid: UUID!,
-                $name: String!,
-                $validity_from: DateTime!
-            )
-            {
-                org_unit_update(
-                    input: {
-                        uuid: $uuid,
-                        name: $name,
-                        validity: {from: $validity_from}
-                    }
-                ) { uuid }
-            }
-            """
+    def dsl_mutation(self) -> DSLMutation:
+        expr = self._dsl_schema_mutation.org_unit_update.args(
+            input=self.dsl_mutation_input,
         )
+        return DSLMutation(expr.select(self._dsl_schema.OrganisationUnitResponse.uuid))
 
     @property
-    def query_args(self) -> dict[str, Any]:
+    def dsl_mutation_input(self) -> dict[str, Any]:
         return {
-            "uuid": str(self.operation.uuid),
-            "name": self.operation.value,
-            "validity_from": str(datetime.date.today()),
+            "uuid": str(self.operation.uuid),  # type: ignore
+            "validity": {"from": str(datetime.date.today())},
+            self.operation.attr: self.operation.value,  # type: ignore
         }
 
 
@@ -93,35 +89,21 @@ class AddOrgUnitMutation(Mutation):
         super().__init__(session, operation)
 
     @property
-    def query(self) -> str:
-        return dedent(
-            """
-            mutation AddOrgUnit(
-                $parent_uuid: UUID!,
-                $name: String!,
-                $org_unit_type_uuid: UUID!,
-                $validity_from: DateTime!
-            )
-            {
-                org_unit_create(
-                    input: {
-                        parent: $parent_uuid,
-                        name: $name,
-                        org_unit_type: $org_unit_type_uuid,
-                        validity: {from: $validity_from}
-                    }
-                ) { uuid }
-            }
-            """
+    def dsl_mutation(self) -> DSLMutation:
+        return DSLMutation(
+            self._dsl_schema_mutation.org_unit_create.args(
+                input=self.dsl_mutation_input,
+            ).select(self._dsl_schema.OrganisationUnitResponse.uuid)
         )
 
     @property
-    def query_args(self) -> dict[str, Any]:
+    def dsl_mutation_input(self) -> dict[str, Any]:
         return {
-            "parent_uuid": str(self.operation.parent_uuid),
-            "name": self.operation.name,
-            "org_unit_type_uuid": str(self.operation.org_unit_type_uuid),
-            "validity_from": str(datetime.date.today()),
+            "parent": str(self.operation.parent_uuid),  # type: ignore
+            "name": self.operation.name,  # type: ignore
+            "org_unit_type": str(self.operation.org_unit_type_uuid),  # type: ignore
+            "org_unit_level": str(self.operation.org_unit_level_uuid),  # type: ignore
+            "validity": {"from": str(datetime.date.today())},
         }
 
 
@@ -135,7 +117,9 @@ class TreeDiffExecutor:
 
     def execute(
         self,
-    ) -> Iterator[tuple[AnyOperation, AnyMutation, dict[str, Any] | Exception]]:
+    ) -> Iterator[
+        tuple[AnyOperation, AnyMutation, dict[str, Any] | ExecutionResult | Any]
+    ]:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             try:
