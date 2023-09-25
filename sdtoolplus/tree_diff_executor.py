@@ -143,4 +143,4 @@ class TreeDiffExecutor:
             return UpdateOrgUnitMutation(self._session, operation)
         if isinstance(operation, AddOperation):
             return AddOrgUnitMutation(self._session, operation)
-        raise ValueError("cannot get mutation for unknown operation %s" % operation)
+        raise ValueError(f"cannot get mutation for unknown operation {operation}")
