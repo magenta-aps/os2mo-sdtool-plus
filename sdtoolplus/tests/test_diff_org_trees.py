@@ -6,6 +6,7 @@ from unittest.mock import Mock
 import pytest
 from anytree.render import RenderTree
 from deepdiff.helper import CannotCompare
+from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -21,6 +22,7 @@ from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
+from .conftest import _TESTING_MO_VALIDITY
 from .conftest import SharedIdentifier
 
 
@@ -32,6 +34,7 @@ class TestOrgTreeDiff:
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
         mock_mo_org_unit_type: MOClass,
+        sd_expected_validity: Validity,
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -64,24 +67,28 @@ class TestOrgTreeDiff:
                 uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 attr="name",
                 value="Department 2",
+                validity=sd_expected_validity,
             ),
             # MO unit "Grandchild" has its org unit level changed to match SD
             UpdateOperation(
                 uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 attr="org_unit_level_uuid",
                 value=str(mock_mo_org_unit_level_map["NY0-niveau"].uuid),
+                validity=sd_expected_validity,
             ),
             # MO unit "Child" is renamed to "Department 1"
             UpdateOperation(
                 uuid=SharedIdentifier.child_org_unit_uuid,
                 attr="name",
                 value="Department 1",
+                validity=sd_expected_validity,
             ),
             # MO unit "Child" has its org unit level changed to match SD
             UpdateOperation(
                 uuid=SharedIdentifier.child_org_unit_uuid,
                 attr="org_unit_level_uuid",
                 value=str(mock_mo_org_unit_level_map["NY1-niveau"].uuid),
+                validity=sd_expected_validity,
             ),
             # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
             AddOperation(
@@ -89,12 +96,14 @@ class TestOrgTreeDiff:
                 name="Department 3",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
                 org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+                validity=sd_expected_validity,
             ),
             AddOperation(
                 parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
                 name="Department 4",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
                 org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+                validity=sd_expected_validity,
             ),
             # SD unit "Department 5" is added under MO unit "Child"
             AddOperation(
@@ -102,6 +111,7 @@ class TestOrgTreeDiff:
                 name="Department 5",
                 org_unit_type_uuid=mock_mo_org_unit_type.uuid,
                 org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
+                validity=sd_expected_validity,
             ),
         ]
         assert actual_operations == expected_operations
@@ -140,8 +150,18 @@ class TestOrgTreeDiff:
         "x,y,expected_result",
         [
             (
-                OrgUnitNode(uuid=uuid.uuid4(), parent_uuid=uuid.uuid4(), name="X"),
-                OrgUnitNode(uuid=uuid.uuid4(), parent_uuid=uuid.uuid4(), name="Y"),
+                OrgUnitNode(
+                    uuid=uuid.uuid4(),
+                    parent_uuid=uuid.uuid4(),
+                    name="X",
+                    validity=_TESTING_MO_VALIDITY,
+                ),
+                OrgUnitNode(
+                    uuid=uuid.uuid4(),
+                    parent_uuid=uuid.uuid4(),
+                    name="Y",
+                    validity=_TESTING_MO_VALIDITY,
+                ),
                 False,
             ),
             (
@@ -149,11 +169,13 @@ class TestOrgTreeDiff:
                     uuid=SharedIdentifier.child_org_unit_uuid,
                     parent_uuid=uuid.uuid4(),
                     name="X",
+                    validity=_TESTING_MO_VALIDITY,
                 ),
                 OrgUnitNode(
                     uuid=SharedIdentifier.child_org_unit_uuid,
                     parent_uuid=uuid.uuid4(),
                     name="Y",
+                    validity=_TESTING_MO_VALIDITY,
                 ),
                 True,
             ),

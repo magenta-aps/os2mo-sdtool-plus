@@ -9,7 +9,7 @@ import anytree
 import pydantic
 from gql import gql
 from pydantic import parse_obj_as
-
+from ramodels.mo import Validity
 
 OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
@@ -21,6 +21,7 @@ class OrgUnit(pydantic.BaseModel):
     parent_uuid: OrgUnitUUID | None
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
+    validity: Validity | None
 
 
 class OrgUnitNode(anytree.AnyNode):
@@ -32,6 +33,7 @@ class OrgUnitNode(anytree.AnyNode):
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
         org_unit_level_uuid: OrgUnitLevelUUID | None = None,
+        validity: Validity | None = None,
     ):
         super().__init__(parent=parent, children=children)
         self._instance = OrgUnit(
@@ -39,6 +41,7 @@ class OrgUnitNode(anytree.AnyNode):
             parent_uuid=parent_uuid,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
+            validity=validity,
         )
 
     @classmethod
@@ -48,6 +51,7 @@ class OrgUnitNode(anytree.AnyNode):
             parent_uuid=org_unit.parent_uuid,
             name=org_unit.name,
             org_unit_level_uuid=org_unit.org_unit_level_uuid,
+            validity=org_unit.validity,
         )
 
     def __repr__(self):
@@ -73,6 +77,10 @@ class OrgUnitNode(anytree.AnyNode):
     @property
     def org_unit_level_uuid(self) -> OrgUnitLevelUUID | None:
         return self._instance.org_unit_level_uuid
+
+    @property
+    def validity(self) -> Validity | None:
+        return self._instance.validity
 
 
 class MOOrgTreeImport:

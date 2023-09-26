@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
-import datetime
 from typing import Any
 from typing import Iterator
 
@@ -13,6 +12,7 @@ from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
 from graphql import ExecutionResult
 from raclients.graph.client import GraphQLClient
+from ramodels.mo import Validity
 
 from .diff_org_trees import AddOperation
 from .diff_org_trees import AnyOperation
@@ -53,6 +53,16 @@ class Mutation(abc.ABC):
     def _get_dsl_schema(self) -> DSLSchema:
         return DSLSchema(self._session.schema)  # type: ignore
 
+    def _get_validity_dict_or_none(
+        self, validity: Validity
+    ) -> dict[str, str | None] | None:
+        if validity is not None:
+            return {
+                "from": validity.from_date.isoformat(),
+                "to": validity.to_date.isoformat() if validity.to_date else None,
+            }
+        return None
+
 
 class RemoveOrgUnitMutation(Mutation):
     def __init__(self, session: GraphQLClient, operation: RemoveOperation):
@@ -79,8 +89,8 @@ class UpdateOrgUnitMutation(Mutation):
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
             "uuid": str(self.operation.uuid),  # type: ignore
-            "validity": {"from": str(datetime.date.today())},
             self.operation.attr: self.operation.value,  # type: ignore
+            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
         }
 
 
@@ -103,7 +113,7 @@ class AddOrgUnitMutation(Mutation):
             "name": self.operation.name,  # type: ignore
             "org_unit_type": str(self.operation.org_unit_type_uuid),  # type: ignore
             "org_unit_level": str(self.operation.org_unit_level_uuid),  # type: ignore
-            "validity": {"from": str(datetime.date.today())},
+            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
         }
 
 

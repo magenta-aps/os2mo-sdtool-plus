@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 from gql.transport.exceptions import TransportQueryError
 from graphql import GraphQLSchema
+from ramodels.mo import Validity
 
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import Operation
@@ -102,28 +103,33 @@ class TestTreeDiffExecutor:
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
+        sd_expected_validity: Validity,
     ):
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff,
         )
 
+        # Test `RemoveOperation` produces `RemoveOrgUnitMutation`
         assert isinstance(
             tree_diff_executor.get_mutation(RemoveOperation(uuid=uuid.uuid4())),
             RemoveOrgUnitMutation,
         )
 
+        # Test `UpdateOperation` produces `UpdateOrgUnitMutation`
         assert isinstance(
             tree_diff_executor.get_mutation(
                 UpdateOperation(
                     uuid=uuid.uuid4(),
                     attr="name",
                     value="foo",
+                    validity=sd_expected_validity,
                 )
             ),
             UpdateOrgUnitMutation,
         )
 
+        # Test `AddOperation` produces `AddOrgUnitMutation`
         assert isinstance(
             tree_diff_executor.get_mutation(
                 AddOperation(
@@ -131,6 +137,7 @@ class TestTreeDiffExecutor:
                     name="foo",
                     org_unit_type_uuid=uuid.uuid4(),
                     org_unit_level_uuid=uuid.uuid4(),
+                    validity=sd_expected_validity,
                 )
             ),
             AddOrgUnitMutation,

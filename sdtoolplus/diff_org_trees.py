@@ -9,6 +9,7 @@ from typing import Self
 from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
 from deepdiff.helper import CannotCompare
+from ramodels.mo import Validity
 
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
@@ -73,6 +74,7 @@ class UpdateOperation(Operation):
     uuid: uuid.UUID
     attr: str
     value: str
+    validity: Validity
 
     @classmethod
     def from_diff_level(
@@ -83,7 +85,10 @@ class UpdateOperation(Operation):
         attr = diff_level.path().split(".")[-1]
         if attr in cls._supported_attrs():
             instance = cls(
-                uuid=diff_level.up.t1.uuid, attr=attr, value=str(diff_level.t2)
+                uuid=diff_level.up.t1.uuid,
+                attr=attr,
+                value=str(diff_level.t2),
+                validity=diff_level.up.t2.validity,
             )
             instance._diff_level = diff_level
             return instance
@@ -103,6 +108,7 @@ class AddOperation(Operation):
     name: str
     org_unit_type_uuid: uuid.UUID
     org_unit_level_uuid: uuid.UUID
+    validity: Validity
 
     @classmethod
     def from_diff_level(
@@ -115,6 +121,7 @@ class AddOperation(Operation):
             name=diff_level.t2.name,
             org_unit_type_uuid=org_unit_type.uuid,
             org_unit_level_uuid=diff_level.t2.org_unit_level_uuid,
+            validity=diff_level.t2.validity,
         )
         instance._diff_level = diff_level
         return instance

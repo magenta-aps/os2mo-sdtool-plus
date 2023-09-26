@@ -30,6 +30,7 @@ repos:
           - click
           - ra-utils
           - raclients
+          - types-python-dateutil
 
   - repo: https://github.com/fsfe/reuse-tool
     rev: v1.0.0

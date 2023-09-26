@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import uuid
 from uuid import UUID
 
 from more_itertools import one
+from ramodels.mo import Validity
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
@@ -18,6 +18,7 @@ def _create_node(
     dep_uuid: UUID,
     dep_name: str,
     dep_level_identifier: str,
+    dep_validity: Validity,
     parent: OrgUnitNode,
     existing_nodes: dict[UUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -46,6 +47,7 @@ def _create_node(
         parent=parent,
         name=dep_name,
         org_unit_level_uuid=org_unit_level.uuid,
+        validity=dep_validity,
     )
 
     existing_nodes[dep_uuid] = new_node
@@ -98,6 +100,10 @@ def _process_node(
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
     dep_name = sd_departments_map[dep_uuid].DepartmentName
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
+    dep_validity = Validity(
+        from_date=sd_departments_map[dep_uuid].ActivationDate,
+        to_date=sd_departments_map[dep_uuid].DeactivationDate,
+    )
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
@@ -117,6 +123,7 @@ def _process_node(
             dep_uuid,
             dep_name,
             dep_level_identifier,
+            dep_validity,
             parent,
             existing_nodes,
             mo_org_unit_level_map,
@@ -127,6 +134,7 @@ def _process_node(
         dep_uuid,
         dep_name,
         dep_level_identifier,
+        dep_validity,
         root_node,
         existing_nodes,
         mo_org_unit_level_map,

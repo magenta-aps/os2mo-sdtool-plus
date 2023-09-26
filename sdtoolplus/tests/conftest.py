@@ -3,14 +3,17 @@
 import os
 import uuid
 from copy import deepcopy
+from datetime import datetime
 from itertools import chain
 from typing import Any
 
 import pytest
+from dateutil import tz
 from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
+from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -25,6 +28,7 @@ from ..sd.tree import build_tree
 
 
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
+_TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
 
 
 @pytest.fixture(scope="session")
@@ -47,12 +51,14 @@ class _MockGraphQLSession:
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         ),
         OrgUnitNode(
             uuid=SharedIdentifier.removed_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child only in MO, should be removed",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         ),
     ]
 
@@ -62,6 +68,7 @@ class _MockGraphQLSession:
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Grandchild",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         )
     ]
 
@@ -297,6 +304,18 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
     }
     sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
     return sd_departments
+
+
+@pytest.fixture()
+def sd_expected_validity() -> Validity:
+    """Construct a `Validity` instance corresponding to the periods indicated by the
+    `ActivationDate`/`DeactivationDate` pairs returned by
+    `mock_sd_get_organization_response` and `mock_sd_get_department_response`.
+    """
+    this_tz = tz.gettz("Europe/Copenhagen")
+    from_dt = datetime.fromisoformat("1999-01-01T00:00:00").astimezone(this_tz)
+    to_dt = datetime.fromisoformat("2000-01-01T00:00:00").astimezone(this_tz)
+    return Validity(from_date=from_dt, to_date=to_dt)
 
 
 class _MockGraphQLSessionGetClassesInFacet:
