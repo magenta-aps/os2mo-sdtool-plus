@@ -1,13 +1,16 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from uuid import UUID
 
 from ramodels.mo import Validity
+from sdclient.responses import Department
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import OrgUnitNode
+from ..sd.tree import _get_sd_validity
 from ..sd.tree import build_tree
 from .conftest import SharedIdentifier
 
@@ -97,3 +100,20 @@ def test_build_tree(
             assert_equal(child_a, child_b, depth=depth + 1)
 
     assert_equal(actual_tree, expected_tree)
+
+
+def test_get_sd_validity(
+    mock_sd_get_department_response: GetDepartmentResponse,
+    sd_expected_validity: Validity,
+) -> None:
+    # 1. Test that the "normal" `ActivationDate`/`DeactivationDate` values are converted
+    # to the expected SD validity.
+    sd_dep: Department = mock_sd_get_department_response.Department[0]
+    sd_actual_validity: Validity = _get_sd_validity(sd_dep)
+    assert sd_actual_validity == sd_expected_validity
+
+    # 2. Test that a "special" `DeactivationDate` of "9999-12-31" is converted to None,
+    # representing an open validity period.
+    sd_dep.DeactivationDate = date(9999, 12, 31)
+    sd_actual_validity = _get_sd_validity(sd_dep)
+    assert sd_actual_validity.to_date is None

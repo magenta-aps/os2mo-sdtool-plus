@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from uuid import UUID
 
 from more_itertools import one
@@ -74,6 +75,18 @@ def _get_sd_departments_map(
     }
 
 
+def _get_sd_validity(dep: Department) -> Validity:
+    def convert_infinity_to_none(sd_date: date) -> date | None:
+        if sd_date == date(9999, 12, 31):
+            return None
+        return sd_date
+
+    return Validity(
+        from_date=dep.ActivationDate,
+        to_date=convert_infinity_to_none(dep.DeactivationDate),
+    )
+
+
 def _process_node(
     dep_ref: DepartmentReference,
     root_node: OrgUnitNode,
@@ -100,10 +113,7 @@ def _process_node(
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
     dep_name = sd_departments_map[dep_uuid].DepartmentName
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
-    dep_validity = Validity(
-        from_date=sd_departments_map[dep_uuid].ActivationDate,
-        to_date=sd_departments_map[dep_uuid].DeactivationDate,
-    )
+    dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
