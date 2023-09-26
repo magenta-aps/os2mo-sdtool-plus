@@ -8,7 +8,6 @@ from itertools import chain
 from typing import Any
 
 import pytest
-from dateutil import tz
 from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
@@ -312,9 +311,8 @@ def sd_expected_validity() -> Validity:
     `ActivationDate`/`DeactivationDate` pairs returned by
     `mock_sd_get_organization_response` and `mock_sd_get_department_response`.
     """
-    this_tz = tz.gettz("Europe/Copenhagen")
-    from_dt = datetime.fromisoformat("1999-01-01T00:00:00").astimezone(this_tz)
-    to_dt = datetime.fromisoformat("2000-01-01T00:00:00").astimezone(this_tz)
+    from_dt = datetime.fromisoformat("1999-01-01T00:00:00+01:00")
+    to_dt = datetime.fromisoformat("2000-01-01T00:00:00+01:00")
     return Validity(from_date=from_dt, to_date=to_dt)
 
 

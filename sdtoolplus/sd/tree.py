@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import zoneinfo
 from datetime import date
+from datetime import datetime
 from uuid import UUID
 
 from more_itertools import one
@@ -13,6 +15,9 @@ from sdclient.responses import GetOrganizationResponse
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+
+
+_ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
 
 def _create_node(
@@ -76,14 +81,27 @@ def _get_sd_departments_map(
 
 
 def _get_sd_validity(dep: Department) -> Validity:
-    def convert_infinity_to_none(sd_date: date) -> date | None:
+    def convert_infinity_to_none(sd_date: date | None) -> date | None:
         if sd_date == date(9999, 12, 31):
             return None
-        return sd_date
+        return sd_date  # `date' instance, or None
+
+    def date_to_datetime_in_tz(sd_date: date | None) -> datetime | None:
+        if sd_date is not None:
+            return datetime(
+                year=sd_date.year,
+                month=sd_date.month,
+                day=sd_date.day,
+                hour=0,
+                minute=0,
+                second=0,
+                tzinfo=_ASSUMED_SD_TIMEZONE,
+            )
+        return sd_date  # None
 
     return Validity(
-        from_date=dep.ActivationDate,
-        to_date=convert_infinity_to_none(dep.DeactivationDate),
+        from_date=date_to_datetime_in_tz(dep.ActivationDate),
+        to_date=date_to_datetime_in_tz(convert_infinity_to_none(dep.DeactivationDate)),
     )
 
 
