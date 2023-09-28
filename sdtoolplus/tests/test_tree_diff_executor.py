@@ -20,7 +20,7 @@ from ..tree_diff_executor import RemoveOrgUnitMutation
 from ..tree_diff_executor import TreeDiffExecutor
 from ..tree_diff_executor import UnsupportedMutation
 from ..tree_diff_executor import UpdateOrgUnitMutation
-from .conftest import _MockGraphQLSession
+from .conftest import _MockGraphQLSessionForMutation
 from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 
 
@@ -30,7 +30,7 @@ class TestMutation:
         graphql_testing_schema: GraphQLSchema,
     ):
         instance = Mutation(
-            _MockGraphQLSession(graphql_testing_schema),  # type: ignore
+            _MockGraphQLSessionForMutation(graphql_testing_schema),  # type: ignore
             Operation(),  # type: ignore
         )
         with pytest.raises(NotImplementedError):
@@ -42,11 +42,11 @@ class TestMutation:
 class TestTreeDiffExecutor:
     def test_execute(
         self,
-        mock_graphql_session: _MockGraphQLSession,
+        mock_graphql_session_for_mutation: _MockGraphQLSessionForMutation,
         mock_org_tree_diff: OrgTreeDiff,
     ):
         tree_diff_executor = TreeDiffExecutor(
-            mock_graphql_session,  # type: ignore
+            mock_graphql_session_for_mutation,  # type: ignore
             mock_org_tree_diff,
         )
         for operation, mutation, result in tree_diff_executor.execute():
@@ -86,12 +86,14 @@ class TestTreeDiffExecutor:
 
     def test_execute_dry(
         self,
-        mock_graphql_session: _MockGraphQLSession,
+        mock_graphql_session_for_mutation: _MockGraphQLSessionForMutation,
         mock_org_tree_diff: OrgTreeDiff,
     ):
-        with patch.object(mock_graphql_session, "execute") as mock_session_execute:
+        with patch.object(
+            mock_graphql_session_for_mutation, "execute"
+        ) as mock_session_execute:
             tree_diff_executor = TreeDiffExecutor(
-                mock_graphql_session,  # type: ignore
+                mock_graphql_session_for_mutation,  # type: ignore
                 mock_org_tree_diff,
             )
             for operation, mutation in tree_diff_executor.execute_dry():
@@ -101,12 +103,12 @@ class TestTreeDiffExecutor:
 
     def test_get_mutation(
         self,
-        mock_graphql_session: _MockGraphQLSession,
+        mock_graphql_session_for_mutation: _MockGraphQLSessionForMutation,
         mock_org_tree_diff: OrgTreeDiff,
         sd_expected_validity: Validity,
     ):
         tree_diff_executor = TreeDiffExecutor(
-            mock_graphql_session,  # type: ignore
+            mock_graphql_session_for_mutation,  # type: ignore
             mock_org_tree_diff,
         )
 
