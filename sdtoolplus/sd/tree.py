@@ -81,10 +81,10 @@ def _get_sd_departments_map(
 
 
 def _get_sd_validity(dep: Department) -> Validity:
-    def convert_infinity_to_none(sd_date: date | None) -> date | None:
+    def convert_infinity_to_none(sd_date: date) -> date | None:
         if sd_date == date(9999, 12, 31):
             return None
-        return sd_date  # `date' instance, or None
+        return sd_date  # `date' instance
 
     def date_to_datetime_in_tz(sd_date: date | None) -> datetime | None:
         if sd_date is not None:
