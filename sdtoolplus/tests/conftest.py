@@ -1,20 +1,39 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import os
 import uuid
 from copy import deepcopy
+from datetime import datetime
 from itertools import chain
+from typing import Any
 
 import pytest
+from gql.transport.exceptions import TransportQueryError
+from graphql import build_schema as build_graphql_schema
+from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
+from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
-from ..mo_class import MOOrgUnitTypeMap
+from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
+from ..sd.tree import build_tree
+
+
+_TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
+_TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
+
+
+@pytest.fixture(scope="session")
+def graphql_testing_schema() -> GraphQLSchema:
+    with open(_TESTING_SCHEMA_PATH) as schema:
+        return build_graphql_schema(schema.read())
 
 
 class SharedIdentifier:
@@ -31,12 +50,14 @@ class _MockGraphQLSession:
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         ),
         OrgUnitNode(
             uuid=SharedIdentifier.removed_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child only in MO, should be removed",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         ),
     ]
 
@@ -46,17 +67,26 @@ class _MockGraphQLSession:
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Grandchild",
             org_unit_level_uuid=uuid.uuid4(),
+            validity=_TESTING_MO_VALIDITY,
         )
     ]
 
-    def execute(self, query: DocumentNode) -> dict:
-        name = query.to_dict()["definitions"][0]["name"]["value"]
-        if name == "GetOrgUUID":
-            return self._mock_response_for_get_org_uuid
-        elif name == "GetOrgUnits":
-            return self._mock_response_for_get_org_units
+    def execute(
+        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
+    ) -> dict:
+        definition: dict = query.to_dict()["definitions"][0]
+        if definition["name"] is not None:
+            # If we are executing a "named" query (== not using DSL), check the query
+            # name and return a suitable mock response.
+            name = definition["name"]["value"]
+            if name == "GetOrgUUID":
+                return self._mock_response_for_get_org_uuid
+            elif name == "GetOrgUnits":
+                return self._mock_response_for_get_org_units
+            else:
+                raise ValueError("unknown query name %r" % name)
         else:
-            raise ValueError("unknown query name %r" % name)
+            raise ValueError("unexpected query %r" % query.to_dict())
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:
@@ -92,9 +122,45 @@ class _MockGraphQLSession:
         ]
 
 
+class _MockGraphQLSessionForMutation:
+    def __init__(self, schema: GraphQLSchema):
+        self.schema = schema
+
+    def execute(
+        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
+    ) -> dict:
+        definition: dict = query.to_dict()["definitions"][0]
+        assert definition["operation"] == "mutation"
+        # When executing a mutation (== probably using DSL), take the relevant data from
+        # the mutation request (e.g. name and arguments) and return them as a mock
+        # response that can be verified by tests.
+        return definition["selection_set"]["selections"][0]
+
+
+class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSessionForMutation):
+    def execute(
+        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
+    ) -> dict:
+        raise TransportQueryError("testing")
+
+
 @pytest.fixture()
 def mock_graphql_session() -> _MockGraphQLSession:
     return _MockGraphQLSession()
+
+
+@pytest.fixture()
+def mock_graphql_session_for_mutation(
+    graphql_testing_schema: GraphQLSchema,
+) -> _MockGraphQLSessionForMutation:
+    return _MockGraphQLSessionForMutation(graphql_testing_schema)
+
+
+@pytest.fixture()
+def mock_graphql_session_raising_transportqueryerror(
+    graphql_testing_schema: GraphQLSchema,
+) -> _MockGraphQLSessionRaisingTransportQueryError:
+    return _MockGraphQLSessionRaisingTransportQueryError(graphql_testing_schema)
 
 
 @pytest.fixture()
@@ -253,6 +319,17 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
     return sd_departments
 
 
+@pytest.fixture()
+def sd_expected_validity() -> Validity:
+    """Construct a `Validity` instance corresponding to the periods indicated by the
+    `ActivationDate`/`DeactivationDate` pairs returned by
+    `mock_sd_get_organization_response` and `mock_sd_get_department_response`.
+    """
+    from_dt = datetime.fromisoformat("1999-01-01T00:00:00+01:00")
+    to_dt = datetime.fromisoformat("2000-01-01T00:00:00+01:00")
+    return Validity(from_date=from_dt, to_date=to_dt)
+
+
 class _MockGraphQLSessionGetClassesInFacet:
     class_data = [
         {
@@ -298,3 +375,22 @@ def mock_mo_org_unit_level_map(
 @pytest.fixture()
 def mock_mo_org_unit_type() -> MOClass:
     return MOClass(uuid=uuid.uuid4(), name="Enhed", user_key="Enhed")
+
+
+@pytest.fixture()
+def mock_org_tree_diff(
+    mock_graphql_session: _MockGraphQLSession,
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+    mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
+    mock_mo_org_unit_type: MOClass,
+) -> OrgTreeDiff:
+    # Construct MO and SD trees
+    mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+    # Construct tree diff
+    return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)

@@ -1,9 +1,12 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import uuid
+import zoneinfo
+from datetime import date
+from datetime import datetime
 from uuid import UUID
 
 from more_itertools import one
+from ramodels.mo import Validity
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
@@ -14,10 +17,14 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 
 
+_ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
+
+
 def _create_node(
     dep_uuid: UUID,
     dep_name: str,
     dep_level_identifier: str,
+    dep_validity: Validity,
     parent: OrgUnitNode,
     existing_nodes: dict[UUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -46,6 +53,7 @@ def _create_node(
         parent=parent,
         name=dep_name,
         org_unit_level_uuid=org_unit_level.uuid,
+        validity=dep_validity,
     )
 
     existing_nodes[dep_uuid] = new_node
@@ -70,6 +78,31 @@ def _get_sd_departments_map(
         department.DepartmentUUIDIdentifier: department
         for department in sd_departments.Department
     }
+
+
+def _get_sd_validity(dep: Department) -> Validity:
+    def convert_infinity_to_none(sd_date: date) -> date | None:
+        if sd_date == date(9999, 12, 31):
+            return None
+        return sd_date  # `date' instance
+
+    def date_to_datetime_in_tz(sd_date: date | None) -> datetime | None:
+        if sd_date is not None:
+            return datetime(
+                year=sd_date.year,
+                month=sd_date.month,
+                day=sd_date.day,
+                hour=0,
+                minute=0,
+                second=0,
+                tzinfo=_ASSUMED_SD_TIMEZONE,
+            )
+        return sd_date  # None
+
+    return Validity(
+        from_date=date_to_datetime_in_tz(dep.ActivationDate),
+        to_date=date_to_datetime_in_tz(convert_infinity_to_none(dep.DeactivationDate)),
+    )
 
 
 def _process_node(
@@ -98,6 +131,7 @@ def _process_node(
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
     dep_name = sd_departments_map[dep_uuid].DepartmentName
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
+    dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
@@ -117,6 +151,7 @@ def _process_node(
             dep_uuid,
             dep_name,
             dep_level_identifier,
+            dep_validity,
             parent,
             existing_nodes,
             mo_org_unit_level_map,
@@ -127,6 +162,7 @@ def _process_node(
         dep_uuid,
         dep_name,
         dep_level_identifier,
+        dep_validity,
         root_node,
         existing_nodes,
         mo_org_unit_level_map,
