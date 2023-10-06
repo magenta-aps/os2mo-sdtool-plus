@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import logging
 
+import sentry_sdk
 from anytree import RenderTree
 from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
@@ -24,6 +25,10 @@ class App:
     def __init__(self):
         self.settings = SDToolPlusSettings()
         self.settings.start_logging_based_on_settings()
+
+        if self.settings.sentry_dsn:
+            sentry_sdk.init(dsn=self.settings.sentry_dsn)
+
         self.session = PersistentGraphQLClient(
             url=f"{self.settings.mora_base}/graphql/v7",
             client_id=self.settings.client_id,
