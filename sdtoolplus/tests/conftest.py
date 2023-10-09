@@ -19,6 +19,7 @@ from sdclient.responses import GetOrganizationResponse
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
+from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
@@ -375,6 +376,23 @@ def mock_mo_org_unit_level_map(
 @pytest.fixture()
 def mock_mo_org_unit_type() -> MOClass:
     return MOClass(uuid=uuid.uuid4(), name="Enhed", user_key="Enhed")
+
+
+class MockMOOrgUnitTypeMap(MOOrgUnitTypeMap):
+    def __init__(self, classes: list[MOClass]):
+        self.classes = classes
+
+
+@pytest.fixture()
+def mock_mo_org_unit_type_map(mock_mo_org_unit_type: MOClass) -> MockMOOrgUnitTypeMap:
+    return MockMOOrgUnitTypeMap([mock_mo_org_unit_type])
+
+
+@pytest.fixture()
+def mock_mo_org_tree_import(
+    mock_graphql_session: _MockGraphQLSession,
+) -> MOOrgTreeImport:
+    return MOOrgTreeImport(mock_graphql_session)
 
 
 @pytest.fixture()
