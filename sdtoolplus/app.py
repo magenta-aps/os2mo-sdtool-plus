@@ -31,7 +31,7 @@ class App:
         self.session = PersistentGraphQLClient(
             url=f"{self.settings.mora_base}/graphql/v7",
             client_id=self.settings.client_id,
-            client_secret=self.settings.client_secret,  # type: ignore
+            client_secret=self.settings.client_secret.get_secret_value(),
             auth_realm=self.settings.auth_realm,
             auth_server=self.settings.auth_server,  # type: ignore
             sync=True,

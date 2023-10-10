@@ -5,6 +5,7 @@ from ra_utils.job_settings import JobSettings
 
 
 class SDToolPlusSettings(JobSettings):
+    client_secret: SecretStr = SecretStr("")  # type: ignore
     sd_username: str | None
     sd_institution_identifier: str | None
     sd_password: SecretStr | None
