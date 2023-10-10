@@ -45,6 +45,9 @@ class SharedIdentifier:
 
 
 class _MockGraphQLSession:
+    def __init__(self, schema: GraphQLSchema):
+        self.schema = schema
+
     expected_children: list[OrgUnitNode] = [
         OrgUnitNode(
             uuid=SharedIdentifier.child_org_unit_uuid,
@@ -79,15 +82,44 @@ class _MockGraphQLSession:
         if definition["name"] is not None:
             # If we are executing a "named" query (== not using DSL), check the query
             # name and return a suitable mock response.
-            name = definition["name"]["value"]
-            if name == "GetOrgUUID":
-                return self._mock_response_for_get_org_uuid
-            elif name == "GetOrgUnits":
-                return self._mock_response_for_get_org_units
-            else:
-                raise ValueError("unknown query name %r" % name)
+            return self._execute_named_query(definition)
+        elif definition["operation"] == "mutation":
+            # If we are executing a mutation (== using DSL), check the mutation name and
+            # return a suitable mock response.
+            return self._execute_mutation(definition)
         else:
-            raise ValueError("unexpected query %r" % query.to_dict())
+            raise ValueError("don't know how to mock response for %r" % query.to_dict())
+
+    def _execute_named_query(self, definition: dict) -> dict:
+        # Extract name of GraphQL query, e.g. "Foo" from "query Foo { ... }"
+        name: str = definition["name"]["value"]
+        if name == "GetOrgUUID":
+            return self._mock_response_for_get_org_uuid
+        elif name == "GetOrgUnits":
+            return self._mock_response_for_get_org_units
+        else:
+            raise ValueError(
+                "don't know how to mock response for named query %r" % name
+            )
+
+    def _execute_mutation(self, definition: dict) -> dict:
+        # Extract mutation name, e.g. "org_unit_create", "org_unit_update", etc.
+        name: str = definition["selection_set"]["selections"][0]["name"]["value"]
+        if name == "org_unit_create":
+            # Pretend we have created a new org unit, and return a new UUID
+            return {name: {"uuid": str(uuid.uuid4())}}
+        elif name == "org_unit_update":
+            # Pretend we have updated an existing org unit, and returns its original
+            # UUID.
+            arguments: list[dict] = definition["selection_set"]["selections"][0][
+                "arguments"
+            ][0]["value"]["fields"]
+            for arg in arguments:
+                if arg["name"]["value"] == "uuid":
+                    return {name: {"uuid": arg["value"]["value"]}}
+            raise ValueError("could not find org unit UUID in %r" % arguments)
+        else:
+            raise ValueError("don't know how to mock response for mutation %r" % name)
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:
@@ -123,22 +155,7 @@ class _MockGraphQLSession:
         ]
 
 
-class _MockGraphQLSessionForMutation:
-    def __init__(self, schema: GraphQLSchema):
-        self.schema = schema
-
-    def execute(
-        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
-    ) -> dict:
-        definition: dict = query.to_dict()["definitions"][0]
-        assert definition["operation"] == "mutation"
-        # When executing a mutation (== probably using DSL), take the relevant data from
-        # the mutation request (e.g. name and arguments) and return them as a mock
-        # response that can be verified by tests.
-        return definition["selection_set"]["selections"][0]
-
-
-class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSessionForMutation):
+class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSession):
     def execute(
         self, query: DocumentNode, variable_values: dict[str, Any] | None = None
     ) -> dict:
@@ -146,15 +163,8 @@ class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSessionForMutati
 
 
 @pytest.fixture()
-def mock_graphql_session() -> _MockGraphQLSession:
-    return _MockGraphQLSession()
-
-
-@pytest.fixture()
-def mock_graphql_session_for_mutation(
-    graphql_testing_schema: GraphQLSchema,
-) -> _MockGraphQLSessionForMutation:
-    return _MockGraphQLSessionForMutation(graphql_testing_schema)
+def mock_graphql_session(graphql_testing_schema: GraphQLSchema) -> _MockGraphQLSession:
+    return _MockGraphQLSession(graphql_testing_schema)
 
 
 @pytest.fixture()
