@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import logging
-
 import sentry_sdk
+import structlog
 from anytree import RenderTree
 from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
@@ -18,7 +17,7 @@ from .sd.mock_tree import get_mock_sd_tree
 from .tree_diff_executor import TreeDiffExecutor
 
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class App:
@@ -55,7 +54,7 @@ class App:
             and self.settings.sd_institution_identifier
         ):
             # Get actual SD tree
-            logger.info("Fetching SD org tree ...")
+            logger.info(event="Fetching SD org tree ...")
             sd_client = SDClient(self.settings.sd_username, self.settings.sd_password)
             sd_org_tree = get_sd_tree(
                 sd_client,
@@ -65,7 +64,7 @@ class App:
             print(RenderTree(sd_org_tree).by_attr("uuid"))
         else:
             # Mock SD tree (remove when appropriate)
-            logger.info("Using mock SD org tree")
+            logger.info(event="Using mock SD org tree")
             sd_org_tree = get_mock_sd_tree(mo_org_tree)
 
         # Construct org tree diff
