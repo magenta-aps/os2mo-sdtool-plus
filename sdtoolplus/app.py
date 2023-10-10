@@ -13,7 +13,7 @@ from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
 from .sd.importer import get_sd_tree
-from .sd.mock_tree import get_mock_sd_tree
+from .tests.conftest import get_mock_sd_tree
 from .tree_diff_executor import TreeDiffExecutor
 
 

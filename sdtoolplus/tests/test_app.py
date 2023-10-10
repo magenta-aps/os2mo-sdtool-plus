@@ -10,8 +10,8 @@ from raclients.graph.client import PersistentGraphQLClient
 
 from ..app import App
 from ..config import SDToolPlusSettings
-from ..sd.mock_tree import get_mock_sd_tree
 from ..tree_diff_executor import TreeDiffExecutor
+from .conftest import get_mock_sd_tree
 
 
 class TestApp:
