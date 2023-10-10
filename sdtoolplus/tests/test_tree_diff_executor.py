@@ -23,19 +23,23 @@ from .conftest import _MockGraphQLSession
 from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 
 
+@pytest.fixture()
+def mutation_instance(graphql_testing_schema: GraphQLSchema) -> Mutation:
+    return Mutation(
+        _MockGraphQLSession(graphql_testing_schema),  # type: ignore
+        Operation(),  # type: ignore
+    )
+
+
 class TestMutation:
-    def test_abstract_methods(
-        self,
-        graphql_testing_schema: GraphQLSchema,
-    ):
-        instance = Mutation(
-            _MockGraphQLSessionForMutation(graphql_testing_schema),  # type: ignore
-            Operation(),  # type: ignore
-        )
+    def test_abstract_methods(self, mutation_instance: Mutation) -> None:
         with pytest.raises(NotImplementedError):
-            instance.dsl_mutation
+            mutation_instance.dsl_mutation
         with pytest.raises(NotImplementedError):
-            instance.dsl_mutation_input
+            mutation_instance.dsl_mutation_input
+
+    def test_get_validity_dict_or_none(self, mutation_instance: Mutation) -> None:
+        assert mutation_instance._get_validity_dict_or_none(None) == None  # type: ignore
 
 
 class TestTreeDiffExecutor:
