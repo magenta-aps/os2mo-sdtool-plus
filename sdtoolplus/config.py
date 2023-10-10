@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import SecretStr
 
@@ -28,3 +29,4 @@ class SDToolPlusSettings(BaseSettings):
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
     org_unit_type: str = "Enhed"
+    sd_lon_base_url: AnyHttpUrl = "http://localhost:8000"  # type: ignore
