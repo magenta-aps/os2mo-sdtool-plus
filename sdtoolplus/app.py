@@ -21,8 +21,8 @@ logger = structlog.get_logger()
 
 
 class App:
-    def __init__(self):
-        self.settings = SDToolPlusSettings()
+    def __init__(self, settings: SDToolPlusSettings):
+        self.settings: SDToolPlusSettings = settings
         self.settings.start_logging_based_on_settings()
 
         if self.settings.sentry_dsn:

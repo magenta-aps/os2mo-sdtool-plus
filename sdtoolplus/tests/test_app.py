@@ -17,20 +17,17 @@ from ..tree_diff_executor import TreeDiffExecutor
 class TestApp:
     def test_init(self) -> None:
         # Act
-        app: App = App()
+        app: App = self._get_app_instance()
         # Assert
         assert isinstance(app.settings, SDToolPlusSettings)
         assert isinstance(app.session, PersistentGraphQLClient)
 
     def test_init_calls_sentry_sdk(self) -> None:
         # Arrange
-        mock_sd_tool_plus_settings: SDToolPlusSettings = SDToolPlusSettings()
-        mock_sd_tool_plus_settings.sentry_dsn = "sentry_dsn"
         with ExitStack() as stack:
-            self._add_mock(stack, "SDToolPlusSettings", mock_sd_tool_plus_settings)
             mock_sentry_sdk_init = self._add_mock(stack, "sentry_sdk.init")
             # Act
-            app: App = App()
+            app: App = self._get_app_instance(sentry_dsn="sentry_dsn")
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
@@ -44,15 +41,18 @@ class TestApp:
         sd_credentials: bool,
     ) -> None:
         # Arrange: add mock SD credentials to settings, if part of test run
-        mock_sd_tool_plus_settings: SDToolPlusSettings = SDToolPlusSettings()
-        if sd_credentials:
-            mock_sd_tool_plus_settings.sd_username = "sd_username"
-            mock_sd_tool_plus_settings.sd_password = SecretStr("sd_password")
-            mock_sd_tool_plus_settings.sd_institution_identifier = "sd_institution"
+        sd_credential_values: dict = (
+            dict(
+                sd_username="sd_username",
+                sd_password=SecretStr("sd_password"),
+                sd_institution_identifier="sd_institution_identifier",
+            )
+            if sd_credentials
+            else {}
+        )
 
         # Arrange: patch dependencies with mock replacements
         with ExitStack() as stack:
-            self._add_mock(stack, "SDToolPlusSettings", mock_sd_tool_plus_settings)
             self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
             self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
@@ -62,7 +62,7 @@ class TestApp:
             )
 
             # Act
-            app: App = App()
+            app: App = self._get_app_instance(**sd_credential_values)
             tree_diff_executor: TreeDiffExecutor = app.get_tree_diff_executor()
 
             # Assert
@@ -72,3 +72,9 @@ class TestApp:
     def _add_mock(self, stack: ExitStack, name: str, value: Any = None):
         """Mock out `name` using `value` (or None)"""
         return stack.enter_context(patch(f"sdtoolplus.app.{name}", return_value=value))
+
+    def _get_app_instance(self, **kwargs: Any) -> App:
+        settings: SDToolPlusSettings = SDToolPlusSettings()
+        for name, value in kwargs.items():
+            setattr(settings, name, value)
+        return App(settings)

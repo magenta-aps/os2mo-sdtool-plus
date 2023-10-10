@@ -15,11 +15,13 @@ from fastapi import Response
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
+from .config import SDToolPlusSettings
 from .tree_diff_executor import TreeDiffExecutor
 
 
 def create_app(**kwargs) -> FastAPI:
-    app = FastAPI(sdtoolplus=App())
+    settings = SDToolPlusSettings()
+    app = FastAPI(sdtoolplus=App(settings))
     Instrumentator().instrument(app).expose(app)
 
     @app.get("/")
