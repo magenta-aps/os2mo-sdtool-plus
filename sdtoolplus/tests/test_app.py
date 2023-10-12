@@ -74,7 +74,7 @@ class TestApp:
         return stack.enter_context(patch(f"sdtoolplus.app.{name}", return_value=value))
 
     def _get_app_instance(self, **kwargs: Any) -> App:
-        settings: SDToolPlusSettings = SDToolPlusSettings()
+        settings: SDToolPlusSettings = SDToolPlusSettings(client_secret=SecretStr(""))
         for name, value in kwargs.items():
             setattr(settings, name, value)
         return App(settings)
