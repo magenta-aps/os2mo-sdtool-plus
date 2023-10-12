@@ -8,6 +8,7 @@ from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
+from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
@@ -23,7 +24,8 @@ logger = structlog.get_logger()
 class App:
     def __init__(self, settings: SDToolPlusSettings):
         self.settings: SDToolPlusSettings = settings
-        self.settings.start_logging_based_on_settings()
+
+        setup_logging(self.settings.log_level)
 
         if self.settings.sentry_dsn:
             sentry_sdk.init(dsn=self.settings.sentry_dsn)

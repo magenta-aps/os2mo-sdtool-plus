@@ -3,6 +3,7 @@
 from pydantic import BaseSettings
 from pydantic import SecretStr
 
+from .log import LogLevel
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -12,6 +13,9 @@ class SDToolPlusSettings(BaseSettings):
     client_secret: SecretStr
     auth_realm: str = "mo"
     auth_server: str = "http://keycloak:8080/auth"
+
+    # Configures log level
+    log_level: LogLevel = LogLevel.DEBUG
 
     # Configures Sentry error monitoring
     sentry_dsn: str | None = None
