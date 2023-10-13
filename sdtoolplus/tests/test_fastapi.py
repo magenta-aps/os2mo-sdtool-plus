@@ -41,6 +41,22 @@ class TestFastAPIApp:
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
             mock_sdtoolplus_app.execute.assert_called_once_with()
+            mock_sdtoolplus_app.execute_dry.assert_not_called()
+            # Assert: check status code and response
+            assert response.status_code == 200
+            assert response.json() == []
+
+    def test_post_trigger_dry(self) -> None:
+        """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
+        # Arrange
+        mock_sdtoolplus_app = MagicMock(spec=App)
+        with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
+            client: TestClient = TestClient(self._get_fastapi_app_instance())
+            # Act
+            response: Response = client.post("/trigger/dry")
+            # Assert: check that we call the expected methods
+            mock_sdtoolplus_app.execute_dry.assert_called_once_with()
+            mock_sdtoolplus_app.execute.assert_not_called()
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
