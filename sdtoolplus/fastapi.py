@@ -9,6 +9,8 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
+import dataclasses
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
@@ -32,11 +34,26 @@ def create_app(**kwargs) -> FastAPI:
         sdtoolplus: App = request.app.extra["sdtoolplus"]
         results: list[dict] = [
             {
-                "operation": str(operation),
-                "result": str(result),
+                "description": str(operation),
+                "type": operation.__class__.__name__,
+                "data": dataclasses.asdict(operation),
+                "mutation_result": str(result),
                 "fix_departments_result": str(fix_departments_result),
             }
             for operation, mutation, result, fix_departments_result in sdtoolplus.execute()
+        ]
+        return results
+
+    @app.post("/trigger/dry")
+    async def trigger_dry(request: Request, response: Response) -> list[dict]:
+        sdtoolplus: App = request.app.extra["sdtoolplus"]
+        results: list[dict] = [
+            {
+                "description": str(operation),
+                "type": operation.__class__.__name__,
+                "data": dataclasses.asdict(operation),
+            }
+            for operation, mutation in sdtoolplus.execute_dry()
         ]
         return results
 

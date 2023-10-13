@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from typing import Iterator
+from typing import Optional
 from uuid import UUID
 
 import httpx
@@ -88,25 +90,34 @@ class App:
         # Construct tree diff executor
         return TreeDiffExecutor(self.session, tree_diff)
 
-    def execute(self):
+    def execute(
+        self,
+    ) -> Iterator[tuple[AnyOperation, AnyMutation, UUID | Exception, Optional[bool]]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
         """
         executor: TreeDiffExecutor = self.get_tree_diff_executor()
         operation: AnyOperation
         mutation: AnyMutation
-        result: UUID
+        result: UUID | Exception
         fix_departments_result: bool | None
         for operation, mutation, result in executor.execute():
             fix_departments_result = None
             if isinstance(operation, (AddOperation, UpdateOperation)):
-                fix_departments_result = self._call_fix_departments(result)
+                fix_departments_result = self._call_fix_departments(result)  # type: ignore
             yield (
                 operation,
                 mutation,
                 result,
                 fix_departments_result,
             )
+
+    def execute_dry(self) -> Iterator[tuple[AnyOperation, AnyMutation]]:
+        executor: TreeDiffExecutor = self.get_tree_diff_executor()
+        operation: AnyOperation
+        mutation: AnyMutation
+        for operation, mutation in executor.execute_dry():
+            yield operation, mutation
 
     def _call_fix_departments(self, org_unit_uuid: OrgUnitUUID) -> bool:
         url: str = f"/trigger/fix-departments/{org_unit_uuid}"
