@@ -16,7 +16,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
 from .config import SDToolPlusSettings
-from .tree_diff_executor import TreeDiffExecutor
 
 
 def create_app(**kwargs) -> FastAPI:
@@ -31,10 +30,13 @@ def create_app(**kwargs) -> FastAPI:
     @app.post("/trigger")
     async def trigger(request: Request, response: Response) -> list[dict]:
         sdtoolplus: App = request.app.extra["sdtoolplus"]
-        executor: TreeDiffExecutor = sdtoolplus.get_tree_diff_executor()
         results: list[dict] = [
-            {"operation": str(operation), "result": str(result)}
-            for operation, mutation, result in executor.execute()
+            {
+                "operation": str(operation),
+                "result": str(result),
+                "fix_departments_result": str(fix_departments_result),
+            }
+            for operation, mutation, result, fix_departments_result in sdtoolplus.execute()
         ]
         return results
 

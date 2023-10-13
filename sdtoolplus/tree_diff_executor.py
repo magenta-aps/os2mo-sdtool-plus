@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
+import uuid
 from typing import Any
 from typing import Iterator
 
@@ -47,9 +48,6 @@ class Mutation(abc.ABC):
     def _dsl_schema_mutation(self) -> DSLType:
         return self._dsl_schema.Mutation
 
-    def execute(self) -> dict[str, Any] | ExecutionResult:
-        return self._session.execute(self.gql)
-
     def _get_dsl_schema(self) -> DSLSchema:
         return DSLSchema(self._session.schema)  # type: ignore
 
@@ -93,6 +91,10 @@ class UpdateOrgUnitMutation(Mutation):
             "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
         }
 
+    def execute(self) -> uuid.UUID:
+        result: dict = self._session.execute(self.gql)
+        return uuid.UUID(result["org_unit_update"]["uuid"])
+
 
 class AddOrgUnitMutation(Mutation):
     def __init__(self, session: GraphQLClient, operation: AddOperation):
@@ -116,6 +118,10 @@ class AddOrgUnitMutation(Mutation):
             "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
         }
 
+    def execute(self) -> uuid.UUID:
+        result: dict = self._session.execute(self.gql)
+        return uuid.UUID(result["org_unit_create"]["uuid"])
+
 
 AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | RemoveOrgUnitMutation
 
@@ -127,9 +133,7 @@ class TreeDiffExecutor:
 
     def execute(
         self,
-    ) -> Iterator[
-        tuple[AnyOperation, AnyMutation, dict[str, Any] | ExecutionResult | Any]
-    ]:
+    ) -> Iterator[tuple[AnyOperation, AnyMutation, uuid.UUID | Exception]]:
         for operation in self._tree_diff.get_operations():
             mutation = self.get_mutation(operation)
             try:

@@ -16,7 +16,10 @@ from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..diff_org_trees import AddOperation
 from ..diff_org_trees import OrgTreeDiff
+from ..diff_org_trees import RemoveOperation
+from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
@@ -25,7 +28,7 @@ from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
 from ..sd.tree import build_tree
-
+from ..tree_diff_executor import TreeDiffExecutor
 
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
 _TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
@@ -45,6 +48,9 @@ class SharedIdentifier:
 
 
 class _MockGraphQLSession:
+    def __init__(self, schema: GraphQLSchema):
+        self.schema = schema
+
     expected_children: list[OrgUnitNode] = [
         OrgUnitNode(
             uuid=SharedIdentifier.child_org_unit_uuid,
@@ -79,15 +85,44 @@ class _MockGraphQLSession:
         if definition["name"] is not None:
             # If we are executing a "named" query (== not using DSL), check the query
             # name and return a suitable mock response.
-            name = definition["name"]["value"]
-            if name == "GetOrgUUID":
-                return self._mock_response_for_get_org_uuid
-            elif name == "GetOrgUnits":
-                return self._mock_response_for_get_org_units
-            else:
-                raise ValueError("unknown query name %r" % name)
+            return self._execute_named_query(definition)
+        elif definition["operation"] == "mutation":
+            # If we are executing a mutation (== using DSL), check the mutation name and
+            # return a suitable mock response.
+            return self._execute_mutation(definition)
         else:
-            raise ValueError("unexpected query %r" % query.to_dict())
+            raise ValueError("don't know how to mock response for %r" % query.to_dict())
+
+    def _execute_named_query(self, definition: dict) -> dict:
+        # Extract name of GraphQL query, e.g. "Foo" from "query Foo { ... }"
+        name: str = definition["name"]["value"]
+        if name == "GetOrgUUID":
+            return self._mock_response_for_get_org_uuid
+        elif name == "GetOrgUnits":
+            return self._mock_response_for_get_org_units
+        else:
+            raise ValueError(
+                "don't know how to mock response for named query %r" % name
+            )
+
+    def _execute_mutation(self, definition: dict) -> dict:
+        # Extract mutation name, e.g. "org_unit_create", "org_unit_update", etc.
+        name: str = definition["selection_set"]["selections"][0]["name"]["value"]
+        if name == "org_unit_create":
+            # Pretend we have created a new org unit, and return a new UUID
+            return {name: {"uuid": str(uuid.uuid4())}}
+        elif name == "org_unit_update":
+            # Pretend we have updated an existing org unit, and returns its original
+            # UUID.
+            arguments: list[dict] = definition["selection_set"]["selections"][0][
+                "arguments"
+            ][0]["value"]["fields"]
+            for arg in arguments:
+                if arg["name"]["value"] == "uuid":
+                    return {name: {"uuid": arg["value"]["value"]}}
+            raise ValueError("could not find org unit UUID in %r" % arguments)
+        else:
+            raise ValueError("don't know how to mock response for mutation %r" % name)
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:
@@ -123,22 +158,7 @@ class _MockGraphQLSession:
         ]
 
 
-class _MockGraphQLSessionForMutation:
-    def __init__(self, schema: GraphQLSchema):
-        self.schema = schema
-
-    def execute(
-        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
-    ) -> dict:
-        definition: dict = query.to_dict()["definitions"][0]
-        assert definition["operation"] == "mutation"
-        # When executing a mutation (== probably using DSL), take the relevant data from
-        # the mutation request (e.g. name and arguments) and return them as a mock
-        # response that can be verified by tests.
-        return definition["selection_set"]["selections"][0]
-
-
-class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSessionForMutation):
+class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSession):
     def execute(
         self, query: DocumentNode, variable_values: dict[str, Any] | None = None
     ) -> dict:
@@ -146,15 +166,8 @@ class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSessionForMutati
 
 
 @pytest.fixture()
-def mock_graphql_session() -> _MockGraphQLSession:
-    return _MockGraphQLSession()
-
-
-@pytest.fixture()
-def mock_graphql_session_for_mutation(
-    graphql_testing_schema: GraphQLSchema,
-) -> _MockGraphQLSessionForMutation:
-    return _MockGraphQLSessionForMutation(graphql_testing_schema)
+def mock_graphql_session(graphql_testing_schema: GraphQLSchema) -> _MockGraphQLSession:
+    return _MockGraphQLSession(graphql_testing_schema)
 
 
 @pytest.fixture()
@@ -443,3 +456,77 @@ def get_mock_sd_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
     )
     mock_sd_root.children = [mock_sd_updated_child, mock_sd_new_child]
     return mock_sd_root
+
+
+@pytest.fixture()
+def mock_tree_diff_executor(
+    mock_graphql_session: _MockGraphQLSession,
+    mock_org_tree_diff: OrgTreeDiff,
+) -> TreeDiffExecutor:
+    return TreeDiffExecutor(
+        mock_graphql_session,  # type: ignore
+        mock_org_tree_diff,
+    )
+
+
+@pytest.fixture()
+def expected_operations(
+    sd_expected_validity: Validity,
+    mock_mo_org_unit_type: MOClass,
+    mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
+) -> list[AddOperation | UpdateOperation | RemoveOperation]:
+    return [
+        # MO unit to be removed is indeed removed
+        RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
+        # MO unit "Grandchild" is renamed to "Department 2"
+        UpdateOperation(
+            uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            attr="name",
+            value="Department 2",
+            validity=sd_expected_validity,
+        ),
+        # MO unit "Grandchild" has its org unit level changed to match SD
+        UpdateOperation(
+            uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            attr="org_unit_level_uuid",
+            value=str(mock_mo_org_unit_level_map["NY0-niveau"].uuid),
+            validity=sd_expected_validity,
+        ),
+        # MO unit "Child" is renamed to "Department 1"
+        UpdateOperation(
+            uuid=SharedIdentifier.child_org_unit_uuid,
+            attr="name",
+            value="Department 1",
+            validity=sd_expected_validity,
+        ),
+        # MO unit "Child" has its org unit level changed to match SD
+        UpdateOperation(
+            uuid=SharedIdentifier.child_org_unit_uuid,
+            attr="org_unit_level_uuid",
+            value=str(mock_mo_org_unit_level_map["NY1-niveau"].uuid),
+            validity=sd_expected_validity,
+        ),
+        # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
+        AddOperation(
+            parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            name="Department 3",
+            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+            org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+            validity=sd_expected_validity,
+        ),
+        AddOperation(
+            parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            name="Department 4",
+            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+            org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+            validity=sd_expected_validity,
+        ),
+        # SD unit "Department 5" is added under MO unit "Child"
+        AddOperation(
+            parent_uuid=SharedIdentifier.child_org_unit_uuid,
+            name="Department 5",
+            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
+            org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
+            validity=sd_expected_validity,
+        ),
+    ]

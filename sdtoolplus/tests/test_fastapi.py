@@ -40,8 +40,7 @@ class TestFastAPIApp:
             # Act
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
-            mock_sdtoolplus_app.get_tree_diff_executor.assert_called_once_with()
-            mock_sdtoolplus_app.get_tree_diff_executor().execute.assert_called_once_with()
+            mock_sdtoolplus_app.execute.assert_called_once_with()
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
