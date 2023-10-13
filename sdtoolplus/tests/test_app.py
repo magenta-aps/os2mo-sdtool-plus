@@ -89,7 +89,7 @@ class TestApp:
         expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
     ) -> None:
         # Arrange
-        app: App = App()
+        app: App = self._get_app_instance()
         with patch.object(
             app,
             "get_tree_diff_executor",
@@ -120,7 +120,7 @@ class TestApp:
     @pytest.mark.parametrize("status_code", [200, 400, 500])
     def test_call_fix_departments(self, status_code: int):
         # Arrange
-        app: App = App()
+        app: App = self._get_app_instance()
         org_unit_uuid: OrgUnitUUID = uuid4()
         response: Response = Response(status_code=status_code, json={"msg": "msg"})
         with patch.object(
