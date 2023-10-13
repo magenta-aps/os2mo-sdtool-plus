@@ -1,20 +1,29 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from uuid import UUID
+
+import httpx
 import sentry_sdk
 import structlog
 from anytree import RenderTree
+from httpx import Response
 from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
+from .diff_org_trees import AddOperation
+from .diff_org_trees import AnyOperation
 from .diff_org_trees import OrgTreeDiff
+from .diff_org_trees import UpdateOperation
 from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
+from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
 from .tests.conftest import get_mock_sd_tree
+from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 
 
@@ -40,6 +49,8 @@ class App:
             httpx_client_kwargs={"timeout": None},
             fetch_schema_from_transport=True,
         )
+
+        self.client = httpx.Client(base_url=self.settings.sd_lon_base_url)
 
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
         # Get relevant MO facet/class data
@@ -76,3 +87,34 @@ class App:
 
         # Construct tree diff executor
         return TreeDiffExecutor(self.session, tree_diff)
+
+    def execute(self):
+        """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
+        for each 'add' and 'update' operation.
+        """
+        executor: TreeDiffExecutor = self.get_tree_diff_executor()
+        operation: AnyOperation
+        mutation: AnyMutation
+        result: UUID
+        fix_departments_result: bool | None
+        for operation, mutation, result in executor.execute():
+            fix_departments_result = None
+            if isinstance(operation, (AddOperation, UpdateOperation)):
+                fix_departments_result = self._call_fix_departments(result)
+            yield (
+                operation,
+                mutation,
+                result,
+                fix_departments_result,
+            )
+
+    def _call_fix_departments(self, org_unit_uuid: OrgUnitUUID) -> bool:
+        url: str = f"/trigger/fix-departments/{org_unit_uuid}"
+        response: Response = self.client.post(url)
+        if response.status_code >= 400:
+            logger.error(
+                "fix_departments returned an error: status_code=%d, response=%r",
+                response.status_code,
+                response.json(),
+            )
+        return response.status_code == 200
