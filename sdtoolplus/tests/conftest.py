@@ -19,6 +19,7 @@ from sdclient.responses import GetOrganizationResponse
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
+from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
@@ -377,6 +378,23 @@ def mock_mo_org_unit_type() -> MOClass:
     return MOClass(uuid=uuid.uuid4(), name="Enhed", user_key="Enhed")
 
 
+class MockMOOrgUnitTypeMap(MOOrgUnitTypeMap):
+    def __init__(self, classes: list[MOClass]):
+        self.classes = classes
+
+
+@pytest.fixture()
+def mock_mo_org_unit_type_map(mock_mo_org_unit_type: MOClass) -> MockMOOrgUnitTypeMap:
+    return MockMOOrgUnitTypeMap([mock_mo_org_unit_type])
+
+
+@pytest.fixture()
+def mock_mo_org_tree_import(
+    mock_graphql_session: _MockGraphQLSession,
+) -> MOOrgTreeImport:
+    return MOOrgTreeImport(mock_graphql_session)
+
+
 @pytest.fixture()
 def mock_org_tree_diff(
     mock_graphql_session: _MockGraphQLSession,
@@ -394,3 +412,34 @@ def mock_org_tree_diff(
     )
     # Construct tree diff
     return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+
+
+def get_mock_sd_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
+    # This function is not a pytest fixture, as it is being called from "application"
+    # code (`App`.)
+    mock_sd_validity: Validity = Validity(
+        from_date=datetime.fromisoformat("1960-01-01T00:00:00+01:00"),
+        to_date=None,
+    )
+    mock_sd_root: OrgUnitNode = OrgUnitNode(
+        uuid=mo_org_tree.get_org_uuid(),
+        parent_uuid=None,
+        name="<root>",
+        validity=mock_sd_validity,
+    )
+    mock_sd_updated_child: OrgUnitNode = OrgUnitNode(
+        uuid=OrgUnitUUID("f06ee470-9f17-566f-acbe-e938112d46d9"),
+        parent_uuid=mo_org_tree.get_org_uuid(),
+        name="Kolding Kommune II",
+        org_unit_level_uuid=uuid.uuid4(),
+        validity=mock_sd_validity,
+    )
+    mock_sd_new_child: OrgUnitNode = OrgUnitNode(
+        uuid=uuid.uuid4(),
+        parent_uuid=mo_org_tree.get_org_uuid(),
+        name="Something new",
+        org_unit_level_uuid=uuid.uuid4(),
+        validity=mock_sd_validity,
+    )
+    mock_sd_root.children = [mock_sd_updated_child, mock_sd_new_child]
+    return mock_sd_root
