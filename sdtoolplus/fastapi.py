@@ -14,6 +14,7 @@ import dataclasses
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
+from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
@@ -42,6 +43,7 @@ def create_app(**kwargs) -> FastAPI:
             }
             for operation, mutation, result, fix_departments_result in sdtoolplus.execute()
         ]
+        dipex_last_success_timestamp.set_to_current_time()
         return results
 
     @app.post("/trigger/dry")
