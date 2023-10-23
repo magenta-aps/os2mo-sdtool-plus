@@ -9,7 +9,6 @@ from uuid import uuid4
 
 import pytest
 from httpx import Response
-from pydantic import SecretStr
 from raclients.graph.client import PersistentGraphQLClient
 
 from ..app import App
@@ -23,42 +22,34 @@ from ..tree_diff_executor import TreeDiffExecutor
 
 
 class TestApp:
-    def test_init(self) -> None:
+    def test_init(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         # Act
-        app: App = self._get_app_instance()
+        app: App = self._get_app_instance(sdtoolplus_settings)
         # Assert
         assert isinstance(app.settings, SDToolPlusSettings)
         assert isinstance(app.session, PersistentGraphQLClient)
 
-    def test_init_calls_sentry_sdk(self) -> None:
+    def test_init_calls_sentry_sdk(
+        self, sdtoolplus_settings: SDToolPlusSettings
+    ) -> None:
         # Arrange
         with ExitStack() as stack:
             mock_sentry_sdk_init = self._add_mock(stack, "sentry_sdk.init")
             # Act
-            app: App = self._get_app_instance(sentry_dsn="sentry_dsn")
+            app: App = self._get_app_instance(
+                sdtoolplus_settings, sentry_dsn="sentry_dsn"
+            )
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
-    @pytest.mark.parametrize("sd_credentials", [False, True])
     def test_get_tree_diff_executor(
         self,
         mock_graphql_session,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
         mock_mo_org_tree_import,
-        sd_credentials: bool,
+        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
-        # Arrange: add mock SD credentials to settings, if part of test run
-        sd_credential_values: dict = (
-            dict(
-                sd_username="sd_username",
-                sd_password=SecretStr("sd_password"),
-                sd_institution_identifier="sd_institution_identifier",
-            )
-            if sd_credentials
-            else {}
-        )
-
         # Arrange: patch dependencies with mock replacements
         with ExitStack() as stack:
             self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
@@ -68,7 +59,7 @@ class TestApp:
             mock_get_sd_tree = self._add_mock(stack, "get_sd_tree", MagicMock())
 
             # Act
-            app: App = self._get_app_instance(**sd_credential_values)
+            app: App = self._get_app_instance(sdtoolplus_settings)
             tree_diff_executor: TreeDiffExecutor = app.get_tree_diff_executor()
 
             # Assert: check the `TreeDiffExecutor` instance
@@ -76,20 +67,17 @@ class TestApp:
             assert isinstance(tree_diff_executor._tree_diff, OrgTreeDiff)
             assert isgenerator(tree_diff_executor.execute())
 
-            # Assert: check that we called the (mocked) `get_sd_tree` function if SD
-            # credentials are available, and not otherwise.
-            if sd_credentials:
-                mock_get_sd_tree.assert_called_once()
-            else:
-                mock_get_sd_tree.assert_not_called()
+            # Assert: check that we called the (mocked) `get_sd_tree` function
+            mock_get_sd_tree.assert_called_once()
 
     def test_execute(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
         expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
-        app: App = self._get_app_instance()
+        app: App = self._get_app_instance(sdtoolplus_settings)
         with ExitStack() as stack:
             self._add_obj_mock(
                 stack, app, "get_tree_diff_executor", mock_tree_diff_executor
@@ -124,9 +112,10 @@ class TestApp:
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
         expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
-        app: App = self._get_app_instance()
+        app: App = self._get_app_instance(sdtoolplus_settings)
         with ExitStack() as stack:
             self._add_obj_mock(
                 stack, app, "get_tree_diff_executor", mock_tree_diff_executor
@@ -145,9 +134,11 @@ class TestApp:
             mock_client_post.assert_not_called()
 
     @pytest.mark.parametrize("status_code", [200, 400, 500])
-    def test_call_fix_departments(self, status_code: int) -> None:
+    def test_call_fix_departments(
+        self, sdtoolplus_settings: SDToolPlusSettings, status_code: int
+    ) -> None:
         # Arrange
-        app: App = self._get_app_instance()
+        app: App = self._get_app_instance(sdtoolplus_settings)
         org_unit_uuid: OrgUnitUUID = uuid4()
         response: Response = Response(status_code=status_code, json={"msg": "msg"})
         with patch.object(
@@ -185,8 +176,11 @@ class TestApp:
         mock_mutation_response.__getitem__.return_value = {"uuid": str(uuid4())}
         return mock_mutation_response
 
-    def _get_app_instance(self, **kwargs: Any) -> App:
-        settings: SDToolPlusSettings = SDToolPlusSettings(client_secret=SecretStr(""))
+    def _get_app_instance(
+        self,
+        sdtoolplus_settings: SDToolPlusSettings,
+        **kwargs: Any,
+    ) -> App:
         for name, value in kwargs.items():
-            setattr(settings, name, value)
-        return App(settings)
+            setattr(sdtoolplus_settings, name, value)
+        return App(sdtoolplus_settings)

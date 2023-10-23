@@ -12,10 +12,12 @@ from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
+from pydantic import SecretStr
 from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..config import SDToolPlusSettings
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
@@ -499,3 +501,13 @@ def expected_operations(
             validity=sd_expected_validity,
         ),
     ]
+
+
+@pytest.fixture()
+def sdtoolplus_settings() -> SDToolPlusSettings:
+    return SDToolPlusSettings(
+        client_secret=SecretStr(""),
+        sd_username="sd_username",
+        sd_institution_identifier="sd_institution_identifier",
+        sd_password=SecretStr(""),
+    )
