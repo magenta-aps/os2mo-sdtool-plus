@@ -64,7 +64,10 @@ class App:
 
         # Get the SD tree
         logger.info(event="Fetching SD org tree ...")
-        sd_client = SDClient(self.settings.sd_username, self.settings.sd_password)
+        sd_client = SDClient(
+            self.settings.sd_username,
+            self.settings.sd_password.get_secret_value(),
+        )
         sd_org_tree = get_sd_tree(
             sd_client,
             self.settings.sd_institution_identifier,
