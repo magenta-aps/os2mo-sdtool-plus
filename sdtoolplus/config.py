@@ -22,9 +22,9 @@ class SDToolPlusSettings(BaseSettings):
     sentry_dsn: str | None = None
 
     # Credentials, etc. for authenticating against SD and performing SD API calls
-    sd_username: str | None
-    sd_institution_identifier: str | None
-    sd_password: SecretStr | None
+    sd_username: str
+    sd_institution_identifier: str
+    sd_password: SecretStr
 
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
