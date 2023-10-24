@@ -12,10 +12,12 @@ from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
+from pydantic import SecretStr
 from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..config import SDToolPlusSettings
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
@@ -427,37 +429,6 @@ def mock_org_tree_diff(
     return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
 
 
-def get_mock_sd_tree(mo_org_tree: MOOrgTreeImport) -> OrgUnitNode:
-    # This function is not a pytest fixture, as it is being called from "application"
-    # code (`App`.)
-    mock_sd_validity: Validity = Validity(
-        from_date=datetime.fromisoformat("1960-01-01T00:00:00+01:00"),
-        to_date=None,
-    )
-    mock_sd_root: OrgUnitNode = OrgUnitNode(
-        uuid=mo_org_tree.get_org_uuid(),
-        parent_uuid=None,
-        name="<root>",
-        validity=mock_sd_validity,
-    )
-    mock_sd_updated_child: OrgUnitNode = OrgUnitNode(
-        uuid=OrgUnitUUID("f06ee470-9f17-566f-acbe-e938112d46d9"),
-        parent_uuid=mo_org_tree.get_org_uuid(),
-        name="Kolding Kommune II",
-        org_unit_level_uuid=uuid.uuid4(),
-        validity=mock_sd_validity,
-    )
-    mock_sd_new_child: OrgUnitNode = OrgUnitNode(
-        uuid=uuid.uuid4(),
-        parent_uuid=mo_org_tree.get_org_uuid(),
-        name="Something new",
-        org_unit_level_uuid=uuid.uuid4(),
-        validity=mock_sd_validity,
-    )
-    mock_sd_root.children = [mock_sd_updated_child, mock_sd_new_child]
-    return mock_sd_root
-
-
 @pytest.fixture()
 def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
@@ -530,3 +501,13 @@ def expected_operations(
             validity=sd_expected_validity,
         ),
     ]
+
+
+@pytest.fixture()
+def sdtoolplus_settings() -> SDToolPlusSettings:
+    return SDToolPlusSettings(
+        client_secret=SecretStr(""),
+        sd_username="sd_username",
+        sd_institution_identifier="sd_institution_identifier",
+        sd_password=SecretStr(""),
+    )

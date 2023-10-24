@@ -7,7 +7,6 @@ from uuid import UUID
 import httpx
 import sentry_sdk
 import structlog
-from anytree import RenderTree
 from httpx import Response
 from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
@@ -24,7 +23,6 @@ from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
-from .tests.conftest import get_mock_sd_tree
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 
@@ -60,27 +58,21 @@ class App:
         mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
         mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
 
-        # Get actual MO tree
+        # Get the MO tree
+        logger.info(event="Fetching MO org tree ...")
         mo_org_tree = MOOrgTreeImport(self.session)
 
-        if (
-            self.settings.sd_username
-            and self.settings.sd_password
-            and self.settings.sd_institution_identifier
-        ):
-            # Get actual SD tree
-            logger.info(event="Fetching SD org tree ...")
-            sd_client = SDClient(self.settings.sd_username, self.settings.sd_password)
-            sd_org_tree = get_sd_tree(
-                sd_client,
-                self.settings.sd_institution_identifier,
-                mo_org_unit_level_map,
-            )
-            print(RenderTree(sd_org_tree).by_attr("uuid"))
-        else:
-            # Mock SD tree (remove when appropriate)
-            logger.info(event="Using mock SD org tree")
-            sd_org_tree = get_mock_sd_tree(mo_org_tree)
+        # Get the SD tree
+        logger.info(event="Fetching SD org tree ...")
+        sd_client = SDClient(
+            self.settings.sd_username,
+            self.settings.sd_password.get_secret_value(),
+        )
+        sd_org_tree = get_sd_tree(
+            sd_client,
+            self.settings.sd_institution_identifier,
+            mo_org_unit_level_map,
+        )
 
         # Construct org tree diff
         tree_diff = OrgTreeDiff(

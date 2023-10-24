@@ -6,7 +6,6 @@ from unittest.mock import patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import Response
-from pydantic import SecretStr
 
 from ..app import App
 from ..config import SDToolPlusSettings
@@ -14,29 +13,33 @@ from ..fastapi import create_app
 
 
 class TestFastAPIApp:
-    def test_create_app(self) -> None:
+    def test_create_app(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that `create_app` adds an `App` instance to the FastAPI app returned"""
         # Act
-        app: FastAPI = self._get_fastapi_app_instance()
+        app: FastAPI = self._get_fastapi_app_instance(sdtoolplus_settings)
         # Assert
         assert isinstance(app.extra["sdtoolplus"], App)
 
-    def test_get_root(self) -> None:
+    def test_get_root(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that 'GET /' returns a JSON doc giving the name of this integration"""
         # Arrange
-        client: TestClient = TestClient(self._get_fastapi_app_instance())
+        client: TestClient = TestClient(
+            self._get_fastapi_app_instance(sdtoolplus_settings)
+        )
         # Act
         response: Response = client.get("/")
         # Assert
         assert response.status_code == 200
         assert response.json() == {"name": "sdtoolplus"}
 
-    def test_post_trigger(self) -> None:
+    def test_post_trigger(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(self._get_fastapi_app_instance())
+            client: TestClient = TestClient(
+                self._get_fastapi_app_instance(sdtoolplus_settings)
+            )
             # Act
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
@@ -46,12 +49,14 @@ class TestFastAPIApp:
             assert response.status_code == 200
             assert response.json() == []
 
-    def test_post_trigger_dry(self) -> None:
+    def test_post_trigger_dry(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(self._get_fastapi_app_instance())
+            client: TestClient = TestClient(
+                self._get_fastapi_app_instance(sdtoolplus_settings)
+            )
             # Act
             response: Response = client.post("/trigger/dry")
             # Assert: check that we call the expected methods
@@ -61,7 +66,10 @@ class TestFastAPIApp:
             assert response.status_code == 200
             assert response.json() == []
 
-    def _get_fastapi_app_instance(self) -> FastAPI:
-        settings: SDToolPlusSettings = SDToolPlusSettings(client_secret=SecretStr(""))
-        with patch("sdtoolplus.fastapi.SDToolPlusSettings", return_value=settings):
+    def _get_fastapi_app_instance(
+        self, sdtoolplus_settings: SDToolPlusSettings
+    ) -> FastAPI:
+        with patch(
+            "sdtoolplus.fastapi.SDToolPlusSettings", return_value=sdtoolplus_settings
+        ):
             return create_app()
