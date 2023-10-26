@@ -52,7 +52,7 @@ include:
       - /gitlab-ci-templates/common/pre-commit.v1.yml
       - /gitlab-ci-templates/common/conventional-commits.v1.yml
       - /gitlab-ci-templates/python/pytest.v1.yml
-      #- /gitlab-ci-templates/common/docker-build.v1.yml
-      #- /gitlab-ci-templates/common/docker-release.v1.yml
+      - /gitlab-ci-templates/common/docker-build.v1.yml
+      - /gitlab-ci-templates/common/docker-release.v1.yml
       #- /gitlab-ci-templates/common/config-updater-salt.v1.yml
       #- gitlab-ci-templates/common/config-updater-flux.v1.yml
