@@ -13,6 +13,9 @@ stages:
 variables:
   IMAGE_SHA: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
+  RELEASE_REGISTRY: docker.io
+  RELEASE_REGISTRY_IMAGE: index.docker.io/magentaaps/os2mo-sdtool-plus
+
   PYTEST_COV_MODULE: sdtoolplus
   PYTEST_COV_FAIL_UNDER: 50
 
