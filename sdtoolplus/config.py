@@ -10,13 +10,13 @@ from .log import LogLevel
 class SDToolPlusSettings(BaseSettings):
     # Credentials, etc. for authenticating against MO and performing GraphQL queries
     mora_base: str = "http://mo:5000"
-    client_id: str = "dipex"
+    client_id: str = "integration_sdtool_plus"
     client_secret: SecretStr
     auth_realm: str = "mo"
     auth_server: str = "http://keycloak:8080/auth"
 
     # Configures log level
-    log_level: LogLevel = LogLevel.DEBUG
+    log_level: LogLevel = LogLevel.INFO
 
     # Configures Sentry error monitoring
     sentry_dsn: str | None = None
