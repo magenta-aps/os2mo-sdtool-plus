@@ -90,12 +90,10 @@ class TestFastAPIApp:
         by `metric_name`.
         """
         response: Response = client.get("/metrics")
-        match: re.Match | None = re.search(
+        match: re.Match = re.search(  # type: ignore
             r"^%s (?P<val>.*?)$" % metric_name,  # Find metric name and value
             response.content.decode("ascii"),  # Convert from `bytes` to `str`
             re.MULTILINE,  # Response consists of multiple lines
         )
-        if match is not None:
-            val: float = float(match.groupdict()["val"])
-            return val
-        raise ValueError("could not find %r metric value" % metric_name)
+        val: float = float(match.groupdict()["val"])
+        return val
