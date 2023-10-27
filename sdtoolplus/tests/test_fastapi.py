@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import re
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -40,6 +41,8 @@ class TestFastAPIApp:
             client: TestClient = TestClient(
                 self._get_fastapi_app_instance(sdtoolplus_settings)
             )
+            # Arrange: get initial value of "last run" metric
+            last_run_val_before: float = self._get_last_run_metric(client)
             # Act
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
@@ -48,6 +51,10 @@ class TestFastAPIApp:
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
+            # Assert: check that the "last run" metric has incremented from 0.0
+            last_run_val_after: float = self._get_last_run_metric(client)
+            assert last_run_val_before == 0.0
+            assert last_run_val_after > last_run_val_before
 
     def test_post_trigger_dry(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
@@ -73,3 +80,20 @@ class TestFastAPIApp:
             "sdtoolplus.fastapi.SDToolPlusSettings", return_value=sdtoolplus_settings
         ):
             return create_app()
+
+    def _get_last_run_metric(
+        self,
+        client: TestClient,
+        metric_name: str = "dipex_last_success_timestamp_seconds",
+    ) -> float:
+        """Parse the response of `GET /metrics`, finding the value of the metric given
+        by `metric_name`.
+        """
+        response: Response = client.get("/metrics")
+        match: re.Match = re.search(  # type: ignore
+            r"^%s (?P<val>.*?)$" % metric_name,  # Find metric name and value
+            response.content.decode("ascii"),  # Convert from `bytes` to `str`
+            re.MULTILINE,  # Response consists of multiple lines
+        )
+        val: float = float(match.groupdict()["val"])
+        return val
