@@ -20,6 +20,7 @@ from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..tree_diff_executor import TreeDiffExecutor
+from .conftest import SharedIdentifier
 
 
 class TestApp:
@@ -70,6 +71,39 @@ class TestApp:
 
             # Assert: check that we called the (mocked) `get_sd_tree` function
             mock_get_sd_tree.assert_called_once()
+
+    def test_as_single_tree_called_with_correct_path(
+        self,
+        mock_mo_org_unit_type_map,
+        mock_mo_org_unit_level_map,
+        mock_mo_org_tree_import,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        with ExitStack() as stack:
+            # Arrange
+            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(stack, "get_sd_tree", MagicMock())
+
+            mock_as_single_tree = MagicMock()
+            mock_mo_org_tree_import.as_single_tree = mock_as_single_tree
+
+            app: App = self._get_app_instance(
+                sdtoolplus_settings,
+                mo_subtree_path_for_root=[
+                    SharedIdentifier.child_org_unit_uuid,
+                    SharedIdentifier.grandchild_org_unit_uuid,
+                ],
+            )
+
+            # Act
+            app.get_tree_diff_executor()
+
+            # Assert
+            mock_as_single_tree.assert_called_once_with(
+                f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}"
+            )
 
     def test_execute(
         self,
