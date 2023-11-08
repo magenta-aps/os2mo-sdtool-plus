@@ -5,6 +5,7 @@ from inspect import isgenerator
 from typing import Any
 from unittest.mock import MagicMock
 from unittest.mock import patch
+from uuid import UUID
 from uuid import uuid4
 
 import pytest
@@ -184,3 +185,22 @@ class TestApp:
         for name, value in kwargs.items():
             setattr(sdtoolplus_settings, name, value)
         return App(sdtoolplus_settings)
+
+    def test_get_effective_root_path(self):
+        # Arrange
+        ou_uuid1 = UUID("10000000-0000-0000-0000-000000000000")
+        ou_uuid2 = UUID("20000000-0000-0000-0000-000000000000")
+        ou_uuid3 = UUID("30000000-0000-0000-0000-000000000000")
+
+        # Act
+        path: str = App._get_effective_root_path([ou_uuid1, ou_uuid2, ou_uuid3])
+
+        # Assert
+        assert path == (
+            "10000000-0000-0000-0000-000000000000/"
+            "20000000-0000-0000-0000-000000000000/"
+            "30000000-0000-0000-0000-000000000000"
+        )
+
+    def test_get_effective_root_path_for_empty_list(self):
+        assert App._get_effective_root_path([]) == ""

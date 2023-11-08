@@ -121,3 +121,7 @@ class App:
                 response.json(),
             )
         return response.status_code == 200
+
+    @staticmethod
+    def _get_effective_root_path(path_ou_uuids: list[OrgUnitUUID]):
+        return "/".join([str(ou_uuid) for ou_uuid in path_ou_uuids])
