@@ -5,6 +5,7 @@ from pydantic import BaseSettings
 from pydantic import SecretStr
 
 from .log import LogLevel
+from .mo_org_unit_importer import OrgUnitUUID
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -14,6 +15,10 @@ class SDToolPlusSettings(BaseSettings):
     client_secret: SecretStr
     auth_realm: str = "mo"
     auth_server: str = "http://keycloak:8080/auth"
+
+    # Compare the SD tree to the MO tree found at the path. The path must be a
+    # list of UUIDs
+    mo_subtree_path_for_root: list[OrgUnitUUID] = []
 
     # Configures log level
     log_level: LogLevel = LogLevel.INFO
