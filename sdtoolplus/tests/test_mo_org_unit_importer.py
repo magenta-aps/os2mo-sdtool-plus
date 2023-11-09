@@ -86,6 +86,27 @@ class TestMOOrgTreeImport:
         assert [child.is_leaf for child in root.children]
 
     def test_as_single_tree_for_subtree(self, mock_graphql_session):
+        """
+        We test that function 'as_single_tree' is capable of generating af subtree
+        of OUs from the units in MO. The feature we are testing is most easily
+        explained by an example. Assume the OU tree in MO looks like this:
+
+             A (uuidA)
+            / \
+          B    C (uuidC)
+         / \  / \
+        D  E F   G (uuidG)
+                / \
+               H   I
+
+        Calling the function as 'instance.as_single_tree("uuidC/uuidG")' should
+        return the tree:
+
+                root (UUID of the MO organisation)
+                / \
+               H   I
+        """
+
         # Arrange
         unit1 = OrgUnitNode(
             uuid=UUID("10000000-0000-0000-0000-000000000000"), name="unit1"

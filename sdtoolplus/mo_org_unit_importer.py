@@ -130,6 +130,29 @@ class MOOrgTreeImport:
         return parse_obj_as(list[OrgUnit], org_units)
 
     def as_single_tree(self, path: str = "") -> OrgUnitNode:
+        """
+        The is capable of generating a (sub)tree of OUs from the units in MO.
+        The feature is most easily explained by an example. Assume the OU
+        tree in MO looks like this:
+
+             A (uuidA)
+            / \
+          B    C (uuidC)
+         / \  / \
+        D  E F   G (uuidG)
+                / \
+               H   I
+
+        Calling the function as 'instance.as_single_tree("uuidC/uuidG")'
+        returns the tree:
+
+                root (UUID of the MO organisation)
+                / \
+               H   I
+
+        It 'path' is the empty string, the whole tree is returned
+        """
+
         children = self._build_trees(self.get_org_units())
         root = OrgUnitNode(
             uuid=self.get_org_uuid(),
