@@ -7,7 +7,6 @@ from uuid import UUID
 
 import anytree
 import pydantic
-from anytree import Resolver
 from gql import gql
 from pydantic import parse_obj_as
 from ramodels.mo import Validity
@@ -141,7 +140,7 @@ class MOOrgTreeImport:
         )
 
         if path:
-            resolver = Resolver("uuid")
+            resolver = anytree.Resolver("uuid")
             new_root = resolver.get(root, path)
             root = OrgUnitNode(
                 uuid=self.get_org_uuid(),
