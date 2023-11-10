@@ -131,7 +131,7 @@ class MOOrgTreeImport:
 
     def as_single_tree(self, path: str = "") -> OrgUnitNode:
         """
-        The is capable of generating a (sub)tree of OUs from the units in MO.
+        Generates a (sub)tree of OUs from the units in MO.
         The feature is most easily explained by an example. Assume the OU
         tree in MO looks like this:
 
@@ -150,7 +150,7 @@ class MOOrgTreeImport:
                 / \
                H   I
 
-        It 'path' is the empty string, the whole tree is returned
+        If 'path' is the empty string, the whole tree is returned
         """
 
         children = self._build_trees(self.get_org_units())
