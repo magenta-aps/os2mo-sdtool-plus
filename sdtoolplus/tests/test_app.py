@@ -5,6 +5,7 @@ from inspect import isgenerator
 from typing import Any
 from unittest.mock import MagicMock
 from unittest.mock import patch
+from uuid import UUID
 from uuid import uuid4
 
 import pytest
@@ -17,8 +18,11 @@ from ..diff_org_trees import AddOperation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
+from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
+from ..sd.tree import build_tree
 from ..tree_diff_executor import TreeDiffExecutor
+from .conftest import SharedIdentifier
 
 
 class TestApp:
@@ -69,6 +73,89 @@ class TestApp:
 
             # Assert: check that we called the (mocked) `get_sd_tree` function
             mock_get_sd_tree.assert_called_once()
+
+    def test_as_single_tree_called_with_correct_path(
+        self,
+        mock_mo_org_unit_type_map,
+        mock_mo_org_unit_level_map,
+        mock_mo_org_tree_import,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        with ExitStack() as stack:
+            # Arrange
+            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(stack, "get_sd_tree", MagicMock())
+
+            mock_as_single_tree = MagicMock()
+            mock_mo_org_tree_import.as_single_tree = mock_as_single_tree
+
+            app: App = self._get_app_instance(
+                sdtoolplus_settings,
+                mo_subtree_path_for_root=[
+                    SharedIdentifier.child_org_unit_uuid,
+                    SharedIdentifier.grandchild_org_unit_uuid,
+                ],
+            )
+
+            # Act
+            app.get_tree_diff_executor()
+
+            # Assert
+            mock_as_single_tree.assert_called_once_with(
+                f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}"
+            )
+
+    def test_get_tree_diff_executor_for_mo_subtree_case(
+        self,
+        mock_mo_org_unit_type_map,
+        mock_mo_org_unit_level_map,
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+
+        # The SD tree
+        sd_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+
+        # The MO tree
+        mo_root = OrgUnitNode(uuid=SharedIdentifier.root_org_uuid, name="<root>")
+        mo_root_sub = OrgUnitNode(
+            uuid=UUID("11000000-0000-0000-0000-000000000000"),
+            name="mo_root_sub",
+            parent=mo_root,
+            children=build_tree(
+                mock_sd_get_organization_response,
+                mock_sd_get_department_response,
+                mock_mo_org_unit_level_map,
+            ).children,
+        )
+
+        mock_mo_org_tree_import = MagicMock()
+        mock_mo_org_tree_import._build_trees = MagicMock(return_value=[mo_root])
+
+        with ExitStack() as stack:
+            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(stack, "get_sd_tree", sd_tree)
+
+            app: App = self._get_app_instance(
+                sdtoolplus_settings,
+                mo_subtree_path_for_root=[UUID("11000000-0000-0000-0000-000000000000")],
+            )
+
+            # Act
+            actual_iter = app.get_tree_diff_executor().execute()
+
+            # Assert
+            assert list(actual_iter) == []
 
     def test_execute(
         self,
@@ -184,3 +271,22 @@ class TestApp:
         for name, value in kwargs.items():
             setattr(sdtoolplus_settings, name, value)
         return App(sdtoolplus_settings)
+
+    def test_get_effective_root_path(self):
+        # Arrange
+        ou_uuid1 = UUID("10000000-0000-0000-0000-000000000000")
+        ou_uuid2 = UUID("20000000-0000-0000-0000-000000000000")
+        ou_uuid3 = UUID("30000000-0000-0000-0000-000000000000")
+
+        # Act
+        path: str = App._get_effective_root_path([ou_uuid1, ou_uuid2, ou_uuid3])
+
+        # Assert
+        assert path == (
+            "10000000-0000-0000-0000-000000000000/"
+            "20000000-0000-0000-0000-000000000000/"
+            "30000000-0000-0000-0000-000000000000"
+        )
+
+    def test_get_effective_root_path_for_empty_list(self):
+        assert App._get_effective_root_path([]) == ""

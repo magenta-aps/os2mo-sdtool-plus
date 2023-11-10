@@ -75,8 +75,13 @@ class App:
         )
 
         # Construct org tree diff
+        mo_subtree_path_for_root = App._get_effective_root_path(
+            self.settings.mo_subtree_path_for_root
+        )
         tree_diff = OrgTreeDiff(
-            mo_org_tree.as_single_tree(), sd_org_tree, mo_org_unit_type
+            mo_org_tree.as_single_tree(mo_subtree_path_for_root),
+            sd_org_tree,
+            mo_org_unit_type,
         )
 
         # Construct tree diff executor
@@ -121,3 +126,7 @@ class App:
                 response.json(),
             )
         return response.status_code == 200
+
+    @staticmethod
+    def _get_effective_root_path(path_ou_uuids: list[OrgUnitUUID]):
+        return "/".join([str(ou_uuid) for ou_uuid in path_ou_uuids])
