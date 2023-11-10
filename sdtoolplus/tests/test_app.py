@@ -18,7 +18,9 @@ from ..diff_org_trees import AddOperation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
+from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
+from ..sd.tree import build_tree
 from ..tree_diff_executor import TreeDiffExecutor
 from .conftest import SharedIdentifier
 
@@ -104,6 +106,56 @@ class TestApp:
             mock_as_single_tree.assert_called_once_with(
                 f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}"
             )
+
+    def test_get_tree_diff_executor_for_mo_subtree_case(
+        self,
+        mock_mo_org_unit_type_map,
+        mock_mo_org_unit_level_map,
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+
+        # The SD tree
+        sd_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+
+        # The MO tree
+        mo_root = OrgUnitNode(uuid=SharedIdentifier.root_org_uuid, name="<root>")
+        mo_root_sub = OrgUnitNode(
+            uuid=UUID("11000000-0000-0000-0000-000000000000"),
+            name="mo_root_sub",
+            parent=mo_root,
+            children=build_tree(
+                mock_sd_get_organization_response,
+                mock_sd_get_department_response,
+                mock_mo_org_unit_level_map,
+            ).children,
+        )
+
+        mock_mo_org_tree_import = MagicMock()
+        mock_mo_org_tree_import._build_trees = MagicMock(return_value=[mo_root])
+
+        with ExitStack() as stack:
+            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(stack, "get_sd_tree", sd_tree)
+
+            app: App = self._get_app_instance(
+                sdtoolplus_settings,
+                mo_subtree_path_for_root=[UUID("11000000-0000-0000-0000-000000000000")],
+            )
+
+            # Act
+            actual_iter = app.get_tree_diff_executor().execute()
+
+            # Assert
+            assert list(actual_iter) == []
 
     def test_execute(
         self,
