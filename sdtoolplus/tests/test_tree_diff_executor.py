@@ -130,6 +130,7 @@ class TestTreeDiffExecutor:
         assert isinstance(
             tree_diff_executor.get_mutation(
                 AddOperation(
+                    uuid=uuid.uuid4(),
                     parent_uuid=uuid.uuid4(),
                     name="foo",
                     org_unit_type_uuid=uuid.uuid4(),

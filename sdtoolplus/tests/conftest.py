@@ -479,6 +479,7 @@ def expected_operations(
         ),
         # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
         AddOperation(
+            uuid=uuid.UUID("30000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
             name="Department 3",
             org_unit_type_uuid=mock_mo_org_unit_type.uuid,
@@ -486,6 +487,7 @@ def expected_operations(
             validity=sd_expected_validity,
         ),
         AddOperation(
+            uuid=uuid.UUID("40000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
             name="Department 4",
             org_unit_type_uuid=mock_mo_org_unit_type.uuid,
@@ -494,6 +496,7 @@ def expected_operations(
         ),
         # SD unit "Department 5" is added under MO unit "Child"
         AddOperation(
+            uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Department 5",
             org_unit_type_uuid=mock_mo_org_unit_type.uuid,

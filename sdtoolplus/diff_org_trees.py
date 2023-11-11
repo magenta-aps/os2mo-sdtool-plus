@@ -104,6 +104,7 @@ class UpdateOperation(Operation):
 
 @dataclass
 class AddOperation(Operation):
+    uuid: UUID
     parent_uuid: UUID
     name: str
     org_unit_type_uuid: UUID
@@ -117,6 +118,7 @@ class AddOperation(Operation):
         org_unit_type: MOClass,
     ) -> Self | None:
         instance = cls(
+            uuid=diff_level.t2.uuid,
             parent_uuid=diff_level.up.up.t1.uuid,
             name=diff_level.t2.name,
             org_unit_type_uuid=org_unit_type.uuid,
