@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
-import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Self
+from uuid import UUID
 
 from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
@@ -53,7 +53,7 @@ class Operation(abc.ABC):
 
 @dataclass
 class RemoveOperation(Operation):
-    uuid: uuid.UUID
+    uuid: UUID
 
     @classmethod
     def from_diff_level(
@@ -71,7 +71,7 @@ class RemoveOperation(Operation):
 
 @dataclass
 class UpdateOperation(Operation):
-    uuid: uuid.UUID
+    uuid: UUID
     attr: str
     value: str
     validity: Validity
@@ -104,10 +104,10 @@ class UpdateOperation(Operation):
 
 @dataclass
 class AddOperation(Operation):
-    parent_uuid: uuid.UUID
+    parent_uuid: UUID
     name: str
-    org_unit_type_uuid: uuid.UUID
-    org_unit_level_uuid: uuid.UUID
+    org_unit_type_uuid: UUID
+    org_unit_level_uuid: UUID
     validity: Validity
 
     @classmethod
