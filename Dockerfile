@@ -17,4 +17,7 @@ RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root --no-dev
 
 COPY . ./
 
+# Useful for debugging
+RUN apt update && apt install -y jq vim less
+
 CMD ["./docker/start.sh"]
