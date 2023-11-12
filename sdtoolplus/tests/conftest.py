@@ -110,21 +110,13 @@ class _MockGraphQLSession:
     def _execute_mutation(self, definition: dict) -> dict:
         # Extract mutation name, e.g. "org_unit_create", "org_unit_update", etc.
         name: str = definition["selection_set"]["selections"][0]["name"]["value"]
-        if name == "org_unit_create":
-            # Pretend we have created a new org unit, and return a new UUID
-            return {name: {"uuid": str(uuid.uuid4())}}
-        elif name == "org_unit_update":
-            # Pretend we have updated an existing org unit, and returns its original
-            # UUID.
-            arguments: list[dict] = definition["selection_set"]["selections"][0][
-                "arguments"
-            ][0]["value"]["fields"]
-            for arg in arguments:
-                if arg["name"]["value"] == "uuid":
-                    return {name: {"uuid": arg["value"]["value"]}}
-            raise ValueError("could not find org unit UUID in %r" % arguments)
-        else:
-            raise ValueError("don't know how to mock response for mutation %r" % name)
+        arguments: list[dict] = definition["selection_set"]["selections"][0][
+            "arguments"
+        ][0]["value"]["fields"]
+        for arg in arguments:
+            if arg["name"]["value"] == "uuid":
+                return {name: {"uuid": arg["value"]["value"]}}
+        raise ValueError("could not find org unit UUID in %r" % arguments)
 
     @property
     def _mock_response_for_get_org_uuid(self) -> dict:

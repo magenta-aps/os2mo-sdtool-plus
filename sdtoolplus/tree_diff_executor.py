@@ -111,6 +111,7 @@ class AddOrgUnitMutation(Mutation):
     @property
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
+            "uuid": str(self.operation.uuid),  # type: ignore
             "parent": str(self.operation.parent_uuid),  # type: ignore
             "name": self.operation.name,  # type: ignore
             "org_unit_type": str(self.operation.org_unit_type_uuid),  # type: ignore

@@ -65,6 +65,7 @@ class TestTreeDiffExecutor:
             if isinstance(operation, AddOperation):
                 assert isinstance(mutation, AddOrgUnitMutation)
                 assert isinstance(result, uuid.UUID)  # Result is UUID of new org unit
+                assert result == operation.uuid
 
     def test_execute_handles_transportqueryerror(
         self,
