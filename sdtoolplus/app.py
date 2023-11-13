@@ -73,13 +73,26 @@ class App:
             self.settings.sd_institution_identifier,
             mo_org_unit_level_map,
         )
+        logger.debug(
+            "SD tree",
+            sd_org_tree=repr(sd_org_tree),
+            children=[repr(child) for child in sd_org_tree.children],
+        )
 
-        # Construct org tree diff
+        # Get the MO tree
         mo_subtree_path_for_root = App._get_effective_root_path(
             self.settings.mo_subtree_path_for_root
         )
+        mo_org_tree_as_single = mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+        logger.debug(
+            "MO tree",
+            mo_org_tree=repr(mo_org_tree_as_single),
+            children=[repr(child) for child in mo_org_tree_as_single.children],
+        )
+
+        # Construct org tree diff
         tree_diff = OrgTreeDiff(
-            mo_org_tree.as_single_tree(mo_subtree_path_for_root),
+            mo_org_tree_as_single,
             sd_org_tree,
             mo_org_unit_type,
         )
