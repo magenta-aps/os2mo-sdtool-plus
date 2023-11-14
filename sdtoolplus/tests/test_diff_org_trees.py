@@ -4,8 +4,10 @@ import uuid
 from unittest.mock import Mock
 
 import pytest
+from anytree import Resolver
 from anytree.render import RenderTree
 from deepdiff.helper import CannotCompare
+from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -53,12 +55,64 @@ class TestOrgTreeDiff:
         print("SD Tree")
         print(RenderTree(sd_tree))
         print()
+
         for operation in tree_diff.get_operations():
             print(operation)
 
         # Compare actual emitted operations to expected operations
         actual_operations: list[AnyOperation] = list(tree_diff.get_operations())
         assert actual_operations == expected_operations
+
+    def test_get_operation_for_move_scenario(
+        self,
+        mock_sd_get_organization_response: GetOrganizationResponse,
+        mock_sd_get_department_response: GetDepartmentResponse,
+        mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
+        mock_mo_org_unit_type: MOClass,
+    ):
+        """
+        This tests the get_operations function in the case where we
+        move Department 4 from Department 2 to Department 5 in the tree below:
+
+        <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+            ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+            │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+            │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+                └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+        """
+
+        # Arrange
+
+        resolver = Resolver("name")
+
+        mo_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+        sd_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+
+        # Move Department 4 to Department 5 in the SD tree, so it differs
+        # from the MO tree
+        dep4 = resolver.get(sd_tree, "Department 1/Department 2/Department 4")
+        dep5 = resolver.get(sd_tree, "Department 1/Department 5")
+        dep4.parent = dep5
+
+        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+
+        # Act
+        operations = list(org_tree_diff.get_operations())
+
+        # Assert
+        assert len(operations) == 1
+        assert isinstance(operations[0], MoveOperation)
+        # TODO: add more asserts regarding the MoveOperation (to be added in a later commit)
 
     @pytest.mark.parametrize(
         "path,expected_result",

@@ -183,26 +183,39 @@ class OrgTreeDiff:
             return x.uuid == y.uuid
         raise CannotCompare() from None
 
+    @staticmethod
+    def _root_key_children_filter(items: list[DiffLevel]) -> list[DiffLevel]:
+        return [item for item in items if item.get_root_key() == "children"]
+
     def get_operations(
         self,
     ) -> Iterator[AnyOperation]:
-        # Emit removal operations from "id-based diff"
-        for item in self.uuid_deepdiff.get("iterable_item_removed", []):
-            if item.get_root_key() == "children":
-                yield MoveOperation.from_diff_level(item, self._mo_org_unit_type)
+        # Get items to move, add and update
+        move_items = list(self.uuid_deepdiff.get("iterable_item_removed", []))
+        add_items = list(self.structural_deepdiff.get("iterable_item_added", []))
+        update_items = list(self.uuid_deepdiff.get("attribute_removed", [])) + list(
+            self.uuid_deepdiff.get("values_changed", [])
+        )
+
+        # Filter based on the item root key
+        move_items = OrgTreeDiff._root_key_children_filter(move_items)
+        add_items = OrgTreeDiff._root_key_children_filter(add_items)
+        update_items = OrgTreeDiff._root_key_children_filter(update_items)
+
+        # Only add an "Add" item if it is not also moved
+        move_items_uuids = [item.t1.uuid for item in move_items]
+        add_items = [item for item in add_items if item.t2.uuid not in move_items_uuids]
+
+        # Emit move operations from "id-based diff"
+        for item in move_items:
+            yield MoveOperation.from_diff_level(item, self._mo_org_unit_type)
 
         # Emit update operations from "id-based diff"
-        for iterable_name in ("attribute_removed", "values_changed"):
-            iterable = self.uuid_deepdiff.get(iterable_name, [])
-            for item in iterable:
-                if item.get_root_key() == "children":
-                    operation = UpdateOperation.from_diff_level(
-                        item, self._mo_org_unit_type
-                    )
-                    if operation:
-                        yield operation
+        for item in update_items:
+            operation = UpdateOperation.from_diff_level(item, self._mo_org_unit_type)
+            if operation:
+                yield operation
 
         # Emit add operations from "structural diff"
-        for item in self.structural_deepdiff.get("iterable_item_added", []):
-            if item.get_root_key() == "children":
-                yield AddOperation.from_diff_level(item, self._mo_org_unit_type)
+        for item in add_items:
+            yield AddOperation.from_diff_level(item, self._mo_org_unit_type)
