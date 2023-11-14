@@ -17,8 +17,8 @@ from ramodels.mo import Validity
 
 from .diff_org_trees import AddOperation
 from .diff_org_trees import AnyOperation
+from .diff_org_trees import MoveOperation
 from .diff_org_trees import OrgTreeDiff
-from .diff_org_trees import RemoveOperation
 from .diff_org_trees import UpdateOperation
 
 
@@ -63,7 +63,7 @@ class Mutation(abc.ABC):
 
 
 class RemoveOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, operation: RemoveOperation):
+    def __init__(self, session: GraphQLClient, operation: MoveOperation):
         super().__init__(session, operation)
 
     def execute(self):
@@ -152,7 +152,7 @@ class TreeDiffExecutor:
             yield operation, mutation
 
     def get_mutation(self, operation: AnyOperation) -> AnyMutation:
-        if isinstance(operation, RemoveOperation):
+        if isinstance(operation, MoveOperation):
             return RemoveOrgUnitMutation(self._session, operation)
         if isinstance(operation, UpdateOperation):
             return UpdateOrgUnitMutation(self._session, operation)

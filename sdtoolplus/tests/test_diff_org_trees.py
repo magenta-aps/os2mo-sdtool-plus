@@ -11,9 +11,9 @@ from sdclient.responses import GetOrganizationResponse
 
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import AnyOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
@@ -33,7 +33,7 @@ class TestOrgTreeDiff:
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
         mock_mo_org_unit_type: MOClass,
-        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()

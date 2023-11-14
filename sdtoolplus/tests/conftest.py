@@ -19,8 +19,8 @@ from sdclient.responses import GetOrganizationResponse
 
 from ..config import SDToolPlusSettings
 from ..diff_org_trees import AddOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
@@ -437,10 +437,10 @@ def expected_operations(
     sd_expected_validity: Validity,
     mock_mo_org_unit_type: MOClass,
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
-) -> list[AddOperation | UpdateOperation | RemoveOperation]:
+) -> list[AddOperation | UpdateOperation | MoveOperation]:
     return [
         # MO unit to be removed is indeed removed
-        RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
+        MoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
         # MO unit "Grandchild" is renamed to "Department 2"
         UpdateOperation(
             uuid=SharedIdentifier.grandchild_org_unit_uuid,

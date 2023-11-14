@@ -15,8 +15,8 @@ from raclients.graph.client import PersistentGraphQLClient
 from ..app import App
 from ..config import SDToolPlusSettings
 from ..diff_org_trees import AddOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
@@ -160,7 +160,7 @@ class TestApp:
     def test_execute(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
@@ -198,7 +198,7 @@ class TestApp:
     def test_execute_dry(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
@@ -250,10 +250,10 @@ class TestApp:
     def _assert_expected_operations(
         self,
         result: list[tuple],
-        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
     ) -> None:
         """Assert that the actual operations in `result` match the expected operations."""
-        actual_operations: list[AddOperation | UpdateOperation | RemoveOperation] = [
+        actual_operations: list[AddOperation | UpdateOperation | MoveOperation] = [
             item[0] for item in result
         ]
         assert actual_operations == expected_operations

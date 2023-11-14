@@ -9,9 +9,9 @@ from graphql import GraphQLSchema
 from ramodels.mo import Validity
 
 from ..diff_org_trees import AddOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import Mutation
@@ -56,7 +56,7 @@ class TestTreeDiffExecutor:
             assert operation is not None
             assert mutation is not None
             assert result is not None
-            if isinstance(operation, RemoveOperation):
+            if isinstance(operation, MoveOperation):
                 assert isinstance(mutation, RemoveOrgUnitMutation)
                 assert isinstance(result, UnsupportedMutation)
             if isinstance(operation, UpdateOperation):
@@ -77,7 +77,7 @@ class TestTreeDiffExecutor:
             mock_org_tree_diff,
         )
         for operation, mutation, result in tree_diff_executor.execute():
-            if isinstance(operation, RemoveOperation):
+            if isinstance(operation, MoveOperation):
                 assert isinstance(result, UnsupportedMutation)
             else:
                 assert isinstance(result, TransportQueryError)
@@ -110,7 +110,7 @@ class TestTreeDiffExecutor:
 
         # Test `RemoveOperation` produces `RemoveOrgUnitMutation`
         assert isinstance(
-            tree_diff_executor.get_mutation(RemoveOperation(uuid=uuid.uuid4())),
+            tree_diff_executor.get_mutation(MoveOperation(uuid=uuid.uuid4())),
             RemoveOrgUnitMutation,
         )
 

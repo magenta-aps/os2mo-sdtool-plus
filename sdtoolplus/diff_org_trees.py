@@ -52,7 +52,7 @@ class Operation(abc.ABC):
 
 
 @dataclass
-class RemoveOperation(Operation):
+class MoveOperation(Operation):
     uuid: UUID
 
     @classmethod
@@ -132,7 +132,7 @@ class AddOperation(Operation):
         return f"Add {self._diff_level.t2} as child of MO org unit {self._diff_level.up.up.t1}"
 
 
-AnyOperation = AddOperation | UpdateOperation | RemoveOperation | None
+AnyOperation = AddOperation | UpdateOperation | MoveOperation | None
 
 
 class OrgTreeDiff:
@@ -158,13 +158,14 @@ class OrgTreeDiff:
     def _get_deepdiff_instance(
         self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode, **kwargs
     ) -> DeepDiff:
-        return DeepDiff(
+        diff = DeepDiff(
             mo_org_tree,
             sd_org_tree,
             view="tree",
             include_obj_callback=self._is_relevant,
             **kwargs,
         )
+        return diff
 
     @staticmethod
     def _is_relevant(node, path: str) -> bool:
@@ -188,7 +189,7 @@ class OrgTreeDiff:
         # Emit removal operations from "id-based diff"
         for item in self.uuid_deepdiff.get("iterable_item_removed", []):
             if item.get_root_key() == "children":
-                yield RemoveOperation.from_diff_level(item, self._mo_org_unit_type)
+                yield MoveOperation.from_diff_level(item, self._mo_org_unit_type)
 
         # Emit update operations from "id-based diff"
         for iterable_name in ("attribute_removed", "values_changed"):
