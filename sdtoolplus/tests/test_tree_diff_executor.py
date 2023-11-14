@@ -14,8 +14,8 @@ from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import UpdateOperation
 from ..tree_diff_executor import AddOrgUnitMutation
+from ..tree_diff_executor import MoveOrgUnitMutation
 from ..tree_diff_executor import Mutation
-from ..tree_diff_executor import RemoveOrgUnitMutation
 from ..tree_diff_executor import TreeDiffExecutor
 from ..tree_diff_executor import UnsupportedMutation
 from ..tree_diff_executor import UpdateOrgUnitMutation
@@ -57,7 +57,7 @@ class TestTreeDiffExecutor:
             assert mutation is not None
             assert result is not None
             if isinstance(operation, MoveOperation):
-                assert isinstance(mutation, RemoveOrgUnitMutation)
+                assert isinstance(mutation, MoveOrgUnitMutation)
                 assert isinstance(result, UnsupportedMutation)
             if isinstance(operation, UpdateOperation):
                 assert isinstance(mutation, UpdateOrgUnitMutation)
@@ -111,7 +111,7 @@ class TestTreeDiffExecutor:
         # Test `RemoveOperation` produces `RemoveOrgUnitMutation`
         assert isinstance(
             tree_diff_executor.get_mutation(MoveOperation(uuid=uuid.uuid4())),
-            RemoveOrgUnitMutation,
+            MoveOrgUnitMutation,
         )
 
         # Test `UpdateOperation` produces `UpdateOrgUnitMutation`

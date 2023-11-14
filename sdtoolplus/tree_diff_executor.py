@@ -62,7 +62,7 @@ class Mutation(abc.ABC):
         return None
 
 
-class RemoveOrgUnitMutation(Mutation):
+class MoveOrgUnitMutation(Mutation):
     def __init__(self, session: GraphQLClient, operation: MoveOperation):
         super().__init__(session, operation)
 
@@ -124,7 +124,7 @@ class AddOrgUnitMutation(Mutation):
         return uuid.UUID(result["org_unit_create"]["uuid"])
 
 
-AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | RemoveOrgUnitMutation
+AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | MoveOrgUnitMutation
 
 
 class TreeDiffExecutor:
@@ -153,7 +153,7 @@ class TreeDiffExecutor:
 
     def get_mutation(self, operation: AnyOperation) -> AnyMutation:
         if isinstance(operation, MoveOperation):
-            return RemoveOrgUnitMutation(self._session, operation)
+            return MoveOrgUnitMutation(self._session, operation)
         if isinstance(operation, UpdateOperation):
             return UpdateOrgUnitMutation(self._session, operation)
         if isinstance(operation, AddOperation):
