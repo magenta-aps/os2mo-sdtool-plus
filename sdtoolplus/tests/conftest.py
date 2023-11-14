@@ -43,9 +43,11 @@ def graphql_testing_schema() -> GraphQLSchema:
 
 
 class SharedIdentifier:
-    root_org_uuid: OrgUUID = uuid.uuid4()
-    child_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
-    grandchild_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
+    root_org_uuid: OrgUUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+    child_org_unit_uuid: OrgUnitUUID = uuid.UUID("10000000-0000-0000-0000-000000000000")
+    grandchild_org_unit_uuid: OrgUnitUUID = uuid.UUID(
+        "20000000-0000-0000-0000-000000000000"
+    )
     removed_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
 
 
