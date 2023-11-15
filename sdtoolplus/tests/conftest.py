@@ -8,6 +8,7 @@ from itertools import chain
 from typing import Any
 
 import pytest
+from anytree import Resolver
 from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
@@ -413,6 +414,50 @@ def mock_org_tree_diff(
     )
     # Construct tree diff
     return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+
+
+@pytest.fixture()
+def mock_org_tree_diff_move_case(
+    mock_sd_get_organization_response,
+    mock_sd_get_department_response,
+    mock_mo_org_unit_level_map,
+    mock_mo_org_unit_type,
+) -> OrgTreeDiff:
+    """
+    OrgTreeDiff instance for the scenario where we move Department 4
+    from Department 2 to Department 5 in the tree below:
+
+    <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+    └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+        ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+        │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+        │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+    """
+
+    resolver = Resolver("name")
+
+    mo_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+
+    # Move Department 4 to Department 5 in the SD tree, so it differs
+    # from the MO tree
+    dep4 = resolver.get(sd_tree, "Department 1/Department 2/Department 4")
+    dep5 = resolver.get(sd_tree, "Department 1/Department 5")
+    dep4.parent = dep5
+    # Dangerous: dep4.parent_uuid is now wrong
+
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    return org_tree_diff
 
 
 @pytest.fixture()

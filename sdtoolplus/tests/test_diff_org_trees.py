@@ -67,10 +67,7 @@ class TestOrgTreeDiff:
     @freeze_time("2023-11-15")
     def test_get_operation_for_move_scenario(
         self,
-        mock_sd_get_organization_response: GetOrganizationResponse,
-        mock_sd_get_department_response: GetDepartmentResponse,
-        mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
-        mock_mo_org_unit_type: MOClass,
+        mock_org_tree_diff_move_case,
     ):
         """
         This tests the get_operations function in the case where we
@@ -85,32 +82,8 @@ class TestOrgTreeDiff:
                 └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
         """
 
-        # Arrange
-
-        resolver = Resolver("name")
-
-        mo_tree = build_tree(
-            mock_sd_get_organization_response,
-            mock_sd_get_department_response,
-            mock_mo_org_unit_level_map,
-        )
-        sd_tree = build_tree(
-            mock_sd_get_organization_response,
-            mock_sd_get_department_response,
-            mock_mo_org_unit_level_map,
-        )
-
-        # Move Department 4 to Department 5 in the SD tree, so it differs
-        # from the MO tree
-        dep4 = resolver.get(sd_tree, "Department 1/Department 2/Department 4")
-        dep5 = resolver.get(sd_tree, "Department 1/Department 5")
-        dep4.parent = dep5
-        # Dangerous: dep4.parent_uuid is now wrong
-
-        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
-
         # Act
-        operations = list(org_tree_diff.get_operations())
+        operations = list(mock_org_tree_diff_move_case.get_operations())
         move_operation = operations[0]
 
         # Assert
