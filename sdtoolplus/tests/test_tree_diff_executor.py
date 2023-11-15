@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
+from datetime import datetime
 from unittest.mock import patch
 
 import pytest
@@ -108,9 +109,15 @@ class TestTreeDiffExecutor:
             mock_org_tree_diff,
         )
 
-        # Test `RemoveOperation` produces `RemoveOrgUnitMutation`
+        # Test `MoveOperation` produces `MoveOrgUnitMutation`
         assert isinstance(
-            tree_diff_executor.get_mutation(MoveOperation(uuid=uuid.uuid4())),
+            tree_diff_executor.get_mutation(
+                MoveOperation(
+                    uuid=uuid.uuid4(),
+                    parent=uuid.uuid4(),
+                    validity=Validity(from_date=datetime.now()),
+                )
+            ),
             MoveOrgUnitMutation,
         )
 

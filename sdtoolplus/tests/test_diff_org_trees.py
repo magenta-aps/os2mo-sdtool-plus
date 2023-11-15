@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
+from datetime import date
 from unittest.mock import Mock
 
 import pytest
 from anytree import Resolver
 from anytree.render import RenderTree
 from deepdiff.helper import CannotCompare
-from more_itertools import one
+from freezegun import freeze_time
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -63,6 +64,7 @@ class TestOrgTreeDiff:
         actual_operations: list[AnyOperation] = list(tree_diff.get_operations())
         assert actual_operations == expected_operations
 
+    @freeze_time("2023-11-15")
     def test_get_operation_for_move_scenario(
         self,
         mock_sd_get_organization_response: GetOrganizationResponse,
@@ -103,16 +105,22 @@ class TestOrgTreeDiff:
         dep4 = resolver.get(sd_tree, "Department 1/Department 2/Department 4")
         dep5 = resolver.get(sd_tree, "Department 1/Department 5")
         dep4.parent = dep5
+        # Dangerous: dep4.parent_uuid is now wrong
 
         org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
 
         # Act
         operations = list(org_tree_diff.get_operations())
+        move_operation = operations[0]
 
         # Assert
         assert len(operations) == 1
-        assert isinstance(operations[0], MoveOperation)
-        # TODO: add more asserts regarding the MoveOperation (to be added in a later commit)
+        assert isinstance(move_operation, MoveOperation)
+        assert move_operation.uuid == uuid.UUID("40000000-0000-0000-0000-000000000000")
+        assert move_operation.parent == uuid.UUID(
+            "50000000-0000-0000-0000-000000000000"
+        )
+        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
     @pytest.mark.parametrize(
         "path,expected_result",

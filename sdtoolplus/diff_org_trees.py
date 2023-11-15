@@ -3,9 +3,12 @@
 import abc
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Self
 from uuid import UUID
+from uuid import uuid4
 
+from anytree.cachedsearch import find
 from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
 from deepdiff.helper import CannotCompare
@@ -53,7 +56,9 @@ class Operation(abc.ABC):
 
 @dataclass
 class MoveOperation(Operation):
-    uuid: UUID
+    uuid: UUID  # The unit to move
+    parent: UUID  # The new parent
+    validity: Validity
 
     @classmethod
     def from_diff_level(
@@ -61,12 +66,23 @@ class MoveOperation(Operation):
         diff_level: DiffLevel,
         org_unit_type: MOClass,
     ) -> Self | None:
-        instance = cls(uuid=diff_level.t1.uuid)
+        MoveOperation._get_new_parent(diff_level)
+        instance = cls(
+            uuid=diff_level.t1.uuid,
+            parent=MoveOperation._get_new_parent(diff_level),
+            validity=Validity(from_date=datetime.now()),
+        )
         instance._diff_level = diff_level
         return instance
 
+    @staticmethod
+    def _get_new_parent(diff_level: DiffLevel) -> UUID:
+        sd_tree = diff_level.all_up.t2
+        ou_to_move = find(sd_tree, filter_=lambda node: node.uuid == diff_level.t1.uuid)
+        return ou_to_move.parent.uuid
+
     def __str__(self):
-        return f"Remove {self._diff_level.t1} from {self._diff_level.up.up.t1}"
+        return f"Move {self._diff_level.t1} from {self._diff_level.up.up.t1} to {MoveOperation._get_new_parent(self._diff_level)}"
 
 
 @dataclass
