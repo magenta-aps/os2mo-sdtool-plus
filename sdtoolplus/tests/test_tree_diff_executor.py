@@ -40,7 +40,7 @@ class TestMutation:
             mutation_instance.dsl_mutation_input
 
     def test_get_validity_dict_or_none(self, mutation_instance: Mutation) -> None:
-        assert mutation_instance._get_validity_dict_or_none(None) == None  # type: ignore
+        assert mutation_instance._get_validity_dict_or_none(None) is None  # type: ignore
 
 
 class TestTreeDiffExecutor:
