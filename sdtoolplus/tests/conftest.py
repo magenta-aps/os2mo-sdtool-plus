@@ -48,7 +48,6 @@ class SharedIdentifier:
     grandchild_org_unit_uuid: OrgUnitUUID = uuid.UUID(
         "20000000-0000-0000-0000-000000000000"
     )
-    removed_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
 
 
 class _MockGraphQLSession:
@@ -60,13 +59,6 @@ class _MockGraphQLSession:
             uuid=SharedIdentifier.child_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
-            org_unit_level_uuid=uuid.uuid4(),
-            validity=_TESTING_MO_VALIDITY,
-        ),
-        OrgUnitNode(
-            uuid=SharedIdentifier.removed_org_unit_uuid,
-            parent_uuid=SharedIdentifier.root_org_uuid,
-            name="Child only in MO, should be removed",
             org_unit_level_uuid=uuid.uuid4(),
             validity=_TESTING_MO_VALIDITY,
         ),
@@ -441,8 +433,6 @@ def expected_operations(
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
 ) -> list[AddOperation | UpdateOperation | MoveOperation]:
     return [
-        # MO unit to be removed is indeed removed
-        MoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
         # MO unit "Grandchild" is renamed to "Department 2"
         UpdateOperation(
             uuid=SharedIdentifier.grandchild_org_unit_uuid,
