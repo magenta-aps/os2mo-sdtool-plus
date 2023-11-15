@@ -11,7 +11,6 @@ from gql.dsl import DSLSchema
 from gql.dsl import DSLType
 from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
-from graphql import ExecutionResult
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
@@ -66,10 +65,24 @@ class MoveOrgUnitMutation(Mutation):
     def __init__(self, session: GraphQLClient, operation: MoveOperation):
         super().__init__(session, operation)
 
-    def execute(self):
-        raise UnsupportedMutation(
-            f"cannot terminate org units ({self.operation.uuid=})"
+    @property
+    def dsl_mutation(self) -> DSLMutation:
+        expr = self._dsl_schema_mutation.org_unit_update.args(
+            input=self.dsl_mutation_input,
         )
+        return DSLMutation(expr.select(self._dsl_schema.OrganisationUnitResponse.uuid))
+
+    @property
+    def dsl_mutation_input(self) -> dict[str, Any]:
+        return {
+            "uuid": str(self.operation.uuid),  # type: ignore
+            "parent": str(self.operation.parent),  # type: ignore
+            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
+        }
+
+    def execute(self) -> uuid.UUID:
+        result: dict = self._session.execute(self.gql)
+        return uuid.UUID(result["org_unit_update"]["uuid"])
 
 
 class UpdateOrgUnitMutation(Mutation):
