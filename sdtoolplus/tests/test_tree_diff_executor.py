@@ -69,11 +69,16 @@ class TestTreeDiffExecutor:
                 assert result == operation.uuid
 
     @freeze_time("2023-11-15")
-    def test_execute_for_move_ou_scenario(
+    def test_execute_for_move_afd_from_ny_to_ny(
         self,
         mock_graphql_session: _MockGraphQLSession,
-        mock_org_tree_diff_move_case: OrgTreeDiff,
+        mock_org_tree_diff_move_afd_from_ny_to_ny: OrgTreeDiff,
     ):
+        """
+        Test the case where we move an SD "Afdelings-niveau" from
+        one "NY-niveau" to another
+        """
+
         # Arrange
         ou_uuid = uuid.UUID("40000000-0000-0000-0000-000000000000")
         new_parent_uuid = uuid.UUID("50000000-0000-0000-0000-000000000000")
@@ -81,7 +86,7 @@ class TestTreeDiffExecutor:
 
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
-            mock_org_tree_diff_move_case,
+            mock_org_tree_diff_move_afd_from_ny_to_ny,
         )
 
         # Act

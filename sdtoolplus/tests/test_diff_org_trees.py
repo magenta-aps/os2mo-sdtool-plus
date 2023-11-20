@@ -65,13 +65,15 @@ class TestOrgTreeDiff:
         assert actual_operations == expected_operations
 
     @freeze_time("2023-11-15")
-    def test_get_operation_for_move_scenario(
+    def test_get_operation_for_move_afd_from_ny_to_ny(
         self,
-        mock_org_tree_diff_move_case,
+        mock_org_tree_diff_move_afd_from_ny_to_ny,
     ):
         """
         This tests the get_operations function in the case where we
-        move Department 4 from Department 2 to Department 5 in the tree below:
+        move Department 4 from Department 2 to Department 5 in the tree below.
+        I.e. we test the case where we move an SD "Afdelings-niveau" from
+        one "NY-niveau" to another.
 
         <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
         └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
@@ -83,7 +85,7 @@ class TestOrgTreeDiff:
         """
 
         # Act
-        operations = list(mock_org_tree_diff_move_case.get_operations())
+        operations = list(mock_org_tree_diff_move_afd_from_ny_to_ny.get_operations())
         move_operation = operations[0]
 
         # Assert

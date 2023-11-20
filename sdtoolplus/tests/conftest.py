@@ -417,7 +417,7 @@ def mock_org_tree_diff(
 
 
 @pytest.fixture()
-def mock_org_tree_diff_move_case(
+def mock_org_tree_diff_move_afd_from_ny_to_ny(
     mock_sd_get_organization_response,
     mock_sd_get_department_response,
     mock_mo_org_unit_level_map,
