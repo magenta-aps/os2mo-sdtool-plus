@@ -191,6 +191,7 @@ class TestOrgTreeDiff:
 
         assert isinstance(move_operation, MoveOperation)
         assert move_operation.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
+        assert move_operation.name == "Department 8"
         assert move_operation.parent == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )

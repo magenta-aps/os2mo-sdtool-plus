@@ -155,6 +155,7 @@ class TestTreeDiffExecutor:
             tree_diff_executor.get_mutation(
                 MoveOperation(
                     uuid=uuid.uuid4(),
+                    name="name",
                     parent=uuid.uuid4(),
                     validity=Validity(from_date=datetime.now()),
                 )
