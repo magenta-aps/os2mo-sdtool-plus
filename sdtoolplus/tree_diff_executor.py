@@ -11,14 +11,13 @@ from gql.dsl import DSLSchema
 from gql.dsl import DSLType
 from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
-from graphql import ExecutionResult
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
 from .diff_org_trees import AddOperation
 from .diff_org_trees import AnyOperation
+from .diff_org_trees import MoveOperation
 from .diff_org_trees import OrgTreeDiff
-from .diff_org_trees import RemoveOperation
 from .diff_org_trees import UpdateOperation
 
 
@@ -62,14 +61,28 @@ class Mutation(abc.ABC):
         return None
 
 
-class RemoveOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, operation: RemoveOperation):
+class MoveOrgUnitMutation(Mutation):
+    def __init__(self, session: GraphQLClient, operation: MoveOperation):
         super().__init__(session, operation)
 
-    def execute(self):
-        raise UnsupportedMutation(
-            f"cannot terminate org units ({self.operation.uuid=})"
+    @property
+    def dsl_mutation(self) -> DSLMutation:
+        expr = self._dsl_schema_mutation.org_unit_update.args(
+            input=self.dsl_mutation_input,
         )
+        return DSLMutation(expr.select(self._dsl_schema.OrganisationUnitResponse.uuid))
+
+    @property
+    def dsl_mutation_input(self) -> dict[str, Any]:
+        return {
+            "uuid": str(self.operation.uuid),  # type: ignore
+            "parent": str(self.operation.parent),  # type: ignore
+            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
+        }
+
+    def execute(self) -> uuid.UUID:
+        result: dict = self._session.execute(self.gql)
+        return uuid.UUID(result["org_unit_update"]["uuid"])
 
 
 class UpdateOrgUnitMutation(Mutation):
@@ -124,7 +137,7 @@ class AddOrgUnitMutation(Mutation):
         return uuid.UUID(result["org_unit_create"]["uuid"])
 
 
-AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | RemoveOrgUnitMutation
+AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | MoveOrgUnitMutation
 
 
 class TreeDiffExecutor:
@@ -152,8 +165,8 @@ class TreeDiffExecutor:
             yield operation, mutation
 
     def get_mutation(self, operation: AnyOperation) -> AnyMutation:
-        if isinstance(operation, RemoveOperation):
-            return RemoveOrgUnitMutation(self._session, operation)
+        if isinstance(operation, MoveOperation):
+            return MoveOrgUnitMutation(self._session, operation)
         if isinstance(operation, UpdateOperation):
             return UpdateOrgUnitMutation(self._session, operation)
         if isinstance(operation, AddOperation):

@@ -8,6 +8,7 @@ from itertools import chain
 from typing import Any
 
 import pytest
+from anytree import Resolver
 from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
@@ -19,8 +20,8 @@ from sdclient.responses import GetOrganizationResponse
 
 from ..config import SDToolPlusSettings
 from ..diff_org_trees import AddOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
@@ -43,10 +44,11 @@ def graphql_testing_schema() -> GraphQLSchema:
 
 
 class SharedIdentifier:
-    root_org_uuid: OrgUUID = uuid.uuid4()
-    child_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
-    grandchild_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
-    removed_org_unit_uuid: OrgUnitUUID = uuid.uuid4()
+    root_org_uuid: OrgUUID = uuid.UUID("00000000-0000-0000-0000-000000000000")
+    child_org_unit_uuid: OrgUnitUUID = uuid.UUID("10000000-0000-0000-0000-000000000000")
+    grandchild_org_unit_uuid: OrgUnitUUID = uuid.UUID(
+        "20000000-0000-0000-0000-000000000000"
+    )
 
 
 class _MockGraphQLSession:
@@ -58,13 +60,6 @@ class _MockGraphQLSession:
             uuid=SharedIdentifier.child_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
             name="Child",
-            org_unit_level_uuid=uuid.uuid4(),
-            validity=_TESTING_MO_VALIDITY,
-        ),
-        OrgUnitNode(
-            uuid=SharedIdentifier.removed_org_unit_uuid,
-            parent_uuid=SharedIdentifier.root_org_uuid,
-            name="Child only in MO, should be removed",
             org_unit_level_uuid=uuid.uuid4(),
             validity=_TESTING_MO_VALIDITY,
         ),
@@ -422,6 +417,50 @@ def mock_org_tree_diff(
 
 
 @pytest.fixture()
+def mock_org_tree_diff_move_case(
+    mock_sd_get_organization_response,
+    mock_sd_get_department_response,
+    mock_mo_org_unit_level_map,
+    mock_mo_org_unit_type,
+) -> OrgTreeDiff:
+    """
+    OrgTreeDiff instance for the scenario where we move Department 4
+    from Department 2 to Department 5 in the tree below:
+
+    <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+    └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+        ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+        │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+        │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+    """
+
+    resolver = Resolver("name")
+
+    mo_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+
+    # Move Department 4 to Department 5 in the SD tree, so it differs
+    # from the MO tree
+    dep4 = resolver.get(sd_tree, "Department 1/Department 2/Department 4")
+    dep5 = resolver.get(sd_tree, "Department 1/Department 5")
+    dep4.parent = dep5
+    # Dangerous: dep4.parent_uuid is now wrong
+
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    return org_tree_diff
+
+
+@pytest.fixture()
 def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
     mock_org_tree_diff: OrgTreeDiff,
@@ -437,10 +476,8 @@ def expected_operations(
     sd_expected_validity: Validity,
     mock_mo_org_unit_type: MOClass,
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
-) -> list[AddOperation | UpdateOperation | RemoveOperation]:
+) -> list[AddOperation | UpdateOperation | MoveOperation]:
     return [
-        # MO unit to be removed is indeed removed
-        RemoveOperation(uuid=SharedIdentifier.removed_org_unit_uuid),
         # MO unit "Grandchild" is renamed to "Department 2"
         UpdateOperation(
             uuid=SharedIdentifier.grandchild_org_unit_uuid,

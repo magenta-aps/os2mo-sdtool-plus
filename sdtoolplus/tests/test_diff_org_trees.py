@@ -1,19 +1,22 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
+from datetime import date
 from unittest.mock import Mock
 
 import pytest
+from anytree import Resolver
 from anytree.render import RenderTree
 from deepdiff.helper import CannotCompare
+from freezegun import freeze_time
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import AnyOperation
+from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import RemoveOperation
 from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
@@ -33,7 +36,7 @@ class TestOrgTreeDiff:
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
         mock_mo_org_unit_type: MOClass,
-        expected_operations: list[AddOperation | UpdateOperation | RemoveOperation],
+        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -53,12 +56,44 @@ class TestOrgTreeDiff:
         print("SD Tree")
         print(RenderTree(sd_tree))
         print()
+
         for operation in tree_diff.get_operations():
             print(operation)
 
         # Compare actual emitted operations to expected operations
         actual_operations: list[AnyOperation] = list(tree_diff.get_operations())
         assert actual_operations == expected_operations
+
+    @freeze_time("2023-11-15")
+    def test_get_operation_for_move_scenario(
+        self,
+        mock_org_tree_diff_move_case,
+    ):
+        """
+        This tests the get_operations function in the case where we
+        move Department 4 from Department 2 to Department 5 in the tree below:
+
+        <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+            ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+            │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+            │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+                └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+        """
+
+        # Act
+        operations = list(mock_org_tree_diff_move_case.get_operations())
+        move_operation = operations[0]
+
+        # Assert
+        assert len(operations) == 1
+        assert isinstance(move_operation, MoveOperation)
+        assert move_operation.uuid == uuid.UUID("40000000-0000-0000-0000-000000000000")
+        assert move_operation.parent == uuid.UUID(
+            "50000000-0000-0000-0000-000000000000"
+        )
+        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
     @pytest.mark.parametrize(
         "path,expected_result",
