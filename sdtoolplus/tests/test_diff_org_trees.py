@@ -97,6 +97,40 @@ class TestOrgTreeDiff:
         )
         assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
+    @freeze_time("2023-11-15")
+    def test_get_operation_for_move_ny_from_ny_to_ny(
+        self,
+        mock_org_tree_diff_move_ny_from_ny_to_ny,
+    ):
+        """
+        This tests the get_operations function in the case where we
+        move Department 5 (with subunits) from Department 1 to Department 7
+        in the tree below. I.e. we test the case where we move an SD
+        "NY-niveau" from one "NY-niveau" to another.
+
+        <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+        ├── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+        │   ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+        │   │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+        │   │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+        │   └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+        │       └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 7 (70000000-0000-0000-0000-000000000000)>
+        """
+
+        # Act
+        operations = list(mock_org_tree_diff_move_ny_from_ny_to_ny.get_operations())
+        move_operation = operations[0]
+
+        # Assert
+        assert len(operations) == 1
+        assert isinstance(move_operation, MoveOperation)
+        assert move_operation.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
+        assert move_operation.parent == uuid.UUID(
+            "70000000-0000-0000-0000-000000000000"
+        )
+        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
+
     @pytest.mark.parametrize(
         "path,expected_result",
         [

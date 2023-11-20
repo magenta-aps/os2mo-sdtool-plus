@@ -461,6 +461,68 @@ def mock_org_tree_diff_move_afd_from_ny_to_ny(
 
 
 @pytest.fixture()
+def mock_org_tree_diff_move_ny_from_ny_to_ny(
+    mock_sd_get_organization_response,
+    mock_sd_get_department_response,
+    mock_mo_org_unit_level_map,
+    mock_mo_org_unit_type,
+    sd_expected_validity,
+) -> OrgTreeDiff:
+    """
+    OrgTreeDiff instance for the scenario where we move Department 5
+    from Department 1 to Department 7 in the tree below. I.e. we move
+    a NY-level (with subunits) from one NY-level to another NY-level.
+
+    <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+    ├── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+    │   ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+    │   │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+    │   │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+    │   └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+    │       └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+    └── <OrgUnitNode: Department 7 (70000000-0000-0000-0000-000000000000)>
+    """
+
+    resolver = Resolver("name")
+
+    mo_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+    mo_dep7 = OrgUnitNode(
+        uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
+        parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        parent=mo_tree,
+        name="Department 7",
+        org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+        validity=sd_expected_validity,
+    )
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+    sd_dep7 = OrgUnitNode(
+        uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
+        parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        parent=sd_tree,
+        name="Department 7",
+        org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
+        validity=sd_expected_validity,
+    )
+
+    # Move Department 5 to Department 7 in the SD tree, so it differs
+    # from the MO tree
+    sd_dep5 = resolver.get(sd_tree, "Department 1/Department 5")
+    sd_dep5.parent = sd_dep7
+    # Dangerous: sd_dep5.parent_uuid is now wrong
+
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    return org_tree_diff
+
+
+@pytest.fixture()
 def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
     mock_org_tree_diff: OrgTreeDiff,
