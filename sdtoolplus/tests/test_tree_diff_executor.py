@@ -99,6 +99,7 @@ class TestTreeDiffExecutor:
         assert operation.validity.from_date.date() == move_date
 
         assert mutation.dsl_mutation_input["uuid"] == str(ou_uuid)
+        assert mutation.dsl_mutation_input["name"] == "Department 4"
         assert mutation.dsl_mutation_input["parent"] == str(new_parent_uuid)
         assert (
             datetime.fromisoformat(
