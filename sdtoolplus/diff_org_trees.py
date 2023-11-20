@@ -222,6 +222,10 @@ class OrgTreeDiff:
         move_items_uuids = [item.t1.uuid for item in move_items]
         add_items = [item for item in add_items if item.t2.uuid not in move_items_uuids]
 
+        # Emit add operations from "structural diff"
+        for item in add_items:
+            yield AddOperation.from_diff_level(item, self._mo_org_unit_type)
+
         # Emit move operations from "id-based diff"
         for item in move_items:
             yield MoveOperation.from_diff_level(item, self._mo_org_unit_type)
@@ -231,7 +235,3 @@ class OrgTreeDiff:
             operation = UpdateOperation.from_diff_level(item, self._mo_org_unit_type)
             if operation:
                 yield operation
-
-        # Emit add operations from "structural diff"
-        for item in add_items:
-            yield AddOperation.from_diff_level(item, self._mo_org_unit_type)

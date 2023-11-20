@@ -131,6 +131,71 @@ class TestOrgTreeDiff:
         )
         assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
+    @freeze_time("2023-11-15")
+    def test_get_operation_for_add_and_move_and_rename(
+        self,
+        mock_mo_org_unit_level_map,
+        mock_org_tree_diff_add_and_move_and_rename,
+        sd_expected_validity,
+    ):
+        """
+        This tests the get_operations function in the case where we:
+
+        1) Add Department 7 to the root
+        2) Move Department 5 from Department 1 to Department 7
+           (i.e. it must be added before Dep 5 can be moved)
+        3) Rename Department 5 to Department 8
+
+        The MO tree before any of the operations looks like this:
+
+        <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+            ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+            │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+            │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+                └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+
+        and the SD tree looks like this:
+
+        <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+        ├── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+        │   └── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+        │       ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+        │       └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 7 (70000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 8 (50000000-0000-0000-0000-000000000000)>
+                └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+        """
+
+        # Act
+        operations = list(mock_org_tree_diff_add_and_move_and_rename.get_operations())
+
+        # Assert
+        assert len(operations) == 2
+
+        add_operation = operations[0]
+        move_operation = operations[1]
+
+        assert isinstance(add_operation, AddOperation)
+        assert add_operation.uuid == uuid.UUID("70000000-0000-0000-0000-000000000000")
+        assert (
+            add_operation.org_unit_level_uuid
+            == mock_mo_org_unit_level_map["NY1-niveau"].uuid
+        )
+        assert add_operation.name == "Department 7"
+        assert add_operation.parent_uuid == uuid.UUID(
+            "00000000-0000-0000-0000-000000000000"
+        )
+        assert add_operation.validity == sd_expected_validity
+
+        assert isinstance(move_operation, MoveOperation)
+        assert move_operation.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
+        assert move_operation.parent == uuid.UUID(
+            "70000000-0000-0000-0000-000000000000"
+        )
+        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
+
     @pytest.mark.parametrize(
         "path,expected_result",
         [
