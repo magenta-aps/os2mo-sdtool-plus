@@ -58,6 +58,7 @@ class Operation(abc.ABC):
 class MoveOperation(Operation):
     uuid: UUID  # The unit to move
     parent: UUID  # The new parent
+    name: str  # The (new) name of the unit
     validity: Validity
 
     @classmethod
@@ -70,6 +71,7 @@ class MoveOperation(Operation):
         instance = cls(
             uuid=diff_level.t1.uuid,
             parent=MoveOperation._get_new_parent(diff_level),
+            name=MoveOperation._get_unit_name(diff_level),
             validity=Validity(from_date=datetime.now()),
         )
         instance._diff_level = diff_level
@@ -80,6 +82,12 @@ class MoveOperation(Operation):
         sd_tree = diff_level.all_up.t2
         ou_to_move = find(sd_tree, filter_=lambda node: node.uuid == diff_level.t1.uuid)
         return ou_to_move.parent.uuid
+
+    @staticmethod
+    def _get_unit_name(diff_level: DiffLevel) -> str:
+        sd_tree = diff_level.all_up.t2
+        ou_to_move = find(sd_tree, filter_=lambda node: node.uuid == diff_level.t1.uuid)
+        return ou_to_move.name
 
     def __str__(self):
         return f"Move {self._diff_level.t1} from {self._diff_level.up.up.t1} to {MoveOperation._get_new_parent(self._diff_level)}"
@@ -222,6 +230,10 @@ class OrgTreeDiff:
         move_items_uuids = [item.t1.uuid for item in move_items]
         add_items = [item for item in add_items if item.t2.uuid not in move_items_uuids]
 
+        # Emit add operations from "structural diff"
+        for item in add_items:
+            yield AddOperation.from_diff_level(item, self._mo_org_unit_type)
+
         # Emit move operations from "id-based diff"
         for item in move_items:
             yield MoveOperation.from_diff_level(item, self._mo_org_unit_type)
@@ -231,7 +243,3 @@ class OrgTreeDiff:
             operation = UpdateOperation.from_diff_level(item, self._mo_org_unit_type)
             if operation:
                 yield operation
-
-        # Emit add operations from "structural diff"
-        for item in add_items:
-            yield AddOperation.from_diff_level(item, self._mo_org_unit_type)

@@ -76,6 +76,7 @@ class MoveOrgUnitMutation(Mutation):
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
             "uuid": str(self.operation.uuid),  # type: ignore
+            "name": self.operation.name,  # type: ignore
             "parent": str(self.operation.parent),  # type: ignore
             "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
         }
