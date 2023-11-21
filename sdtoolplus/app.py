@@ -65,16 +65,20 @@ class App:
             mo_org_unit_level_map,
         )
 
+    def get_mo_tree(self) -> OrgUnitNode:
+        mo_org_tree = MOOrgTreeImport(self.session)
+        mo_subtree_path_for_root = App._get_effective_root_path(
+            self.settings.mo_subtree_path_for_root
+        )
+        return mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
         # Get relevant MO facet/class data
         mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
         mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
 
-        # Get the MO tree
-        logger.info(event="Fetching MO org tree ...")
-        mo_org_tree = MOOrgTreeImport(self.session)
-
         # Get the SD tree
+        logger.info(event="Fetching SD org tree ...")
         sd_org_tree = self.get_sd_tree()
         logger.debug(
             "SD tree",
@@ -83,10 +87,8 @@ class App:
         )
 
         # Get the MO tree
-        mo_subtree_path_for_root = App._get_effective_root_path(
-            self.settings.mo_subtree_path_for_root
-        )
-        mo_org_tree_as_single = mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+        logger.info(event="Fetching MO org tree ...")
+        mo_org_tree_as_single = self.get_mo_tree()
         logger.debug(
             "MO tree",
             mo_org_tree=repr(mo_org_tree_as_single),
