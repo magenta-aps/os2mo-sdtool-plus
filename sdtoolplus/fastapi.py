@@ -19,6 +19,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
 from .config import SDToolPlusSettings
+from .tree_tools import tree_as_string
 
 
 def create_app(**kwargs) -> FastAPI:
@@ -29,6 +30,25 @@ def create_app(**kwargs) -> FastAPI:
     @app.get("/")
     async def index() -> dict[str, str]:
         return {"name": "sdtoolplus"}
+
+    @app.get("/tree/mo")
+    async def print_mo_tree(request: Request) -> str:
+        """
+        For debugging problems. Prints the part of the MO tree that
+        should be compared to the SD tree.
+        """
+        sdtoolplus: App = request.app.extra["sdtoolplus"]
+        mo_tree = sdtoolplus.get_mo_tree()
+        return tree_as_string(mo_tree)
+
+    @app.get("/tree/sd")
+    async def print_sd_tree(request: Request) -> str:
+        """
+        For debugging problems. Prints the SD tree.
+        """
+        sdtoolplus: App = request.app.extra["sdtoolplus"]
+        sd_tree = sdtoolplus.get_sd_tree()
+        return tree_as_string(sd_tree)
 
     @app.post("/trigger")
     async def trigger(request: Request, response: Response) -> list[dict]:
