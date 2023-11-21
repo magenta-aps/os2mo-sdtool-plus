@@ -1,21 +1,52 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
+from collections import namedtuple
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Self
 from uuid import UUID
-from uuid import uuid4
 
 from anytree.cachedsearch import find
 from deepdiff import DeepDiff
 from deepdiff.diff import DiffLevel
 from deepdiff.helper import CannotCompare
+from pydantic import BaseModel
 from ramodels.mo import Validity
 
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
+
+
+class Nodes(BaseModel):
+    unit: OrgUnitNode
+    parent: OrgUnitNode
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def _uuid_to_nodes_map(tree: OrgUnitNode) -> dict[UUID, Nodes]:
+    """
+    A map from a UUID tree node to a Nodes object containing the
+    OrgUnitNodes of the unit itself and its parent.
+
+    Args:
+        tree: the tree (MO or SD) to create the map from
+
+    Returns:
+        A dict mapping from a UUID tree node to a Nodes object
+        (see description above)
+    """
+
+    def add_node_children(node: OrgUnitNode, parent_map: dict[UUID, Nodes]):
+        for child in node.children:
+            parent_map[child.uuid] = Nodes(unit=child, parent=node)
+            add_node_children(child, parent_map)
+        return parent_map
+
+    return add_node_children(tree, dict())
 
 
 class Operation(abc.ABC):

@@ -9,12 +9,15 @@ from anytree import Resolver
 from anytree.render import RenderTree
 from deepdiff.helper import CannotCompare
 from freezegun import freeze_time
+from more_itertools import first
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..diff_org_trees import _uuid_to_nodes_map
 from ..diff_org_trees import AddOperation
 from ..diff_org_trees import AnyOperation
 from ..diff_org_trees import MoveOperation
+from ..diff_org_trees import Nodes
 from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
 from ..diff_org_trees import UpdateOperation
@@ -303,3 +306,88 @@ class TestUpdateOperation:
         diff_level.path = Mock()
         diff_level.path.return_value = "a.b.c"
         assert UpdateOperation.from_diff_level(diff_level, None) is None
+
+
+def test_uuid_to_nodes_map(
+    mock_sd_get_organization_response,
+    mock_sd_get_department_response,
+    mock_mo_org_unit_level_map,
+) -> None:
+    """
+    Test that _get_patent_map returns the correct map. The
+    following tree structure will be used for the test:
+
+    <OrgUnitNode: <root> (00000000-0000-0000-0000-000000000000)>
+    └── <OrgUnitNode: Department 1 (10000000-0000-0000-0000-000000000000)>
+        ├── <OrgUnitNode: Department 2 (20000000-0000-0000-0000-000000000000)>
+        │   ├── <OrgUnitNode: Department 3 (30000000-0000-0000-0000-000000000000)>
+        │   └── <OrgUnitNode: Department 4 (40000000-0000-0000-0000-000000000000)>
+        └── <OrgUnitNode: Department 5 (50000000-0000-0000-0000-000000000000)>
+            └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
+    """
+
+    # Arrange
+    sd_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+    )
+
+    # Act
+    uuid_to_nodes_map = _uuid_to_nodes_map(sd_tree)
+
+    # Careful here! No logic in the test code!
+    map_of_uuids = {
+        str(unit_uuid): (str(nodes.unit.uuid), str(nodes.parent.uuid))
+        for unit_uuid, nodes in uuid_to_nodes_map.items()
+    }
+
+    # Assert
+    assert len(uuid_to_nodes_map) == 6
+
+    assert isinstance(first(uuid_to_nodes_map.keys()), uuid.UUID)
+    assert isinstance(first(uuid_to_nodes_map.values()), Nodes)
+
+    assert map_of_uuids == {
+        "10000000-0000-0000-0000-000000000000": (
+            "10000000-0000-0000-0000-000000000000",
+            "00000000-0000-0000-0000-000000000000",
+        ),
+        "20000000-0000-0000-0000-000000000000": (
+            "20000000-0000-0000-0000-000000000000",
+            "10000000-0000-0000-0000-000000000000",
+        ),
+        "30000000-0000-0000-0000-000000000000": (
+            "30000000-0000-0000-0000-000000000000",
+            "20000000-0000-0000-0000-000000000000",
+        ),
+        "40000000-0000-0000-0000-000000000000": (
+            "40000000-0000-0000-0000-000000000000",
+            "20000000-0000-0000-0000-000000000000",
+        ),
+        "50000000-0000-0000-0000-000000000000": (
+            "50000000-0000-0000-0000-000000000000",
+            "10000000-0000-0000-0000-000000000000",
+        ),
+        "60000000-0000-0000-0000-000000000000": (
+            "60000000-0000-0000-0000-000000000000",
+            "50000000-0000-0000-0000-000000000000",
+        ),
+    }
+
+
+def test_uuid_to_nodes_map_no_children(sd_expected_validity) -> None:
+    # Arrange
+    tree = OrgUnitNode(
+        uuid=uuid.uuid4(),
+        parent_uuid=uuid.uuid4(),
+        name="name",
+        org_unit_level_uuid=uuid.uuid4(),
+        validity=sd_expected_validity,
+    )
+
+    # Act
+    parent_map = _uuid_to_nodes_map(tree)
+
+    # Assert
+    assert parent_map == dict()
