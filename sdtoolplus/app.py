@@ -21,6 +21,7 @@ from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
+from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
 from .tree_diff_executor import AnyMutation
@@ -52,27 +53,33 @@ class App:
 
         self.client = httpx.Client(base_url=self.settings.sd_lon_base_url)
 
-    def get_tree_diff_executor(self) -> TreeDiffExecutor:
-        # Get relevant MO facet/class data
-        mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
-        mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
+    def get_sd_tree(self) -> OrgUnitNode:
         mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
-
-        # Get the MO tree
-        logger.info(event="Fetching MO org tree ...")
-        mo_org_tree = MOOrgTreeImport(self.session)
-
-        # Get the SD tree
-        logger.info(event="Fetching SD org tree ...")
         sd_client = SDClient(
             self.settings.sd_username,
             self.settings.sd_password.get_secret_value(),
         )
-        sd_org_tree = get_sd_tree(
+        return get_sd_tree(
             sd_client,
             self.settings.sd_institution_identifier,
             mo_org_unit_level_map,
         )
+
+    def get_mo_tree(self) -> OrgUnitNode:
+        mo_org_tree = MOOrgTreeImport(self.session)
+        mo_subtree_path_for_root = App._get_effective_root_path(
+            self.settings.mo_subtree_path_for_root
+        )
+        return mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+
+    def get_tree_diff_executor(self) -> TreeDiffExecutor:
+        # Get relevant MO facet/class data
+        mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
+        mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
+
+        # Get the SD tree
+        logger.info(event="Fetching SD org tree ...")
+        sd_org_tree = self.get_sd_tree()
         logger.debug(
             "SD tree",
             sd_org_tree=repr(sd_org_tree),
@@ -80,10 +87,8 @@ class App:
         )
 
         # Get the MO tree
-        mo_subtree_path_for_root = App._get_effective_root_path(
-            self.settings.mo_subtree_path_for_root
-        )
-        mo_org_tree_as_single = mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+        logger.info(event="Fetching MO org tree ...")
+        mo_org_tree_as_single = self.get_mo_tree()
         logger.debug(
             "MO tree",
             mo_org_tree=repr(mo_org_tree_as_single),
