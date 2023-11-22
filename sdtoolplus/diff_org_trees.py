@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
-from collections import namedtuple
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
@@ -197,6 +196,9 @@ class OrgTreeDiff:
         sd_org_tree: OrgUnitNode,
         mo_org_unit_type: MOClass,
     ):
+        self.mo_org_tree = mo_org_tree
+        self.sd_org_tree = sd_org_tree
+
         # "ID-based" difference between the two org trees. Used to find the org units
         # that need to be removed or updated.
         self.uuid_deepdiff = self._get_deepdiff_instance(
@@ -209,6 +211,20 @@ class OrgTreeDiff:
         self.structural_deepdiff = self._get_deepdiff_instance(mo_org_tree, sd_org_tree)
         # Class in MO `org_unit_type` facet to use when emitting operations
         self._mo_org_unit_type = mo_org_unit_type
+
+    def _compare_trees(self) -> None:
+        sd_uuid_map = _uuid_to_nodes_map(self.sd_org_tree)
+        mo_uuid_map = _uuid_to_nodes_map(self.mo_org_tree)
+
+        # New SD units which should be added to MO
+        self.units_to_add = [
+            nodes.unit
+            for unit_uuid, nodes in sd_uuid_map.items()
+            if unit_uuid not in mo_uuid_map.keys()
+        ]
+
+        # TODO: implement in later commit
+        # self.units_to_update = []  # Units to rename, move,...
 
     def _get_deepdiff_instance(
         self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode, **kwargs

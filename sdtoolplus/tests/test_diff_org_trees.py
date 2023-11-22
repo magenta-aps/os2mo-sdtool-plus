@@ -32,6 +32,62 @@ from .conftest import SharedIdentifier
 
 
 class TestOrgTreeDiff:
+    def test_compare_trees(
+        self,
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+        mock_mo_org_unit_type,
+    ):
+        # Arrange
+
+        mo_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+        sd_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+        # Add two new units
+        dep7 = OrgUnitNode(
+            uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
+            name="Department 7",
+            parent=sd_tree,
+        )
+        dep8 = OrgUnitNode(
+            uuid=uuid.UUID("80000000-0000-0000-0000-000000000000"),
+            name="Department 8",
+            parent=dep7,
+        )
+
+        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+
+        # Act
+        org_tree_diff._compare_trees()
+
+        # Assert
+        assert len(org_tree_diff.units_to_add) == 2
+
+        first_to_add = org_tree_diff.units_to_add[0]
+        second_to_add = org_tree_diff.units_to_add[1]
+
+        assert isinstance(first_to_add, OrgUnitNode)
+        assert first_to_add.uuid == uuid.UUID("70000000-0000-0000-0000-000000000000")
+        assert first_to_add.name == "Department 7"
+        assert first_to_add.parent.uuid == uuid.UUID(
+            "00000000-0000-0000-0000-000000000000"
+        )
+
+        assert isinstance(second_to_add, OrgUnitNode)
+        assert second_to_add.uuid == uuid.UUID("80000000-0000-0000-0000-000000000000")
+        assert second_to_add.name == "Department 8"
+        assert second_to_add.parent.uuid == uuid.UUID(
+            "70000000-0000-0000-0000-000000000000"
+        )
+
     def test_get_operations(
         self,
         mock_graphql_session: _MockGraphQLSession,
