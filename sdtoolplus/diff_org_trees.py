@@ -218,13 +218,37 @@ class OrgTreeDiff:
 
         # New SD units which should be added to MO
         self.units_to_add = [
-            nodes.unit
-            for unit_uuid, nodes in sd_uuid_map.items()
+            sd_nodes.unit
+            for unit_uuid, sd_nodes in sd_uuid_map.items()
             if unit_uuid not in mo_uuid_map.keys()
         ]
 
-        # TODO: implement in later commit
-        # self.units_to_update = []  # Units to rename, move,...
+        # Units to rename, move,...
+        self.units_to_update = [
+            sd_nodes.unit
+            for unit_uuid, sd_nodes in sd_uuid_map.items()
+            if (
+                unit_uuid in mo_uuid_map.keys()
+                and OrgTreeDiff._should_be_updated(sd_nodes, mo_uuid_map[unit_uuid])
+            )
+        ]
+
+    @staticmethod
+    def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
+        """
+        Check if a unit should be updated
+
+        Args:
+            sd_nodes: The SD nodes (unit itself and its parent)
+            mo_nodes: The MO nodes (unit itself and its parent)
+
+        Returns:
+            True if the unit should be updated and False otherwise
+        """
+        return (
+            mo_nodes.parent.uuid != sd_nodes.parent.uuid
+            or mo_nodes.unit.name != sd_nodes.unit.name
+        )
 
     def _get_deepdiff_instance(
         self, mo_org_tree: OrgUnitNode, sd_org_tree: OrgUnitNode, **kwargs
