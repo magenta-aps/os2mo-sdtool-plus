@@ -1,10 +1,12 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
+import datetime
 import uuid
 from typing import Any
 from typing import Iterator
 
+import structlog
 from gql.dsl import dsl_gql
 from gql.dsl import DSLMutation
 from gql.dsl import DSLSchema
@@ -14,21 +16,18 @@ from graphql import DocumentNode
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
-from .diff_org_trees import AddOperation
-from .diff_org_trees import AnyOperation
-from .diff_org_trees import MoveOperation
 from .diff_org_trees import OrgTreeDiff
-from .diff_org_trees import UpdateOperation
+from .mo_class import MOClass
+from .mo_org_unit_importer import OrgUnitNode
 
 
-class UnsupportedMutation(Exception):
-    pass
+logger = structlog.get_logger()
 
 
 class Mutation(abc.ABC):
-    def __init__(self, session: GraphQLClient, operation: AnyOperation):
+    def __init__(self, session: GraphQLClient, org_unit_node: OrgUnitNode):
         self._session = session
-        self.operation = operation
+        self.org_unit_node = org_unit_node
         self._dsl_schema = self._get_dsl_schema()
 
     @property
@@ -61,34 +60,9 @@ class Mutation(abc.ABC):
         return None
 
 
-class MoveOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, operation: MoveOperation):
-        super().__init__(session, operation)
-
-    @property
-    def dsl_mutation(self) -> DSLMutation:
-        expr = self._dsl_schema_mutation.org_unit_update.args(
-            input=self.dsl_mutation_input,
-        )
-        return DSLMutation(expr.select(self._dsl_schema.OrganisationUnitResponse.uuid))
-
-    @property
-    def dsl_mutation_input(self) -> dict[str, Any]:
-        return {
-            "uuid": str(self.operation.uuid),  # type: ignore
-            "name": self.operation.name,  # type: ignore
-            "parent": str(self.operation.parent),  # type: ignore
-            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
-        }
-
-    def execute(self) -> uuid.UUID:
-        result: dict = self._session.execute(self.gql)
-        return uuid.UUID(result["org_unit_update"]["uuid"])
-
-
 class UpdateOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, operation: UpdateOperation):
-        super().__init__(session, operation)
+    def __init__(self, session: GraphQLClient, org_unit_node: OrgUnitNode):
+        super().__init__(session, org_unit_node)
 
     @property
     def dsl_mutation(self) -> DSLMutation:
@@ -100,9 +74,15 @@ class UpdateOrgUnitMutation(Mutation):
     @property
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
-            "uuid": str(self.operation.uuid),  # type: ignore
-            self.operation.attr: self.operation.value,  # type: ignore
-            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
+            "uuid": str(self.org_unit_node.uuid),  # type: ignore
+            "name": self.org_unit_node.name,  # type: ignore
+            "parent": str(self.org_unit_node.parent.uuid),
+            "validity": {
+                "from": datetime.datetime.now().date().strftime("%Y-%m-%d"),
+                "to": self.org_unit_node.validity.to_date.date().strftime("%Y-%m-%d")  # type: ignore
+                if self.org_unit_node.validity.to_date is not None  # type: ignore
+                else None,
+            },
         }
 
     def execute(self) -> uuid.UUID:
@@ -111,8 +91,14 @@ class UpdateOrgUnitMutation(Mutation):
 
 
 class AddOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, operation: AddOperation):
-        super().__init__(session, operation)
+    def __init__(
+        self,
+        session: GraphQLClient,
+        org_unit_node: OrgUnitNode,
+        mo_org_unit_type: MOClass,
+    ):
+        super().__init__(session, org_unit_node)
+        self.mo_org_unit_type = mo_org_unit_type
 
     @property
     def dsl_mutation(self) -> DSLMutation:
@@ -125,12 +111,12 @@ class AddOrgUnitMutation(Mutation):
     @property
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
-            "uuid": str(self.operation.uuid),  # type: ignore
-            "parent": str(self.operation.parent_uuid),  # type: ignore
-            "name": self.operation.name,  # type: ignore
-            "org_unit_type": str(self.operation.org_unit_type_uuid),  # type: ignore
-            "org_unit_level": str(self.operation.org_unit_level_uuid),  # type: ignore
-            "validity": self._get_validity_dict_or_none(self.operation.validity),  # type: ignore
+            "uuid": str(self.org_unit_node.uuid),  # type: ignore
+            "parent": str(self.org_unit_node.parent_uuid),  # type: ignore
+            "name": self.org_unit_node.name,  # type: ignore
+            "org_unit_type": str(self.mo_org_unit_type.uuid),  # type: ignore
+            "org_unit_level": str(self.org_unit_node.org_unit_level_uuid),  # type: ignore
+            "validity": self._get_validity_dict_or_none(self.org_unit_node.validity),  # type: ignore
         }
 
     def execute(self) -> uuid.UUID:
@@ -138,38 +124,56 @@ class AddOrgUnitMutation(Mutation):
         return uuid.UUID(result["org_unit_create"]["uuid"])
 
 
-AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation | MoveOrgUnitMutation
+AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 
 
 class TreeDiffExecutor:
-    def __init__(self, session: GraphQLClient, tree_diff: OrgTreeDiff):
+    def __init__(
+        self, session: GraphQLClient, tree_diff: OrgTreeDiff, mo_org_unit_type: MOClass
+    ):
         self._session = session
         self._tree_diff = tree_diff
+        self.mo_org_unit_type = mo_org_unit_type
 
     def execute(
         self,
-    ) -> Iterator[tuple[AnyOperation, AnyMutation, uuid.UUID | Exception]]:
-        for operation in self._tree_diff.get_operations():
-            mutation = self.get_mutation(operation)
+    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID | Exception]]:
+        # Add new units first
+        for unit in self._tree_diff.get_units_to_add():
+            add_mutation = AddOrgUnitMutation(
+                self._session, unit, self.mo_org_unit_type
+            )
             try:
-                result = mutation.execute()
-            except UnsupportedMutation as e:
-                yield operation, mutation, e
+                result = add_mutation.execute()
             except TransportQueryError as e:
-                yield operation, mutation, e
+                yield unit, add_mutation, e
             else:
-                yield operation, mutation, result
+                yield unit, add_mutation, result
 
-    def execute_dry(self) -> Iterator[tuple[AnyOperation, AnyMutation]]:
-        for operation in self._tree_diff.get_operations():
-            mutation = self.get_mutation(operation)
-            yield operation, mutation
+        # ... and then update modified units (name or parent changed)
+        for unit in self._tree_diff.get_units_to_update():
+            update_mutation = UpdateOrgUnitMutation(self._session, unit)
+            try:
+                result = update_mutation.execute()
+            except TransportQueryError as e:
+                yield unit, update_mutation, e
+            else:
+                yield unit, update_mutation, result
 
-    def get_mutation(self, operation: AnyOperation) -> AnyMutation:
-        if isinstance(operation, MoveOperation):
-            return MoveOrgUnitMutation(self._session, operation)
-        if isinstance(operation, UpdateOperation):
-            return UpdateOrgUnitMutation(self._session, operation)
-        if isinstance(operation, AddOperation):
-            return AddOrgUnitMutation(self._session, operation)
-        raise ValueError(f"cannot get mutation for unknown operation {operation}")
+    def execute_dry(self) -> Iterator[tuple[OrgUnitNode, AnyMutation]]:
+        # TODO: maybe the execute and execute_dry methods should be
+        #  condensed into one
+
+        logger.debug("TreeDiffExecutor.execute_dry called")
+
+        # Add new units first
+        for unit in self._tree_diff.get_units_to_add():
+            add_mutation = AddOrgUnitMutation(
+                self._session, unit, self.mo_org_unit_type
+            )
+            yield unit, add_mutation
+
+        # ... and then update modified units (name or parent changed)
+        for unit in self._tree_diff.get_units_to_update():
+            update_mutation = UpdateOrgUnitMutation(self._session, unit)
+            yield unit, update_mutation
