@@ -5,30 +5,21 @@ from datetime import date
 from unittest.mock import Mock
 
 import pytest
-from anytree import Resolver
 from anytree.render import RenderTree
-from deepdiff.helper import CannotCompare
 from freezegun import freeze_time
 from more_itertools import first
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..diff_org_trees import _uuid_to_nodes_map
-from ..diff_org_trees import AddOperation
-from ..diff_org_trees import AnyOperation
-from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import Nodes
-from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
-from .conftest import _TESTING_MO_VALIDITY
-from .conftest import SharedIdentifier
 
 
 class TestOrgTreeDiff:
@@ -37,7 +28,6 @@ class TestOrgTreeDiff:
         mock_sd_get_organization_response,
         mock_sd_get_department_response,
         mock_mo_org_unit_level_map,
-        mock_mo_org_unit_type,
     ):
         # Arrange
 
@@ -63,7 +53,7 @@ class TestOrgTreeDiff:
             parent=dep7,
         )
 
-        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
 
         # Act
         org_tree_diff._compare_trees()
@@ -88,14 +78,13 @@ class TestOrgTreeDiff:
             "70000000-0000-0000-0000-000000000000"
         )
 
-    def test_get_operations(
+    def test_get_units_to_add(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_sd_get_organization_response: GetOrganizationResponse,
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
-        mock_mo_org_unit_type: MOClass,
-        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
+        expected_units_to_add,
     ):
         # Construct MO and SD trees
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -106,7 +95,7 @@ class TestOrgTreeDiff:
         )
 
         # Construct tree diff
-        tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+        tree_diff = OrgTreeDiff(mo_tree, sd_tree)
 
         # If test fails, print diagnostic information
         print("MO Tree")
@@ -116,12 +105,12 @@ class TestOrgTreeDiff:
         print(RenderTree(sd_tree))
         print()
 
-        for operation in tree_diff.get_operations():
-            print(operation)
+        for unit in tree_diff.get_units_to_add():
+            print(unit)
 
         # Compare actual emitted operations to expected operations
-        actual_operations: list[AnyOperation] = list(tree_diff.get_operations())
-        assert actual_operations == expected_operations
+        actual_operations: list[OrgUnitNode] = list(tree_diff.get_units_to_add())
+        assert actual_operations == expected_units_to_add
 
     @freeze_time("2023-11-15")
     def test_get_operation_for_move_afd_from_ny_to_ny(
@@ -144,17 +133,19 @@ class TestOrgTreeDiff:
         """
 
         # Act
-        operations = list(mock_org_tree_diff_move_afd_from_ny_to_ny.get_operations())
-        move_operation = operations[0]
+        units_to_update = list(
+            mock_org_tree_diff_move_afd_from_ny_to_ny.get_units_to_update()
+        )
+        unit_to_update = units_to_update[0]
 
         # Assert
-        assert len(operations) == 1
-        assert isinstance(move_operation, MoveOperation)
-        assert move_operation.uuid == uuid.UUID("40000000-0000-0000-0000-000000000000")
-        assert move_operation.parent == uuid.UUID(
+        assert len(units_to_update) == 1
+        assert isinstance(unit_to_update, OrgUnitNode)
+        assert unit_to_update.uuid == uuid.UUID("40000000-0000-0000-0000-000000000000")
+        assert unit_to_update.name == "Department 4"
+        assert unit_to_update.parent.uuid == uuid.UUID(
             "50000000-0000-0000-0000-000000000000"
         )
-        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
     @freeze_time("2023-11-15")
     def test_get_operation_for_move_ny_from_ny_to_ny(
@@ -178,17 +169,19 @@ class TestOrgTreeDiff:
         """
 
         # Act
-        operations = list(mock_org_tree_diff_move_ny_from_ny_to_ny.get_operations())
-        move_operation = operations[0]
+        units_to_update = list(
+            mock_org_tree_diff_move_ny_from_ny_to_ny.get_units_to_update()
+        )
+        unit_to_update = units_to_update[0]
 
         # Assert
-        assert len(operations) == 1
-        assert isinstance(move_operation, MoveOperation)
-        assert move_operation.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
-        assert move_operation.parent == uuid.UUID(
+        assert len(units_to_update) == 1
+        assert isinstance(unit_to_update, OrgUnitNode)
+        assert unit_to_update.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
+        assert unit_to_update.name == "Department 5"
+        assert unit_to_update.parent.uuid == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )
-        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
 
     @freeze_time("2023-11-15")
     def test_get_operation_for_add_and_move_and_rename(
@@ -228,140 +221,38 @@ class TestOrgTreeDiff:
         """
 
         # Act
-        operations = list(mock_org_tree_diff_add_and_move_and_rename.get_operations())
+        units_to_add = list(
+            mock_org_tree_diff_add_and_move_and_rename.get_units_to_add()
+        )
+        units_to_update = list(
+            mock_org_tree_diff_add_and_move_and_rename.get_units_to_update()
+        )
 
         # Assert
-        assert len(operations) == 2
+        assert len(units_to_add) == 1
+        assert len(units_to_update) == 1
 
-        add_operation = operations[0]
-        move_operation = operations[1]
+        unit_to_add = units_to_add[0]
+        unit_to_update = units_to_update[0]
 
-        assert isinstance(add_operation, AddOperation)
-        assert add_operation.uuid == uuid.UUID("70000000-0000-0000-0000-000000000000")
+        assert isinstance(unit_to_add, OrgUnitNode)
+        assert unit_to_add.uuid == uuid.UUID("70000000-0000-0000-0000-000000000000")
         assert (
-            add_operation.org_unit_level_uuid
+            unit_to_add.org_unit_level_uuid
             == mock_mo_org_unit_level_map["NY1-niveau"].uuid
         )
-        assert add_operation.name == "Department 7"
-        assert add_operation.parent_uuid == uuid.UUID(
+        assert unit_to_add.name == "Department 7"
+        assert unit_to_add.parent_uuid == uuid.UUID(
             "00000000-0000-0000-0000-000000000000"
         )
-        assert add_operation.validity == sd_expected_validity
+        assert unit_to_add.validity == sd_expected_validity
 
-        assert isinstance(move_operation, MoveOperation)
-        assert move_operation.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
-        assert move_operation.name == "Department 8"
-        assert move_operation.parent == uuid.UUID(
+        assert isinstance(unit_to_update, OrgUnitNode)
+        assert unit_to_update.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
+        assert unit_to_update.name == "Department 8"
+        assert unit_to_update.parent.uuid == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )
-        assert move_operation.validity.from_date.date() == date(2023, 11, 15)
-
-    @pytest.mark.parametrize(
-        "path,expected_result",
-        [
-            ("__", False),
-            ("a.b.c", False),
-            ("uuid", True),
-            ("_uuid", False),
-            ("children", True),
-            ("_children", True),
-        ],
-    )
-    def test_is_relevant(self, path: str, expected_result: bool):
-        """`OrgTreeDiff._is_relevant` is passed to the `DeepDiff` instances used by
-        `OrgTreeDiff`, and decides whether a given part of the `DeepDiff` tree is
-        relevant.
-
-        `DeepDiff` calls `_is_relevant`, passing it a `path` which corresponds to the
-        location in the tree to test for relevance.
-
-        We consider paths relevant if their last part:
-        - exactly match one of "uuid", "parent_uuid" or "name"
-        - or contains "children".
-
-        We consider paths irrelevant if they begin with `__` (= they come from the
-        `anytree`/`NodeMixin` API), or do not satisfy the above criteria otherwise.
-        """
-        instance = self._get_empty_instance()
-        actual_result = instance._is_relevant(None, path)
-        assert actual_result == expected_result
-
-    @pytest.mark.parametrize(
-        "x,y,expected_result",
-        [
-            (
-                OrgUnitNode(
-                    uuid=uuid.uuid4(),
-                    parent_uuid=uuid.uuid4(),
-                    name="X",
-                    validity=_TESTING_MO_VALIDITY,
-                ),
-                OrgUnitNode(
-                    uuid=uuid.uuid4(),
-                    parent_uuid=uuid.uuid4(),
-                    name="Y",
-                    validity=_TESTING_MO_VALIDITY,
-                ),
-                False,
-            ),
-            (
-                OrgUnitNode(
-                    uuid=SharedIdentifier.child_org_unit_uuid,
-                    parent_uuid=uuid.uuid4(),
-                    name="X",
-                    validity=_TESTING_MO_VALIDITY,
-                ),
-                OrgUnitNode(
-                    uuid=SharedIdentifier.child_org_unit_uuid,
-                    parent_uuid=uuid.uuid4(),
-                    name="Y",
-                    validity=_TESTING_MO_VALIDITY,
-                ),
-                True,
-            ),
-        ],
-    )
-    def test_compare_on_uuid(self, x, y, expected_result: bool):
-        instance = self._get_empty_instance()
-        assert instance._compare_on_uuid(x, y) == expected_result
-
-    def test_compare_on_uuid_raises_cannotcompare(self):
-        instance = self._get_empty_instance()
-        with pytest.raises(CannotCompare):
-            instance._compare_on_uuid(None, None)
-
-    def _get_empty_instance(self):
-        return OrgTreeDiff(
-            None,  # mo_org_tree,
-            None,  # sd_org_tree,
-            None,  # mo_org_unit_type
-        )
-
-
-class TestOperation:
-    def test_has_diff_level_member(self):
-        operation = Operation()
-        assert operation._diff_level is None
-
-    def test_from_diff_level(self):
-        with pytest.raises(NotImplementedError):
-            Operation.from_diff_level(None, None)
-
-    def test_str(self):
-        operation = Operation()
-        with pytest.raises(NotImplementedError):
-            str(operation)
-
-
-class TestUpdateOperation:
-    def test_supported_attrs(self):
-        assert UpdateOperation._supported_attrs() == {"name", "org_unit_level_uuid"}
-
-    def test_from_diff_level_can_return_none(self):
-        diff_level = Mock()
-        diff_level.path = Mock()
-        diff_level.path.return_value = "a.b.c"
-        assert UpdateOperation.from_diff_level(diff_level, None) is None
 
 
 def test_uuid_to_nodes_map(
