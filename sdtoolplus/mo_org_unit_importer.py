@@ -55,7 +55,7 @@ class OrgUnitNode(anytree.AnyNode):
         )
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}: {self.name} ({self.uuid})>"
+        return f"<{self.__class__.__name__}: {self.name} ({self.uuid}) parent={self.parent.uuid if self.parent is not None else None}>"
 
     def __eq__(self, other) -> bool:
         if isinstance(other, OrgUnitNode):
