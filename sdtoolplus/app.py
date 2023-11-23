@@ -12,10 +12,7 @@ from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
-from .diff_org_trees import AddOperation
-from .diff_org_trees import AnyOperation
 from .diff_org_trees import OrgTreeDiff
-from .diff_org_trees import UpdateOperation
 from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
@@ -24,6 +21,7 @@ from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
+from .tree_diff_executor import AddOrgUnitMutation
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 
@@ -66,13 +64,15 @@ class App:
         )
 
     def get_mo_tree(self) -> OrgUnitNode:
-        mo_org_tree = MOOrgTreeImport(self.session)
+        mo_org_tree_import = MOOrgTreeImport(self.session)
         mo_subtree_path_for_root = App._get_effective_root_path(
             self.settings.mo_subtree_path_for_root
         )
-        return mo_org_tree.as_single_tree(mo_subtree_path_for_root)
+        return mo_org_tree_import.as_single_tree(mo_subtree_path_for_root)
 
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
+        logger.debug("Getting TreeDiffExecutor")
+
         # Get relevant MO facet/class data
         mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
         mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
@@ -99,40 +99,45 @@ class App:
         tree_diff = OrgTreeDiff(
             mo_org_tree_as_single,
             sd_org_tree,
-            mo_org_unit_type,
         )
 
         # Construct tree diff executor
-        return TreeDiffExecutor(self.session, tree_diff)
+        return TreeDiffExecutor(self.session, tree_diff, mo_org_unit_type)
 
     def execute(
         self,
-    ) -> Iterator[tuple[AnyOperation, AnyMutation, UUID | Exception, Optional[bool]]]:
+    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID | Exception, Optional[bool]]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
         """
         executor: TreeDiffExecutor = self.get_tree_diff_executor()
-        operation: AnyOperation
+        org_unit_node: OrgUnitNode
         mutation: AnyMutation
         result: UUID | Exception
         fix_departments_result: bool | None
-        for operation, mutation, result in executor.execute():
-            fix_departments_result = None
-            if isinstance(operation, (AddOperation, UpdateOperation)):
-                fix_departments_result = self._call_fix_departments(result)  # type: ignore
+        for org_unit_node, mutation, result in executor.execute():
+            fix_departments_result = self._call_fix_departments(result)  # type: ignore
             yield (
-                operation,
+                org_unit_node,
                 mutation,
                 result,
                 fix_departments_result,
             )
 
-    def execute_dry(self) -> Iterator[tuple[AnyOperation, AnyMutation]]:
+    def execute_dry(self) -> Iterator[tuple[OrgUnitNode, AnyMutation]]:
         executor: TreeDiffExecutor = self.get_tree_diff_executor()
-        operation: AnyOperation
+        org_unit_node: OrgUnitNode
         mutation: AnyMutation
-        for operation, mutation in executor.execute_dry():
-            yield operation, mutation
+        for org_unit_node, mutation in executor.execute_dry():
+            logger.debug(
+                "Add unit"
+                if isinstance(mutation, AddOrgUnitMutation)
+                else "Update unit",
+                name=org_unit_node.name,
+                uuid=str(org_unit_node.uuid),
+                parent=str(org_unit_node.parent.uuid),
+            )
+            yield org_unit_node, mutation
 
     def _call_fix_departments(self, org_unit_uuid: OrgUnitUUID) -> bool:
         url: str = f"/trigger/fix-departments/{org_unit_uuid}"
