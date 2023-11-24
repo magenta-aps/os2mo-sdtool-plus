@@ -136,7 +136,7 @@ class TreeDiffExecutor:
         self.mo_org_unit_type = mo_org_unit_type
 
     def execute(
-        self,
+        self, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID | Exception]]:
         # Add new units first
         for unit in self._tree_diff.get_units_to_add():
@@ -144,7 +144,10 @@ class TreeDiffExecutor:
                 self._session, unit, self.mo_org_unit_type
             )
             try:
-                result = add_mutation.execute()
+                if not dry_run:
+                    result = add_mutation.execute()
+                else:
+                    result = unit.uuid
             except TransportQueryError as e:
                 yield unit, add_mutation, e
             else:
@@ -154,26 +157,11 @@ class TreeDiffExecutor:
         for unit in self._tree_diff.get_units_to_update():
             update_mutation = UpdateOrgUnitMutation(self._session, unit)
             try:
-                result = update_mutation.execute()
+                if not dry_run:
+                    result = update_mutation.execute()
+                else:
+                    result = unit.uuid
             except TransportQueryError as e:
                 yield unit, update_mutation, e
             else:
                 yield unit, update_mutation, result
-
-    def execute_dry(self) -> Iterator[tuple[OrgUnitNode, AnyMutation]]:
-        # TODO: maybe the execute and execute_dry methods should be
-        #  condensed into one
-
-        logger.debug("TreeDiffExecutor.execute_dry called")
-
-        # Add new units first
-        for unit in self._tree_diff.get_units_to_add():
-            add_mutation = AddOrgUnitMutation(
-                self._session, unit, self.mo_org_unit_type
-            )
-            yield unit, add_mutation
-
-        # ... and then update modified units (name or parent changed)
-        for unit in self._tree_diff.get_units_to_update():
-            update_mutation = UpdateOrgUnitMutation(self._session, unit)
-            yield unit, update_mutation
