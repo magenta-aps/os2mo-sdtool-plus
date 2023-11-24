@@ -140,7 +140,7 @@ class TestTreeDiffExecutor:
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
             )
-            for operation, mutation, result in tree_diff_executor.execute(True):
+            for operation, mutation, result in tree_diff_executor.execute(dry_run=True):
                 assert operation is not None
                 assert mutation is not None
                 assert result is not None

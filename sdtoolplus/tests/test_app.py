@@ -203,7 +203,7 @@ class TestApp:
             )
             mock_client_post = self._add_obj_mock(stack, app.client, "post")
             # Act
-            result: list[tuple] = list(app.execute(True))
+            result: list[tuple] = list(app.execute(dry_run=True))
             # Assert: check that we see the expected operations
             self._assert_expected_operations(
                 result, expected_units_to_add + expected_units_to_update

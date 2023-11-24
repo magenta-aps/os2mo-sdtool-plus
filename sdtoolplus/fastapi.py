@@ -68,7 +68,7 @@ def create_app(**kwargs) -> FastAPI:
                 "fix_departments_result": str(fix_departments_result),
             }
             for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute(
-                dry_run
+                dry_run=dry_run
             )
         ]
         dipex_last_success_timestamp.set_to_current_time()

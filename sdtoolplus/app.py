@@ -115,7 +115,7 @@ class App:
         mutation: AnyMutation
         result: UUID | Exception
         fix_departments_result: bool | None
-        for org_unit_node, mutation, result in executor.execute(dry_run):
+        for org_unit_node, mutation, result in executor.execute(dry_run=dry_run):
             if not dry_run:
                 fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
             else:
