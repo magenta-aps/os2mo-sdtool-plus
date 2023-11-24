@@ -116,7 +116,7 @@ class App:
         result: UUID | Exception
         fix_departments_result: bool | None
         for org_unit_node, mutation, result in executor.execute():
-            fix_departments_result = self._call_fix_departments(result)  # type: ignore
+            fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
             yield (
                 org_unit_node,
                 mutation,
@@ -139,10 +139,11 @@ class App:
             )
             yield org_unit_node, mutation
 
-    def _call_fix_departments(self, org_unit_uuid: OrgUnitUUID) -> bool:
-        url: str = f"/trigger/fix-departments/{org_unit_uuid}"
+    def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> bool:
+        url: str = f"/trigger/apply-ny-logic/{org_unit_uuid}"
         response: Response = self.client.post(url)
         if response.status_code >= 400:
+            # TODO: we need an RC alarm if this happens
             logger.error(
                 "fix_departments returned an error: status_code=%d, response=%r",
                 response.status_code,
