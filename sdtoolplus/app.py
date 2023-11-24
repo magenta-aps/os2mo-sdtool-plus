@@ -105,7 +105,7 @@ class App:
         return TreeDiffExecutor(self.session, tree_diff, mo_org_unit_type)
 
     def execute(
-        self,
+        self, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID | Exception, Optional[bool]]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
@@ -115,29 +115,17 @@ class App:
         mutation: AnyMutation
         result: UUID | Exception
         fix_departments_result: bool | None
-        for org_unit_node, mutation, result in executor.execute():
-            fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
+        for org_unit_node, mutation, result in executor.execute(dry_run=dry_run):
+            if not dry_run:
+                fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
+            else:
+                fix_departments_result = True
             yield (
                 org_unit_node,
                 mutation,
                 result,
                 fix_departments_result,
             )
-
-    def execute_dry(self) -> Iterator[tuple[OrgUnitNode, AnyMutation]]:
-        executor: TreeDiffExecutor = self.get_tree_diff_executor()
-        org_unit_node: OrgUnitNode
-        mutation: AnyMutation
-        for org_unit_node, mutation in executor.execute_dry():
-            logger.debug(
-                "Add unit"
-                if isinstance(mutation, AddOrgUnitMutation)
-                else "Update unit",
-                name=org_unit_node.name,
-                uuid=str(org_unit_node.uuid),
-                parent=str(org_unit_node.parent.uuid),
-            )
-            yield org_unit_node, mutation
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> bool:
         url: str = f"/trigger/apply-ny-logic/{org_unit_uuid}"

@@ -56,7 +56,7 @@ def create_app(**kwargs) -> FastAPI:
         return tree_as_string(sd_tree)
 
     @app.post("/trigger")
-    async def trigger(request: Request, response: Response) -> list[dict]:
+    async def trigger(request: Request, dry_run: bool = False) -> list[dict]:
         logger.info("Starting run")
 
         sdtoolplus: App = request.app.extra["sdtoolplus"]
@@ -67,23 +67,11 @@ def create_app(**kwargs) -> FastAPI:
                 "mutation_result": str(result),
                 "fix_departments_result": str(fix_departments_result),
             }
-            for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute()
+            for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute(
+                dry_run=dry_run
+            )
         ]
         dipex_last_success_timestamp.set_to_current_time()
-        return results
-
-    @app.post("/trigger/dry")
-    async def trigger_dry(request: Request, response: Response) -> list[dict]:
-        logger.info("Starting dry run")
-
-        sdtoolplus: App = request.app.extra["sdtoolplus"]
-        results: list[dict] = [
-            {
-                "type": mutation.__class__.__name__,
-                "unit": repr(org_unit_node),
-            }
-            for org_unit_node, mutation in sdtoolplus.execute_dry()
-        ]
         return results
 
     return app

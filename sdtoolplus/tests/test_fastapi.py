@@ -46,8 +46,7 @@ class TestFastAPIApp:
             # Act
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
-            mock_sdtoolplus_app.execute.assert_called_once_with()
-            mock_sdtoolplus_app.execute_dry.assert_not_called()
+            mock_sdtoolplus_app.execute.assert_called_once_with(dry_run=False)
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
@@ -65,10 +64,9 @@ class TestFastAPIApp:
                 self._get_fastapi_app_instance(sdtoolplus_settings)
             )
             # Act
-            response: Response = client.post("/trigger/dry")
+            response: Response = client.post("/trigger?dry_run=true")
             # Assert: check that we call the expected methods
-            mock_sdtoolplus_app.execute_dry.assert_called_once_with()
-            mock_sdtoolplus_app.execute.assert_not_called()
+            mock_sdtoolplus_app.execute.assert_called_once_with(dry_run=True)
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
