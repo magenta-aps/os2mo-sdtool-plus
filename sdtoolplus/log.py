@@ -25,7 +25,10 @@ def _dont_log_graphql_responses(_: Any, __: str, event_dict: dict) -> dict:
     """
     module: str | None = event_dict.get("module")
     func_name: str | None = event_dict.get("func_name")
-    if module == "transport" and func_name == "_decode_response":
+    if module == "transport" and func_name in (
+        "_decode_response",
+        "_construct_payload",
+    ):
         raise structlog.DropEvent
     return event_dict
 

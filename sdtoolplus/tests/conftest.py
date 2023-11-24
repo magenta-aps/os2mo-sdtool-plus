@@ -19,10 +19,7 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..config import SDToolPlusSettings
-from ..diff_org_trees import AddOperation
-from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import UpdateOperation
 from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
@@ -398,12 +395,37 @@ def mock_mo_org_tree_import(
 
 
 @pytest.fixture()
+def mock_mo_org_tree_import_subtree_case(
+    mock_sd_get_organization_response,
+    mock_sd_get_department_response,
+    mock_mo_org_unit_level_map,
+    mock_graphql_session: _MockGraphQLSession,
+) -> MOOrgTreeImport:
+    # The MO tree
+    mo_root = OrgUnitNode(uuid=SharedIdentifier.root_org_uuid, name="<root>")
+    mo_root_sub = OrgUnitNode(
+        uuid=uuid.UUID("11000000-0000-0000-0000-000000000000"),
+        name="mo_root_sub",
+        parent=mo_root,
+        children=build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        ).children,
+    )
+
+    mo_org_tree_import = MOOrgTreeImport(mock_graphql_session)
+    mo_org_tree_import._build_trees = lambda org_units: [mo_root_sub]  # type: ignore
+
+    return mo_org_tree_import
+
+
+@pytest.fixture()
 def mock_org_tree_diff(
     mock_graphql_session: _MockGraphQLSession,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response: GetDepartmentResponse,
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
-    mock_mo_org_unit_type: MOClass,
 ) -> OrgTreeDiff:
     # Construct MO and SD trees
     mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -413,7 +435,7 @@ def mock_org_tree_diff(
         mock_mo_org_unit_level_map,
     )
     # Construct tree diff
-    return OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    return OrgTreeDiff(mo_tree, sd_tree)
 
 
 @pytest.fixture()
@@ -456,7 +478,7 @@ def mock_org_tree_diff_move_afd_from_ny_to_ny(
     dep4.parent = dep5
     # Dangerous: dep4.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
     return org_tree_diff
 
 
@@ -518,7 +540,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     sd_dep5.parent = sd_dep7
     # Dangerous: sd_dep5.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
     return org_tree_diff
 
 
@@ -595,7 +617,7 @@ def mock_org_tree_diff_add_and_move_and_rename(
     )
     new_sd_dep5.children = sd_dep5_children
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, mock_mo_org_unit_type)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
     return org_tree_diff
 
 
@@ -603,72 +625,76 @@ def mock_org_tree_diff_add_and_move_and_rename(
 def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
     mock_org_tree_diff: OrgTreeDiff,
+    mock_mo_org_unit_type: MOClass,
 ) -> TreeDiffExecutor:
     return TreeDiffExecutor(
         mock_graphql_session,  # type: ignore
         mock_org_tree_diff,
+        mock_mo_org_unit_type,
     )
 
 
 @pytest.fixture()
-def expected_operations(
+def expected_units_to_add(
     sd_expected_validity: Validity,
     mock_mo_org_unit_type: MOClass,
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
-) -> list[AddOperation | UpdateOperation | MoveOperation]:
+) -> list[OrgUnitNode]:
     return [
         # SD units "Department 3" and "Department 4" are added under MO unit "Grandchild"
-        AddOperation(
+        OrgUnitNode(
             uuid=uuid.UUID("30000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
             name="Department 3",
-            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             validity=sd_expected_validity,
         ),
-        AddOperation(
+        OrgUnitNode(
             uuid=uuid.UUID("40000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
             name="Department 4",
-            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             validity=sd_expected_validity,
         ),
         # SD unit "Department 5" is added under MO unit "Child"
-        AddOperation(
+        OrgUnitNode(
             uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
             name="Department 5",
-            org_unit_type_uuid=mock_mo_org_unit_type.uuid,
             org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             validity=sd_expected_validity,
         ),
+        OrgUnitNode(
+            uuid=uuid.UUID("60000000-0000-0000-0000-000000000000"),
+            parent_uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
+            name="Department 6",
+            org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
+            validity=sd_expected_validity,
+        ),
+    ]
+
+
+@pytest.fixture()
+def expected_units_to_update(
+    sd_expected_validity: Validity,
+    mock_mo_org_unit_type: MOClass,
+    mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
+) -> list[OrgUnitNode]:
+    return [
         # MO unit "Grandchild" is renamed to "Department 2"
-        UpdateOperation(
-            uuid=SharedIdentifier.grandchild_org_unit_uuid,
-            attr="name",
-            value="Department 2",
-            validity=sd_expected_validity,
-        ),
-        # MO unit "Grandchild" has its org unit level changed to match SD
-        UpdateOperation(
-            uuid=SharedIdentifier.grandchild_org_unit_uuid,
-            attr="org_unit_level_uuid",
-            value=str(mock_mo_org_unit_level_map["NY0-niveau"].uuid),
-            validity=sd_expected_validity,
-        ),
         # MO unit "Child" is renamed to "Department 1"
-        UpdateOperation(
-            uuid=SharedIdentifier.child_org_unit_uuid,
-            attr="name",
-            value="Department 1",
+        OrgUnitNode(
+            uuid=uuid.UUID("10000000-0000-0000-0000-000000000000"),
+            parent_uuid=uuid.UUID("10000000-0000-0000-0000-000000000000"),
+            name="Department 1",
+            org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
             validity=sd_expected_validity,
         ),
-        # MO unit "Child" has its org unit level changed to match SD
-        UpdateOperation(
-            uuid=SharedIdentifier.child_org_unit_uuid,
-            attr="org_unit_level_uuid",
-            value=str(mock_mo_org_unit_level_map["NY1-niveau"].uuid),
+        OrgUnitNode(
+            uuid=uuid.UUID("20000000-0000-0000-0000-000000000000"),
+            parent_uuid=uuid.UUID("20000000-0000-0000-0000-000000000000"),
+            name="Department 2",
+            org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             validity=sd_expected_validity,
         ),
     ]

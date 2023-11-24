@@ -11,6 +11,7 @@ To run:
 """
 import dataclasses
 
+import structlog
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
@@ -19,7 +20,11 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
 from .config import SDToolPlusSettings
+from .tree_diff_executor import AddOrgUnitMutation
 from .tree_tools import tree_as_string
+
+
+logger = structlog.get_logger()
 
 
 def create_app(**kwargs) -> FastAPI:
@@ -52,30 +57,32 @@ def create_app(**kwargs) -> FastAPI:
 
     @app.post("/trigger")
     async def trigger(request: Request, response: Response) -> list[dict]:
+        logger.info("Starting run")
+
         sdtoolplus: App = request.app.extra["sdtoolplus"]
         results: list[dict] = [
             {
-                "description": str(operation),
-                "type": operation.__class__.__name__,
-                "data": dataclasses.asdict(operation),
+                "type": mutation.__class__.__name__,
+                "unit": repr(org_unit_node),
                 "mutation_result": str(result),
                 "fix_departments_result": str(fix_departments_result),
             }
-            for operation, mutation, result, fix_departments_result in sdtoolplus.execute()
+            for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute()
         ]
         dipex_last_success_timestamp.set_to_current_time()
         return results
 
     @app.post("/trigger/dry")
     async def trigger_dry(request: Request, response: Response) -> list[dict]:
+        logger.info("Starting dry run")
+
         sdtoolplus: App = request.app.extra["sdtoolplus"]
         results: list[dict] = [
             {
-                "description": str(operation),
-                "type": operation.__class__.__name__,
-                "data": dataclasses.asdict(operation),
+                "type": mutation.__class__.__name__,
+                "unit": repr(org_unit_node),
             }
-            for operation, mutation in sdtoolplus.execute_dry()
+            for org_unit_node, mutation in sdtoolplus.execute_dry()
         ]
         return results
 

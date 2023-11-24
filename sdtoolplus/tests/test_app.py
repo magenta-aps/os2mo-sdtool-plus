@@ -14,14 +14,12 @@ from raclients.graph.client import PersistentGraphQLClient
 
 from ..app import App
 from ..config import SDToolPlusSettings
-from ..diff_org_trees import AddOperation
-from ..diff_org_trees import MoveOperation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import UpdateOperation
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..sd.tree import build_tree
 from ..tree_diff_executor import TreeDiffExecutor
+from .conftest import mock_graphql_session
 from .conftest import SharedIdentifier
 
 
@@ -109,10 +107,12 @@ class TestApp:
 
     def test_get_tree_diff_executor_for_mo_subtree_case(
         self,
+        mock_graphql_session,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
         mock_sd_get_organization_response,
         mock_sd_get_department_response,
+        mock_mo_org_tree_import_subtree_case,
         sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
@@ -124,26 +124,13 @@ class TestApp:
             mock_mo_org_unit_level_map,
         )
 
-        # The MO tree
-        mo_root = OrgUnitNode(uuid=SharedIdentifier.root_org_uuid, name="<root>")
-        mo_root_sub = OrgUnitNode(
-            uuid=UUID("11000000-0000-0000-0000-000000000000"),
-            name="mo_root_sub",
-            parent=mo_root,
-            children=build_tree(
-                mock_sd_get_organization_response,
-                mock_sd_get_department_response,
-                mock_mo_org_unit_level_map,
-            ).children,
-        )
-
-        mock_mo_org_tree_import = MagicMock()
-        mock_mo_org_tree_import._build_trees = MagicMock(return_value=[mo_root])
-
         with ExitStack() as stack:
+            self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
             self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
-            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(
+                stack, "MOOrgTreeImport", mock_mo_org_tree_import_subtree_case
+            )
             self._add_mock(stack, "get_sd_tree", sd_tree)
 
             app: App = self._get_app_instance(
@@ -160,7 +147,8 @@ class TestApp:
     def test_execute(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
+        expected_units_to_add: list[OrgUnitNode],
+        expected_units_to_update: list[OrgUnitNode],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
@@ -181,15 +169,17 @@ class TestApp:
             # Act
             result: list[tuple] = list(app.execute())
             # Assert: check that we see the expected operations
-            self._assert_expected_operations(result, expected_operations)
+            self._assert_expected_operations(
+                result, expected_units_to_add + expected_units_to_update
+            )
             # Assert: check that we see a call to the GraphQL API, as well as a call to
             # "fix_departments", for each `AddOperation` and `UpdateOperation` in the
             # result.
             num_add_or_update_ops = len(
                 [
-                    operation
-                    for (operation, mutation, res1, res2) in result
-                    if isinstance(operation, (AddOperation, UpdateOperation))
+                    unit
+                    for (unit, mutation, res1, res2) in result
+                    if isinstance(unit, OrgUnitNode)
                 ]
             )
             assert mock_graphql_execute.call_count == num_add_or_update_ops
@@ -198,7 +188,8 @@ class TestApp:
     def test_execute_dry(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
+        expected_units_to_add: list[OrgUnitNode],
+        expected_units_to_update: list[OrgUnitNode],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
@@ -214,7 +205,9 @@ class TestApp:
             # Act
             result: list[tuple] = list(app.execute_dry())
             # Assert: check that we see the expected operations
-            self._assert_expected_operations(result, expected_operations)
+            self._assert_expected_operations(
+                result, expected_units_to_add + expected_units_to_update
+            )
             # Assert: check that we did not make any calls to the GraphQL API, or to
             # "fix_departments".
             mock_graphql_execute.assert_not_called()
@@ -250,13 +243,11 @@ class TestApp:
     def _assert_expected_operations(
         self,
         result: list[tuple],
-        expected_operations: list[AddOperation | UpdateOperation | MoveOperation],
+        expected_units_to_add: list[OrgUnitNode],
     ) -> None:
         """Assert that the actual operations in `result` match the expected operations."""
-        actual_operations: list[AddOperation | UpdateOperation | MoveOperation] = [
-            item[0] for item in result
-        ]
-        assert actual_operations == expected_operations
+        actual_operations: list[OrgUnitNode] = [item[0] for item in result]
+        assert actual_operations == expected_units_to_add
 
     def _get_mock_mutation_response(self) -> MagicMock:
         mock_mutation_response: MagicMock = MagicMock()

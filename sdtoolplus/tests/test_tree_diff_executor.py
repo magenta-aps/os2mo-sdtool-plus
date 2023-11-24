@@ -10,18 +10,13 @@ from freezegun import freeze_time
 from gql.transport.exceptions import TransportQueryError
 from graphql import GraphQLSchema
 from more_itertools import one
-from ramodels.mo import Validity
 
-from ..diff_org_trees import AddOperation
-from ..diff_org_trees import MoveOperation
-from ..diff_org_trees import Operation
 from ..diff_org_trees import OrgTreeDiff
-from ..diff_org_trees import UpdateOperation
+from ..mo_class import MOClass
+from ..mo_org_unit_importer import OrgUnitNode
 from ..tree_diff_executor import AddOrgUnitMutation
-from ..tree_diff_executor import MoveOrgUnitMutation
 from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import TreeDiffExecutor
-from ..tree_diff_executor import UnsupportedMutation
 from ..tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
 from .conftest import _MockGraphQLSessionRaisingTransportQueryError
@@ -31,7 +26,11 @@ from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 def mutation_instance(graphql_testing_schema: GraphQLSchema) -> Mutation:
     return Mutation(
         _MockGraphQLSession(graphql_testing_schema),  # type: ignore
-        Operation(),  # type: ignore
+        OrgUnitNode(
+            uuid=uuid.uuid4(),
+            name="name",
+            parent_uuid=uuid.uuid4(),
+        ),  # type: ignore
     )
 
 
@@ -51,28 +50,33 @@ class TestTreeDiffExecutor:
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
     ):
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff,
+            mock_mo_org_unit_type,
         )
-        for operation, mutation, result in tree_diff_executor.execute():
-            assert operation is not None
+        for org_unit_node, mutation, result in tree_diff_executor.execute():
+            assert org_unit_node is not None
             assert mutation is not None
             assert result is not None
-            if isinstance(operation, UpdateOperation):
-                assert isinstance(mutation, UpdateOrgUnitMutation)
-                assert result == operation.uuid  # Result is UUID of updated org unit
-            if isinstance(operation, AddOperation):
-                assert isinstance(mutation, AddOrgUnitMutation)
+            if isinstance(mutation, UpdateOrgUnitMutation):
+                assert isinstance(org_unit_node, OrgUnitNode)
+                assert (
+                    result == org_unit_node.uuid
+                )  # Result is UUID of updated org unit
+            if isinstance(mutation, AddOrgUnitMutation):
+                assert isinstance(org_unit_node, OrgUnitNode)
                 assert isinstance(result, uuid.UUID)  # Result is UUID of new org unit
-                assert result == operation.uuid
+                assert result == org_unit_node.uuid
 
     @freeze_time("2023-11-15")
     def test_execute_for_move_afd_from_ny_to_ny(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff_move_afd_from_ny_to_ny: OrgTreeDiff,
+        mock_mo_org_unit_type,
     ):
         """
         Test the case where we move an SD "Afdelings-niveau" from
@@ -87,16 +91,16 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff_move_afd_from_ny_to_ny,
+            mock_mo_org_unit_type,
         )
 
         # Act
-        operation, mutation, result = one(tree_diff_executor.execute())
+        org_unit_node, mutation, result = one(tree_diff_executor.execute())
 
         # Assert
-        assert isinstance(operation, MoveOperation)
-        assert operation.uuid == ou_uuid
-        assert operation.parent == new_parent_uuid
-        assert operation.validity.from_date.date() == move_date
+        assert isinstance(org_unit_node, OrgUnitNode)
+        assert org_unit_node.uuid == ou_uuid
+        assert org_unit_node.parent.uuid == new_parent_uuid
 
         assert mutation.dsl_mutation_input["uuid"] == str(ou_uuid)
         assert mutation.dsl_mutation_input["name"] == "Department 4"
@@ -114,83 +118,29 @@ class TestTreeDiffExecutor:
         self,
         mock_graphql_session_raising_transportqueryerror: _MockGraphQLSessionRaisingTransportQueryError,
         mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type,
     ):
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session_raising_transportqueryerror,  # type: ignore
             mock_org_tree_diff,
+            mock_mo_org_unit_type,
         )
         for operation, mutation, result in tree_diff_executor.execute():
-            if isinstance(operation, MoveOperation):
-                assert isinstance(result, UnsupportedMutation)
-            else:
-                assert isinstance(result, TransportQueryError)
+            assert isinstance(result, TransportQueryError)
 
     def test_execute_dry(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
     ):
         with patch.object(mock_graphql_session, "execute") as mock_session_execute:
             tree_diff_executor = TreeDiffExecutor(
                 mock_graphql_session,  # type: ignore
                 mock_org_tree_diff,
+                mock_mo_org_unit_type,
             )
             for operation, mutation in tree_diff_executor.execute_dry():
                 assert operation is not None
                 assert mutation is not None
                 mock_session_execute.assert_not_called()  # type: ignore
-
-    def test_get_mutation(
-        self,
-        mock_graphql_session: _MockGraphQLSession,
-        mock_org_tree_diff: OrgTreeDiff,
-        sd_expected_validity: Validity,
-    ):
-        tree_diff_executor = TreeDiffExecutor(
-            mock_graphql_session,  # type: ignore
-            mock_org_tree_diff,
-        )
-
-        # Test `MoveOperation` produces `MoveOrgUnitMutation`
-        assert isinstance(
-            tree_diff_executor.get_mutation(
-                MoveOperation(
-                    uuid=uuid.uuid4(),
-                    name="name",
-                    parent=uuid.uuid4(),
-                    validity=Validity(from_date=datetime.now()),
-                )
-            ),
-            MoveOrgUnitMutation,
-        )
-
-        # Test `UpdateOperation` produces `UpdateOrgUnitMutation`
-        assert isinstance(
-            tree_diff_executor.get_mutation(
-                UpdateOperation(
-                    uuid=uuid.uuid4(),
-                    attr="name",
-                    value="foo",
-                    validity=sd_expected_validity,
-                )
-            ),
-            UpdateOrgUnitMutation,
-        )
-
-        # Test `AddOperation` produces `AddOrgUnitMutation`
-        assert isinstance(
-            tree_diff_executor.get_mutation(
-                AddOperation(
-                    uuid=uuid.uuid4(),
-                    parent_uuid=uuid.uuid4(),
-                    name="foo",
-                    org_unit_type_uuid=uuid.uuid4(),
-                    org_unit_level_uuid=uuid.uuid4(),
-                    validity=sd_expected_validity,
-                )
-            ),
-            AddOrgUnitMutation,
-        )
-
-        with pytest.raises(ValueError):
-            tree_diff_executor.get_mutation(None)  # type: ignore
