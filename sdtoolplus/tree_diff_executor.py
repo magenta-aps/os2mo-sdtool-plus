@@ -24,6 +24,15 @@ from .mo_org_unit_importer import OrgUnitNode
 logger = structlog.get_logger()
 
 
+def _filter_by_uuid(
+    unit_uuid: uuid.UUID | None, org_units: Iterator[OrgUnitNode]
+) -> list[OrgUnitNode]:
+    if unit_uuid is None:
+        return list(org_units)
+
+    return [org_unit for org_unit in org_units if org_unit.uuid == unit_uuid]
+
+
 class Mutation(abc.ABC):
     def __init__(self, session: GraphQLClient, org_unit_node: OrgUnitNode):
         self._session = session
@@ -136,10 +145,11 @@ class TreeDiffExecutor:
         self.mo_org_unit_type = mo_org_unit_type
 
     def execute(
-        self, dry_run: bool = False
+        self, org_unit: uuid.UUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID | Exception]]:
         # Add new units first
-        for unit in self._tree_diff.get_units_to_add():
+        units_to_add = _filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
+        for unit in units_to_add:
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
             )
@@ -154,7 +164,10 @@ class TreeDiffExecutor:
                 yield unit, add_mutation, result
 
         # ... and then update modified units (name or parent changed)
-        for unit in self._tree_diff.get_units_to_update():
+        units_to_update = _filter_by_uuid(
+            org_unit, self._tree_diff.get_units_to_update()
+        )
+        for unit in units_to_update:
             update_mutation = UpdateOrgUnitMutation(self._session, unit)
             try:
                 if not dry_run:
