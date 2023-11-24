@@ -214,7 +214,7 @@ class TestApp:
             mock_client_post.assert_not_called()
 
     @pytest.mark.parametrize("status_code", [200, 400, 500])
-    def test_call_fix_departments(
+    def test_call_apply_ny_logic(
         self, sdtoolplus_settings: SDToolPlusSettings, status_code: int
     ) -> None:
         # Arrange
@@ -225,11 +225,11 @@ class TestApp:
             app.client, "post", return_value=response
         ) as mock_client_post:
             # Act
-            success: bool = app._call_fix_departments(org_unit_uuid)
+            success: bool = app._call_apply_ny_logic(org_unit_uuid)
             # Assert
             assert success is (True if status_code == 200 else False)
             mock_client_post.assert_called_once_with(
-                f"/trigger/fix-departments/{org_unit_uuid}"
+                f"/trigger/apply-ny-logic/{org_unit_uuid}"
             )
 
     def _add_mock(self, stack: ExitStack, name: str, value: Any = None):
