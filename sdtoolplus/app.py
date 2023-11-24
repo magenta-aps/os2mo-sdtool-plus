@@ -21,7 +21,6 @@ from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
-from .tree_diff_executor import AddOrgUnitMutation
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 
@@ -105,17 +104,26 @@ class App:
         return TreeDiffExecutor(self.session, tree_diff, mo_org_unit_type)
 
     def execute(
-        self, dry_run: bool = False
+        self, org_unit: UUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID | Exception, Optional[bool]]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
+
+        Args:
+            org_unit: Unit to be processed (if not None) by TreeDiffExecutor
+            dry_run: whether to perform a dry run or not
+
+        Returns:
+            Iterator which iterates over the processed units
         """
         executor: TreeDiffExecutor = self.get_tree_diff_executor()
         org_unit_node: OrgUnitNode
         mutation: AnyMutation
         result: UUID | Exception
         fix_departments_result: bool | None
-        for org_unit_node, mutation, result in executor.execute(dry_run=dry_run):
+        for org_unit_node, mutation, result in executor.execute(
+            org_unit=org_unit, dry_run=dry_run
+        ):
             if not dry_run:
                 fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
             else:

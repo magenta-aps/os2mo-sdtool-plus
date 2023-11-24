@@ -140,8 +140,33 @@ class TestTreeDiffExecutor:
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
             )
-            for operation, mutation, result in tree_diff_executor.execute(dry_run=True):
-                assert operation is not None
+            for org_unit_node, mutation, result in tree_diff_executor.execute(
+                dry_run=True
+            ):
+                assert org_unit_node is not None
                 assert mutation is not None
                 assert result is not None
                 mock_session_execute.assert_not_called()  # type: ignore
+
+    def test_execute_filter(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
+    ):
+        # Arrange
+        tree_diff_executor = TreeDiffExecutor(
+            mock_graphql_session,  # type: ignore
+            mock_org_tree_diff,
+            mock_mo_org_unit_type,
+        )
+
+        # Act
+        org_unit_node, mutation, result = one(
+            tree_diff_executor.execute(
+                org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
+            )
+        )
+
+        # Assert
+        assert org_unit_node.uuid == uuid.UUID("60000000-0000-0000-0000-000000000000")

@@ -3,6 +3,7 @@
 import re
 from unittest.mock import MagicMock
 from unittest.mock import patch
+from uuid import UUID
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -46,7 +47,9 @@ class TestFastAPIApp:
             # Act
             response: Response = client.post("/trigger")
             # Assert: check that we call the expected methods
-            mock_sdtoolplus_app.execute.assert_called_once_with(dry_run=False)
+            mock_sdtoolplus_app.execute.assert_called_once_with(
+                org_unit=None, dry_run=False
+            )
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
@@ -54,6 +57,24 @@ class TestFastAPIApp:
             last_run_val_after: float = self._get_last_run_metric(client)
             assert last_run_val_before == 0.0
             assert last_run_val_after > last_run_val_before
+
+    def test_post_trigger_filter(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
+        # Arrange
+        mock_sdtoolplus_app = MagicMock(spec=App)
+        with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
+            client: TestClient = TestClient(
+                self._get_fastapi_app_instance(sdtoolplus_settings)
+            )
+
+            # Act
+            response: Response = client.post(
+                "/trigger?org_unit=70000000-0000-0000-0000-000000000000"
+            )
+
+            # Assert
+            mock_sdtoolplus_app.execute.assert_called_once_with(
+                org_unit=UUID("70000000-0000-0000-0000-000000000000"), dry_run=False
+            )
 
     def test_post_trigger_dry(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
@@ -66,7 +87,9 @@ class TestFastAPIApp:
             # Act
             response: Response = client.post("/trigger?dry_run=true")
             # Assert: check that we call the expected methods
-            mock_sdtoolplus_app.execute.assert_called_once_with(dry_run=True)
+            mock_sdtoolplus_app.execute.assert_called_once_with(
+                org_unit=None, dry_run=True
+            )
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []

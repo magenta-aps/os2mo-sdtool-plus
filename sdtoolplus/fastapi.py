@@ -9,18 +9,16 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
-import dataclasses
+from uuid import UUID
 
 import structlog
 from fastapi import FastAPI
 from fastapi import Request
-from fastapi import Response
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from .app import App
 from .config import SDToolPlusSettings
-from .tree_diff_executor import AddOrgUnitMutation
 from .tree_tools import tree_as_string
 
 
@@ -56,8 +54,10 @@ def create_app(**kwargs) -> FastAPI:
         return tree_as_string(sd_tree)
 
     @app.post("/trigger")
-    async def trigger(request: Request, dry_run: bool = False) -> list[dict]:
-        logger.info("Starting run")
+    async def trigger(
+        request: Request, org_unit: UUID | None = None, dry_run: bool = False
+    ) -> list[dict]:
+        logger.info("Starting run", org_unit=org_unit, dry_run=dry_run)
 
         sdtoolplus: App = request.app.extra["sdtoolplus"]
         results: list[dict] = [
@@ -68,7 +68,7 @@ def create_app(**kwargs) -> FastAPI:
                 "fix_departments_result": str(fix_departments_result),
             }
             for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute(
-                dry_run=dry_run
+                org_unit=org_unit, dry_run=dry_run
             )
         ]
         dipex_last_success_timestamp.set_to_current_time()
