@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import pytest
 from httpx import Response
+from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient
 
 from ..app import App
@@ -185,6 +186,30 @@ class TestApp:
             assert mock_graphql_execute.call_count == num_add_or_update_ops
             assert mock_client_post.call_count == num_add_or_update_ops
 
+    def test_execute_filter(
+        self,
+        mock_tree_diff_executor: TreeDiffExecutor,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        # Arrange
+        app: App = self._get_app_instance(sdtoolplus_settings)
+        with ExitStack() as stack:
+            self._add_obj_mock(
+                stack, app, "get_tree_diff_executor", mock_tree_diff_executor
+            )
+            self._add_obj_mock(stack, app.client, "post", Response(status_code=200))
+
+            # Act
+            result: list[tuple] = list(
+                app.execute(org_unit=UUID("60000000-0000-0000-0000-000000000000"))
+            )
+
+            # Assert
+            expected_unit_to_process = one(result)[0]
+            assert expected_unit_to_process.uuid == UUID(
+                "60000000-0000-0000-0000-000000000000"
+            )
+
     def test_execute_dry(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
@@ -243,11 +268,11 @@ class TestApp:
     def _assert_expected_operations(
         self,
         result: list[tuple],
-        expected_units_to_add: list[OrgUnitNode],
+        expected_units: list[OrgUnitNode],
     ) -> None:
         """Assert that the actual operations in `result` match the expected operations."""
         actual_operations: list[OrgUnitNode] = [item[0] for item in result]
-        assert actual_operations == expected_units_to_add
+        assert actual_operations == expected_units
 
     def _get_mock_mutation_response(self) -> MagicMock:
         mock_mutation_response: MagicMock = MagicMock()
