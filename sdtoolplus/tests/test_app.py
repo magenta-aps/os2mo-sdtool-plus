@@ -147,8 +147,8 @@ class TestApp:
     def test_execute(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_units_to_add,
-        expected_units_to_update,
+        expected_units_to_add: list[OrgUnitNode],
+        expected_units_to_update: list[OrgUnitNode],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
@@ -188,8 +188,8 @@ class TestApp:
     def test_execute_dry(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
-        expected_units_to_add,
-        expected_units_to_update,
+        expected_units_to_add: list[OrgUnitNode],
+        expected_units_to_update: list[OrgUnitNode],
         sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
