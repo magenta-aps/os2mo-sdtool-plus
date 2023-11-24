@@ -57,7 +57,7 @@ def create_app(**kwargs) -> FastAPI:
     async def trigger(
         request: Request, org_unit: UUID | None = None, dry_run: bool = False
     ) -> list[dict]:
-        logger.info("Starting run", org_unit=org_unit, dry_run=dry_run)
+        logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
         sdtoolplus: App = request.app.extra["sdtoolplus"]
         results: list[dict] = [
@@ -72,6 +72,9 @@ def create_app(**kwargs) -> FastAPI:
             )
         ]
         dipex_last_success_timestamp.set_to_current_time()
+
+        logger.info("Run completed!")
+
         return results
 
     return app
