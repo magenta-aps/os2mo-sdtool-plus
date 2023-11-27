@@ -34,4 +34,4 @@ class SDToolPlusSettings(BaseSettings):
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
     org_unit_type: str = "Enhed"
-    sd_lon_base_url: AnyHttpUrl = "http://sdtool_plus:8000"  # type: ignore
+    sd_lon_base_url: AnyHttpUrl = "http://sdlon:8000"  # type: ignore
