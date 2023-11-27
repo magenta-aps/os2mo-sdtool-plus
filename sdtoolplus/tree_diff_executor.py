@@ -75,6 +75,7 @@ class UpdateOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
+        logger.info("Updating org unit...", input=self.dsl_mutation_input)
         expr = self._dsl_schema_mutation.org_unit_update.args(
             input=self.dsl_mutation_input,
         )
@@ -112,6 +113,7 @@ class AddOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
+        logger.info("Creating org unit...", input=self.dsl_mutation_input)
         return DSLMutation(
             self._dsl_schema_mutation.org_unit_create.args(
                 input=self.dsl_mutation_input,

@@ -48,7 +48,8 @@ class App:
             fetch_schema_from_transport=True,
         )
 
-        self.client = httpx.Client(base_url=self.settings.sd_lon_base_url)
+        self.client = httpx.Client(base_url=str(self.settings.sd_lon_base_url))
+        logger.debug("Configured HTTPX client", base_url=self.client.base_url)
 
     def get_sd_tree(self) -> OrgUnitNode:
         mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
@@ -136,6 +137,8 @@ class App:
             )
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> bool:
+        logger.debug("Apply NY logic", org_unit_uuid=org_unit_uuid)
+
         url: str = f"/trigger/apply-ny-logic/{org_unit_uuid}"
         response: Response = self.client.post(url)
         if response.status_code >= 400:
