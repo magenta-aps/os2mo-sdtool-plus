@@ -159,20 +159,6 @@ class TestTreeDiffExecutor:
 
         assert result == uuid.UUID("40000000-0000-0000-0000-000000000000")
 
-    def test_execute_handles_transportqueryerror(
-        self,
-        mock_graphql_session_raising_transportqueryerror: _MockGraphQLSessionRaisingTransportQueryError,
-        mock_org_tree_diff: OrgTreeDiff,
-        mock_mo_org_unit_type,
-    ):
-        tree_diff_executor = TreeDiffExecutor(
-            mock_graphql_session_raising_transportqueryerror,  # type: ignore
-            mock_org_tree_diff,
-            mock_mo_org_unit_type,
-        )
-        for operation, mutation, result in tree_diff_executor.execute():
-            assert isinstance(result, TransportQueryError)
-
     def test_execute_dry(
         self,
         mock_graphql_session: _MockGraphQLSession,

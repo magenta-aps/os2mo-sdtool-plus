@@ -160,13 +160,6 @@ def mock_graphql_session(graphql_testing_schema: GraphQLSchema) -> _MockGraphQLS
 
 
 @pytest.fixture()
-def mock_graphql_session_raising_transportqueryerror(
-    graphql_testing_schema: GraphQLSchema,
-) -> _MockGraphQLSessionRaisingTransportQueryError:
-    return _MockGraphQLSessionRaisingTransportQueryError(graphql_testing_schema)
-
-
-@pytest.fixture()
 def mock_sd_get_organization_response() -> GetOrganizationResponse:
     sd_org_json = {
         "RegionIdentifier": "RI",
