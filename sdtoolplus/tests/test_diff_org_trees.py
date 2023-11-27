@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
-from datetime import date
-from unittest.mock import Mock
 
-import pytest
 from anytree.render import RenderTree
 from freezegun import freeze_time
 from more_itertools import first
@@ -14,7 +11,6 @@ from sdclient.responses import GetOrganizationResponse
 from ..diff_org_trees import _uuid_to_nodes_map
 from ..diff_org_trees import Nodes
 from ..diff_org_trees import OrgTreeDiff
-from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
@@ -44,11 +40,13 @@ class TestOrgTreeDiff:
         # Add two new units
         dep7 = OrgUnitNode(
             uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
+            user_key="dep7",
             name="Department 7",
             parent=sd_tree,
         )
         dep8 = OrgUnitNode(
             uuid=uuid.UUID("80000000-0000-0000-0000-000000000000"),
+            user_key="dep8",
             name="Department 8",
             parent=dep7,
         )
@@ -143,6 +141,7 @@ class TestOrgTreeDiff:
         assert isinstance(unit_to_update, OrgUnitNode)
         assert unit_to_update.uuid == uuid.UUID("40000000-0000-0000-0000-000000000000")
         assert unit_to_update.name == "Department 4"
+        assert unit_to_update.user_key == "dep4"
         assert unit_to_update.parent.uuid == uuid.UUID(
             "50000000-0000-0000-0000-000000000000"
         )
@@ -179,6 +178,7 @@ class TestOrgTreeDiff:
         assert isinstance(unit_to_update, OrgUnitNode)
         assert unit_to_update.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
         assert unit_to_update.name == "Department 5"
+        assert unit_to_update.user_key == "dep5"
         assert unit_to_update.parent.uuid == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )
@@ -242,6 +242,7 @@ class TestOrgTreeDiff:
             == mock_mo_org_unit_level_map["NY1-niveau"].uuid
         )
         assert unit_to_add.name == "Department 7"
+        assert unit_to_add.user_key == "dep7"
         assert unit_to_add.parent_uuid == uuid.UUID(
             "00000000-0000-0000-0000-000000000000"
         )
@@ -250,6 +251,7 @@ class TestOrgTreeDiff:
         assert isinstance(unit_to_update, OrgUnitNode)
         assert unit_to_update.uuid == uuid.UUID("50000000-0000-0000-0000-000000000000")
         assert unit_to_update.name == "Department 8"
+        assert unit_to_update.user_key == "dep8"
         assert unit_to_update.parent.uuid == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )
@@ -328,6 +330,7 @@ def test_uuid_to_nodes_map_no_children(sd_expected_validity) -> None:
     tree = OrgUnitNode(
         uuid=uuid.uuid4(),
         parent_uuid=uuid.uuid4(),
+        user_key="user_key",
         name="name",
         org_unit_level_uuid=uuid.uuid4(),
         validity=sd_expected_validity,

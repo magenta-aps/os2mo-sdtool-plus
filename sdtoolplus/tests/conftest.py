@@ -56,6 +56,7 @@ class _MockGraphQLSession:
         OrgUnitNode(
             uuid=SharedIdentifier.child_org_unit_uuid,
             parent_uuid=SharedIdentifier.root_org_uuid,
+            user_key="child",
             name="Child",
             org_unit_level_uuid=uuid.uuid4(),
             validity=_TESTING_MO_VALIDITY,
@@ -66,6 +67,7 @@ class _MockGraphQLSession:
         OrgUnitNode(
             uuid=SharedIdentifier.grandchild_org_unit_uuid,
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
+            user_key="grandchild",
             name="Grandchild",
             org_unit_level_uuid=uuid.uuid4(),
             validity=_TESTING_MO_VALIDITY,
@@ -137,6 +139,7 @@ class _MockGraphQLSession:
             {
                 "uuid": str(node.uuid),
                 "parent_uuid": str(node.parent_uuid),
+                "user_key": node.user_key,
                 "name": node.name,
                 "org_unit_level_uuid": str(node.org_unit_level_uuid),
             }
@@ -266,7 +269,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "NY1",
+                "DepartmentIdentifier": "dep1",
                 "DepartmentLevelIdentifier": "NY1-niveau",
                 "DepartmentName": "Department 1",
                 "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
@@ -274,7 +277,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "NY0",
+                "DepartmentIdentifier": "dep2",
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "Department 2",
                 "DepartmentUUIDIdentifier": str(
@@ -284,7 +287,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "Afd",
+                "DepartmentIdentifier": "dep3",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 3",
                 "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000",
@@ -292,7 +295,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "Afd",
+                "DepartmentIdentifier": "dep4",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 4",
                 "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000",
@@ -300,7 +303,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "NY0",
+                "DepartmentIdentifier": "dep5",
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "Department 5",
                 "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000",
@@ -308,7 +311,7 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
             {
                 "ActivationDate": "1999-01-01",
                 "DeactivationDate": "2000-01-01",
-                "DepartmentIdentifier": "Afd",
+                "DepartmentIdentifier": "dep6",
                 "DepartmentLevelIdentifier": "Afdelings-niveau",
                 "DepartmentName": "Department 6",
                 "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000",
@@ -402,10 +405,13 @@ def mock_mo_org_tree_import_subtree_case(
     mock_graphql_session: _MockGraphQLSession,
 ) -> MOOrgTreeImport:
     # The MO tree
-    mo_root = OrgUnitNode(uuid=SharedIdentifier.root_org_uuid, name="<root>")
+    mo_root = OrgUnitNode(
+        uuid=SharedIdentifier.root_org_uuid, name="<root>", user_key="root"
+    )
     mo_root_sub = OrgUnitNode(
         uuid=uuid.UUID("11000000-0000-0000-0000-000000000000"),
         name="mo_root_sub",
+        user_key="mo_root_sub",
         parent=mo_root,
         children=build_tree(
             mock_sd_get_organization_response,
@@ -515,6 +521,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     mo_dep7 = OrgUnitNode(
         uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
         parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        user_key="dep7",
         parent=mo_tree,
         name="Department 7",
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
@@ -528,6 +535,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     sd_dep7 = OrgUnitNode(
         uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
         parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        user_key="dep7",
         parent=sd_tree,
         name="Department 7",
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
@@ -596,6 +604,7 @@ def mock_org_tree_diff_add_and_move_and_rename(
     sd_dep7 = OrgUnitNode(
         uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
         parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        user_key="dep7",
         parent=sd_tree,
         name="Department 7",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
@@ -610,6 +619,7 @@ def mock_org_tree_diff_add_and_move_and_rename(
     new_sd_dep5 = OrgUnitNode(
         uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
         parent_uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
+        user_key="dep8",
         parent=sd_dep7,
         name="Department 8",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
@@ -645,6 +655,7 @@ def expected_units_to_add(
         OrgUnitNode(
             uuid=uuid.UUID("30000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            user_key="dep3",
             name="Department 3",
             org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             validity=sd_expected_validity,
@@ -652,6 +663,7 @@ def expected_units_to_add(
         OrgUnitNode(
             uuid=uuid.UUID("40000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+            user_key="dep4",
             name="Department 4",
             org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
             validity=sd_expected_validity,
@@ -660,6 +672,7 @@ def expected_units_to_add(
         OrgUnitNode(
             uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
             parent_uuid=SharedIdentifier.child_org_unit_uuid,
+            user_key="dep5",
             name="Department 5",
             org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             validity=sd_expected_validity,
@@ -667,6 +680,7 @@ def expected_units_to_add(
         OrgUnitNode(
             uuid=uuid.UUID("60000000-0000-0000-0000-000000000000"),
             parent_uuid=uuid.UUID("50000000-0000-0000-0000-000000000000"),
+            user_key="dep6",
             name="Department 6",
             org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             validity=sd_expected_validity,
@@ -686,6 +700,7 @@ def expected_units_to_update(
         OrgUnitNode(
             uuid=uuid.UUID("10000000-0000-0000-0000-000000000000"),
             parent_uuid=uuid.UUID("10000000-0000-0000-0000-000000000000"),
+            user_key="dep1",
             name="Department 1",
             org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
             validity=sd_expected_validity,
@@ -693,6 +708,7 @@ def expected_units_to_update(
         OrgUnitNode(
             uuid=uuid.UUID("20000000-0000-0000-0000-000000000000"),
             parent_uuid=uuid.UUID("20000000-0000-0000-0000-000000000000"),
+            user_key="dep2",
             name="Department 2",
             org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
             validity=sd_expected_validity,
