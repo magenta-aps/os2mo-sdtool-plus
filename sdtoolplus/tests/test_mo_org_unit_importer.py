@@ -52,6 +52,7 @@ class TestMOOrgTreeImport:
             OrgUnit(
                 uuid=n.uuid,
                 parent_uuid=n.parent_uuid,
+                user_key=n.user_key,
                 name=n.name,
                 org_unit_level_uuid=n.org_unit_level_uuid,
             )
@@ -109,39 +110,49 @@ class TestMOOrgTreeImport:
 
         # Arrange
         unit1 = OrgUnitNode(
-            uuid=UUID("10000000-0000-0000-0000-000000000000"), name="unit1"
+            uuid=UUID("10000000-0000-0000-0000-000000000000"),
+            user_key="unit1",
+            name="unit1",
         )
         unit11 = OrgUnitNode(
             uuid=UUID("11000000-0000-0000-0000-000000000000"),
+            user_key="unit11",
             name="unit11",
             parent=unit1,
         )
         unit12 = OrgUnitNode(
             uuid=UUID("12000000-0000-0000-0000-000000000000"),
+            user_key="unit12",
             name="unit12",
             parent=unit1,
         )
 
         unit2 = OrgUnitNode(
-            uuid=UUID("20000000-0000-0000-0000-000000000000"), name="unit2"
+            uuid=UUID("20000000-0000-0000-0000-000000000000"),
+            user_key="unit2",
+            name="unit2",
         )
         unit21 = OrgUnitNode(
             uuid=UUID("21000000-0000-0000-0000-000000000000"),
+            user_key="unit21",
             name="unit21",
             parent=unit2,
         )
         unit22 = OrgUnitNode(
             uuid=UUID("22000000-0000-0000-0000-000000000000"),
+            user_key="unit22",
             name="unit22",
             parent=unit2,
         )
         unit221 = OrgUnitNode(
             uuid=UUID("22100000-0000-0000-0000-000000000000"),
+            user_key="unit221",
             name="unit221",
             parent=unit22,
         )
         unit222 = OrgUnitNode(
             uuid=UUID("22200000-0000-0000-0000-000000000000"),
+            user_key="unit222",
             name="unit222",
             parent=unit22,
         )

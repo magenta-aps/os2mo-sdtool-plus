@@ -85,6 +85,7 @@ class UpdateOrgUnitMutation(Mutation):
         return {
             "uuid": str(self.org_unit_node.uuid),  # type: ignore
             "name": self.org_unit_node.name,  # type: ignore
+            "user_key": self.org_unit_node.user_key,  # type: ignore
             "parent": str(self.org_unit_node.parent.uuid),
             "validity": {
                 "from": datetime.datetime.now().date().strftime("%Y-%m-%d"),
@@ -122,6 +123,7 @@ class AddOrgUnitMutation(Mutation):
         return {
             "uuid": str(self.org_unit_node.uuid),  # type: ignore
             "parent": str(self.org_unit_node.parent_uuid),  # type: ignore
+            "user_key": self.org_unit_node.user_key,
             "name": self.org_unit_node.name,  # type: ignore
             "org_unit_type": str(self.mo_org_unit_type.uuid),  # type: ignore
             "org_unit_level": str(self.org_unit_node.org_unit_level_uuid),  # type: ignore

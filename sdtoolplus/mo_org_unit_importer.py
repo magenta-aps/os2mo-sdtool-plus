@@ -19,6 +19,7 @@ OrgUnitLevelUUID: TypeAlias = UUID
 class OrgUnit(pydantic.BaseModel):
     uuid: OrgUnitUUID
     parent_uuid: OrgUnitUUID | None
+    user_key: str
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
     validity: Validity | None
@@ -29,6 +30,7 @@ class OrgUnitNode(anytree.AnyNode):
         self,
         uuid: OrgUnitUUID | None = None,
         parent_uuid: OrgUnitUUID | None = None,
+        user_key: str | None = None,
         name: str | None = None,
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
@@ -39,6 +41,7 @@ class OrgUnitNode(anytree.AnyNode):
         self._instance = OrgUnit(
             uuid=uuid,
             parent_uuid=parent_uuid,
+            user_key=user_key,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
             validity=validity,
@@ -49,6 +52,7 @@ class OrgUnitNode(anytree.AnyNode):
         return cls(
             uuid=org_unit.uuid,
             parent_uuid=org_unit.parent_uuid,
+            user_key=org_unit.user_key,
             name=org_unit.name,
             org_unit_level_uuid=org_unit.org_unit_level_uuid,
             validity=org_unit.validity,
@@ -69,6 +73,10 @@ class OrgUnitNode(anytree.AnyNode):
     @property
     def parent_uuid(self) -> OrgUnitUUID | None:
         return self._instance.parent_uuid
+
+    @property
+    def user_key(self) -> str:
+        return self._instance.user_key
 
     @property
     def name(self) -> str:
@@ -113,6 +121,7 @@ class MOOrgTreeImport:
                             current {
                                 uuid
                                 parent_uuid
+                                user_key
                                 name
                                 org_unit_level_uuid
                             }
@@ -157,6 +166,7 @@ class MOOrgTreeImport:
         root = OrgUnitNode(
             uuid=self.get_org_uuid(),
             parent_uuid=None,
+            user_key="root",
             name="<root>",
             children=children,
             org_unit_level_uuid=None,
@@ -168,6 +178,7 @@ class MOOrgTreeImport:
             root = OrgUnitNode(
                 uuid=self.get_org_uuid(),
                 parent_uuid=None,
+                user_key="root",
                 name="<root>",
                 children=new_root.children,
                 org_unit_level_uuid=None,

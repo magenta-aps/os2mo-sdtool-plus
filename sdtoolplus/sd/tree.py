@@ -23,6 +23,7 @@ _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 def _create_node(
     dep_uuid: UUID,
     dep_name: str,
+    dep_identifier: str,
     dep_level_identifier: str,
     dep_validity: Validity,
     parent: OrgUnitNode,
@@ -50,6 +51,7 @@ def _create_node(
     new_node = OrgUnitNode(
         uuid=dep_uuid,
         parent_uuid=parent.uuid,
+        user_key=dep_identifier,
         parent=parent,
         name=dep_name,
         org_unit_level_uuid=org_unit_level.uuid,
@@ -130,6 +132,7 @@ def _process_node(
 
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
     dep_name = sd_departments_map[dep_uuid].DepartmentName
+    dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
     dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
 
@@ -150,6 +153,7 @@ def _process_node(
         new_node = _create_node(
             dep_uuid,
             dep_name,
+            dep_identifier,
             dep_level_identifier,
             dep_validity,
             parent,
@@ -161,6 +165,7 @@ def _process_node(
     new_node = _create_node(
         dep_uuid,
         dep_name,
+        dep_identifier,
         dep_level_identifier,
         dep_validity,
         root_node,
@@ -190,6 +195,7 @@ def build_tree(
     root_node = OrgUnitNode(
         uuid=sd_org.InstitutionUUIDIdentifier,
         parent_uuid=None,
+        user_key="root",
         name="<root>",
         org_unit_level_uuid=None,
     )

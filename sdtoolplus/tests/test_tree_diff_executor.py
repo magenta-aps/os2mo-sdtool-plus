@@ -3,6 +3,7 @@
 import uuid
 from datetime import date
 from datetime import datetime
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
@@ -28,6 +29,7 @@ def mutation_instance(graphql_testing_schema: GraphQLSchema) -> Mutation:
         _MockGraphQLSession(graphql_testing_schema),  # type: ignore
         OrgUnitNode(
             uuid=uuid.uuid4(),
+            user_key="user_key",
             name="name",
             parent_uuid=uuid.uuid4(),
         ),  # type: ignore
@@ -43,6 +45,48 @@ class TestMutation:
 
     def test_get_validity_dict_or_none(self, mutation_instance: Mutation) -> None:
         assert mutation_instance._get_validity_dict_or_none(None) is None  # type: ignore
+
+
+class TestAddOrgUnitMutation:
+    def test_dsl_mutation_input(
+        self, mock_graphql_session, sd_expected_validity, mock_mo_org_unit_type
+    ) -> None:
+        # Arrange
+        unit_uuid = uuid.uuid4()
+        parent_uuid = uuid.uuid4()
+        org_unit_level_uuid = uuid.uuid4()
+
+        org_unit_node = OrgUnitNode(
+            uuid=unit_uuid,
+            parent_uuid=parent_uuid,
+            user_key="dep",
+            name="Department",
+            org_unit_level_uuid=org_unit_level_uuid,
+            validity=sd_expected_validity,
+        )
+
+        add_mutation = AddOrgUnitMutation(
+            mock_graphql_session,
+            org_unit_node,
+            mock_mo_org_unit_type,
+        )
+
+        # Act
+        mutation_input = add_mutation.dsl_mutation_input
+
+        # Assert
+        assert mutation_input == {
+            "uuid": str(unit_uuid),
+            "parent": str(parent_uuid),
+            "user_key": "dep",
+            "name": "Department",
+            "org_unit_type": str(mock_mo_org_unit_type.uuid),
+            "org_unit_level": str(org_unit_level_uuid),
+            "validity": {
+                "from": "1999-01-01T00:00:00+01:00",
+                "to": "2000-01-01T00:00:00+01:00",
+            },
+        }
 
 
 class TestTreeDiffExecutor:
@@ -104,6 +148,7 @@ class TestTreeDiffExecutor:
 
         assert mutation.dsl_mutation_input["uuid"] == str(ou_uuid)
         assert mutation.dsl_mutation_input["name"] == "Department 4"
+        assert mutation.dsl_mutation_input["user_key"] == "dep4"
         assert mutation.dsl_mutation_input["parent"] == str(new_parent_uuid)
         assert (
             datetime.fromisoformat(

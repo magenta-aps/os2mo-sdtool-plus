@@ -25,6 +25,7 @@ def test_build_tree(
     expected_tree = OrgUnitNode(
         uuid=SharedIdentifier.root_org_uuid,
         parent_uuid=None,
+        user_key="root",
         name="<root>",
         org_unit_level_uuid=None,
         validity=None,
@@ -32,6 +33,7 @@ def test_build_tree(
     dep1 = OrgUnitNode(
         uuid=SharedIdentifier.child_org_unit_uuid,
         parent_uuid=SharedIdentifier.root_org_uuid,
+        user_key="dep1",
         parent=expected_tree,
         name="Department 1",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
@@ -40,6 +42,7 @@ def test_build_tree(
     dep2 = OrgUnitNode(
         uuid=SharedIdentifier.grandchild_org_unit_uuid,
         parent_uuid=SharedIdentifier.child_org_unit_uuid,
+        user_key="dep2",
         parent=dep1,
         name="Department 2",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
@@ -48,6 +51,7 @@ def test_build_tree(
     dep3 = OrgUnitNode(
         uuid=UUID("30000000-0000-0000-0000-000000000000"),
         parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+        user_key="dep3",
         parent=dep2,
         name="Department 3",
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
@@ -56,6 +60,7 @@ def test_build_tree(
     dep4 = OrgUnitNode(
         uuid=UUID("40000000-0000-0000-0000-000000000000"),
         parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
+        user_key="dep4",
         parent=dep2,
         name="Department 4",
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
@@ -64,6 +69,7 @@ def test_build_tree(
     dep5 = OrgUnitNode(
         uuid=UUID("50000000-0000-0000-0000-000000000000"),
         parent_uuid=SharedIdentifier.child_org_unit_uuid,
+        user_key="dep5",
         parent=dep1,
         name="Department 5",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
@@ -72,6 +78,7 @@ def test_build_tree(
     dep6 = OrgUnitNode(
         uuid=UUID("60000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("50000000-0000-0000-0000-000000000000"),
+        user_key="dep6",
         parent=dep5,
         name="Department 6",
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
@@ -90,6 +97,7 @@ def test_build_tree(
         assert node_a == node_b
         assert node_a.uuid == node_b.uuid
         assert node_a.parent_uuid == node_b.parent_uuid
+        assert node_a.user_key == node_b.user_key
         assert node_a.name == node_b.name
         assert node_a.org_unit_level_uuid == node_b.org_unit_level_uuid
         assert node_a.validity == node_b.validity
