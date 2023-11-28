@@ -13,6 +13,7 @@ from more_itertools import one
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_org_unit_importer import OrgUnitNode
+from ..tree_diff_executor import _remove_by_name
 from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import TreeDiffExecutor
@@ -198,3 +199,22 @@ class TestTreeDiffExecutor:
 
         # Assert
         assert org_unit_node.uuid == uuid.UUID("60000000-0000-0000-0000-000000000000")
+
+
+def test_remove_by_name(expected_units_to_add):
+    # Arrange
+    regexs = ["^.*5$", "^.*6$"]  # Filter out units where the name ends in "5" or "6"
+
+    # Act
+    kept_units = _remove_by_name(regexs, expected_units_to_add)
+
+    # Assert
+    assert expected_units_to_add[:2] == kept_units
+
+
+def test_remove_by_name_keep_all(expected_units_to_add):
+    # Act
+    kept_units = _remove_by_name([], expected_units_to_add)
+
+    # Assert
+    assert expected_units_to_add == kept_units
