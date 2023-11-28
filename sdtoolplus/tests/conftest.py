@@ -626,6 +626,7 @@ def mock_tree_diff_executor(
         mock_graphql_session,  # type: ignore
         mock_org_tree_diff,
         mock_mo_org_unit_type,
+        [],
     )
 
 

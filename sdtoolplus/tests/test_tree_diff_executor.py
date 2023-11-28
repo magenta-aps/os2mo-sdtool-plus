@@ -98,6 +98,7 @@ class TestTreeDiffExecutor:
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            [],
         )
         for org_unit_node, mutation, result in tree_diff_executor.execute():
             assert org_unit_node is not None
@@ -134,6 +135,7 @@ class TestTreeDiffExecutor:
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
+            [],
         )
 
         # Act
@@ -168,6 +170,7 @@ class TestTreeDiffExecutor:
                 mock_graphql_session,  # type: ignore
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
+                [],
             )
             for org_unit_node, mutation, result in tree_diff_executor.execute(
                 dry_run=True
@@ -177,7 +180,7 @@ class TestTreeDiffExecutor:
                 assert result is not None
                 mock_session_execute.assert_not_called()  # type: ignore
 
-    def test_execute_filter(
+    def test_execute_filter_by_uuid(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -188,6 +191,7 @@ class TestTreeDiffExecutor:
             mock_graphql_session,  # type: ignore
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            [],
         )
 
         # Act
@@ -199,6 +203,28 @@ class TestTreeDiffExecutor:
 
         # Assert
         assert org_unit_node.uuid == uuid.UUID("60000000-0000-0000-0000-000000000000")
+
+    def test_execute_remove_by_name(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
+    ):
+        # Arrange
+        tree_diff_executor = TreeDiffExecutor(
+            mock_graphql_session,  # type: ignore
+            mock_org_tree_diff,
+            mock_mo_org_unit_type,
+            ["^.*5$", "^.*6$"],
+        )
+
+        # Act
+        units_to_mutate: list[tuple] = list(tree_diff_executor.execute())
+
+        # Assert
+        unit_names = [tup[0].name for tup in units_to_mutate]
+        assert "Department 5" not in unit_names
+        assert "Department 6" not in unit_names
 
 
 def test_remove_by_name(expected_units_to_add):

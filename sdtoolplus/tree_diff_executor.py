@@ -5,6 +5,7 @@ import datetime
 import re
 import uuid
 from typing import Any
+from typing import Iterable
 from typing import Iterator
 
 import structlog
@@ -25,7 +26,7 @@ logger = structlog.get_logger()
 
 
 def _filter_by_uuid(
-    unit_uuid: uuid.UUID | None, org_units: Iterator[OrgUnitNode]
+    unit_uuid: uuid.UUID | None, org_units: Iterable[OrgUnitNode]
 ) -> list[OrgUnitNode]:
     if unit_uuid is None:
         return list(org_units)
@@ -34,7 +35,7 @@ def _filter_by_uuid(
 
 
 def _remove_by_name(
-    regex_strings: list[str], org_units: Iterator[OrgUnitNode]
+    regex_strings: list[str], org_units: Iterable[OrgUnitNode]
 ) -> list[OrgUnitNode]:
     """
     Filter org units by name. The units which does NOT match the regex
@@ -164,17 +165,23 @@ AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 
 class TreeDiffExecutor:
     def __init__(
-        self, session: GraphQLClient, tree_diff: OrgTreeDiff, mo_org_unit_type: MOClass
+        self,
+        session: GraphQLClient,
+        tree_diff: OrgTreeDiff,
+        mo_org_unit_type: MOClass,
+        regex_unit_names_to_remove: list[str],
     ):
         self._session = session
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
+        self.regex_unit_names_to_remove = regex_unit_names_to_remove
 
     def execute(
         self, org_unit: uuid.UUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID]]:
         # Add new units first
         units_to_add = _filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
+        units_to_add = _remove_by_name(self.regex_unit_names_to_remove, units_to_add)
         for unit in units_to_add:
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
@@ -188,6 +195,9 @@ class TreeDiffExecutor:
         # ... and then update modified units (name or parent changed)
         units_to_update = _filter_by_uuid(
             org_unit, self._tree_diff.get_units_to_update()
+        )
+        units_to_update = _remove_by_name(
+            self.regex_unit_names_to_remove, units_to_update
         )
         for unit in units_to_update:
             update_mutation = UpdateOrgUnitMutation(self._session, unit)
