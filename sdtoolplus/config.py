@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from uuid import UUID
+
 from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import SecretStr
@@ -35,3 +37,8 @@ class SDToolPlusSettings(BaseSettings):
     # org units in MO. The default value matches the existing setup at SD customers.
     org_unit_type: str = "Enhed"
     sd_lon_base_url: AnyHttpUrl = "http://sdlon:8000"  # type: ignore
+
+    # In some cases, the SD InstitutionIdentifier UUID does not match the MO
+    # organization UUID (which it should), so in such cases we can override
+    # the UUID of the SD root to match the MO organization UUID
+    use_mo_root_uuid_as_sd_root_uuid: bool = False

@@ -13,6 +13,7 @@ from httpx import HTTPStatusError
 from httpx import Response
 from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient
+from sdclient.client import SDClient
 
 from ..app import App
 from ..config import SDToolPlusSettings
@@ -309,3 +310,31 @@ class TestApp:
 
     def test_get_effective_root_path_for_empty_list(self):
         assert App._get_effective_root_path([]) == ""
+
+    @patch("sdtoolplus.app.get_sd_tree")
+    def test_get_sd_tree_override_sd_root_uuid(
+        self,
+        mock_get_sd_tree: MagicMock,
+        mock_graphql_session,
+        mock_mo_org_tree_import,
+        mock_mo_org_unit_level_map,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        with ExitStack() as stack:
+            self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+
+            mo_org_uuid = uuid4()
+            mock_mo_org_tree_import.get_org_uuid = MagicMock(return_value=mo_org_uuid)
+
+            # Arrange
+            app_: App = self._get_app_instance(
+                sdtoolplus_settings, use_mo_root_uuid_as_sd_root_uuid=True
+            )
+
+            # Act
+            app_.get_sd_tree()
+
+            # Assert
+            assert mock_get_sd_tree.call_args.args[3] == mo_org_uuid

@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from typing import Iterator
-from typing import Optional
 from uuid import UUID
 
 import httpx
@@ -48,6 +47,7 @@ class App:
             fetch_schema_from_transport=True,
         )
 
+        self.mo_org_tree_import = MOOrgTreeImport(self.session)
         self.client = httpx.Client(base_url=str(self.settings.sd_lon_base_url))
         logger.debug("Configured HTTPX client", base_url=self.client.base_url)
 
@@ -57,18 +57,25 @@ class App:
             self.settings.sd_username,
             self.settings.sd_password.get_secret_value(),
         )
+
+        sd_root_uuid = (
+            self.mo_org_tree_import.get_org_uuid()
+            if self.settings.use_mo_root_uuid_as_sd_root_uuid
+            else None
+        )
+
         return get_sd_tree(
             sd_client,
             self.settings.sd_institution_identifier,
             mo_org_unit_level_map,
+            sd_root_uuid,
         )
 
     def get_mo_tree(self) -> OrgUnitNode:
-        mo_org_tree_import = MOOrgTreeImport(self.session)
         mo_subtree_path_for_root = App._get_effective_root_path(
             self.settings.mo_subtree_path_for_root
         )
-        return mo_org_tree_import.as_single_tree(mo_subtree_path_for_root)
+        return self.mo_org_tree_import.as_single_tree(mo_subtree_path_for_root)
 
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
         logger.debug("Getting TreeDiffExecutor")

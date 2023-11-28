@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from uuid import UUID
+from uuid import uuid4
 
 from ramodels.mo import Validity
 from sdclient.responses import Department
@@ -108,6 +109,26 @@ def test_build_tree(
             assert_equal(child_a, child_b, depth=depth + 1)
 
     assert_equal(actual_tree, expected_tree)
+
+
+def test_override_sd_root_uuid(
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+    mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
+):
+    # Arrange
+    sd_root_uuid = uuid4()
+
+    # Act
+    actual_tree = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response,
+        mock_mo_org_unit_level_map,
+        sd_root_uuid,
+    )
+
+    # Assert
+    assert actual_tree.uuid == sd_root_uuid
 
 
 def test_get_sd_validity(
