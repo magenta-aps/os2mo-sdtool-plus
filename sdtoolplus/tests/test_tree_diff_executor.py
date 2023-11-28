@@ -3,12 +3,10 @@
 import uuid
 from datetime import date
 from datetime import datetime
-from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
 from freezegun import freeze_time
-from gql.transport.exceptions import TransportQueryError
 from graphql import GraphQLSchema
 from more_itertools import one
 
@@ -20,7 +18,6 @@ from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import TreeDiffExecutor
 from ..tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
-from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 
 
 @pytest.fixture()

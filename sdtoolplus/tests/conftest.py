@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 from anytree import Resolver
-from gql.transport.exceptions import TransportQueryError
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
@@ -145,13 +144,6 @@ class _MockGraphQLSession:
             }
             for node in chain(self.expected_children, self.expected_grandchildren)
         ]
-
-
-class _MockGraphQLSessionRaisingTransportQueryError(_MockGraphQLSession):
-    def execute(
-        self, query: DocumentNode, variable_values: dict[str, Any] | None = None
-    ) -> dict:
-        raise TransportQueryError("testing")
 
 
 @pytest.fixture()
