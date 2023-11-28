@@ -11,7 +11,6 @@ from gql.dsl import dsl_gql
 from gql.dsl import DSLMutation
 from gql.dsl import DSLSchema
 from gql.dsl import DSLType
-from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
@@ -75,6 +74,7 @@ class UpdateOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
+        logger.info("Updating org unit...", input=self.dsl_mutation_input)
         expr = self._dsl_schema_mutation.org_unit_update.args(
             input=self.dsl_mutation_input,
         )
@@ -112,6 +112,7 @@ class AddOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
+        logger.info("Creating org unit...", input=self.dsl_mutation_input)
         return DSLMutation(
             self._dsl_schema_mutation.org_unit_create.args(
                 input=self.dsl_mutation_input,
@@ -148,22 +149,18 @@ class TreeDiffExecutor:
 
     def execute(
         self, org_unit: uuid.UUID | None = None, dry_run: bool = False
-    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID | Exception]]:
+    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID]]:
         # Add new units first
         units_to_add = _filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
         for unit in units_to_add:
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
             )
-            try:
-                if not dry_run:
-                    result = add_mutation.execute()
-                else:
-                    result = unit.uuid
-            except TransportQueryError as e:
-                yield unit, add_mutation, e
+            if not dry_run:
+                result = add_mutation.execute()
             else:
-                yield unit, add_mutation, result
+                result = unit.uuid
+            yield unit, add_mutation, result
 
         # ... and then update modified units (name or parent changed)
         units_to_update = _filter_by_uuid(
@@ -171,12 +168,8 @@ class TreeDiffExecutor:
         )
         for unit in units_to_update:
             update_mutation = UpdateOrgUnitMutation(self._session, unit)
-            try:
-                if not dry_run:
-                    result = update_mutation.execute()
-                else:
-                    result = unit.uuid
-            except TransportQueryError as e:
-                yield unit, update_mutation, e
+            if not dry_run:
+                result = update_mutation.execute()
             else:
-                yield unit, update_mutation, result
+                result = unit.uuid
+            yield unit, update_mutation, result

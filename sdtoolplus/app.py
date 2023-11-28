@@ -48,7 +48,8 @@ class App:
             fetch_schema_from_transport=True,
         )
 
-        self.client = httpx.Client(base_url=self.settings.sd_lon_base_url)
+        self.client = httpx.Client(base_url=str(self.settings.sd_lon_base_url))
+        logger.debug("Configured HTTPX client", base_url=self.client.base_url)
 
     def get_sd_tree(self) -> OrgUnitNode:
         mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
@@ -105,7 +106,7 @@ class App:
 
     def execute(
         self, org_unit: UUID | None = None, dry_run: bool = False
-    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID | Exception, Optional[bool]]]:
+    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
 
@@ -119,33 +120,29 @@ class App:
         executor: TreeDiffExecutor = self.get_tree_diff_executor()
         org_unit_node: OrgUnitNode
         mutation: AnyMutation
-        result: UUID | Exception
-        fix_departments_result: bool | None
+        result: UUID
         for org_unit_node, mutation, result in executor.execute(
             org_unit=org_unit, dry_run=dry_run
         ):
+            logger.info("Successfully executed mutation", org_unit=str(org_unit))
             if not dry_run:
-                fix_departments_result = self._call_apply_ny_logic(result)  # type: ignore
-            else:
-                fix_departments_result = True
+                self._call_apply_ny_logic(result)  # type: ignore
             yield (
                 org_unit_node,
                 mutation,
                 result,
-                fix_departments_result,
             )
 
-    def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> bool:
+    def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> None:
+        logger.info("Apply NY logic", org_unit_uuid=org_unit_uuid)
+
         url: str = f"/trigger/apply-ny-logic/{org_unit_uuid}"
         response: Response = self.client.post(url)
-        if response.status_code >= 400:
-            # TODO: we need an RC alarm if this happens
-            logger.error(
-                "fix_departments returned an error: status_code=%d, response=%r",
-                response.status_code,
-                response.json(),
-            )
-        return response.status_code == 200
+
+        # NOTE: if _call_apply_ny_logic fails, you will have to make the
+        # failing POST request again manually to make sure the NY logic
+        # has been applied properly for the given org unit
+        response.raise_for_status()
 
     @staticmethod
     def _get_effective_root_path(path_ou_uuids: list[OrgUnitUUID]):

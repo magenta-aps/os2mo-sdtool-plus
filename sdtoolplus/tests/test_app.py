@@ -9,6 +9,7 @@ from uuid import UUID
 from uuid import uuid4
 
 import pytest
+from httpx import HTTPStatusError
 from httpx import Response
 from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient
@@ -164,8 +165,10 @@ class TestApp:
                 "execute",
                 self._get_mock_mutation_response(),
             )
+            apply_ny_logic_response = MagicMock()
+            apply_ny_logic_response.is_success = True
             mock_client_post = self._add_obj_mock(
-                stack, app.client, "post", Response(status_code=200)
+                stack, app.client, "post", apply_ny_logic_response
             )
             # Act
             result: list[tuple] = list(app.execute())
@@ -179,7 +182,7 @@ class TestApp:
             num_add_or_update_ops = len(
                 [
                     unit
-                    for (unit, mutation, res1, res2) in result
+                    for (unit, mutation, res1) in result
                     if isinstance(unit, OrgUnitNode)
                 ]
             )
@@ -197,7 +200,9 @@ class TestApp:
             self._add_obj_mock(
                 stack, app, "get_tree_diff_executor", mock_tree_diff_executor
             )
-            self._add_obj_mock(stack, app.client, "post", Response(status_code=200))
+            apply_ny_logic_response = MagicMock()
+            apply_ny_logic_response.is_success = True
+            self._add_obj_mock(stack, app.client, "post", apply_ny_logic_response)
 
             # Act
             result: list[tuple] = list(
@@ -238,24 +243,22 @@ class TestApp:
             mock_graphql_execute.assert_not_called()
             mock_client_post.assert_not_called()
 
-    @pytest.mark.parametrize("status_code", [200, 400, 500])
-    def test_call_apply_ny_logic(
-        self, sdtoolplus_settings: SDToolPlusSettings, status_code: int
-    ) -> None:
+    def test_call_apply_ny_logic(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
         # Arrange
         app: App = self._get_app_instance(sdtoolplus_settings)
         org_unit_uuid: OrgUnitUUID = uuid4()
-        response: Response = Response(status_code=status_code, json={"msg": "msg"})
+        mock_response = MagicMock(spec_set=Response)
         with patch.object(
-            app.client, "post", return_value=response
+            app.client, "post", return_value=mock_response
         ) as mock_client_post:
             # Act
-            success: bool = app._call_apply_ny_logic(org_unit_uuid)
+            app._call_apply_ny_logic(org_unit_uuid)
+
             # Assert
-            assert success is (True if status_code == 200 else False)
             mock_client_post.assert_called_once_with(
                 f"/trigger/apply-ny-logic/{org_unit_uuid}"
             )
+            mock_response.raise_for_status.assert_called_once()
 
     def _add_mock(self, stack: ExitStack, name: str, value: Any = None):
         """Mock out `name` using `value` (or None)"""

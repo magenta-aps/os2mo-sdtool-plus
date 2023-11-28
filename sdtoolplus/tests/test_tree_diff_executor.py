@@ -3,12 +3,10 @@
 import uuid
 from datetime import date
 from datetime import datetime
-from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
 from freezegun import freeze_time
-from gql.transport.exceptions import TransportQueryError
 from graphql import GraphQLSchema
 from more_itertools import one
 
@@ -20,7 +18,6 @@ from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import TreeDiffExecutor
 from ..tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
-from .conftest import _MockGraphQLSessionRaisingTransportQueryError
 
 
 @pytest.fixture()
@@ -158,20 +155,6 @@ class TestTreeDiffExecutor:
         )
 
         assert result == uuid.UUID("40000000-0000-0000-0000-000000000000")
-
-    def test_execute_handles_transportqueryerror(
-        self,
-        mock_graphql_session_raising_transportqueryerror: _MockGraphQLSessionRaisingTransportQueryError,
-        mock_org_tree_diff: OrgTreeDiff,
-        mock_mo_org_unit_type,
-    ):
-        tree_diff_executor = TreeDiffExecutor(
-            mock_graphql_session_raising_transportqueryerror,  # type: ignore
-            mock_org_tree_diff,
-            mock_mo_org_unit_type,
-        )
-        for operation, mutation, result in tree_diff_executor.execute():
-            assert isinstance(result, TransportQueryError)
 
     def test_execute_dry(
         self,

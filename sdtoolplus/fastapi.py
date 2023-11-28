@@ -65,9 +65,8 @@ def create_app(**kwargs) -> FastAPI:
                 "type": mutation.__class__.__name__,
                 "unit": repr(org_unit_node),
                 "mutation_result": str(result),
-                "fix_departments_result": str(fix_departments_result),
             }
-            for org_unit_node, mutation, result, fix_departments_result in sdtoolplus.execute(
+            for org_unit_node, mutation, result in sdtoolplus.execute(
                 org_unit=org_unit, dry_run=dry_run
             )
         ]
