@@ -109,7 +109,12 @@ class App:
         )
 
         # Construct tree diff executor
-        return TreeDiffExecutor(self.session, tree_diff, mo_org_unit_type)
+        return TreeDiffExecutor(
+            self.session,
+            tree_diff,
+            mo_org_unit_type,
+            self.settings.regex_unit_names_to_remove,
+        )
 
     def execute(
         self, org_unit: UUID | None = None, dry_run: bool = False
