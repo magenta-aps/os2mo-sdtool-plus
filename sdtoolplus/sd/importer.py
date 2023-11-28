@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
+from uuid import UUID
 
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
@@ -52,6 +53,7 @@ def get_sd_tree(
     sd_client: SDClient,
     institution_identifier: str,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
+    sd_root_uuid: UUID | None = None,
 ) -> OrgUnitNode:
     # TODO: add docstring
     today = date.today()
@@ -61,4 +63,4 @@ def get_sd_tree(
     sd_departments = get_sd_departments(sd_client, institution_identifier, today, today)
     # print(sd_departments)
 
-    return build_tree(sd_org, sd_departments, mo_org_unit_level_map)
+    return build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
