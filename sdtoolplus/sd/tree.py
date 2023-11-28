@@ -180,6 +180,7 @@ def build_tree(
     sd_org: GetOrganizationResponse,
     sd_departments: GetDepartmentResponse,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
+    sd_root_uuid: UUID | None = None,
 ) -> OrgUnitNode:
     """
     Build the SD organization unit tree structure.
@@ -193,7 +194,7 @@ def build_tree(
     """
 
     root_node = OrgUnitNode(
-        uuid=sd_org.InstitutionUUIDIdentifier,
+        uuid=sd_org.InstitutionUUIDIdentifier if sd_root_uuid is None else sd_root_uuid,
         parent_uuid=None,
         user_key="root",
         name="<root>",
