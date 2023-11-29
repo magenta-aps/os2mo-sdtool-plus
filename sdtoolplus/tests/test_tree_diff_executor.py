@@ -238,6 +238,27 @@ def test_remove_by_name(expected_units_to_add):
     assert expected_units_to_add[:2] == kept_units
 
 
+def test_remove_by_name_special_characters(sd_expected_validity):
+    # Arrange
+    regexs = ["^%.*$"]
+    org_unit_nodes = [
+        OrgUnitNode(
+            uuid=uuid.uuid4(),
+            parent_uuid=uuid.uuid4(),
+            user_key="dep3",
+            name="% Department 3",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+    ]
+
+    # Act
+    kept_units = _remove_by_name(regexs, org_unit_nodes)
+
+    # Assert
+    assert kept_units == []
+
+
 def test_remove_by_name_keep_all(expected_units_to_add):
     # Act
     kept_units = _remove_by_name([], expected_units_to_add)
