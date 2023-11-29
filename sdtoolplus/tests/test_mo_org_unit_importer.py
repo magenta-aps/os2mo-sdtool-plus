@@ -173,3 +173,6 @@ class TestMOOrgTreeImport:
         assert isinstance(actual, OrgUnitNode)
         assert actual.children == (unit221, unit222)
         assert actual.is_root
+
+    def test_ensure_get_org_units_not_cached(self):
+        assert not hasattr(MOOrgTreeImport.get_org_units, "__wrapped__")

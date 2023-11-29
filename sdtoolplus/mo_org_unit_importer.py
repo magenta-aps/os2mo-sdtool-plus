@@ -110,7 +110,6 @@ class MOOrgTreeImport:
         )
         return parse_obj_as(OrgUUID, doc["org"]["uuid"])
 
-    @cache
     def get_org_units(self) -> list[OrgUnit]:
         doc = self.session.execute(
             gql(
