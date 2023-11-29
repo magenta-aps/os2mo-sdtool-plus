@@ -155,6 +155,7 @@ class App:
         # failing POST request again manually to make sure the NY logic
         # has been applied properly for the given org unit
         response.raise_for_status()
+        logger.info("NY logic applied successfully")
 
     @staticmethod
     def _get_effective_root_path(path_ou_uuids: list[OrgUnitUUID]):
