@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
 version: "3.10"
 
 networks:
@@ -21,6 +23,11 @@ services:
       - "127.0.0.1:8000:8000"
     networks:
       - os2mo_default
+  wait-for-db:
+    image: postgres:14
+    command: ["sh", "-c", 'until pg_isready -h sd-db -p 5432; do echo "Waiting for database"; sleep 1; done;']
+    networks:
+      os2mo_default:
   sd-db-init:
     image: magentaaps/postgres-keycloak-init:12.7-11.7
     environment:
@@ -32,3 +39,6 @@ services:
       KEYCLOAK_DB_PASSWORD: super_secret_sd_payload_password
     networks:
       os2mo_default:
+    depends_on:
+      wait-for-db:
+        condition: service_completed_successfully
