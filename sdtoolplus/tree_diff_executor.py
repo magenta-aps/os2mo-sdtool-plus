@@ -176,6 +176,10 @@ class TreeDiffExecutor:
         self.mo_org_unit_type = mo_org_unit_type
         self.regex_unit_names_to_remove = regex_unit_names_to_remove
 
+        logger.debug(
+            "Regexs for units to remove by name", regexs=regex_unit_names_to_remove
+        )
+
     def execute(
         self, org_unit: uuid.UUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID]]:
