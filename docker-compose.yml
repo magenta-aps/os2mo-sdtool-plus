@@ -1,0 +1,34 @@
+version: "3.10"
+
+networks:
+  os2mo_default:
+    external: true
+
+services:
+  sdtool-plus:
+    build:
+      context: .
+    environment:
+      MORA_BASE: "http://mo:5000"
+      CLIENT_ID: "dipex"
+      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+      AUTH_SERVER: "http://keycloak:8080/auth"
+
+      SD_USERNAME: "username"
+      SD_PASSWORD: "password"
+      SD_INSTITUTION_IDENTIFIER: "XY"
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - os2mo_default
+  sd-db-init:
+    image: magentaaps/postgres-keycloak-init:12.7-11.7
+    environment:
+      POSTGRES_HOST: sd-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      KEYCLOAK_DB_NAME: sdtool_plus
+      KEYCLOAK_DB_USER: sdtool_plus
+      KEYCLOAK_DB_PASSWORD: super_secret_sd_payload_password
+    networks:
+      os2mo_default:
