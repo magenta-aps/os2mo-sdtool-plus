@@ -31,6 +31,7 @@ structlog = "<24.0"
 fastramqpi = "^1.7.0"
 freezegun = "^1.2.2"
 alembic = "^1.12.1"
+psycopg2 = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 aiohttp = "^3.8.5"
