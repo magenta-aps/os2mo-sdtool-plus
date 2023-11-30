@@ -42,3 +42,7 @@ class SDToolPlusSettings(BaseSettings):
     # organization UUID (which it should), so in such cases we can override
     # the UUID of the SD root to match the MO organization UUID
     use_mo_root_uuid_as_sd_root_uuid: bool = False
+
+    # Do not add or update org units whose names match one or more of these
+    # regular expressions
+    regex_unit_names_to_remove: list[str] = []

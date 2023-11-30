@@ -321,6 +321,7 @@ class TestApp:
         sdtoolplus_settings: SDToolPlusSettings,
     ):
         with ExitStack() as stack:
+            # Arrange
             self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
             self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
@@ -328,7 +329,6 @@ class TestApp:
             mo_org_uuid = uuid4()
             mock_mo_org_tree_import.get_org_uuid = MagicMock(return_value=mo_org_uuid)
 
-            # Arrange
             app_: App = self._get_app_instance(
                 sdtoolplus_settings, use_mo_root_uuid_as_sd_root_uuid=True
             )
