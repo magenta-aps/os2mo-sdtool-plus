@@ -5,5 +5,8 @@ set -o nounset
 set -o errexit
 set -o pipefail
 
+# Apply Alembic migrations
+alembic upgrade head
+
 # Run app
 uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0

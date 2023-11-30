@@ -19,6 +19,8 @@ services:
       SD_USERNAME: "username"
       SD_PASSWORD: "password"
       SD_INSTITUTION_IDENTIFIER: "XY"
+
+      DB_PASSWORD: "super_secret_sd_payload_password"
     ports:
       - "127.0.0.1:8000:8000"
     networks:
