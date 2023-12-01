@@ -9,4 +9,10 @@ set -o pipefail
 alembic upgrade head
 
 # Run app
-uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0
+if [ "$ENVIRONMENT" = "development" ]; then
+    echo "Running in development mode (hot-reload)"
+    uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0 --reload
+else
+    echo "Running in production mode"
+    uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0
+fi

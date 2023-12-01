@@ -20,4 +20,4 @@ COPY . ./
 # Useful for debugging
 RUN apt update && apt install -y jq vim less
 
-CMD ["./docker/start.sh"]
+ENTRYPOINT ["./docker/start.sh"]
