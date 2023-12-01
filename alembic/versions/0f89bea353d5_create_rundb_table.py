@@ -10,10 +10,8 @@ Create Date: 2023-11-30 14:56:26.866561
 from typing import Sequence
 from typing import Union
 
-import sqlalchemy as sa
-
 from alembic import op  # type: ignore
-
+from sdtoolplus.db.models import RunDB
 
 # revision identifiers, used by Alembic.
 revision: str = "0f89bea353d5"
@@ -23,12 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "rundb",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("timestamp", sa.DateTime, nullable=False),
-        sa.Column("status", sa.Unicode(20)),
-    )
+    op.create_table(RunDB.__tablename__, *RunDB.__table__.c)
 
 
 def downgrade() -> None:
