@@ -338,3 +338,15 @@ class TestApp:
 
             # Assert
             assert mock_get_sd_tree.call_args.args[3] == mo_org_uuid
+
+    def test_httpx_ny_logic_timeout(
+        self,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        app_: App = self._get_app_instance(
+            sdtoolplus_settings, use_mo_root_uuid_as_sd_root_uuid=True
+        )
+
+        # Assert
+        assert app_.client.timeout.read == 120
