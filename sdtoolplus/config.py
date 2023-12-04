@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
+from pydantic import PositiveInt
 from pydantic import SecretStr
 
 from .log import LogLevel
@@ -17,6 +18,8 @@ class SDToolPlusSettings(BaseSettings):
     client_secret: SecretStr
     auth_realm: str = "mo"
     auth_server: str = "http://keycloak:8080/auth"
+
+    httpx_timeout_ny_logic: PositiveInt = 120
 
     # Compare the SD tree to the MO tree found at the path. The path must be a
     # list of UUIDs

@@ -7,6 +7,7 @@ import httpx
 import sentry_sdk
 import structlog
 from httpx import Response
+from httpx import Timeout
 from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
 
@@ -48,7 +49,10 @@ class App:
         )
 
         self.mo_org_tree_import = MOOrgTreeImport(self.session)
-        self.client = httpx.Client(base_url=str(self.settings.sd_lon_base_url))
+        self.client = httpx.Client(
+            base_url=str(self.settings.sd_lon_base_url),
+            timeout=Timeout(timeout=self.settings.httpx_timeout_ny_logic),
+        )
         logger.debug("Configured HTTPX client", base_url=self.client.base_url)
 
     def get_sd_tree(self) -> OrgUnitNode:
