@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from sqlalchemy import Column, Integer, DateTime, Unicode
+from sqlalchemy import Column
+from sqlalchemy import DateTime
+from sqlalchemy import Integer
+from sqlalchemy import Unicode
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
