@@ -36,7 +36,16 @@ class TestFastAPIApp:
         assert response.status_code == 200
         assert response.json() == {"name": "sdtoolplus"}
 
-    # TODO: test app engine correct
+    def test_app_uses_correct_engine(self, sdtoolplus_settings: SDToolPlusSettings):
+        # Arrange
+        app = self._get_fastapi_app_instance(sdtoolplus_settings)
+
+        # Assert
+        engine = app.extra["engine"]
+        assert isinstance(engine, Engine)
+        assert (
+            str(engine.url) == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
+        )
 
     @patch("sdtoolplus.fastapi.persist_status")
     @patch("sdtoolplus.fastapi.get_status", return_value=Status.COMPLETED)
