@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from uuid import UUID
-
 from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
 from pydantic import PositiveInt
@@ -49,3 +47,13 @@ class SDToolPlusSettings(BaseSettings):
     # Do not add or update org units whose names match one or more of these
     # regular expressions
     regex_unit_names_to_remove: list[str] = []
+
+    # Database settings for the RunDB
+    db_user: str = "sdtool_plus"
+    db_password: SecretStr
+    db_host: str = "sd-db"
+    db_name: str = "sdtool_plus"
+
+
+def get_settings(*args, **kwargs) -> SDToolPlusSettings:
+    return SDToolPlusSettings(*args, **kwargs)

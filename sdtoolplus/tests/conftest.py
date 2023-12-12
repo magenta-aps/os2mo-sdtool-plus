@@ -709,4 +709,5 @@ def sdtoolplus_settings() -> SDToolPlusSettings:
         sd_username="sd_username",
         sd_institution_identifier="sd_institution_identifier",
         sd_password=SecretStr(""),
+        db_password=SecretStr("secret"),
     )
