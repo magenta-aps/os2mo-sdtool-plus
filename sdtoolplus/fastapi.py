@@ -66,7 +66,7 @@ def create_app(**kwargs) -> FastAPI:
         response: Response,
         org_unit: UUID | None = None,
         dry_run: bool = False,
-    ) -> list[dict] | None:
+    ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
         sdtoolplus: App = request.app.extra["sdtoolplus"]
@@ -77,7 +77,7 @@ def create_app(**kwargs) -> FastAPI:
         if not status_last_run == Status.COMPLETED:
             logger.warn("Previous run did not complete successfully!")
             response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-            return None
+            return {"msg": "Previous run did not complete successfully!"}
         logger.info("Previous run completed successfully")
         persist_status(engine, Status.RUNNING)
 

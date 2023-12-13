@@ -111,7 +111,9 @@ class TestFastAPIApp:
 
             # Assert
             assert response.status_code == 500
-            assert response.text == "null"
+            assert response.json() == {
+                "msg": "Previous run did not complete successfully!"
+            }
 
             mock_persist_status.assert_not_called()
 
