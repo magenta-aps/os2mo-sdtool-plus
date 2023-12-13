@@ -20,8 +20,13 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-def upgrade() -> None:
-    op.create_table(RunDB.__tablename__, *RunDB.__table__.c)
+def upgrade(sa=None) -> None:
+    op.create_table(
+        "rundb",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("timestamp", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("status", sa.String(20)),
+    )
 
 
 def downgrade() -> None:
