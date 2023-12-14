@@ -2,11 +2,8 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 
-from sqlalchemy import Column
 from sqlalchemy import DateTime
-from sqlalchemy import Integer
 from sqlalchemy import String
-from sqlalchemy import Unicode
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
