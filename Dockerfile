@@ -8,7 +8,8 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_VERSION=1.3.1
+    POETRY_VERSION=1.3.1 \
+    ENVIRONMENT=production
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 COPY pyproject.toml poetry.lock ./
@@ -20,4 +21,4 @@ COPY . ./
 # Useful for debugging
 RUN apt update && apt install -y jq vim less
 
-CMD ["./docker/start.sh"]
+ENTRYPOINT ["./docker/start.sh"]

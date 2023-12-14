@@ -14,11 +14,18 @@ from uuid import UUID
 import structlog
 from fastapi import FastAPI
 from fastapi import Request
+from fastapi import Response
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from prometheus_fastapi_instrumentator import Instrumentator
+from starlette.status import HTTP_200_OK
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from .app import App
 from .config import SDToolPlusSettings
+from .db.engine import get_engine
+from .db.rundb import get_status
+from .db.rundb import persist_status
+from .db.rundb import Status
 from .tree_tools import tree_as_string
 
 
@@ -27,7 +34,7 @@ logger = structlog.get_logger()
 
 def create_app(**kwargs) -> FastAPI:
     settings = SDToolPlusSettings()
-    app = FastAPI(sdtoolplus=App(settings))
+    app = FastAPI(sdtoolplus=App(settings), engine=get_engine(settings))
     Instrumentator().instrument(app).expose(app)
 
     @app.get("/")
@@ -53,13 +60,27 @@ def create_app(**kwargs) -> FastAPI:
         sd_tree = sdtoolplus.get_sd_tree()
         return tree_as_string(sd_tree)
 
-    @app.post("/trigger")
+    @app.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
-        request: Request, org_unit: UUID | None = None, dry_run: bool = False
-    ) -> list[dict]:
+        request: Request,
+        response: Response,
+        org_unit: UUID | None = None,
+        dry_run: bool = False,
+    ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
         sdtoolplus: App = request.app.extra["sdtoolplus"]
+        engine = request.app.extra["engine"]
+
+        logger.info("Checking RunDB status...")
+        status_last_run = get_status(engine)
+        if not status_last_run == Status.COMPLETED:
+            logger.warn("Previous run did not complete successfully!")
+            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+            return {"msg": "Previous run did not complete successfully!"}
+        logger.info("Previous run completed successfully")
+        persist_status(engine, Status.RUNNING)
+
         results: list[dict] = [
             {
                 "type": mutation.__class__.__name__,
@@ -70,8 +91,9 @@ def create_app(**kwargs) -> FastAPI:
                 org_unit=org_unit, dry_run=dry_run
             )
         ]
-        dipex_last_success_timestamp.set_to_current_time()
 
+        persist_status(engine, Status.COMPLETED)
+        dipex_last_success_timestamp.set_to_current_time()
         logger.info("Run completed!")
 
         return results

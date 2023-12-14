@@ -11,6 +11,8 @@ services:
     build:
       context: .
     environment:
+      ENVIRONMENT: "development"
+
       MORA_BASE: "http://mo:5000"
       CLIENT_ID: "dipex"
       CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
@@ -25,11 +27,31 @@ services:
       - "127.0.0.1:8000:8000"
     networks:
       - os2mo_default
+    volumes:
+      - type: bind
+        source: ./sdtoolplus
+        target: /app/sdtoolplus
+    depends_on:
+      sd-db-init:
+        condition: service_completed_successfully
   wait-for-db:
     image: postgres:14
     command: ["sh", "-c", 'until pg_isready -h sd-db -p 5432; do echo "Waiting for database"; sleep 1; done;']
     networks:
       os2mo_default:
+  sd-db:
+    image: postgres:11.7  # Set image in global.sls
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    networks:
+      os2mo_default:
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
   sd-db-init:
     image: magentaaps/postgres-keycloak-init:12.7-11.7
     environment:

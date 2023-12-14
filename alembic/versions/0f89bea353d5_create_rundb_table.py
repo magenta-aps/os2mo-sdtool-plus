@@ -13,7 +13,7 @@ from typing import Union
 import sqlalchemy as sa
 
 from alembic import op  # type: ignore
-
+from sdtoolplus.db.models import RunDB
 
 # revision identifiers, used by Alembic.
 revision: str = "0f89bea353d5"
@@ -25,9 +25,9 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.create_table(
         "rundb",
-        sa.Column("id", sa.Integer, primary_key=True),
-        sa.Column("timestamp", sa.DateTime, nullable=False),
-        sa.Column("status", sa.Unicode(20)),
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("timestamp", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("status", sa.String(20)),
     )
 
 

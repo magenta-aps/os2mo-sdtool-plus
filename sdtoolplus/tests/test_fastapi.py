@@ -8,9 +8,11 @@ from uuid import UUID
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import Response
+from sqlalchemy import Engine
 
 from ..app import App
 from ..config import SDToolPlusSettings
+from ..db.rundb import Status
 from ..fastapi import create_app
 
 
@@ -34,7 +36,25 @@ class TestFastAPIApp:
         assert response.status_code == 200
         assert response.json() == {"name": "sdtoolplus"}
 
-    def test_post_trigger(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
+    def test_app_uses_correct_engine(self, sdtoolplus_settings: SDToolPlusSettings):
+        # Arrange
+        app = self._get_fastapi_app_instance(sdtoolplus_settings)
+
+        # Assert
+        engine = app.extra["engine"]
+        assert isinstance(engine, Engine)
+        assert (
+            str(engine.url) == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
+        )
+
+    @patch("sdtoolplus.fastapi.persist_status")
+    @patch("sdtoolplus.fastapi.get_status", return_value=Status.COMPLETED)
+    def test_post_trigger(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
@@ -44,21 +64,67 @@ class TestFastAPIApp:
             )
             # Arrange: get initial value of "last run" metric
             last_run_val_before: float = self._get_last_run_metric(client)
+
             # Act
             response: Response = client.post("/trigger")
+
             # Assert: check that we call the expected methods
             mock_sdtoolplus_app.execute.assert_called_once_with(
                 org_unit=None, dry_run=False
             )
+
             # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
+
             # Assert: check that the "last run" metric has incremented from 0.0
             last_run_val_after: float = self._get_last_run_metric(client)
             assert last_run_val_before == 0.0
             assert last_run_val_after > last_run_val_before
 
-    def test_post_trigger_filter(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
+            # Assert: persist_status called twice
+            call1, call2 = mock_persist_status.call_args_list
+            assert isinstance(call1.args[0], Engine)
+            assert call1.args[1] == Status.RUNNING
+
+            assert isinstance(call2.args[0], Engine)
+            assert call2.args[1] == Status.COMPLETED
+
+    @patch("sdtoolplus.fastapi.persist_status")
+    @patch("sdtoolplus.fastapi.get_status", return_value=Status.RUNNING)
+    def test_post_trigger_aborts_when_rundb_status_is_running(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
+        # Arrange
+        mock_sdtoolplus_app = MagicMock(spec=App)
+        with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
+            client: TestClient = TestClient(
+                self._get_fastapi_app_instance(sdtoolplus_settings)
+            )
+
+            # Act
+            response: Response = client.post("/trigger")
+
+            # Assert
+            assert response.status_code == 500
+            assert response.json() == {
+                "msg": "Previous run did not complete successfully!"
+            }
+
+            mock_persist_status.assert_not_called()
+
+    @patch("sdtoolplus.fastapi.persist_status")
+    @patch("sdtoolplus.fastapi.get_status", return_value=Status.COMPLETED)
+    def test_post_trigger_filter(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with patch("sdtoolplus.fastapi.App", return_value=mock_sdtoolplus_app):
@@ -76,7 +142,14 @@ class TestFastAPIApp:
                 org_unit=UUID("70000000-0000-0000-0000-000000000000"), dry_run=False
             )
 
-    def test_post_trigger_dry(self, sdtoolplus_settings: SDToolPlusSettings) -> None:
+    @patch("sdtoolplus.fastapi.persist_status")
+    @patch("sdtoolplus.fastapi.get_status", return_value=Status.COMPLETED)
+    def test_post_trigger_dry(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
