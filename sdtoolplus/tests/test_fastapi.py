@@ -159,13 +159,14 @@ class TestFastAPIApp:
             )
             # Act
             response: Response = client.post("/trigger?dry_run=true")
-            # Assert: check that we call the expected methods
+
+            # Assert
             mock_sdtoolplus_app.execute.assert_called_once_with(
                 org_unit=None, dry_run=True
             )
-            # Assert: check status code and response
             assert response.status_code == 200
             assert response.json() == []
+            mock_persist_status.assert_not_called()
 
     def _get_fastapi_app_instance(
         self, sdtoolplus_settings: SDToolPlusSettings

@@ -79,7 +79,8 @@ def create_app(**kwargs) -> FastAPI:
             response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
             return {"msg": "Previous run did not complete successfully!"}
         logger.info("Previous run completed successfully")
-        persist_status(engine, Status.RUNNING)
+        if not dry_run:
+            persist_status(engine, Status.RUNNING)
 
         results: list[dict] = [
             {
@@ -92,7 +93,8 @@ def create_app(**kwargs) -> FastAPI:
             )
         ]
 
-        persist_status(engine, Status.COMPLETED)
+        if not dry_run:
+            persist_status(engine, Status.COMPLETED)
         dipex_last_success_timestamp.set_to_current_time()
         logger.info("Run completed!")
 
