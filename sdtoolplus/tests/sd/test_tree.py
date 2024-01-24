@@ -9,11 +9,11 @@ from sdclient.responses import Department
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_org_unit_importer import OrgUnitNode
-from ..sd.tree import _get_sd_validity
-from ..sd.tree import build_tree
-from .conftest import SharedIdentifier
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.sd.tree import _get_sd_validity
+from sdtoolplus.sd.tree import build_tree
+from sdtoolplus.tests.conftest import SharedIdentifier
 
 
 def test_build_tree(
