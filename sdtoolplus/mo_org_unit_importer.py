@@ -137,6 +137,12 @@ class MOOrgTreeImport:
         ]
         return parse_obj_as(list[OrgUnit], org_units)
 
+    def get_unit_details(self, org_unit: UUID) -> dict:
+        # Returns all objects on an org_unit inclusive
+        # active and future engagements
+        pass
+
+
     def as_single_tree(self, path: str = "") -> OrgUnitNode:
         """
         Generates a (sub)tree of OUs from the units in MO.

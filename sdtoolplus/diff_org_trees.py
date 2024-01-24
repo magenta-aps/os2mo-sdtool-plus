@@ -12,6 +12,10 @@ from .mo_org_unit_importer import OrgUnitNode
 logger = structlog.get_logger()
 
 
+class UnitObj(BaseModel):
+    pass
+
+
 class Nodes(BaseModel):
     unit: OrgUnitNode
     parent: OrgUnitNode
@@ -74,6 +78,34 @@ class OrgTreeDiff:
                 and OrgTreeDiff._should_be_updated(sd_nodes, mo_uuid_map[unit_uuid])
             )
         ]
+
+        # Split the "unit_to_update" into two lists: a "units_to_rename" and
+        # a "units_to_move" list. These are not necessary disjoint.
+        # Loop through the "units_to_move" and use AnyTrees
+        # "commonancestors" to determine if "Udgåede afdelinger" is
+        # in the list - if so, check if the unit has any active or future active
+        # engagements. If this is the case, add it to the "units_to_leave_but_email"
+
+        # The units not in the SD tree and not manually created
+        # (based on org_unit_level)
+        self.candidate_units_to_terminate = [
+            mo_nodes.unit
+            for unit_uuid, mo_nodes in mo_uuid_map.items()
+            if ...
+        ]
+
+        ########## DEPRECATED #############
+        # Call _partition_candidate_units_to_terminate. We now have two lists
+        # the ones that should be moved to "Udgåede afdelinger" and
+        # the ones that still have engagements attached. The former should be
+        # added to "units to update" and the latter should be added to
+        # another list e.g. "units_to_leave_but_email"
+
+    @staticmethod
+    def _partition_candidate_units_to_terminate() -> tuple[list[dict], list[dict]]:
+        # Return lists with dicts with all details for unit with and
+        # without engagements, respectively
+        pass
 
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
