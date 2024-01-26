@@ -13,7 +13,7 @@ from sqlalchemy import Engine
 from ..app import App
 from ..config import SDToolPlusSettings
 from ..db.rundb import Status
-from ..fastapi import create_app
+from ..main import create_app
 
 
 class TestFastAPIApp:
