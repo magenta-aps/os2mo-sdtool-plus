@@ -43,6 +43,8 @@ def get_sd_departments(
         ActivationDate=activation_date,
         DeactivationDate=deactivation_date,
         DepartmentNameIndicator=True,
+        PostalAddressIndicator=True,
+        ProductionUnitIndicator=True,
         UUIDIndicator=True,
     )
 
