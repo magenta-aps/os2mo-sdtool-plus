@@ -11,8 +11,8 @@ alembic upgrade head
 # Run app
 if [ "$ENVIRONMENT" = "development" ]; then
     echo "Running in development mode (hot-reload)"
-    uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0 --reload
+    uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0 --reload
 else
     echo "Running in production mode"
-    uvicorn --factory sdtoolplus.fastapi:create_app --host 0.0.0.0
+    uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0
 fi

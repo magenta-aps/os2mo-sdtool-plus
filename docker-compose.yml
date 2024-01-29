@@ -23,6 +23,8 @@ services:
       SD_INSTITUTION_IDENTIFIER: "XY"
 
       DB_PASSWORD: "super_secret_sd_payload_password"
+
+      FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker"
     ports:
       - "127.0.0.1:8000:8000"
     networks:

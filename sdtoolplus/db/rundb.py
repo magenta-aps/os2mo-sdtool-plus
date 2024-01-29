@@ -28,7 +28,7 @@ def get_status(engine: Engine) -> Status:
 
         # status is only "None" the very first time the application is run
         # and should in this case return "COMPLETED" in order to not abort
-        # the run when get_status() is called from fastapi.py
+        # the run when get_status() is called from main.py
         return Status(status) if status is not None else Status.COMPLETED
 
 

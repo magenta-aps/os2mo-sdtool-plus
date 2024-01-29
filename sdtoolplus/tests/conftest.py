@@ -9,11 +9,13 @@ from typing import Any
 
 import pytest
 from anytree import Resolver
+from fastramqpi.config import Settings as FastRAMQPISettings
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
 from graphql.language.ast import DocumentNode
 from pydantic import SecretStr
 from ramodels.mo import Validity
+from ramqp.config import AMQPConnectionSettings
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -705,6 +707,11 @@ def expected_units_to_update(
 @pytest.fixture()
 def sdtoolplus_settings() -> SDToolPlusSettings:
     return SDToolPlusSettings(
+        fastramqpi=FastRAMQPISettings(
+            client_id="client_id",
+            client_secret=SecretStr("top_secret"),
+            amqp=AMQPConnectionSettings(url="amqp://guest:guest@msg-broker"),
+        ),
         client_secret=SecretStr(""),
         sd_username="sd_username",
         sd_institution_identifier="sd_institution_identifier",
