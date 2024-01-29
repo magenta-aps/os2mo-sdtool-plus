@@ -9,14 +9,16 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
+from typing import Any
 from uuid import UUID
 
 import structlog
+from fastapi import APIRouter
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
+from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
-from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -32,45 +34,46 @@ from .tree_tools import tree_as_string
 logger = structlog.get_logger()
 
 
-def create_app(**kwargs) -> FastAPI:
-    settings = SDToolPlusSettings()
-    app = FastAPI(sdtoolplus=App(settings), engine=get_engine(settings))
-    Instrumentator().instrument(app).expose(app)
+def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
+    settings = kwargs.get("settings")
+    if settings is None:
+        settings = SDToolPlusSettings()
 
-    @app.get("/")
-    async def index() -> dict[str, str]:
-        return {"name": "sdtoolplus"}
+    fastramqpi = FastRAMQPI(
+        application_name="os2mo-sdtool-plus",
+        settings=settings.fastramqpi,
+    )
+    fastramqpi.add_context(settings=settings)
 
-    @app.get("/tree/mo")
+    sdtoolplus: App = App(settings)
+    engine = get_engine(settings)
+
+    fastapi_router = APIRouter()
+
+    @fastapi_router.get("/tree/mo")
     async def print_mo_tree(request: Request) -> str:
         """
         For debugging problems. Prints the part of the MO tree that
         should be compared to the SD tree.
         """
-        sdtoolplus: App = request.app.extra["sdtoolplus"]
         mo_tree = sdtoolplus.get_mo_tree()
         return tree_as_string(mo_tree)
 
-    @app.get("/tree/sd")
+    @fastapi_router.get("/tree/sd")
     async def print_sd_tree(request: Request) -> str:
         """
         For debugging problems. Prints the SD tree.
         """
-        sdtoolplus: App = request.app.extra["sdtoolplus"]
         sd_tree = sdtoolplus.get_sd_tree()
         return tree_as_string(sd_tree)
 
-    @app.post("/trigger", status_code=HTTP_200_OK)
+    @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
-        request: Request,
         response: Response,
         org_unit: UUID | None = None,
         dry_run: bool = False,
     ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
-
-        sdtoolplus: App = request.app.extra["sdtoolplus"]
-        engine = request.app.extra["engine"]
 
         logger.info("Checking RunDB status...")
         status_last_run = get_status(engine)
@@ -79,6 +82,7 @@ def create_app(**kwargs) -> FastAPI:
             response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
             return {"msg": "Previous run did not complete successfully!"}
         logger.info("Previous run completed successfully")
+
         if not dry_run:
             persist_status(engine, Status.RUNNING)
 
@@ -100,4 +104,12 @@ def create_app(**kwargs) -> FastAPI:
 
         return results
 
-    return app
+    app = fastramqpi.get_app()
+    app.include_router(fastapi_router)
+
+    return fastramqpi
+
+
+def create_app(**kwargs: Any) -> FastAPI:
+    fastramqpi = create_fastramqpi(**kwargs)
+    return fastramqpi.get_app()
