@@ -35,9 +35,7 @@ logger = structlog.get_logger()
 
 
 def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
-    settings = kwargs.get("settings")
-    if settings is None:
-        settings = SDToolPlusSettings()
+    settings = kwargs.get("settings") or SDToolPlusSettings()
 
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
