@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from fastramqpi.config import Settings as FastRAMQPISettings
 from pydantic import AnyHttpUrl
 from pydantic import BaseSettings
+from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
 
@@ -10,6 +12,10 @@ from .mo_org_unit_importer import OrgUnitUUID
 
 
 class SDToolPlusSettings(BaseSettings):
+    fastramqpi: FastRAMQPISettings = Field(
+        default_factory=FastRAMQPISettings, description="FastRAMQPI settings"
+    )
+
     # Credentials, etc. for authenticating against MO and performing GraphQL queries
     mora_base: str = "http://mo:5000"
     client_id: str = "integration_sdtool_plus"
@@ -53,6 +59,9 @@ class SDToolPlusSettings(BaseSettings):
     db_password: SecretStr
     db_host: str = "sd-db"
     db_name: str = "sdtool_plus"
+
+    class Config:
+        env_nested_delimiter = "__"
 
 
 def get_settings(*args, **kwargs) -> SDToolPlusSettings:
