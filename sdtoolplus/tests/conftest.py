@@ -143,6 +143,16 @@ class _MockGraphQLSession:
                 "user_key": node.user_key,
                 "name": node.name,
                 "org_unit_level_uuid": str(node.org_unit_level_uuid),
+                "addresses": [
+                    {
+                        "name": "Grønnegade 2, 1000 Andeby",
+                        "uuid": "599ce718-5ba9-48f1-958f-17ed39b13d27",
+                        "address_type": {
+                            "user_key": "AddressMailUnit",
+                            "uuid": "7bd066ea-e8e5-42b1-9211-73562da54b9b",
+                        },
+                    },
+                ],
             }
             for node in chain(self.expected_children, self.expected_grandchildren)
         ]

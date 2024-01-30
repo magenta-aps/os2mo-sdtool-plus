@@ -11,9 +11,22 @@ from gql import gql
 from pydantic import parse_obj_as
 from ramodels.mo import Validity
 
+AddressUUID: TypeAlias = UUID
+AddressTypeUUID: TypeAlias = UUID
 OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 OrgUnitLevelUUID: TypeAlias = UUID
+
+
+class AddressType(pydantic.BaseModel):
+    uuid: AddressTypeUUID
+    user_key: str
+
+
+class Address(pydantic.BaseModel):
+    uuid: AddressUUID | None = None
+    name: str
+    address_type: AddressType | None = None
 
 
 class OrgUnit(pydantic.BaseModel):
@@ -23,6 +36,7 @@ class OrgUnit(pydantic.BaseModel):
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
     validity: Validity | None
+    addresses: list[Address] = []
 
 
 class OrgUnitNode(anytree.AnyNode):
@@ -35,6 +49,7 @@ class OrgUnitNode(anytree.AnyNode):
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
         org_unit_level_uuid: OrgUnitLevelUUID | None = None,
+        addresses: list[Address] = [],
         validity: Validity | None = None,
     ):
         super().__init__(parent=parent, children=children)
@@ -44,6 +59,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=user_key,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
+            addresses=addresses,
             validity=validity,
         )
 
@@ -55,6 +71,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=org_unit.user_key,
             name=org_unit.name,
             org_unit_level_uuid=org_unit.org_unit_level_uuid,
+            addresses=org_unit.addresses,
             validity=org_unit.validity,
         )
 
@@ -90,6 +107,10 @@ class OrgUnitNode(anytree.AnyNode):
     def validity(self) -> Validity | None:
         return self._instance.validity
 
+    @property
+    def addresses(self) -> list[Address]:
+        return self._instance.addresses
+
 
 class MOOrgTreeImport:
     def __init__(self, session):
@@ -123,6 +144,14 @@ class MOOrgTreeImport:
                                 user_key
                                 name
                                 org_unit_level_uuid
+                                addresses {
+                                    name
+                                    uuid
+                                    address_type {
+                                        user_key
+                                        uuid
+                                    }
+                                }
                             }
                         }
                     }
