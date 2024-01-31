@@ -270,6 +270,13 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentLevelIdentifier": "NY1-niveau",
                 "DepartmentName": "Department 1",
                 "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Hovedgaden 1",
+                    "PostalCode": 1000,
+                    "DistrictName": "Andeby",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 123456789,
             },
             {
                 "ActivationDate": "1999-01-01",

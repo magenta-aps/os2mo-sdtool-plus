@@ -10,6 +10,8 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.tree import _get_sd_validity
 from sdtoolplus.sd.tree import build_tree
@@ -38,6 +40,13 @@ def test_build_tree(
         parent=expected_tree,
         name="Department 1",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
+        addresses=[
+            Address(
+                name="Hovedgaden 1, 1000 Andeby",
+                address_type=AddressType(user_key="AddressMailUnit"),
+            ),
+            Address(name="123456789", address_type=AddressType(user_key="Pnummer")),
+        ],
         validity=sd_expected_validity,
     )
     dep2 = OrgUnitNode(
@@ -102,6 +111,7 @@ def test_build_tree(
         assert node_a.name == node_b.name
         assert node_a.org_unit_level_uuid == node_b.org_unit_level_uuid
         assert node_a.validity == node_b.validity
+        assert node_a.addresses == node_b.addresses
         # Only displayed in case test fails
         print("\t" * depth, node_a, node_b)
         # Visit child nodes pair-wise

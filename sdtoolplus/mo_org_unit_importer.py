@@ -19,7 +19,7 @@ OrgUnitLevelUUID: TypeAlias = UUID
 
 
 class AddressType(pydantic.BaseModel):
-    uuid: AddressTypeUUID
+    uuid: AddressTypeUUID | None = None
     user_key: str
 
 

@@ -14,8 +14,9 @@ from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
@@ -27,6 +28,7 @@ def _create_node(
     dep_level_identifier: str,
     dep_validity: Validity,
     parent: OrgUnitNode,
+    addresses: list[Address],
     existing_nodes: dict[UUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
@@ -55,6 +57,7 @@ def _create_node(
         parent=parent,
         name=dep_name,
         org_unit_level_uuid=org_unit_level.uuid,
+        addresses=addresses,
         validity=dep_validity,
     )
 
@@ -135,6 +138,29 @@ def _process_node(
     dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
     dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
+    dep_addr = sd_departments_map[dep_uuid].PostalAddress
+    dep_prod_unit_id = sd_departments_map[dep_uuid].ProductionUnitIdentifier
+
+    # TODO: put magic values into constant
+    addresses = []
+    # TODO: test missing for the latter part of this expression
+    if dep_addr is not None and None not in (
+        dep_addr.StandardAddressIdentifier,
+        dep_addr.PostalCode,
+        dep_addr.DistrictName,
+    ):
+        addresses.append(
+            Address(
+                name=f"{dep_addr.StandardAddressIdentifier}, {dep_addr.PostalCode} {dep_addr.DistrictName}",
+                address_type=AddressType(user_key="AddressMailUnit"),
+            )
+        )
+    if dep_prod_unit_id is not None:
+        addresses.append(
+            Address(
+                name=str(dep_prod_unit_id), address_type=AddressType(user_key="Pnummer")
+            )
+        )
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
@@ -157,6 +183,7 @@ def _process_node(
             dep_level_identifier,
             dep_validity,
             parent,
+            addresses,
             existing_nodes,
             mo_org_unit_level_map,
         )
@@ -169,6 +196,7 @@ def _process_node(
         dep_level_identifier,
         dep_validity,
         root_node,
+        addresses,
         existing_nodes,
         mo_org_unit_level_map,
     )
