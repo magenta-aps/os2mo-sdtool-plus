@@ -26,7 +26,7 @@ class AddressType(pydantic.BaseModel):
 class Address(pydantic.BaseModel):
     uuid: AddressUUID | None = None
     name: str
-    address_type: AddressType | None = None
+    address_type: AddressType
 
 
 class OrgUnit(pydantic.BaseModel):
