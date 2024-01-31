@@ -191,6 +191,24 @@ class TestMOOrgTreeImport:
 
 
 class TestOrgUnitNode:
+    def test_constructor(self, sd_expected_validity):
+        assert OrgUnitNode(
+            uuid=uuid4(),
+            parent_uuid=uuid4(),
+            user_key="dep1",
+            parent=None,
+            name="Department 1",
+            org_unit_level_uuid=uuid4(),
+            addresses=[
+                Address(
+                    name="Hovedgaden 1, 1000 Andeby",
+                    address_type=AddressType(user_key="AddressMailUnit"),
+                ),
+                Address(name="123456789", address_type=AddressType(user_key="Pnummer")),
+            ],
+            validity=sd_expected_validity,
+        )
+
     def test_from_org_unit_for_addresses(self):
         # Arrange
         org_unit_dict: dict = {
