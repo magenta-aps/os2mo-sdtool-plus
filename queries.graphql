@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+
+query AddressTypes {
+  facets(filter: {user_keys: "org_unit_address_type"}) {
+    objects {
+      current {
+        user_key
+        uuid
+        classes {
+          uuid
+          user_key
+          name
+        }
+      }
+    }
+  }
+}
