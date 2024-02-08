@@ -16,7 +16,10 @@ COPY pyproject.toml poetry.lock ./
 
 RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root --no-dev
 
-COPY . ./
+COPY sdtoolplus ./sdtoolplus
+COPY alembic.ini ./alembic.ini
+COPY alembic ./alembic
+COPY docker/start.sh ./docker/start.sh
 
 # Useful for debugging
 RUN apt update && apt install -y jq vim less
