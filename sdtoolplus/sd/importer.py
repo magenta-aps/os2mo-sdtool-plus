@@ -36,6 +36,8 @@ def get_sd_departments(
     institution_identifier: str,
     activation_date: date,
     deactivation_date: date,
+    fetch_postal_addr: bool = False,
+    fetch_pnumber: bool = False,
 ) -> GetDepartmentResponse:
     # TODO: add docstring
     req = GetDepartmentRequest(
@@ -43,8 +45,8 @@ def get_sd_departments(
         ActivationDate=activation_date,
         DeactivationDate=deactivation_date,
         DepartmentNameIndicator=True,
-        PostalAddressIndicator=True,
-        ProductionUnitIndicator=True,
+        PostalAddressIndicator=fetch_postal_addr,
+        ProductionUnitIndicator=fetch_pnumber,
         UUIDIndicator=True,
     )
 
