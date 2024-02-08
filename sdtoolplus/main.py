@@ -19,6 +19,7 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -32,6 +33,29 @@ from .tree_tools import tree_as_string
 
 
 logger = structlog.get_logger()
+
+
+def run_db_start_operations(
+    engine: Engine, dry_run: bool, response: Response
+) -> dict | None:
+    logger.info("Checking RunDB status...")
+    status_last_run = get_status(engine)
+    if not status_last_run == Status.COMPLETED:
+        logger.warn("Previous run did not complete successfully!")
+        response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+        return {"msg": "Previous run did not complete successfully!"}
+    logger.info("Previous run completed successfully")
+
+    if not dry_run:
+        persist_status(engine, Status.RUNNING)
+
+    return None
+
+
+def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
+    if not dry_run:
+        persist_status(engine, Status.COMPLETED)
+    dipex_last_success_timestamp.set_to_current_time()
 
 
 def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
@@ -73,16 +97,11 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
-        logger.info("Checking RunDB status...")
-        status_last_run = get_status(engine)
-        if not status_last_run == Status.COMPLETED:
-            logger.warn("Previous run did not complete successfully!")
-            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "Previous run did not complete successfully!"}
-        logger.info("Previous run completed successfully")
-
-        if not dry_run:
-            persist_status(engine, Status.RUNNING)
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
 
         results: list[dict] = [
             {
@@ -94,10 +113,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 org_unit=org_unit, dry_run=dry_run
             )
         ]
+        logger.info("Finished adding or updating org unit objects")
 
-        if not dry_run:
-            persist_status(engine, Status.COMPLETED)
-        dipex_last_success_timestamp.set_to_current_time()
+        run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results
