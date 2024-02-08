@@ -13,8 +13,8 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-from sdtoolplus.sd.tree import _get_sd_validity
 from sdtoolplus.sd.tree import build_tree
+from sdtoolplus.sd.tree import get_sd_validity
 from sdtoolplus.tests.conftest import SharedIdentifier
 
 
@@ -148,11 +148,11 @@ def test_get_sd_validity(
     # 1. Test that the "normal" `ActivationDate`/`DeactivationDate` values are converted
     # to the expected SD validity.
     sd_dep: Department = mock_sd_get_department_response.Department[0]
-    sd_actual_validity: Validity = _get_sd_validity(sd_dep)
+    sd_actual_validity: Validity = get_sd_validity(sd_dep)
     assert sd_actual_validity == sd_expected_validity
 
     # 2. Test that a "special" `DeactivationDate` of "9999-12-31" is converted to None,
     # representing an open validity period.
     sd_dep.DeactivationDate = date(9999, 12, 31)
-    sd_actual_validity = _get_sd_validity(sd_dep)
+    sd_actual_validity = get_sd_validity(sd_dep)
     assert sd_actual_validity.to_date is None

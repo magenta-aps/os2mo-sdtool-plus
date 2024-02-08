@@ -21,7 +21,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
 
-def _create_node(
+def create_node(
     dep_uuid: UUID,
     dep_name: str,
     dep_identifier: str,
@@ -85,7 +85,7 @@ def _get_sd_departments_map(
     }
 
 
-def _get_sd_validity(dep: Department) -> Validity:
+def get_sd_validity(dep: Department) -> Validity:
     def convert_infinity_to_none(sd_date: date) -> date | None:
         if sd_date == date(9999, 12, 31):
             return None
@@ -137,7 +137,7 @@ def _process_node(
     dep_name = sd_departments_map[dep_uuid].DepartmentName
     dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
-    dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
+    dep_validity: Validity = get_sd_validity(sd_departments_map[dep_uuid])
     dep_addr = sd_departments_map[dep_uuid].PostalAddress
     dep_prod_unit_id = sd_departments_map[dep_uuid].ProductionUnitIdentifier
 
@@ -176,7 +176,7 @@ def _process_node(
             mo_org_unit_level_map,
         )
 
-        new_node = _create_node(
+        new_node = create_node(
             dep_uuid,
             dep_name,
             dep_identifier,
@@ -189,7 +189,7 @@ def _process_node(
         )
         return new_node
 
-    new_node = _create_node(
+    new_node = create_node(
         dep_uuid,
         dep_name,
         dep_identifier,
