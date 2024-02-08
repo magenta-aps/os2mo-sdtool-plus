@@ -17,6 +17,7 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
@@ -138,29 +139,8 @@ def _process_node(
     dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
     dep_validity: Validity = get_sd_validity(sd_departments_map[dep_uuid])
-    dep_addr = sd_departments_map[dep_uuid].PostalAddress
-    dep_prod_unit_id = sd_departments_map[dep_uuid].ProductionUnitIdentifier
 
-    # TODO: put magic values into constant
-    addresses = []
-    # TODO: test missing for the latter part of this expression
-    if dep_addr is not None and None not in (
-        dep_addr.StandardAddressIdentifier,
-        dep_addr.PostalCode,
-        dep_addr.DistrictName,
-    ):
-        addresses.append(
-            Address(
-                name=f"{dep_addr.StandardAddressIdentifier}, {dep_addr.PostalCode} {dep_addr.DistrictName}",
-                address_type=AddressType(user_key="AddressMailUnit"),
-            )
-        )
-    if dep_prod_unit_id is not None:
-        addresses.append(
-            Address(
-                name=str(dep_prod_unit_id), address_type=AddressType(user_key="Pnummer")
-            )
-        )
+    addresses = get_addresses(sd_departments_map[dep_uuid])
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
