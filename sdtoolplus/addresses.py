@@ -3,12 +3,22 @@
 import structlog
 from more_itertools import only
 from pydantic import BaseModel
+from sdclient.client import SDClient
 
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.depends import GraphQLClient
+from sdtoolplus.graphql import add_address
+from sdtoolplus.graphql import get_address_type_uuid
+from sdtoolplus.graphql import get_graphql_client
+from sdtoolplus.graphql import update_address
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import AddressTypeUUID
+from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.sd.importer import get_sd_units
+from sdtoolplus.tree_diff_executor import AddressOperation
 
 logger = structlog.get_logger()
 
@@ -20,6 +30,7 @@ class AddressCollection(BaseModel):
 
 def _get_unit_address(org_unit_node: OrgUnitNode, address_type: str) -> Address | None:
     # TODO: add docstring
+    # TODO: filter on address type UUID instead of address type string
     try:
         addr = only(
             addr
@@ -110,3 +121,90 @@ def update_or_add_addresses(
     return AddressCollection(
         addresses_to_add=addresses_to_add, addresses_to_update=addresses_to_update
     )
+
+
+def update_or_add_pnumber_address(
+    sd_unit: OrgUnitNode,
+    mo_unit: OrgUnitNode,
+    pnumber_addr_type_uuid: AddressTypeUUID,
+) -> Address | None:
+    # TODO: docstring
+
+    sd_addr = _get_unit_address(sd_unit, "Pnummer")
+    if sd_addr is None:
+        return None
+
+    mo_addr = _get_unit_address(mo_unit, "Pnummer")
+
+    if mo_addr is None:
+        return Address(
+            name=sd_addr.name,
+            address_type=AddressType(
+                user_key=sd_addr.address_type.user_key, uuid=pnumber_addr_type_uuid
+            ),
+        )
+
+    if not sd_addr.name == mo_addr.name:
+        return Address(
+            uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
+            name=sd_addr.name,
+            address_type=mo_addr.address_type,
+        )
+    return None
+
+
+async def fix_addresses(
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    org_unit: OrgUnitUUID | None,
+    dry_run: bool,
+):
+    logger.info("Add or update addresses")
+
+    # Get the SD and MO clients
+    sd_client = SDClient(
+        settings.sd_username,
+        settings.sd_password.get_secret_value(),
+    )
+    # TODO: use auto-generated client instead
+    persistent_client = get_graphql_client(settings)
+
+    # Get the SD units
+    logger.info("Getting SD units...")
+    sd_units = get_sd_units(sd_client, settings.sd_institution_identifier)
+
+    # Get the MO units
+    logger.info("Getting MO units...")
+    mo_org_tree_import = MOOrgTreeImport(persistent_client)
+    mo_org_units = mo_org_tree_import.get_org_units()
+    mo_units = [OrgUnitNode.from_org_unit(org_unit) for org_unit in mo_org_units]
+    mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
+        mo_unit.uuid: mo_unit for mo_unit in mo_units
+    }
+
+    # TODO: filter by UUID
+
+    # Only fix units that are already in MO
+    sd_units = [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
+
+    # Handle P-number addresses
+    addr_type_uuid = await get_address_type_uuid(gql_client, "Pnummer")
+    for sd_unit in sd_units:
+        mo_unit = mo_unit_map[sd_unit.uuid]
+        addr = update_or_add_pnumber_address(sd_unit, mo_unit, addr_type_uuid)
+        if addr is None:
+            continue
+        if addr.uuid is None:
+            logger.info("Add new address", org_unit=str(mo_unit.uuid), addr=addr)
+            if not dry_run:
+                return_address = await add_address(gql_client, mo_unit, addr)
+            else:
+                return_address = addr
+            yield AddressOperation.ADD, mo_unit, return_address
+        else:
+            logger.info("Updating address", org_unit=str(mo_unit.uuid), addr=addr)
+            if not dry_run:
+                return_address = await update_address(gql_client, mo_unit, addr)
+            else:
+                return_address = addr
+            yield AddressOperation.UPDATE, mo_unit, return_address
