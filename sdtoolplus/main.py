@@ -23,12 +23,14 @@ from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
+from .addresses import fix_addresses
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .db.rundb import Status
+from .depends import GraphQLClient
 from .tree_tools import tree_as_string
 
 
@@ -64,6 +66,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
+        graphql_client_cls=GraphQLClient,
+        graphql_version=21,
     )
     fastramqpi.add_context(settings=settings)
 
@@ -116,6 +120,39 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Finished adding or updating org unit objects")
 
         run_db_end_operations(engine, dry_run)
+        logger.info("Run completed!")
+
+        return results
+
+    @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
+    async def trigger_addresses(
+        response: Response,
+        gql_client: GraphQLClient,
+        org_unit: UUID | None = None,
+        dry_run: bool = False,
+    ) -> list[dict] | dict:
+        logger.info("Starting address run", org_unit=str(org_unit), dry_run=dry_run)
+
+        # run_db_start_operations_resp = run_db_start_operations(
+        #     engine, dry_run, response
+        # )
+        # if run_db_start_operations_resp is not None:
+        #     return run_db_start_operations_resp
+
+        results: list[dict] = [
+            {
+                "address_operation": operation.value,
+                "address_type": addr.address_type.user_key,
+                "unit": repr(org_unit_node),
+                "address": addr.name,
+            }
+            async for operation, org_unit_node, addr in fix_addresses(
+                gql_client, settings, org_unit, dry_run
+            )
+        ]
+        logger.info("Finished adding or updating org unit objects")
+
+        # run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results
