@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import datetime
 from enum import Enum
 
 import structlog
@@ -200,6 +201,8 @@ async def fix_addresses(
     # Handle P-number addresses
     addr_type_uuid = await get_address_type_uuid(gql_client, "Pnummer")
     for sd_unit in sd_units:
+        assert sd_unit.validity is not None
+
         mo_unit = mo_unit_map[sd_unit.uuid]
         addr = update_or_add_pnumber_address(sd_unit, mo_unit, addr_type_uuid)
         if addr is None:
@@ -212,7 +215,13 @@ async def fix_addresses(
                 addr_type=addr.address_type.user_key,
             )
             if not dry_run:
-                return_address = await add_address(gql_client, mo_unit, addr)
+                return_address = await add_address(
+                    gql_client,
+                    mo_unit,
+                    addr,
+                    sd_unit.validity.from_date,
+                    sd_unit.validity.to_date,
+                )
             else:
                 return_address = addr
             yield AddressOperation.ADD, mo_unit, return_address
@@ -220,11 +229,12 @@ async def fix_addresses(
             logger.info(
                 "Updating address",
                 org_unit=str(mo_unit.uuid),
-                addr=addr,
+                addr=addr.name,
                 addt_type=addr.address_type.user_key,
             )
             if not dry_run:
-                return_address = await update_address(gql_client, mo_unit, addr)
-            else:
-                return_address = addr
+                await update_address(
+                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
+                )
+            return_address = addr
             yield AddressOperation.UPDATE, mo_unit, return_address
