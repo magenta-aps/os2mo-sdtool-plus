@@ -9,6 +9,8 @@ from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
+from sdtoolplus.filters import filter_by_uuid
+from sdtoolplus.filters import remove_by_name
 from sdtoolplus.graphql import add_address
 from sdtoolplus.graphql import get_address_type_uuid
 from sdtoolplus.graphql import get_graphql_client
@@ -183,12 +185,14 @@ async def fix_addresses(
     logger.info("Getting MO units...")
     mo_org_tree_import = MOOrgTreeImport(persistent_client)
     mo_org_units = mo_org_tree_import.get_org_units()
+
     mo_units = [OrgUnitNode.from_org_unit(org_unit) for org_unit in mo_org_units]
+    mo_units = filter_by_uuid(org_unit, mo_units)
+    mo_units = remove_by_name(settings.regex_unit_names_to_remove, mo_units)
+
     mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
         mo_unit.uuid: mo_unit for mo_unit in mo_units
     }
-
-    # TODO: filter by UUID
 
     # Only fix units that are already in MO
     sd_units = [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
@@ -201,14 +205,24 @@ async def fix_addresses(
         if addr is None:
             continue
         if addr.uuid is None:
-            logger.info("Add new address", org_unit=str(mo_unit.uuid), addr=addr)
+            logger.info(
+                "Add new address",
+                org_unit=str(mo_unit.uuid),
+                addr=addr.name,
+                addr_type=addr.address_type.user_key,
+            )
             if not dry_run:
                 return_address = await add_address(gql_client, mo_unit, addr)
             else:
                 return_address = addr
             yield AddressOperation.ADD, mo_unit, return_address
         else:
-            logger.info("Updating address", org_unit=str(mo_unit.uuid), addr=addr)
+            logger.info(
+                "Updating address",
+                org_unit=str(mo_unit.uuid),
+                addr=addr,
+                addt_type=addr.address_type.user_key,
+            )
             if not dry_run:
                 return_address = await update_address(gql_client, mo_unit, addr)
             else:
