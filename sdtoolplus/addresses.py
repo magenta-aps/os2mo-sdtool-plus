@@ -184,7 +184,7 @@ async def fix_addresses(
     # Get the MO units
     logger.info("Getting MO units...")
     mo_org_tree_import = MOOrgTreeImport(persistent_client)
-    mo_org_units = mo_org_tree_import.get_org_units()
+    mo_org_units = mo_org_tree_import.get_org_units(org_unit)
 
     mo_units = [OrgUnitNode.from_org_unit(org_unit) for org_unit in mo_org_units]
     mo_units = filter_by_uuid(org_unit, mo_units)
