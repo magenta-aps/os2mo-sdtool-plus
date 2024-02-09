@@ -96,11 +96,14 @@ async def test_get_address_type_uuid():
 @pytest.mark.asyncio
 async def test_add_address():
     # Arrange
+    from_date = datetime(2000, 1, 1, 12, 0, 0)
+    to_date = None
+
     mock_gql_client = AsyncMock()
     mock_gql_client.create_address.return_value = CreateAddressAddressCreate(
         current=CreateAddressAddressCreateCurrent(
             validity=CreateAddressAddressCreateCurrentValidity(
-                from_=datetime(2000, 1, 1, 12, 0, 0), to=None
+                from_=from_date, to=to_date
             ),
             uuid=addr_uuid,
             name="address",
@@ -111,7 +114,9 @@ async def test_add_address():
     )
 
     # Act
-    created_addr = await add_address(mock_gql_client, org_unit_node, address)
+    created_addr = await add_address(
+        mock_gql_client, org_unit_node, address, from_date, to_date
+    )
 
     # Assert
     assert created_addr.uuid == addr_uuid
@@ -125,10 +130,8 @@ async def test_add_address():
             value="Paradisæblevej 13, 1000 Andeby",
             address_type=addr_type_uuid,
             validity=RAValidityInput(
-                from_=datetime(
-                    2000, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("Europe/Copenhagen")
-                ),
-                to=None,
+                from_=from_date,
+                to=to_date,
             ),
         )
     )
@@ -137,6 +140,9 @@ async def test_add_address():
 @pytest.mark.asyncio
 async def test_update_address():
     # Arrange
+    from_date = datetime(2000, 1, 1, 12, 0, 0)
+    to_date = None
+
     mock_gql_client = AsyncMock()
     addr = Address(
         uuid=addr_uuid,
@@ -148,7 +154,7 @@ async def test_update_address():
     )
 
     # Act
-    await update_address(mock_gql_client, org_unit_node, addr)
+    await update_address(mock_gql_client, addr, from_date, to_date)
 
     # Assert
     mock_gql_client.update_address.assert_awaited_once_with(
@@ -157,10 +163,8 @@ async def test_update_address():
             value="Paradisæblevej 13, 1000 Andeby",
             address_type=addr_type_uuid,
             validity=RAValidityInput(
-                from_=datetime(
-                    2000, 1, 1, 12, 0, 0, tzinfo=ZoneInfo("Europe/Copenhagen")
-                ),
-                to=None,
+                from_=from_date,
+                to=to_date,
             ),
         )
     )

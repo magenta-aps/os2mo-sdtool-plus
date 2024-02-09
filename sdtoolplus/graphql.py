@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import datetime
 from uuid import UUID
 
 from more_itertools import one
@@ -46,19 +47,20 @@ async def get_address_type_uuid(
 
 
 async def add_address(
-    gql_client: GraphQLClient, org_unit_node: OrgUnitNode, addr: Address
+    gql_client: GraphQLClient,
+    org_unit_node: OrgUnitNode,
+    addr: Address,
+    from_date: datetime,
+    to_date: datetime | None,
 ) -> Address:
-    validity = org_unit_node.validity
-    assert validity is not None
-
     created_addr = await gql_client.create_address(
         AddressCreateInput(
             org_unit=org_unit_node.uuid,
             value=addr.name,
             address_type=addr.address_type.uuid,
             validity=RAValidityInput(
-                from_=validity.from_date,
-                to=validity.to_date,
+                from_=from_date,
+                to=to_date,
             ),
         )
     )
@@ -74,19 +76,19 @@ async def add_address(
 
 
 async def update_address(
-    gql_client: GraphQLClient, org_unit_node: OrgUnitNode, addr: Address
+    gql_client: GraphQLClient,
+    addr: Address,
+    from_date: datetime,
+    to_date: datetime | None,
 ):
-    validity = org_unit_node.validity
-    assert validity is not None
-
     await gql_client.update_address(
         AddressUpdateInput(
             uuid=addr.uuid,
             address_type=addr.address_type.uuid,
             value=addr.name,
             validity=RAValidityInput(
-                from_=validity.from_date,
-                to=validity.to_date,
+                from_=from_date,
+                to=to_date,
             ),
         )
     )
