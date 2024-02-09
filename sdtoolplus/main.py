@@ -40,6 +40,9 @@ logger = structlog.get_logger()
 def run_db_start_operations(
     engine: Engine, dry_run: bool, response: Response
 ) -> dict | None:
+    if dry_run:
+        return None
+
     logger.info("Checking RunDB status...")
     status_last_run = get_status(engine)
     if not status_last_run == Status.COMPLETED:
@@ -48,8 +51,7 @@ def run_db_start_operations(
         return {"msg": "Previous run did not complete successfully!"}
     logger.info("Previous run completed successfully")
 
-    if not dry_run:
-        persist_status(engine, Status.RUNNING)
+    persist_status(engine, Status.RUNNING)
 
     return None
 
@@ -133,11 +135,11 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> list[dict] | dict:
         logger.info("Starting address run", org_unit=str(org_unit), dry_run=dry_run)
 
-        # run_db_start_operations_resp = run_db_start_operations(
-        #     engine, dry_run, response
-        # )
-        # if run_db_start_operations_resp is not None:
-        #     return run_db_start_operations_resp
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
 
         results: list[dict] = [
             {
@@ -152,7 +154,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         ]
         logger.info("Finished adding or updating org unit objects")
 
-        # run_db_end_operations(engine, dry_run)
+        run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results
