@@ -46,8 +46,10 @@ class TestApp:
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
+    @patch("sdtoolplus.app.get_graphql_client")
     def test_get_tree_diff_executor(
         self,
+        mock_get_graphql_client: MagicMock,
         mock_graphql_session,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
@@ -56,7 +58,7 @@ class TestApp:
     ) -> None:
         # Arrange: patch dependencies with mock replacements
         with ExitStack() as stack:
-            self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
+            mock_get_graphql_client.return_value = mock_graphql_session
             self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
             self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
@@ -107,8 +109,10 @@ class TestApp:
                 f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}"
             )
 
+    @patch("sdtoolplus.app.get_graphql_client")
     def test_get_tree_diff_executor_for_mo_subtree_case(
         self,
+        mock_get_graphql_client: MagicMock,
         mock_graphql_session,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
@@ -127,7 +131,7 @@ class TestApp:
         )
 
         with ExitStack() as stack:
-            self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
+            mock_get_graphql_client.return_value = mock_graphql_session
             self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
             self._add_mock(
@@ -310,10 +314,12 @@ class TestApp:
     def test_get_effective_root_path_for_empty_list(self):
         assert App._get_effective_root_path([]) == ""
 
+    @patch("sdtoolplus.app.get_graphql_client")
     @patch("sdtoolplus.app.get_sd_tree")
     def test_get_sd_tree_override_sd_root_uuid(
         self,
         mock_get_sd_tree: MagicMock,
+        mock_get_graphql_client: MagicMock,
         mock_graphql_session,
         mock_mo_org_tree_import,
         mock_mo_org_unit_level_map,
@@ -321,7 +327,7 @@ class TestApp:
     ):
         with ExitStack() as stack:
             # Arrange
-            self._add_mock(stack, "PersistentGraphQLClient", mock_graphql_session)
+            mock_get_graphql_client.return_value = mock_graphql_session
             self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
             self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
 
