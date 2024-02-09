@@ -87,6 +87,8 @@ def get_sd_units(
     return [
         OrgUnitNode(
             uuid=sd_dep.DepartmentUUIDIdentifier,
+            user_key=sd_dep.DepartmentIdentifier,
+            name=sd_dep.DepartmentName,
             addresses=get_addresses(sd_dep),
             validity=get_sd_validity(sd_dep),
         )
