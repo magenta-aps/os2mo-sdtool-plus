@@ -17,6 +17,8 @@ from graphql import DocumentNode
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
+from .addresses import AddressCollection
+from .addresses import AddressOperation
 from .diff_org_trees import OrgTreeDiff
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode

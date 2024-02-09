@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from enum import Enum
+
 import structlog
 from more_itertools import only
 from pydantic import BaseModel
@@ -18,9 +20,13 @@ from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.importer import get_sd_units
-from sdtoolplus.tree_diff_executor import AddressOperation
 
 logger = structlog.get_logger()
+
+
+class AddressOperation(Enum):
+    ADD = "add"
+    UPDATE = "update"
 
 
 class AddressCollection(BaseModel):

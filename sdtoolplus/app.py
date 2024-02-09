@@ -8,9 +8,9 @@ import sentry_sdk
 import structlog
 from httpx import Response
 from httpx import Timeout
-from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
 
+from .addresses import AddressOperation
 from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
 from .graphql import get_graphql_client
