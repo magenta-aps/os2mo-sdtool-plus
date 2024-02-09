@@ -2,10 +2,8 @@
 # SPDX-License-Identifier: MPL-2.0
 import abc
 import datetime
-import re
 import uuid
 from typing import Any
-from typing import Iterable
 from typing import Iterator
 
 import structlog
@@ -17,45 +15,14 @@ from graphql import DocumentNode
 from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
-from .addresses import AddressCollection
-from .addresses import AddressOperation
 from .diff_org_trees import OrgTreeDiff
+from .filters import filter_by_uuid
+from .filters import remove_by_name
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
 
 
 logger = structlog.get_logger()
-
-
-def _filter_by_uuid(
-    unit_uuid: uuid.UUID | None, org_units: Iterable[OrgUnitNode]
-) -> list[OrgUnitNode]:
-    if unit_uuid is None:
-        return list(org_units)
-
-    return [org_unit for org_unit in org_units if org_unit.uuid == unit_uuid]
-
-
-def _remove_by_name(
-    regex_strings: list[str], org_units: Iterable[OrgUnitNode]
-) -> list[OrgUnitNode]:
-    """
-    Filter org units by name. The units which does NOT match the regex
-    are kept.
-    Args:
-        regex_strings: List of regex strings
-        org_units: Iterator of org units to filter
-
-    Returns:
-        List of OrgUnitNodes which does not match the regex's
-    """
-    compiled_regexs = [re.compile(regex_string) for regex_string in regex_strings]
-
-    return [
-        org_unit_node
-        for org_unit_node in org_units
-        if not any(regex.match(org_unit_node.name) for regex in compiled_regexs)
-    ]
 
 
 class Mutation(abc.ABC):
@@ -186,8 +153,8 @@ class TreeDiffExecutor:
         self, org_unit: uuid.UUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID]]:
         # Add new units first
-        units_to_add = _filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
-        units_to_add = _remove_by_name(self.regex_unit_names_to_remove, units_to_add)
+        units_to_add = filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
+        units_to_add = remove_by_name(self.regex_unit_names_to_remove, units_to_add)
         for unit in units_to_add:
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
@@ -199,10 +166,10 @@ class TreeDiffExecutor:
             yield unit, add_mutation, result
 
         # ... and then update modified units (name or parent changed)
-        units_to_update = _filter_by_uuid(
+        units_to_update = filter_by_uuid(
             org_unit, self._tree_diff.get_units_to_update()
         )
-        units_to_update = _remove_by_name(
+        units_to_update = remove_by_name(
             self.regex_unit_names_to_remove, units_to_update
         )
         for unit in units_to_update:

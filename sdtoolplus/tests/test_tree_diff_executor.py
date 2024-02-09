@@ -10,12 +10,9 @@ from freezegun import freeze_time
 from graphql import GraphQLSchema
 from more_itertools import one
 
-from ..addresses import AddressCollection
-from ..addresses import AddressOperation
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_org_unit_importer import OrgUnitNode
-from ..tree_diff_executor import _remove_by_name
 from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import Mutation
 from ..tree_diff_executor import TreeDiffExecutor
@@ -227,43 +224,3 @@ class TestTreeDiffExecutor:
         unit_names = [tup[0].name for tup in units_to_mutate]
         assert "Department 5" not in unit_names
         assert "Department 6" not in unit_names
-
-
-def test_remove_by_name(expected_units_to_add):
-    # Arrange
-    regexs = ["^.*5$", "^.*6$"]  # Filter out units where the name ends in "5" or "6"
-
-    # Act
-    kept_units = _remove_by_name(regexs, expected_units_to_add)
-
-    # Assert
-    assert expected_units_to_add[:2] == kept_units
-
-
-def test_remove_by_name_special_characters(sd_expected_validity):
-    # Arrange
-    regexs = ["^%.*$"]
-    org_unit_nodes = [
-        OrgUnitNode(
-            uuid=uuid.uuid4(),
-            parent_uuid=uuid.uuid4(),
-            user_key="dep3",
-            name="% Department 3",
-            org_unit_level_uuid=uuid.uuid4(),
-            validity=sd_expected_validity,
-        )
-    ]
-
-    # Act
-    kept_units = _remove_by_name(regexs, org_unit_nodes)
-
-    # Assert
-    assert kept_units == []
-
-
-def test_remove_by_name_keep_all(expected_units_to_add):
-    # Act
-    kept_units = _remove_by_name([], expected_units_to_add)
-
-    # Assert
-    assert expected_units_to_add == kept_units
