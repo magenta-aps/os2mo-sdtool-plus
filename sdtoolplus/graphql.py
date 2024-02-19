@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
-from uuid import UUID
 
 from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient

@@ -37,7 +37,7 @@ addr_type_uuid = uuid4()
 ou_uuid = uuid4()
 
 address = Address(
-    name="Paradisæblevej 13, 1000 Andeby",
+    value="a974b5b8-cbc7-4328-a4f1-0d917db90aeb",  # DAR address UUID
     address_type=AddressType(
         uuid=addr_type_uuid,
         user_key="AddressMailUnit",
@@ -120,14 +120,14 @@ async def test_add_address():
 
     # Assert
     assert created_addr.uuid == addr_uuid
-    assert created_addr.name == "Paradisæblevej 13, 1000 Andeby"
+    assert created_addr.value == "a974b5b8-cbc7-4328-a4f1-0d917db90aeb"
     assert created_addr.address_type.user_key == "AddressMailUnit"
     assert created_addr.address_type.uuid == addr_type_uuid
 
     mock_gql_client.create_address.assert_awaited_once_with(
         AddressCreateInput(
             org_unit=ou_uuid,
-            value="Paradisæblevej 13, 1000 Andeby",
+            value="a974b5b8-cbc7-4328-a4f1-0d917db90aeb",
             address_type=addr_type_uuid,
             validity=RAValidityInput(
                 from_=from_date,
@@ -146,7 +146,7 @@ async def test_update_address():
     mock_gql_client = AsyncMock()
     addr = Address(
         uuid=addr_uuid,
-        name="Paradisæblevej 13, 1000 Andeby",
+        value="1234567890",
         address_type=AddressType(
             uuid=addr_type_uuid,
             user_key="AddressMailUnit",
@@ -160,7 +160,7 @@ async def test_update_address():
     mock_gql_client.update_address.assert_awaited_once_with(
         AddressUpdateInput(
             uuid=addr_uuid,
-            value="Paradisæblevej 13, 1000 Andeby",
+            value="1234567890",
             address_type=addr_type_uuid,
             validity=RAValidityInput(
                 from_=from_date,

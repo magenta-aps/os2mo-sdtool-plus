@@ -12,7 +12,6 @@ from uuid import UUID
 import structlog
 from more_itertools import only
 from os2mo_dar_client import AsyncDARClient
-from pydantic import BaseModel
 from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
@@ -41,11 +40,6 @@ class AddressOperation(Enum):
     UPDATE = "update"
 
 
-class AddressCollection(BaseModel):
-    addresses_to_add: list[Address]
-    addresses_to_update: list[Address]
-
-
 def _get_unit_address(org_unit_node: OrgUnitNode, address_type: str) -> Address | None:
     # TODO: add docstring
     # TODO: filter on address type UUID instead of address type string
@@ -63,19 +57,6 @@ def _get_unit_address(org_unit_node: OrgUnitNode, address_type: str) -> Address 
         )
         return None
     return addr
-
-
-def _add_addresses_for_new_unit(org_unit_node: OrgUnitNode) -> list[Address]:
-    # TODO: Docstring
-    # TODO: get rid of magic values
-
-    addresses_to_add = []
-    for address_type in ["AddressMailUnit", "Pnummer"]:
-        addr = _get_unit_address(org_unit_node, address_type)
-        if addr is not None:
-            addresses_to_add.append(addr)
-
-    return addresses_to_add
 
 
 async def _update_or_add_addresses(
