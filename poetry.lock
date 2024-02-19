@@ -20,7 +20,7 @@ yarl = "*"
 name = "aiohttp"
 version = "3.9.3"
 description = "Async http client/server framework (asyncio)"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -132,7 +132,7 @@ yarl = "*"
 name = "aiosignal"
 version = "1.3.1"
 description = "aiosignal: a list of registered asynchronous callbacks"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -701,7 +701,7 @@ python-dateutil = ">=2.7"
 name = "frozenlist"
 version = "1.4.1"
 description = "A list-like structure which implements collections.abc.MutableSequence"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
@@ -1609,6 +1609,25 @@ files = [
 
 [package.extras]
 dev = ["black", "mypy", "pytest"]
+
+[[package]]
+name = "os2mo-dar-client"
+version = "1.0.3"
+description = "OS2mo DAR Client is a client for DAWA / DAR"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "os2mo_dar_client-1.0.3-py3-none-any.whl", hash = "sha256:b420c8684881f9c3395aa1d7ba665fde39e94fe5e4611a62eaea631ec338eac2"},
+    {file = "os2mo_dar_client-1.0.3.tar.gz", hash = "sha256:fd569dc9b1d32b0479271a5e5c6a130bb46cdeeec88ae0f30c7953428d60ec2a"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.7.4,<4.0.0"
+click = ">=8.0.1,<9.0.0"
+more-itertools = ">=9.1.0,<10.0.0"
+ra-utils = ">=1,<2"
+tenacity = ">=8.0.1,<9.0.0"
 
 [[package]]
 name = "packaging"
@@ -2699,4 +2718,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "36485d54aa283d8f1fdf27264539660ac042da85449fe5e372997ad8c8d6eb76"
+content-hash = "1493e7757ab15ad97f0ffbbeab7036c2039951719bce7ff8877183bd4c1724e9"
