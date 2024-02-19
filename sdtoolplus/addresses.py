@@ -152,16 +152,16 @@ def update_or_add_pnumber_address(
 
     if mo_addr is None:
         return Address(
-            name=sd_addr.name,
+            value=sd_addr.name,
             address_type=AddressType(
                 user_key=sd_addr.address_type.user_key, uuid=pnumber_addr_type_uuid
             ),
         )
 
-    if not sd_addr.name == mo_addr.name:
+    if not sd_addr.name == mo_addr.value:
         return Address(
             uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
-            name=sd_addr.name,
+            value=sd_addr.name,
             address_type=mo_addr.address_type,
         )
     return None
@@ -194,17 +194,17 @@ async def update_or_add_postal_address(
     if mo_addr is None:
         # Create a new address
         return Address(
-            name=str(dar_uuid),
+            value=str(dar_uuid),
             address_type=AddressType(
                 user_key="AddressMailUnit", uuid=postal_addr_type_uuid
             ),
         )
 
     # Update existing address
-    if not sd_addr.name == mo_addr.name:
+    if not str(dar_uuid) == mo_addr.value:
         return Address(
             uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
-            name=str(dar_uuid),
+            value=str(dar_uuid),
             address_type=AddressType(
                 user_key="AddressMailUnit", uuid=postal_addr_type_uuid
             ),
@@ -263,7 +263,7 @@ async def fix_addresses(
             logger.info(
                 "Add new address",
                 org_unit=str(mo_unit.uuid),
-                addr=addr.name,
+                value=addr.value,
                 addr_type=addr.address_type.user_key,
             )
             if not dry_run:
@@ -281,7 +281,7 @@ async def fix_addresses(
             logger.info(
                 "Updating address",
                 org_unit=str(mo_unit.uuid),
-                addr=addr.name,
+                value=addr.value,
                 addt_type=addr.address_type.user_key,
             )
             if not dry_run:
@@ -306,7 +306,7 @@ async def fix_addresses(
             logger.info(
                 "Add new address",
                 org_unit=str(mo_unit.uuid),
-                addr=addr.name,
+                value=addr.value,
                 addr_type=addr.address_type.user_key,
             )
             if not dry_run:
@@ -324,7 +324,7 @@ async def fix_addresses(
             logger.info(
                 "Updating address",
                 org_unit=str(mo_unit.uuid),
-                addr=addr.name,
+                value=addr.value,
                 addt_type=addr.address_type.user_key,
             )
             if not dry_run:

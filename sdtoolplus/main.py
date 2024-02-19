@@ -147,7 +147,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 "address_operation": operation.value,
                 "address_type": addr.address_type.user_key,
                 "unit": repr(org_unit_node),
-                "address": addr.name,
+                "address": addr.value,
             }
             async for operation, org_unit_node, addr in fix_addresses(
                 gql_client, AsyncDARClient(), settings, org_unit, dry_run

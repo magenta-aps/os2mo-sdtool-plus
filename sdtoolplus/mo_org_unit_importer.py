@@ -25,8 +25,8 @@ class AddressType(pydantic.BaseModel):
 
 class Address(pydantic.BaseModel):
     uuid: AddressUUID | None = None
-    # TODO: rename name to value
-    name: str
+    name: str | None = None
+    value: str | None = None
     address_type: AddressType
 
 
@@ -148,8 +148,8 @@ class MOOrgTreeImport:
                                 name
                                 org_unit_level_uuid
                                 addresses {{
-                                    name
                                     uuid
+                                    value
                                     address_type {{
                                         user_key
                                         uuid

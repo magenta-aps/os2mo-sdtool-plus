@@ -56,7 +56,7 @@ async def add_address(
     created_addr = await gql_client.create_address(
         AddressCreateInput(
             org_unit=org_unit_node.uuid,
-            value=addr.name,
+            value=addr.value,
             address_type=addr.address_type.uuid,
             validity=RAValidityInput(
                 from_=from_date,
@@ -70,7 +70,7 @@ async def add_address(
 
     return Address(
         uuid=created_addr_current.uuid,
-        name=addr.name,
+        value=addr.value,
         address_type=addr.address_type,
     )
 
@@ -85,7 +85,7 @@ async def update_address(
         AddressUpdateInput(
             uuid=addr.uuid,
             address_type=addr.address_type.uuid,
-            value=addr.name,
+            value=addr.value,
             validity=RAValidityInput(
                 from_=from_date,
                 to=to_date,
