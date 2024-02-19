@@ -182,7 +182,11 @@ async def _update_or_add_postal_address(
         return None
 
     # Get DAR address UUID
-    dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
+    try:
+        dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
+    except:
+        logger.error("Could not get address UUID from DAR!")
+        return None
 
     mo_addr = _get_unit_address(mo_unit, "AddressMailUnit")
     if mo_addr is None:
