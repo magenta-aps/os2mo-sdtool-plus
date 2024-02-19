@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from enum import Enum
+from functools import partial
+from typing import AsyncIterator
+from typing import Awaitable
+from typing import Callable
 from typing import TypeAlias
 from uuid import UUID
 
@@ -74,70 +78,60 @@ def _add_addresses_for_new_unit(org_unit_node: OrgUnitNode) -> list[Address]:
     return addresses_to_add
 
 
-def update_or_add_addresses(
-    sd_unit: OrgUnitNode,
-    mo_unit: OrgUnitNode | None,
-    postal_addr_type_uuid: AddressTypeUUID,
-    pnumber_addr_type_uuid: AddressTypeUUID,
-) -> AddressCollection:
+async def _update_or_add_addresses(
+    gql_client: GraphQLClient,
+    sd_units: list[OrgUnitNode],
+    mo_unit_map: dict[OrgUnitUUID, OrgUnitNode],
+    address_type: str,
+    update_or_add_coro: Callable[
+        [OrgUnitNode, OrgUnitNode, AddressTypeUUID], Awaitable[Address | None]
+    ],
+    dry_run: bool,
+) -> AsyncIterator[tuple[AddressOperation, OrgUnitNode, Address]]:
     # TODO: docstring
 
-    addresses_to_add = []
-    addresses_to_update = []
+    addr_type_uuid = await get_address_type_uuid(gql_client, address_type)
+    for sd_unit in sd_units:
+        assert sd_unit.validity is not None
 
-    if mo_unit is None:
-        addresses_to_add.extend(_add_addresses_for_new_unit(sd_unit))
-        return AddressCollection(
-            addresses_to_add=[
-                Address(
-                    name=addr.name,
-                    address_type=AddressType(
-                        user_key=addr.address_type.user_key,
-                        uuid=postal_addr_type_uuid
-                        if addr.address_type.user_key == "AddressMailUnit"
-                        else pnumber_addr_type_uuid,
-                    ),
-                )
-                for addr in addresses_to_add
-            ],
-            addresses_to_update=[],
-        )
-
-    for address_type in ["AddressMailUnit", "Pnummer"]:
-        sd_addr = _get_unit_address(sd_unit, address_type)
-        mo_addr = _get_unit_address(mo_unit, address_type)
-
-        if sd_addr is None:
+        mo_unit = mo_unit_map[sd_unit.uuid]
+        addr = await update_or_add_coro(sd_unit, mo_unit, addr_type_uuid)
+        if addr is None:
             continue
-
-        if mo_addr is None:
-            addresses_to_add.append(
-                Address(
-                    name=sd_addr.name,
-                    address_type=AddressType(
-                        user_key=sd_addr.address_type.user_key,
-                        uuid=postal_addr_type_uuid
-                        if sd_addr.address_type.user_key == "AddressMailUnit"
-                        else pnumber_addr_type_uuid,
-                    ),
-                )
+        if addr.uuid is None:
+            logger.info(
+                "Add new address",
+                org_unit=str(mo_unit.uuid),
+                value=addr.value,
+                addr_type=addr.address_type.user_key,
             )
-        else:
-            if not sd_addr.name == mo_addr.name:
-                addresses_to_update.append(
-                    Address(
-                        uuid=mo_addr.uuid,
-                        name=sd_addr.name,
-                        address_type=mo_addr.address_type,
-                    )
+            if not dry_run:
+                return_address = await add_address(
+                    gql_client,
+                    mo_unit,
+                    addr,
+                    sd_unit.validity.from_date,
+                    sd_unit.validity.to_date,
                 )
+            else:
+                return_address = addr
+            yield AddressOperation.ADD, mo_unit, return_address
+        else:
+            logger.info(
+                "Updating address",
+                org_unit=str(mo_unit.uuid),
+                value=addr.value,
+                addt_type=addr.address_type.user_key,
+            )
+            if not dry_run:
+                await update_address(
+                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
+                )
+            return_address = addr
+            yield AddressOperation.UPDATE, mo_unit, return_address
 
-    return AddressCollection(
-        addresses_to_add=addresses_to_add, addresses_to_update=addresses_to_update
-    )
 
-
-def update_or_add_pnumber_address(
+async def _update_or_add_pnumber_address(
     sd_unit: OrgUnitNode,
     mo_unit: OrgUnitNode,
     pnumber_addr_type_uuid: AddressTypeUUID,
@@ -167,7 +161,7 @@ def update_or_add_pnumber_address(
     return None
 
 
-async def get_dar_addr_uuid(
+async def _get_dar_addr_uuid(
     dar_client: AsyncDARClient, addr: Address
 ) -> DARAddressUUID:
     async with dar_client:
@@ -175,7 +169,7 @@ async def get_dar_addr_uuid(
         return DARAddressUUID(r["id"])
 
 
-async def update_or_add_postal_address(
+async def _update_or_add_postal_address(
     dar_client: AsyncDARClient,
     sd_unit: OrgUnitNode,
     mo_unit: OrgUnitNode,
@@ -188,7 +182,7 @@ async def update_or_add_postal_address(
         return None
 
     # Get DAR address UUID
-    dar_uuid = await get_dar_addr_uuid(dar_client, sd_addr)
+    dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
 
     mo_addr = _get_unit_address(mo_unit, "AddressMailUnit")
     if mo_addr is None:
@@ -251,85 +245,23 @@ async def fix_addresses(
     sd_units = [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
 
     # Handle P-number addresses
-    addr_type_uuid = await get_address_type_uuid(gql_client, "Pnummer")
-    for sd_unit in sd_units:
-        assert sd_unit.validity is not None
-
-        mo_unit = mo_unit_map[sd_unit.uuid]
-        addr = update_or_add_pnumber_address(sd_unit, mo_unit, addr_type_uuid)
-        if addr is None:
-            continue
-        if addr.uuid is None:
-            logger.info(
-                "Add new address",
-                org_unit=str(mo_unit.uuid),
-                value=addr.value,
-                addr_type=addr.address_type.user_key,
-            )
-            if not dry_run:
-                return_address = await add_address(
-                    gql_client,
-                    mo_unit,
-                    addr,
-                    sd_unit.validity.from_date,
-                    sd_unit.validity.to_date,
-                )
-            else:
-                return_address = addr
-            yield AddressOperation.ADD, mo_unit, return_address
-        else:
-            logger.info(
-                "Updating address",
-                org_unit=str(mo_unit.uuid),
-                value=addr.value,
-                addt_type=addr.address_type.user_key,
-            )
-            if not dry_run:
-                await update_address(
-                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
-                )
-            return_address = addr
-            yield AddressOperation.UPDATE, mo_unit, return_address
+    async for operation, org_unit_node, addr in _update_or_add_addresses(
+        gql_client,
+        sd_units,
+        mo_unit_map,
+        "Pnummer",
+        _update_or_add_pnumber_address,
+        dry_run,
+    ):
+        yield operation, org_unit_node, addr
 
     # Handle postal addresses
-    addr_type_uuid = await get_address_type_uuid(gql_client, "AddressMailUnit")
-    for sd_unit in sd_units:
-        assert sd_unit.validity is not None
-
-        mo_unit = mo_unit_map[sd_unit.uuid]
-        addr = await update_or_add_postal_address(
-            dar_client, sd_unit, mo_unit, addr_type_uuid
-        )
-        if addr is None:
-            continue
-        if addr.uuid is None:
-            logger.info(
-                "Add new address",
-                org_unit=str(mo_unit.uuid),
-                value=addr.value,
-                addr_type=addr.address_type.user_key,
-            )
-            if not dry_run:
-                return_address = await add_address(
-                    gql_client,
-                    mo_unit,
-                    addr,
-                    sd_unit.validity.from_date,
-                    sd_unit.validity.to_date,
-                )
-            else:
-                return_address = addr
-            yield AddressOperation.ADD, mo_unit, return_address
-        else:
-            logger.info(
-                "Updating address",
-                org_unit=str(mo_unit.uuid),
-                value=addr.value,
-                addt_type=addr.address_type.user_key,
-            )
-            if not dry_run:
-                await update_address(
-                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
-                )
-            return_address = addr
-            yield AddressOperation.UPDATE, mo_unit, return_address
+    async for operation, org_unit_node, addr in _update_or_add_addresses(
+        gql_client,
+        sd_units,
+        mo_unit_map,
+        "AddressMailUnit",
+        partial(_update_or_add_postal_address, dar_client),
+        dry_run,
+    ):
+        yield operation, org_unit_node, addr
