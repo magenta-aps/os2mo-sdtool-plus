@@ -19,6 +19,7 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from os2mo_dar_client import AsyncDARClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
@@ -149,7 +150,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 "address": addr.name,
             }
             async for operation, org_unit_node, addr in fix_addresses(
-                gql_client, settings, org_unit, dry_run
+                gql_client, AsyncDARClient(), settings, org_unit, dry_run
             )
         ]
         logger.info("Finished adding or updating org unit objects")

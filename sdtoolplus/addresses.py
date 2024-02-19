@@ -2,9 +2,12 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from enum import Enum
+from typing import TypeAlias
+from uuid import UUID
 
 import structlog
 from more_itertools import only
+from os2mo_dar_client import AsyncDARClient
 from pydantic import BaseModel
 from sdclient.client import SDClient
 
@@ -23,6 +26,8 @@ from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.importer import get_sd_units
+
+DARAddressUUID: TypeAlias = UUID
 
 logger = structlog.get_logger()
 
@@ -162,8 +167,55 @@ def update_or_add_pnumber_address(
     return None
 
 
+async def get_dar_addr_uuid(
+    dar_client: AsyncDARClient, addr: Address
+) -> DARAddressUUID:
+    async with dar_client:
+        r = await dar_client.cleanse_single(addr.name)
+        return DARAddressUUID(r["id"])
+
+
+async def update_or_add_postal_address(
+    dar_client: AsyncDARClient,
+    sd_unit: OrgUnitNode,
+    mo_unit: OrgUnitNode,
+    postal_addr_type_uuid: AddressTypeUUID,
+) -> Address | None:
+    # TODO: add docstring
+
+    sd_addr = _get_unit_address(sd_unit, "AddressMailUnit")
+    if sd_addr is None:
+        return None
+
+    # Get DAR address UUID
+    dar_uuid = await get_dar_addr_uuid(dar_client, sd_addr)
+
+    mo_addr = _get_unit_address(mo_unit, "AddressMailUnit")
+    if mo_addr is None:
+        # Create a new address
+        return Address(
+            name=str(dar_uuid),
+            address_type=AddressType(
+                user_key="AddressMailUnit", uuid=postal_addr_type_uuid
+            ),
+        )
+
+    # Update existing address
+    if not sd_addr.name == mo_addr.name:
+        return Address(
+            uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
+            name=str(dar_uuid),
+            address_type=AddressType(
+                user_key="AddressMailUnit", uuid=postal_addr_type_uuid
+            ),
+        )
+
+    return None
+
+
 async def fix_addresses(
     gql_client: GraphQLClient,
+    dar_client: AsyncDARClient,
     settings: SDToolPlusSettings,
     org_unit: OrgUnitUUID | None,
     dry_run: bool,
@@ -205,6 +257,49 @@ async def fix_addresses(
 
         mo_unit = mo_unit_map[sd_unit.uuid]
         addr = update_or_add_pnumber_address(sd_unit, mo_unit, addr_type_uuid)
+        if addr is None:
+            continue
+        if addr.uuid is None:
+            logger.info(
+                "Add new address",
+                org_unit=str(mo_unit.uuid),
+                addr=addr.name,
+                addr_type=addr.address_type.user_key,
+            )
+            if not dry_run:
+                return_address = await add_address(
+                    gql_client,
+                    mo_unit,
+                    addr,
+                    sd_unit.validity.from_date,
+                    sd_unit.validity.to_date,
+                )
+            else:
+                return_address = addr
+            yield AddressOperation.ADD, mo_unit, return_address
+        else:
+            logger.info(
+                "Updating address",
+                org_unit=str(mo_unit.uuid),
+                addr=addr.name,
+                addt_type=addr.address_type.user_key,
+            )
+            if not dry_run:
+                await update_address(
+                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
+                )
+            return_address = addr
+            yield AddressOperation.UPDATE, mo_unit, return_address
+
+    # Handle postal addresses
+    addr_type_uuid = await get_address_type_uuid(gql_client, "AddressMailUnit")
+    for sd_unit in sd_units:
+        assert sd_unit.validity is not None
+
+        mo_unit = mo_unit_map[sd_unit.uuid]
+        addr = await update_or_add_postal_address(
+            dar_client, sd_unit, mo_unit, addr_type_uuid
+        )
         if addr is None:
             continue
         if addr.uuid is None:

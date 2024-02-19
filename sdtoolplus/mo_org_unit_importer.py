@@ -25,6 +25,7 @@ class AddressType(pydantic.BaseModel):
 
 class Address(pydantic.BaseModel):
     uuid: AddressUUID | None = None
+    # TODO: rename name to value
     name: str
     address_type: AddressType
 
