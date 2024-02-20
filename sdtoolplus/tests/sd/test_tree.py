@@ -13,6 +13,7 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
 from sdtoolplus.tests.conftest import SharedIdentifier
@@ -43,9 +44,14 @@ def test_build_tree(
         addresses=[
             Address(
                 name="Hovedgaden 1, 1000 Andeby",
-                address_type=AddressType(user_key="AddressMailUnit"),
+                address_type=AddressType(user_key=AddressTypeUserKey.POSTAL_ADDR.value),
             ),
-            Address(name="123456789", address_type=AddressType(user_key="Pnummer")),
+            Address(
+                name="123456789",
+                address_type=AddressType(
+                    user_key=AddressTypeUserKey.PNUMBER_ADDR.value
+                ),
+            ),
         ],
         validity=sd_expected_validity,
     )

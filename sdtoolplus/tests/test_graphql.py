@@ -31,6 +31,7 @@ from sdtoolplus.graphql import update_address
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.models import AddressTypeUserKey
 
 addr_uuid = uuid4()
 addr_type_uuid = uuid4()
@@ -40,7 +41,7 @@ address = Address(
     value="a974b5b8-cbc7-4328-a4f1-0d917db90aeb",  # DAR address UUID
     address_type=AddressType(
         uuid=addr_type_uuid,
-        user_key="AddressMailUnit",
+        user_key=AddressTypeUserKey.POSTAL_ADDR.value,
     ),
 )
 
@@ -72,12 +73,12 @@ async def test_get_address_type_uuid():
                     classes=[
                         AddressTypesFacetsObjectsCurrentClasses(
                             uuid=postal_addr_uuid,
-                            user_key="AddressMailUnit",
+                            user_key=AddressTypeUserKey.POSTAL_ADDR.value,
                             name="Postadresse",
                         ),
                         AddressTypesFacetsObjectsCurrentClasses(
                             uuid=pnumber_addr_uuid,
-                            user_key="Pnummer",
+                            user_key=AddressTypeUserKey.PNUMBER_ADDR.value,
                             name="P-nummer",
                         ),
                     ],
@@ -87,7 +88,9 @@ async def test_get_address_type_uuid():
     )
 
     # Act
-    addr_type_uuid = await get_address_type_uuid(mock_gql_client, "Pnummer")
+    addr_type_uuid = await get_address_type_uuid(
+        mock_gql_client, AddressTypeUserKey.PNUMBER_ADDR.value
+    )
 
     # Arrange
     assert addr_type_uuid == pnumber_addr_uuid
@@ -108,7 +111,7 @@ async def test_add_address():
             uuid=addr_uuid,
             name="address",
             address_type=CreateAddressAddressCreateCurrentAddressType(
-                user_key="AddressMailUnit"
+                user_key=AddressTypeUserKey.POSTAL_ADDR.value
             ),
         )
     )
@@ -121,7 +124,7 @@ async def test_add_address():
     # Assert
     assert created_addr.uuid == addr_uuid
     assert created_addr.value == "a974b5b8-cbc7-4328-a4f1-0d917db90aeb"
-    assert created_addr.address_type.user_key == "AddressMailUnit"
+    assert created_addr.address_type.user_key == AddressTypeUserKey.POSTAL_ADDR.value
     assert created_addr.address_type.uuid == addr_type_uuid
 
     mock_gql_client.create_address.assert_awaited_once_with(
@@ -149,7 +152,7 @@ async def test_update_address():
         value="1234567890",
         address_type=AddressType(
             uuid=addr_type_uuid,
-            user_key="AddressMailUnit",
+            user_key=AddressTypeUserKey.POSTAL_ADDR.value,
         ),
     )
 

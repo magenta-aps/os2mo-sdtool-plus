@@ -28,6 +28,7 @@ from sdtoolplus.mo_org_unit_importer import AddressTypeUUID
 from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.importer import get_sd_units
 
 DARAddressUUID: TypeAlias = UUID
@@ -119,11 +120,11 @@ async def _update_or_add_pnumber_address(
 ) -> Address | None:
     # TODO: docstring
 
-    sd_addr = _get_unit_address(sd_unit, "Pnummer")
+    sd_addr = _get_unit_address(sd_unit, AddressTypeUserKey.PNUMBER_ADDR.value)
     if sd_addr is None:
         return None
 
-    mo_addr = _get_unit_address(mo_unit, "Pnummer")
+    mo_addr = _get_unit_address(mo_unit, AddressTypeUserKey.PNUMBER_ADDR.value)
 
     if mo_addr is None:
         return Address(
@@ -158,7 +159,7 @@ async def _update_or_add_postal_address(
 ) -> Address | None:
     # TODO: add docstring
 
-    sd_addr = _get_unit_address(sd_unit, "AddressMailUnit")
+    sd_addr = _get_unit_address(sd_unit, AddressTypeUserKey.POSTAL_ADDR.value)
     if sd_addr is None:
         return None
 
@@ -169,13 +170,14 @@ async def _update_or_add_postal_address(
         logger.error("Could not get address UUID from DAR!")
         return None
 
-    mo_addr = _get_unit_address(mo_unit, "AddressMailUnit")
+    mo_addr = _get_unit_address(mo_unit, AddressTypeUserKey.POSTAL_ADDR.value)
     if mo_addr is None:
         # Create a new address
         return Address(
             value=str(dar_uuid),
             address_type=AddressType(
-                user_key="AddressMailUnit", uuid=postal_addr_type_uuid
+                user_key=AddressTypeUserKey.POSTAL_ADDR.value,
+                uuid=postal_addr_type_uuid,
             ),
         )
 
@@ -185,7 +187,8 @@ async def _update_or_add_postal_address(
             uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
             value=str(dar_uuid),
             address_type=AddressType(
-                user_key="AddressMailUnit", uuid=postal_addr_type_uuid
+                user_key=AddressTypeUserKey.POSTAL_ADDR.value,
+                uuid=postal_addr_type_uuid,
             ),
         )
 
@@ -234,7 +237,7 @@ async def fix_addresses(
         gql_client,
         sd_units,
         mo_unit_map,
-        "Pnummer",
+        AddressTypeUserKey.PNUMBER_ADDR.value,
         _update_or_add_pnumber_address,
         dry_run,
     ):
@@ -245,7 +248,7 @@ async def fix_addresses(
         gql_client,
         sd_units,
         mo_unit_map,
-        "AddressMailUnit",
+        AddressTypeUserKey.POSTAL_ADDR.value,
         partial(_update_or_add_postal_address, dar_client),
         dry_run,
     ):

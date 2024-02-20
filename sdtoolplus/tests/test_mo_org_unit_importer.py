@@ -16,6 +16,7 @@ from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUUID
+from ..models import AddressTypeUserKey
 from .conftest import SharedIdentifier
 
 
@@ -62,7 +63,7 @@ class TestMOOrgTreeImport:
                         uuid=UUID("599ce718-5ba9-48f1-958f-17ed39b13d27"),
                         name="Grønnegade 2, 1000 Andeby",
                         address_type=AddressType(
-                            user_key="AddressMailUnit",
+                            user_key=AddressTypeUserKey.POSTAL_ADDR.value,
                             uuid=UUID("7bd066ea-e8e5-42b1-9211-73562da54b9b"),
                         ),
                     )
@@ -202,9 +203,16 @@ class TestOrgUnitNode:
             addresses=[
                 Address(
                     name="Hovedgaden 1, 1000 Andeby",
-                    address_type=AddressType(user_key="AddressMailUnit"),
+                    address_type=AddressType(
+                        user_key=AddressTypeUserKey.POSTAL_ADDR.value
+                    ),
                 ),
-                Address(name="123456789", address_type=AddressType(user_key="Pnummer")),
+                Address(
+                    name="123456789",
+                    address_type=AddressType(
+                        user_key=AddressTypeUserKey.PNUMBER_ADDR.value
+                    ),
+                ),
             ],
             validity=sd_expected_validity,
         )
@@ -246,8 +254,8 @@ class TestOrgUnitNode:
         addr1, addr2 = org_unit_node.addresses
         assert addr1.uuid == UUID("393e30c5-114f-41df-8497-dc2ed0a339a7")
         assert addr1.name == "1004130546"
-        assert addr1.address_type.user_key == "Pnummer"
+        assert addr1.address_type.user_key == AddressTypeUserKey.PNUMBER_ADDR.value
 
         assert addr2.uuid == UUID("599ce718-5ba9-48f1-958f-17ed39b13d27")
         assert addr2.name == "Grønnegade 2, 1000 Andeby"
-        assert addr2.address_type.user_key == "AddressMailUnit"
+        assert addr2.address_type.user_key == AddressTypeUserKey.POSTAL_ADDR.value
