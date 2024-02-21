@@ -8,12 +8,10 @@ from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
-import pytest
 from httpx import Response
 from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient
 
-from ..addresses import AddressOperation
 from ..app import App
 from ..config import SDToolPlusSettings
 from ..diff_org_trees import OrgTreeDiff
