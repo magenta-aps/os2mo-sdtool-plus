@@ -143,6 +143,16 @@ class _MockGraphQLSession:
                 "user_key": node.user_key,
                 "name": node.name,
                 "org_unit_level_uuid": str(node.org_unit_level_uuid),
+                "addresses": [
+                    {
+                        "name": "Grønnegade 2, 1000 Andeby",
+                        "uuid": "599ce718-5ba9-48f1-958f-17ed39b13d27",
+                        "address_type": {
+                            "user_key": "AddressMailUnit",
+                            "uuid": "7bd066ea-e8e5-42b1-9211-73562da54b9b",
+                        },
+                    },
+                ],
             }
             for node in chain(self.expected_children, self.expected_grandchildren)
         ]
@@ -260,6 +270,13 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
                 "DepartmentLevelIdentifier": "NY1-niveau",
                 "DepartmentName": "Department 1",
                 "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Hovedgaden 1",
+                    "PostalCode": 1000,
+                    "DistrictName": "Andeby",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 123456789,
             },
             {
                 "ActivationDate": "1999-01-01",

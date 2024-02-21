@@ -9,11 +9,14 @@ from sdclient.responses import Department
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_org_unit_importer import OrgUnitNode
-from ..sd.tree import _get_sd_validity
-from ..sd.tree import build_tree
-from .conftest import SharedIdentifier
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.models import AddressTypeUserKey
+from sdtoolplus.sd.tree import build_tree
+from sdtoolplus.sd.tree import get_sd_validity
+from sdtoolplus.tests.conftest import SharedIdentifier
 
 
 def test_build_tree(
@@ -38,6 +41,18 @@ def test_build_tree(
         parent=expected_tree,
         name="Department 1",
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
+        addresses=[
+            Address(
+                name="Hovedgaden 1, 1000 Andeby",
+                address_type=AddressType(user_key=AddressTypeUserKey.POSTAL_ADDR.value),
+            ),
+            Address(
+                name="123456789",
+                address_type=AddressType(
+                    user_key=AddressTypeUserKey.PNUMBER_ADDR.value
+                ),
+            ),
+        ],
         validity=sd_expected_validity,
     )
     dep2 = OrgUnitNode(
@@ -102,6 +117,7 @@ def test_build_tree(
         assert node_a.name == node_b.name
         assert node_a.org_unit_level_uuid == node_b.org_unit_level_uuid
         assert node_a.validity == node_b.validity
+        assert node_a.addresses == node_b.addresses
         # Only displayed in case test fails
         print("\t" * depth, node_a, node_b)
         # Visit child nodes pair-wise
@@ -138,11 +154,11 @@ def test_get_sd_validity(
     # 1. Test that the "normal" `ActivationDate`/`DeactivationDate` values are converted
     # to the expected SD validity.
     sd_dep: Department = mock_sd_get_department_response.Department[0]
-    sd_actual_validity: Validity = _get_sd_validity(sd_dep)
+    sd_actual_validity: Validity = get_sd_validity(sd_dep)
     assert sd_actual_validity == sd_expected_validity
 
     # 2. Test that a "special" `DeactivationDate` of "9999-12-31" is converted to None,
     # representing an open validity period.
     sd_dep.DeactivationDate = date(9999, 12, 31)
-    sd_actual_validity = _get_sd_validity(sd_dep)
+    sd_actual_validity = get_sd_validity(sd_dep)
     assert sd_actual_validity.to_date is None

@@ -11,7 +11,10 @@ from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.tree import build_tree
+from sdtoolplus.sd.tree import create_node
+from sdtoolplus.sd.tree import get_sd_validity
 
 
 def get_sd_organization(
@@ -36,6 +39,8 @@ def get_sd_departments(
     institution_identifier: str,
     activation_date: date,
     deactivation_date: date,
+    fetch_postal_addr: bool = False,
+    fetch_pnumber: bool = False,
 ) -> GetDepartmentResponse:
     # TODO: add docstring
     req = GetDepartmentRequest(
@@ -43,6 +48,8 @@ def get_sd_departments(
         ActivationDate=activation_date,
         DeactivationDate=deactivation_date,
         DepartmentNameIndicator=True,
+        PostalAddressIndicator=fetch_postal_addr,
+        ProductionUnitIndicator=fetch_pnumber,
         UUIDIndicator=True,
     )
 
@@ -64,3 +71,26 @@ def get_sd_tree(
     # print(sd_departments)
 
     return build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
+
+
+def get_sd_units(
+    sd_client: SDClient,
+    institution_identifier: str,
+) -> list[OrgUnitNode]:
+    # TODO: add docstring
+    today = date.today()
+
+    sd_departments = get_sd_departments(
+        sd_client, institution_identifier, today, today, True, True
+    )
+
+    return [
+        OrgUnitNode(
+            uuid=sd_dep.DepartmentUUIDIdentifier,
+            user_key=sd_dep.DepartmentIdentifier,
+            name=sd_dep.DepartmentName,
+            addresses=get_addresses(sd_dep),
+            validity=get_sd_validity(sd_dep),
+        )
+        for sd_dep in sd_departments.Department
+    ]

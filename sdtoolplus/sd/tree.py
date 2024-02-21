@@ -14,19 +14,22 @@ from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-
+from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
 
-def _create_node(
+def create_node(
     dep_uuid: UUID,
     dep_name: str,
     dep_identifier: str,
     dep_level_identifier: str,
     dep_validity: Validity,
     parent: OrgUnitNode,
+    addresses: list[Address],
     existing_nodes: dict[UUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
@@ -55,6 +58,7 @@ def _create_node(
         parent=parent,
         name=dep_name,
         org_unit_level_uuid=org_unit_level.uuid,
+        addresses=addresses,
         validity=dep_validity,
     )
 
@@ -82,7 +86,7 @@ def _get_sd_departments_map(
     }
 
 
-def _get_sd_validity(dep: Department) -> Validity:
+def get_sd_validity(dep: Department) -> Validity:
     def convert_infinity_to_none(sd_date: date) -> date | None:
         if sd_date == date(9999, 12, 31):
             return None
@@ -134,7 +138,9 @@ def _process_node(
     dep_name = sd_departments_map[dep_uuid].DepartmentName
     dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
     dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
-    dep_validity: Validity = _get_sd_validity(sd_departments_map[dep_uuid])
+    dep_validity: Validity = get_sd_validity(sd_departments_map[dep_uuid])
+
+    addresses = get_addresses(sd_departments_map[dep_uuid])
 
     if dep_uuid in existing_nodes:
         return existing_nodes[dep_uuid]
@@ -150,25 +156,27 @@ def _process_node(
             mo_org_unit_level_map,
         )
 
-        new_node = _create_node(
+        new_node = create_node(
             dep_uuid,
             dep_name,
             dep_identifier,
             dep_level_identifier,
             dep_validity,
             parent,
+            addresses,
             existing_nodes,
             mo_org_unit_level_map,
         )
         return new_node
 
-    new_node = _create_node(
+    new_node = create_node(
         dep_uuid,
         dep_name,
         dep_identifier,
         dep_level_identifier,
         dep_validity,
         root_node,
+        addresses,
         existing_nodes,
         mo_org_unit_level_map,
     )

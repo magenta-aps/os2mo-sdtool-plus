@@ -19,19 +19,49 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from os2mo_dar_client import AsyncDARClient
+from sdclient.client import SDClient
+from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
+from .addresses import AddressFixer
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .db.rundb import Status
+from .depends import GraphQLClient
 from .tree_tools import tree_as_string
 
 
 logger = structlog.get_logger()
+
+
+def run_db_start_operations(
+    engine: Engine, dry_run: bool, response: Response
+) -> dict | None:
+    if dry_run:
+        return None
+
+    logger.info("Checking RunDB status...")
+    status_last_run = get_status(engine)
+    if not status_last_run == Status.COMPLETED:
+        logger.warn("Previous run did not complete successfully!")
+        response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+        return {"msg": "Previous run did not complete successfully!"}
+    logger.info("Previous run completed successfully")
+
+    persist_status(engine, Status.RUNNING)
+
+    return None
+
+
+def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
+    if not dry_run:
+        persist_status(engine, Status.COMPLETED)
+    dipex_last_success_timestamp.set_to_current_time()
 
 
 def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
@@ -40,6 +70,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
+        graphql_client_cls=GraphQLClient,
+        graphql_version=21,
     )
     fastramqpi.add_context(settings=settings)
 
@@ -73,16 +105,11 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
-        logger.info("Checking RunDB status...")
-        status_last_run = get_status(engine)
-        if not status_last_run == Status.COMPLETED:
-            logger.warn("Previous run did not complete successfully!")
-            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "Previous run did not complete successfully!"}
-        logger.info("Previous run completed successfully")
-
-        if not dry_run:
-            persist_status(engine, Status.RUNNING)
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
 
         results: list[dict] = [
             {
@@ -94,10 +121,52 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 org_unit=org_unit, dry_run=dry_run
             )
         ]
+        logger.info("Finished adding or updating org unit objects")
 
-        if not dry_run:
-            persist_status(engine, Status.COMPLETED)
-        dipex_last_success_timestamp.set_to_current_time()
+        run_db_end_operations(engine, dry_run)
+        logger.info("Run completed!")
+
+        return results
+
+    @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
+    async def trigger_addresses(
+        response: Response,
+        gql_client: GraphQLClient,
+        org_unit: UUID | None = None,
+        dry_run: bool = False,
+    ) -> list[dict] | dict:
+        logger.info("Starting address run", org_unit=str(org_unit), dry_run=dry_run)
+
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
+
+        addr_fixer = AddressFixer(
+            gql_client,
+            SDClient(
+                settings.sd_username,
+                settings.sd_password.get_secret_value(),
+            ),
+            AsyncDARClient(),
+            settings,
+        )
+
+        results: list[dict] = [
+            {
+                "address_operation": operation.value,
+                "address_type": addr.address_type.user_key,
+                "unit": repr(org_unit_node),
+                "address": addr.value,
+            }
+            async for operation, org_unit_node, addr in addr_fixer.fix_addresses(
+                org_unit, dry_run
+            )
+        ]
+        logger.info("Finished adding or updating org unit objects")
+
+        run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results

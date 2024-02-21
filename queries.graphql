@@ -1,0 +1,54 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+
+query AddressTypes {
+  facets(filter: {user_keys: "org_unit_address_type"}) {
+    objects {
+      current {
+        user_key
+        uuid
+        classes {
+          uuid
+          user_key
+          name
+        }
+      }
+    }
+  }
+}
+
+mutation CreateAddress($input: AddressCreateInput!) {
+  address_create(
+    input: $input
+  ) {
+    current {
+      validity {
+        from
+        to
+      }
+      uuid
+      name
+      address_type {
+        user_key
+      }
+    }
+  }
+}
+
+mutation UpdateAddress($input: AddressUpdateInput!) {
+  address_update(
+    input: $input
+  ) {
+    current {
+      validity {
+        from
+        to
+      }
+      uuid
+      name
+      address_type {
+        user_key
+      }
+    }
+  }
+}

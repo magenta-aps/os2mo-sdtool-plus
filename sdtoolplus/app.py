@@ -8,11 +8,12 @@ import sentry_sdk
 import structlog
 from httpx import Response
 from httpx import Timeout
-from raclients.graph.client import PersistentGraphQLClient
 from sdclient.client import SDClient
 
+from .addresses import AddressOperation
 from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
+from .graphql import get_graphql_client
 from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
@@ -37,16 +38,7 @@ class App:
         if self.settings.sentry_dsn:
             sentry_sdk.init(dsn=self.settings.sentry_dsn)
 
-        self.session = PersistentGraphQLClient(
-            url=f"{self.settings.mora_base}/graphql/v7",
-            client_id=self.settings.client_id,
-            client_secret=self.settings.client_secret.get_secret_value(),
-            auth_realm=self.settings.auth_realm,
-            auth_server=self.settings.auth_server,  # type: ignore
-            sync=True,
-            httpx_client_kwargs={"timeout": None},
-            fetch_schema_from_transport=True,
-        )
+        self.session = get_graphql_client(settings)
 
         self.mo_org_tree_import = MOOrgTreeImport(self.session)
         self.client = httpx.Client(

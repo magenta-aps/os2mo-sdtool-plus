@@ -11,9 +11,23 @@ from gql import gql
 from pydantic import parse_obj_as
 from ramodels.mo import Validity
 
+AddressUUID: TypeAlias = UUID
+AddressTypeUUID: TypeAlias = UUID
 OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 OrgUnitLevelUUID: TypeAlias = UUID
+
+
+class AddressType(pydantic.BaseModel):
+    uuid: AddressTypeUUID | None = None
+    user_key: str
+
+
+class Address(pydantic.BaseModel):
+    uuid: AddressUUID | None = None
+    name: str | None = None
+    value: str | None = None
+    address_type: AddressType
 
 
 class OrgUnit(pydantic.BaseModel):
@@ -23,6 +37,7 @@ class OrgUnit(pydantic.BaseModel):
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
     validity: Validity | None
+    addresses: list[Address] = []
 
 
 class OrgUnitNode(anytree.AnyNode):
@@ -35,6 +50,7 @@ class OrgUnitNode(anytree.AnyNode):
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
         org_unit_level_uuid: OrgUnitLevelUUID | None = None,
+        addresses: list[Address] = [],
         validity: Validity | None = None,
     ):
         super().__init__(parent=parent, children=children)
@@ -44,6 +60,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=user_key,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
+            addresses=addresses,
             validity=validity,
         )
 
@@ -55,6 +72,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=org_unit.user_key,
             name=org_unit.name,
             org_unit_level_uuid=org_unit.org_unit_level_uuid,
+            addresses=org_unit.addresses,
             validity=org_unit.validity,
         )
 
@@ -90,6 +108,10 @@ class OrgUnitNode(anytree.AnyNode):
     def validity(self) -> Validity | None:
         return self._instance.validity
 
+    @property
+    def addresses(self) -> list[Address]:
+        return self._instance.addresses
+
 
 class MOOrgTreeImport:
     def __init__(self, session):
@@ -110,23 +132,33 @@ class MOOrgTreeImport:
         )
         return parse_obj_as(OrgUUID, doc["org"]["uuid"])
 
-    def get_org_units(self) -> list[OrgUnit]:
+    def get_org_units(self, org_unit: OrgUnitUUID | None = None) -> list[OrgUnit]:
+        # TODO: fix this and use the auto-generated GraphQL client instead
+        filter_str = "" if org_unit is None else f'(uuids: "{str(org_unit)}")'
         doc = self.session.execute(
             gql(
-                """
-                query GetOrgUnits {
-                    org_units {
-                        objects {
-                            current {
+                f"""
+                query GetOrgUnits {{
+                    org_units{filter_str} {{
+                        objects {{
+                            current {{
                                 uuid
                                 parent_uuid
                                 user_key
                                 name
                                 org_unit_level_uuid
-                            }
-                        }
-                    }
-                }
+                                addresses {{
+                                    uuid
+                                    value
+                                    address_type {{
+                                        user_key
+                                        uuid
+                                    }}
+                                }}
+                            }}
+                        }}
+                    }}
+                }}
                 """
             )
         )

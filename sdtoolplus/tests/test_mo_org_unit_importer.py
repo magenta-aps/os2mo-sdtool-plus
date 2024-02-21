@@ -10,10 +10,13 @@ from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
 
+from ..mo_org_unit_importer import Address
+from ..mo_org_unit_importer import AddressType
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnit
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUUID
+from ..models import AddressTypeUserKey
 from .conftest import SharedIdentifier
 
 
@@ -55,6 +58,16 @@ class TestMOOrgTreeImport:
                 user_key=n.user_key,
                 name=n.name,
                 org_unit_level_uuid=n.org_unit_level_uuid,
+                addresses=[
+                    Address(
+                        uuid=UUID("599ce718-5ba9-48f1-958f-17ed39b13d27"),
+                        name="Grønnegade 2, 1000 Andeby",
+                        address_type=AddressType(
+                            user_key=AddressTypeUserKey.POSTAL_ADDR.value,
+                            uuid=UUID("7bd066ea-e8e5-42b1-9211-73562da54b9b"),
+                        ),
+                    )
+                ],
             )
             for n in (
                 mock_graphql_session.expected_children
@@ -176,3 +189,73 @@ class TestMOOrgTreeImport:
 
     def test_ensure_get_org_units_not_cached(self):
         assert not hasattr(MOOrgTreeImport.get_org_units, "__wrapped__")
+
+
+class TestOrgUnitNode:
+    def test_constructor(self, sd_expected_validity):
+        assert OrgUnitNode(
+            uuid=uuid4(),
+            parent_uuid=uuid4(),
+            user_key="dep1",
+            parent=None,
+            name="Department 1",
+            org_unit_level_uuid=uuid4(),
+            addresses=[
+                Address(
+                    name="Hovedgaden 1, 1000 Andeby",
+                    address_type=AddressType(
+                        user_key=AddressTypeUserKey.POSTAL_ADDR.value
+                    ),
+                ),
+                Address(
+                    name="123456789",
+                    address_type=AddressType(
+                        user_key=AddressTypeUserKey.PNUMBER_ADDR.value
+                    ),
+                ),
+            ],
+            validity=sd_expected_validity,
+        )
+
+    def test_from_org_unit_for_addresses(self):
+        # Arrange
+        org_unit_dict: dict = {
+            "uuid": "10000000-0000-0000-0000-000000000000",
+            "parent_uuid": "00000000-0000-0000-0000-000000000000",
+            "user_key": "user_key",
+            "name": "name",
+            "org_unit_level_uuid": "2bf13894-b60a-4769-bad6-39d41d9242aa",
+            "addresses": [
+                {
+                    "name": "1004130546",
+                    "uuid": "393e30c5-114f-41df-8497-dc2ed0a339a7",
+                    "address_type": {
+                        "user_key": "Pnummer",
+                        "uuid": "b79bd813-a3cb-46a5-b890-e30227c94af8",
+                    },
+                },
+                {
+                    "name": "Grønnegade 2, 1000 Andeby",
+                    "uuid": "599ce718-5ba9-48f1-958f-17ed39b13d27",
+                    "address_type": {
+                        "user_key": "AddressMailUnit",
+                        "uuid": "7bd066ea-e8e5-42b1-9211-73562da54b9b",
+                    },
+                },
+            ],
+        }
+
+        org_unit = parse_obj_as(OrgUnit, org_unit_dict)
+
+        # Act
+        org_unit_node = OrgUnitNode.from_org_unit(org_unit)
+
+        # Assert
+        addr1, addr2 = org_unit_node.addresses
+        assert addr1.uuid == UUID("393e30c5-114f-41df-8497-dc2ed0a339a7")
+        assert addr1.name == "1004130546"
+        assert addr1.address_type.user_key == AddressTypeUserKey.PNUMBER_ADDR.value
+
+        assert addr2.uuid == UUID("599ce718-5ba9-48f1-958f-17ed39b13d27")
+        assert addr2.name == "Grønnegade 2, 1000 Andeby"
+        assert addr2.address_type.user_key == AddressTypeUserKey.POSTAL_ADDR.value
