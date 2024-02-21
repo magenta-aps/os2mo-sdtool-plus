@@ -20,11 +20,12 @@ from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from os2mo_dar_client import AsyncDARClient
+from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
-from .addresses import fix_addresses
+from .addresses import AddressFixer
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
@@ -142,6 +143,16 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         if run_db_start_operations_resp is not None:
             return run_db_start_operations_resp
 
+        addr_fixer = AddressFixer(
+            gql_client,
+            SDClient(
+                settings.sd_username,
+                settings.sd_password.get_secret_value(),
+            ),
+            AsyncDARClient(),
+            settings,
+        )
+
         results: list[dict] = [
             {
                 "address_operation": operation.value,
@@ -149,8 +160,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 "unit": repr(org_unit_node),
                 "address": addr.value,
             }
-            async for operation, org_unit_node, addr in fix_addresses(
-                gql_client, AsyncDARClient(), settings, org_unit, dry_run
+            async for operation, org_unit_node, addr in addr_fixer.fix_addresses(
+                org_unit, dry_run
             )
         ]
         logger.info("Finished adding or updating org unit objects")

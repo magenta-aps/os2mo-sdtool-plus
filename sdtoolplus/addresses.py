@@ -195,61 +195,69 @@ async def _update_or_add_postal_address(
     return None
 
 
-async def fix_addresses(
-    gql_client: GraphQLClient,
-    dar_client: AsyncDARClient,
-    settings: SDToolPlusSettings,
-    org_unit: OrgUnitUUID | None,
-    dry_run: bool,
-):
-    logger.info("Add or update addresses")
-
-    # Get the SD and MO clients
-    sd_client = SDClient(
-        settings.sd_username,
-        settings.sd_password.get_secret_value(),
-    )
-    # TODO: use auto-generated client instead
-    persistent_client = get_graphql_client(settings)
-
-    # Get the SD units
-    logger.info("Getting SD units...")
-    sd_units = get_sd_units(sd_client, settings.sd_institution_identifier)
-
-    # Get the MO units
-    logger.info("Getting MO units...")
-    mo_org_tree_import = MOOrgTreeImport(persistent_client)
-    mo_org_units = mo_org_tree_import.get_org_units(org_unit)
-
-    mo_units = [OrgUnitNode.from_org_unit(org_unit) for org_unit in mo_org_units]
-    mo_units = filter_by_uuid(org_unit, mo_units)
-    mo_units = remove_by_name(settings.regex_unit_names_to_remove, mo_units)
-
-    mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
-        mo_unit.uuid: mo_unit for mo_unit in mo_units
-    }
-
-    # Only fix units that are already in MO
-    sd_units = [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
-
-    # Handle P-number addresses
-    async for operation, org_unit_node, addr in _update_or_add_addresses(
-        gql_client,
-        sd_units,
-        mo_unit_map,
-        AddressTypeUserKey.PNUMBER_ADDR.value,
-        _update_or_add_pnumber_address,
-        dry_run,
+class AddressFixer:
+    def __init__(
+        self,
+        gql_client: GraphQLClient,
+        sd_client: SDClient,
+        dar_client: AsyncDARClient,
+        settings: SDToolPlusSettings,
     ):
-        yield operation, org_unit_node, addr
+        self.gql_client = gql_client
+        self.sd_client = sd_client
+        self.dar_client = dar_client
+        self.settings = settings
 
-    # Handle postal addresses
-    async for operation, org_unit_node, addr in _update_or_add_addresses(
-        gql_client,
-        sd_units,
-        mo_unit_map,
-        AddressTypeUserKey.POSTAL_ADDR.value,
-        partial(_update_or_add_postal_address, dar_client),
-        dry_run,
+    async def fix_addresses(
+        self,
+        org_unit: OrgUnitUUID | None,
+        dry_run: bool,
     ):
-        yield operation, org_unit_node, addr
+        logger.info("Add or update addresses")
+
+        # TODO: use auto-generated client instead
+        persistent_client = get_graphql_client(self.settings)
+
+        # Get the SD units
+        logger.info("Getting SD units...")
+        sd_units = get_sd_units(self.sd_client, self.settings.sd_institution_identifier)
+
+        # Get the MO units
+        logger.info("Getting MO units...")
+        mo_org_tree_import = MOOrgTreeImport(persistent_client)
+        mo_org_units = mo_org_tree_import.get_org_units(org_unit)
+
+        mo_units = [OrgUnitNode.from_org_unit(org_unit) for org_unit in mo_org_units]
+        mo_units = filter_by_uuid(org_unit, mo_units)
+        mo_units = remove_by_name(self.settings.regex_unit_names_to_remove, mo_units)
+
+        mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
+            mo_unit.uuid: mo_unit for mo_unit in mo_units
+        }
+
+        # Only fix units that are already in MO
+        sd_units = [
+            sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()
+        ]
+
+        # Handle P-number addresses
+        async for operation, org_unit_node, addr in _update_or_add_addresses(
+            self.gql_client,
+            sd_units,
+            mo_unit_map,
+            AddressTypeUserKey.PNUMBER_ADDR.value,
+            _update_or_add_pnumber_address,
+            dry_run,
+        ):
+            yield operation, org_unit_node, addr
+
+        # Handle postal addresses
+        async for operation, org_unit_node, addr in _update_or_add_addresses(
+            self.gql_client,
+            sd_units,
+            mo_unit_map,
+            AddressTypeUserKey.POSTAL_ADDR.value,
+            partial(_update_or_add_postal_address, self.dar_client),
+            dry_run,
+        ):
+            yield operation, org_unit_node, addr
