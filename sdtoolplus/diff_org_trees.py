@@ -10,7 +10,6 @@ from pydantic import BaseModel
 
 from .config import SDToolPlusSettings
 from .mo_org_unit_importer import OrgUnitNode
-from .mo_org_unit_importer import OrgUnitUUID
 
 logger = structlog.get_logger()
 
@@ -54,7 +53,7 @@ class OrgTreeDiff:
     ):
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
-        self.obsolete_unit_roots = settings.obsolete_unit_roots
+        self.settings = settings
 
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
@@ -112,7 +111,7 @@ class OrgTreeDiff:
             True if the unit is in one of the subtrees of obsolete units or False otherwise
         """
         ancestors_uuids = [node.uuid for node in commonancestors(unit)]
-        for obsolete_unit_root in self.obsolete_unit_roots:
+        for obsolete_unit_root in self.settings.obsolete_unit_roots:
             if obsolete_unit_root in ancestors_uuids:
                 return True
         return False
