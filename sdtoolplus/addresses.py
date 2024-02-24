@@ -148,6 +148,7 @@ async def _get_dar_addr_uuid(
 ) -> DARAddressUUID:
     async with dar_client:
         r = await dar_client.cleanse_single(addr.name)
+        # logger.debug("DAR lookup", respos)
         return DARAddressUUID(r["id"])
 
 
@@ -163,34 +164,58 @@ async def _update_or_add_postal_address(
     if sd_addr is None:
         return None
 
-    # Get DAR address UUID
-    try:
-        dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
-    except:
-        logger.error("Could not get address UUID from DAR!")
-        return None
-
     mo_addr = _get_unit_address(mo_unit, AddressTypeUserKey.POSTAL_ADDR.value)
     if mo_addr is None:
-        # Create a new address
-        return Address(
-            value=str(dar_uuid),
-            address_type=AddressType(
-                user_key=AddressTypeUserKey.POSTAL_ADDR.value,
-                uuid=postal_addr_type_uuid,
-            ),
+        logger.debug(
+            "Create new address",
+            addr=sd_addr.name,
+            org_unit_name=mo_unit.name,
+            org_unit_uuid=str(mo_unit.uuid),
         )
+        try:
+            # Create a new address
+            dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
+            return Address(
+                value=str(dar_uuid),
+                address_type=AddressType(
+                    user_key=AddressTypeUserKey.POSTAL_ADDR.value,
+                    uuid=postal_addr_type_uuid,
+                ),
+            )
+        except:
+            logger.error("Could not get address UUID from DAR!")
+            return None
 
     # Update existing address
-    if not str(dar_uuid) == mo_addr.value:
-        return Address(
-            uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
-            value=str(dar_uuid),
-            address_type=AddressType(
-                user_key=AddressTypeUserKey.POSTAL_ADDR.value,
-                uuid=postal_addr_type_uuid,
-            ),
+    if not sd_addr.name == mo_addr.name:
+        # If the postal address string do not match, we have to perform a
+        # DAR lookup and compare the address UUIDs. We only do the DAR lookup
+        # when necessary due to performance. If the address string match,
+        # there is no need to perform a DAR UUID lookup.
+
+        logger.debug(
+            "Update address",
+            sd_addr=sd_addr.name,
+            mo_addr=mo_addr.name,
+            org_unit_name=mo_unit.name,
+            org_unit_uuid=str(mo_unit.uuid),
         )
+
+        try:
+            # Get DAR address UUID
+            dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
+            if not str(dar_uuid) == mo_addr.value:
+                return Address(
+                    uuid=mo_addr.uuid,  # If set, we know that we are updating and not creating
+                    value=str(dar_uuid),
+                    address_type=AddressType(
+                        user_key=AddressTypeUserKey.POSTAL_ADDR.value,
+                        uuid=postal_addr_type_uuid,
+                    ),
+                )
+        except:
+            logger.error("Could not get address UUID from DAR!")
+            return None
 
     return None
 

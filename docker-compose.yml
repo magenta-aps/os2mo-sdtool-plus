@@ -29,7 +29,6 @@ services:
       FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
       FASTRAMQPI__CLIENT_ID: "dipex"
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
-      FASTRAMQPI__MO_GRAPHQL_VERSION: 21
     ports:
       - "127.0.0.1:8000:8000"
     networks:

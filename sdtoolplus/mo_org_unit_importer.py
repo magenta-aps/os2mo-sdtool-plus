@@ -149,6 +149,7 @@ class MOOrgTreeImport:
                                 org_unit_level_uuid
                                 addresses {{
                                     uuid
+                                    name
                                     value
                                     address_type {{
                                         user_key
