@@ -1,14 +1,19 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from collections.abc import Iterator
+from datetime import datetime
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import structlog
 from anytree.util import commonancestors
+from more_itertools import one
 from more_itertools import partition
 from pydantic import BaseModel
 
 from .config import SDToolPlusSettings
+from .graphql import GET_ENGAGEMENTS
+from .graphql import get_graphql_client
 from .mo_org_unit_importer import OrgUnitNode
 
 logger = structlog.get_logger()
@@ -115,6 +120,33 @@ class OrgTreeDiff:
             if obsolete_unit_root in ancestors_uuids:
                 return True
         return False
+
+    def _has_active_engagements(self, org_unit_node: OrgUnitNode) -> bool:
+        """
+        Check if the unit has current or future active engagements
+
+        Args:
+            org_unit_node: the unit to check
+
+        Returns:
+            True if the unit has current or future active engagements or False otherwise
+        """
+
+        # TODO: has to be done in this way for now, but we will use the FastRAMQPI
+        # GraphQL client in the future
+        gql_client = get_graphql_client(self.settings)
+
+        r = gql_client.execute(
+            GET_ENGAGEMENTS,
+            variable_values={
+                "uuid": str(org_unit_node.uuid),
+                "from_date": datetime.now(tz=ZoneInfo("Europe/Copenhagen")).strftime(
+                    "%Y-%m-%d %H-%M-%S"
+                ),
+            },
+        )
+
+        return len(one(one(r["org_units"]["objects"])["objects"])["engagements"]) > 0
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:
