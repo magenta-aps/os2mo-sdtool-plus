@@ -4,10 +4,12 @@ from collections.abc import Iterator
 from uuid import UUID
 
 import structlog
+from anytree.util import commonancestors
+from more_itertools import partition
 from pydantic import BaseModel
 
+from .config import SDToolPlusSettings
 from .mo_org_unit_importer import OrgUnitNode
-
 
 logger = structlog.get_logger()
 
@@ -47,9 +49,11 @@ class OrgTreeDiff:
         self,
         mo_org_tree: OrgUnitNode,
         sd_org_tree: OrgUnitNode,
+        settings: SDToolPlusSettings,
     ):
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
+        self.settings = settings
 
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
@@ -75,6 +79,10 @@ class OrgTreeDiff:
             )
         ]
 
+        units_to_update, units_to_move_to_obsolete_subtree = partition(
+            self._in_obsolete_units_subtree, self.units_to_update
+        )
+
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
         """
@@ -91,6 +99,22 @@ class OrgTreeDiff:
             mo_nodes.parent.uuid != sd_nodes.parent.uuid
             or mo_nodes.unit.name != sd_nodes.unit.name
         )
+
+    def _in_obsolete_units_subtree(self, unit: OrgUnitNode) -> bool:
+        """
+        Check if the unit is in the subtree of one of the obsolete units ("Udgåede afdelinger")
+
+        Args:
+             unit: the unit to check
+
+        Returns:
+            True if the unit is in one of the subtrees of obsolete units or False otherwise
+        """
+        ancestors_uuids = [node.uuid for node in commonancestors(unit)]
+        for obsolete_unit_root in self.settings.obsolete_unit_roots:
+            if obsolete_unit_root in ancestors_uuids:
+                return True
+        return False
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:
