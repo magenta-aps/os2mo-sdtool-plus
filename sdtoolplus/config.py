@@ -60,6 +60,9 @@ class SDToolPlusSettings(BaseSettings):
     db_host: str = "sd-db"
     db_name: str = "sdtool_plus"
 
+    # List of UUIDs of "Udgåede afdelinger" (there can be several of these)
+    obsolete_unit_roots: tuple[OrgUnitUUID, ...] = tuple()
+
     class Config:
         env_nested_delimiter = "__"
 
