@@ -436,6 +436,7 @@ def mock_org_tree_diff(
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response: GetDepartmentResponse,
     mock_mo_org_unit_level_map: MockMOOrgUnitLevelMap,
+    sdtoolplus_settings,
 ) -> OrgTreeDiff:
     # Construct MO and SD trees
     mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
@@ -445,7 +446,7 @@ def mock_org_tree_diff(
         mock_mo_org_unit_level_map,
     )
     # Construct tree diff
-    return OrgTreeDiff(mo_tree, sd_tree)
+    return OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
 
 
 @pytest.fixture()
@@ -454,6 +455,7 @@ def mock_org_tree_diff_move_afd_from_ny_to_ny(
     mock_sd_get_department_response,
     mock_mo_org_unit_level_map,
     mock_mo_org_unit_type,
+    sdtoolplus_settings,
 ) -> OrgTreeDiff:
     """
     OrgTreeDiff instance for the scenario where we move Department 4
@@ -488,7 +490,7 @@ def mock_org_tree_diff_move_afd_from_ny_to_ny(
     dep4.parent = dep5
     # Dangerous: dep4.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
     return org_tree_diff
 
 
@@ -498,6 +500,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     mock_sd_get_department_response,
     mock_mo_org_unit_level_map,
     mock_mo_org_unit_type,
+    sdtoolplus_settings,
     sd_expected_validity,
 ) -> OrgTreeDiff:
     """
@@ -552,7 +555,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     sd_dep5.parent = sd_dep7
     # Dangerous: sd_dep5.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
     return org_tree_diff
 
 
@@ -562,6 +565,7 @@ def mock_org_tree_diff_add_and_move_and_rename(
     mock_sd_get_department_response,
     mock_mo_org_unit_level_map,
     mock_mo_org_unit_type,
+    sdtoolplus_settings,
     sd_expected_validity,
 ) -> OrgTreeDiff:
     """
@@ -631,7 +635,7 @@ def mock_org_tree_diff_add_and_move_and_rename(
     )
     new_sd_dep5.children = sd_dep5_children
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
     return org_tree_diff
 
 
