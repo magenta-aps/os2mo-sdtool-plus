@@ -8,6 +8,7 @@ from anytree.util import commonancestors
 from more_itertools import partition
 from pydantic import BaseModel
 
+from .config import SDToolPlusSettings
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 
@@ -49,11 +50,11 @@ class OrgTreeDiff:
         self,
         mo_org_tree: OrgUnitNode,
         sd_org_tree: OrgUnitNode,
-        obsolete_unit_roots: tuple[OrgUnitUUID, ...] = tuple(),
+        settings: SDToolPlusSettings,
     ):
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
-        self.obsolete_unit_roots = obsolete_unit_roots
+        self.obsolete_unit_roots = settings.obsolete_unit_roots
 
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
