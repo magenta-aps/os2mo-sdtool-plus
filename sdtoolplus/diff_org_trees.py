@@ -84,9 +84,21 @@ class OrgTreeDiff:
             )
         ]
 
+        # Partition units into 1) those that potentially should be moved to
+        # a subtree of on of the obsolete units ("Udgåede afdelinger") and
+        # 2) the rest of the units to update
         units_to_update, units_to_move_to_obsolete_subtree = partition(
             self._in_obsolete_units_subtree, self.units_to_update
         )
+
+        # Partition units into 1) those with active engagements and 2) those
+        # who do not have active engagements
+        units_to_move, units_not_to_move = partition(
+            self._has_active_engagements, units_to_move_to_obsolete_subtree
+        )
+
+        self.units_to_update = list(units_to_update) + list(units_to_move)
+        self.units_for_mails_alert = list(units_not_to_move)
 
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
