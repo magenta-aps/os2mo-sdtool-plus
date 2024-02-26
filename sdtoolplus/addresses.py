@@ -252,12 +252,13 @@ class AddressFixer:
             yield operation, org_unit_node, addr
 
         # Handle postal addresses
-        async for operation, org_unit_node, addr in _update_or_add_addresses(
-            self.gql_client,
-            sd_units,
-            mo_unit_map,
-            AddressTypeUserKey.POSTAL_ADDR.value,
-            partial(_update_or_add_postal_address, self.dar_client),
-            dry_run,
-        ):
-            yield operation, org_unit_node, addr
+        # TODO: re-enable when customer SD addresses have been converted to DAR addresses
+        # async for operation, org_unit_node, addr in _update_or_add_addresses(
+        #     self.gql_client,
+        #     sd_units,
+        #     mo_unit_map,
+        #     AddressTypeUserKey.POSTAL_ADDR.value,
+        #     partial(_update_or_add_postal_address, self.dar_client),
+        #     dry_run,
+        # ):
+        #     yield operation, org_unit_node, addr
