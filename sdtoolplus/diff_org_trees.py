@@ -167,3 +167,6 @@ class OrgTreeDiff:
     def get_units_to_update(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_update:
             yield unit
+
+    def get_units_for_mails_alert(self) -> list[OrgUnitNode]:
+        return self.units_for_mails_alert
