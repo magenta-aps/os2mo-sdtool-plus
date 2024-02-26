@@ -1,10 +1,15 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from typing import Any
+
 from fastramqpi.config import Settings as FastRAMQPISettings
 from pydantic import AnyHttpUrl
+from pydantic import AnyUrl
 from pydantic import BaseSettings
+from pydantic import EmailStr
 from pydantic import Field
 from pydantic import PositiveInt
+from pydantic import root_validator
 from pydantic import SecretStr
 
 from .log import LogLevel
@@ -62,6 +67,15 @@ class SDToolPlusSettings(BaseSettings):
 
     # List of UUIDs of "Udgåede afdelinger" (there can be several of these)
     obsolete_unit_roots: tuple[OrgUnitUUID, ...] = tuple()
+
+    # Email notifications
+    email_notifications_enabled: bool = False
+    email_host: str = ""
+    email_user: str = ""
+    email_password: SecretStr = SecretStr("")
+    email_port: PositiveInt = 465
+    email_from: EmailStr = EmailStr("admin@example.org")
+    email_to: list[EmailStr] = []
 
     class Config:
         env_nested_delimiter = "__"

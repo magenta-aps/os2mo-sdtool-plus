@@ -739,3 +739,15 @@ def sdtoolplus_settings() -> SDToolPlusSettings:
         sd_password=SecretStr(""),
         db_password=SecretStr("secret"),
     )
+
+
+@pytest.fixture()
+def random_org_unit_node(sd_expected_validity) -> OrgUnitNode:
+    return OrgUnitNode(
+        uuid=uuid.UUID("10000000-0000-0000-0000-000000000000"),
+        parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+        user_key="dep",
+        name="Department",
+        org_unit_level_uuid=uuid.uuid4(),
+        validity=sd_expected_validity,
+    )
