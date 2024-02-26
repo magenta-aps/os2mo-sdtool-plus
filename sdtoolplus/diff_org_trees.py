@@ -100,6 +100,16 @@ class OrgTreeDiff:
         self.units_to_update = list(units_to_update) + list(units_to_move)
         self.units_for_mails_alert = list(units_not_to_move)
 
+        # Handle obsolete units without engagements
+        mo_units_not_in_sd = [
+            mo_nodes.unit
+            for unit_uuid, mo_nodes in mo_uuid_map.items()
+            if (
+                unit_uuid not in sd_uuid_map.keys()
+                and mo_nodes.unit.org_unit_level.name in ("")
+            )
+        ]
+
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
         """
@@ -159,6 +169,10 @@ class OrgTreeDiff:
         )
 
         return len(one(one(r["org_units"]["objects"])["objects"])["engagements"]) > 0
+
+    def _is_sd_unit(self, org_unit_node: OrgUnitNode) -> bool:
+        assert org_unit_node.org_unit_level is not None
+        org_unit_level_name = org_unit_node.org_
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:

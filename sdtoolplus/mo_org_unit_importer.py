@@ -30,12 +30,17 @@ class Address(pydantic.BaseModel):
     address_type: AddressType
 
 
+class OrgUnitLevel(pydantic.BaseModel):
+    name: str
+
+
 class OrgUnit(pydantic.BaseModel):
     uuid: OrgUnitUUID
     parent_uuid: OrgUnitUUID | None
     user_key: str
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
+    org_unit_level: OrgUnitLevel | None
     validity: Validity | None
     addresses: list[Address] = []
 
@@ -49,6 +54,7 @@ class OrgUnitNode(anytree.AnyNode):
         name: str | None = None,
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
+        org_unit_level: OrgUnitLevel | None = None,
         org_unit_level_uuid: OrgUnitLevelUUID | None = None,
         addresses: list[Address] = [],
         validity: Validity | None = None,
@@ -60,6 +66,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=user_key,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
+            org_unit_level=org_unit_level,
             addresses=addresses,
             validity=validity,
         )
@@ -105,6 +112,10 @@ class OrgUnitNode(anytree.AnyNode):
         return self._instance.org_unit_level_uuid
 
     @property
+    def org_unit_level(self) -> str | None:
+        return self._instance.org_unit_level_uuid
+
+    @property
     def validity(self) -> Validity | None:
         return self._instance.validity
 
@@ -147,6 +158,9 @@ class MOOrgTreeImport:
                                 user_key
                                 name
                                 org_unit_level_uuid
+                                org_unit_level {{
+                                    name
+                                }}
                                 addresses {{
                                     uuid
                                     value
