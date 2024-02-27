@@ -19,6 +19,7 @@ RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root --no-dev
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
 COPY docker/start.sh ./docker/start.sh
+COPY scripts ./scripts
 COPY sdtoolplus ./sdtoolplus
 
 # Useful for debugging
