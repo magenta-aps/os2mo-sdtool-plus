@@ -24,12 +24,20 @@ services:
 
       DB_PASSWORD: "super_secret_sd_payload_password"
 
+      MO_SUBTREE_PATH_FOR_ROOT: '["12121212-1212-1212-1212-121212121212"]'
+
       FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker"
       FASTRAMQPI__MO_URL: "http://mo:5000"
       FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
       FASTRAMQPI__CLIENT_ID: "dipex"
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
-      FASTRAMQPI__MO_GRAPHQL_VERSION: 21
+
+      EMAIL_NOTIFICATIONS_ENABLED: "false"
+      EMAIL_HOST: "sandbox.smtp.mailtrap.io"
+      EMAIL_USER: "70e58fda8d0426"
+      EMAIL_PASSWORD: "3dcafadaff221e"
+      EMAIL_TO: '["to@example.com"]'
+
     ports:
       - "127.0.0.1:8000:8000"
     networks:
@@ -73,3 +81,18 @@ services:
     depends_on:
       wait-for-db:
         condition: service_completed_successfully
+  mo-init:
+    image: magentaaps/os2mo-init:2
+    environment:
+      MO_URL: "http://mo:5000"
+      CLIENT_ID: "dipex"
+      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+      AUTH_SERVER: "http://keycloak:8080/auth"
+      AUTH_REALM: "mo"
+    networks:
+      os2mo_default:
+    volumes:
+      - type: bind
+        source: ./dev-environment/mo-config.yml
+        target: /config/config.yml
+        read_only: true

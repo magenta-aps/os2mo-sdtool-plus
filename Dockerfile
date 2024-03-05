@@ -14,7 +14,7 @@ ENV PYTHONUNBUFFERED=1 \
 RUN curl -sSL https://install.python-poetry.org | python3 -
 COPY pyproject.toml poetry.lock ./
 
-RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root --no-dev
+RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root
 
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
