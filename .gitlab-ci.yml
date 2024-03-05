@@ -11,6 +11,7 @@ stages:
 
 
 variables:
+  OS2MO_INIT_CONFIG: "/builds/$CI_PROJECT_PATH/dev-environment/init.config.yml"
   IMAGE_SHA: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
   RELEASE_REGISTRY: docker.io
@@ -46,8 +47,10 @@ workflow:
     - <<: *if-default-branch-refs
     - <<: *if-merge-request
 
-
 include:
+  - project: rammearkitektur/os2mo
+    file:
+      - gitlab-ci-templates/integration-test-meta.v1.yml
   - project: labs/salt-automation
     ref: master
     file:
@@ -59,3 +62,26 @@ include:
       - /gitlab-ci-templates/common/docker-release.v1.yml
       - /gitlab-ci-templates/common/config-updater-salt.v1.yml
       - /gitlab-ci-templates/common/config-updater-flux.v1.yml
+
+Test:
+  variables:
+    PYTEST_ADDOPTS: "-m 'not integration_test'"
+
+Integration-test:
+  extends:
+    - .integration-test:mo
+  parallel: 1
+  variables:
+      RUN_ALEMBIC_MIGRATIONS: "false"
+      MORA_BASE: "http://mo:5000"
+      CLIENT_ID: "dipex"
+      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+      AUTH_SERVER: "http://keycloak:8080/auth"
+
+      SD_USERNAME: "username"
+      SD_PASSWORD: "password"
+      SD_INSTITUTION_IDENTIFIER: "XY"
+
+      DB_PASSWORD: "super_secret_sd_payload_password"
+
+      MO_SUBTREE_PATH_FOR_ROOT: '["12121212-1212-1212-1212-121212121212"]'

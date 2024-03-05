@@ -22,13 +22,17 @@ from sdtoolplus.tests.conftest import SharedIdentifier
 
 
 @pytest.mark.integration_test
+@patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.main.run_db_end_operations")
 @patch("sdtoolplus.main.run_db_start_operations", return_value=None)
 async def test_two_new_departments_in_sd(
     mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
     mock_get_sd_organization: MagicMock,
     mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
     test_client: TestClient,
     graphql_client: GraphQLClient,
     base_tree_builder: None,

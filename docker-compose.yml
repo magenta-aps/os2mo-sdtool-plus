@@ -93,6 +93,6 @@ services:
       os2mo_default:
     volumes:
       - type: bind
-        source: ./dev-environment/mo-config.yml
+        source: ./dev-environment/init.config.yml
         target: /config/config.yml
         read_only: true

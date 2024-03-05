@@ -9,7 +9,8 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_VERSION=1.3.1 \
-    ENVIRONMENT=production
+    ENVIRONMENT=production \
+    RUN_ALEMBIC_MIGRATIONS=true
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 COPY pyproject.toml poetry.lock ./
