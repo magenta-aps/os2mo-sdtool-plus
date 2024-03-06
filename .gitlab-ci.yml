@@ -85,3 +85,9 @@ Integration-test:
       DB_PASSWORD: "super_secret_sd_payload_password"
 
       MO_SUBTREE_PATH_FOR_ROOT: '["12121212-1212-1212-1212-121212121212"]'
+
+      EMAIL_NOTIFICATIONS_ENABLED: "true"
+      EMAIL_HOST: "smtp.example.org"
+      EMAIL_USER: "email_user"
+      EMAIL_PASSWORD: "secret"
+      EMAIL_TO: '["to@example.org"]'

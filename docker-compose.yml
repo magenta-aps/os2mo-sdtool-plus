@@ -32,7 +32,7 @@ services:
       FASTRAMQPI__CLIENT_ID: "dipex"
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
-      EMAIL_NOTIFICATIONS_ENABLED: "false"
+      EMAIL_NOTIFICATIONS_ENABLED: "true"
       EMAIL_HOST: "sandbox.smtp.mailtrap.io"
       EMAIL_USER: "70e58fda8d0426"
       EMAIL_PASSWORD: "3dcafadaff221e"

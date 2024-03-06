@@ -10,7 +10,6 @@ from httpx import Response
 from httpx import Timeout
 from sdclient.client import SDClient
 
-from .addresses import AddressOperation
 from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
 from .email import build_email_body
@@ -147,8 +146,9 @@ class App:
 
     def send_email_notification(self):
         units_for_email_alerts = self.tree_diff.get_units_for_mails_alert()
-        email_body = build_email_body(units_for_email_alerts)
-        send_email_notification(self.settings, email_body)
+        if units_for_email_alerts:
+            email_body = build_email_body(units_for_email_alerts)
+            send_email_notification(self.settings, email_body)
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> None:
         logger.info("Apply NY logic", org_unit_uuid=org_unit_uuid)
