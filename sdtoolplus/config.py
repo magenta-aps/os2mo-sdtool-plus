@@ -66,7 +66,7 @@ class SDToolPlusSettings(BaseSettings):
     db_name: str = "sdtool_plus"
 
     # List of UUIDs of "Udgåede afdelinger" (there can be several of these)
-    obsolete_unit_roots: tuple[OrgUnitUUID, ...] = tuple()
+    obsolete_unit_roots: list[OrgUnitUUID] = []
 
     # Email notifications
     email_notifications_enabled: bool = False

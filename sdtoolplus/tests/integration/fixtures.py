@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import pytest
-from sdclient.responses import GetOrganizationResponse, GetDepartmentResponse
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.tests.conftest import SharedIdentifier
 
@@ -103,7 +104,7 @@ def sd_get_dep_with_obsolete() -> GetDepartmentResponse:
                 "DepartmentIdentifier": "dep2",
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "Department 2",
-                "DepartmentUUIDIdentifier": "20000000-0000-0000-0000-000000000000"
+                "DepartmentUUIDIdentifier": "20000000-0000-0000-0000-000000000000",
             },
             {
                 "ActivationDate": "1999-01-01",

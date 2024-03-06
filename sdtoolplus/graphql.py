@@ -18,10 +18,10 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 GET_ENGAGEMENTS = gql(
     """
     query GetOrgUnitEngagements($uuid: UUID!, $from_date: DateTime!) {
-      org_units(filter: {uuids: [$uuid]}) {
+      org_units(uuids: [$uuid]) {
         objects {
           objects {
-            engagements(filter: {from_date: $from_date, to_date: null}) {
+            engagements(from_date: $from_date, to_date: null) {
               uuid
               validity {
                 from
