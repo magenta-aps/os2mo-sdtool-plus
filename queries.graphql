@@ -120,3 +120,23 @@ query _Testing_GetOrgUnit($uuid: UUID!) {
     }
   }
 }
+
+mutation _Testing_CreateEngagement(
+  $from_date: DateTime!,
+  $org_unit: UUID!,
+  $engagement_type: UUID!,
+  $job_function: UUID!,
+  $person: UUID!
+) {
+  engagement_create(
+    input: {
+      validity: {from: $from_date},
+      org_unit: $org_unit,
+      engagement_type: $engagement_type,
+      job_function: $job_function,
+      person: $person
+    }
+  ) {
+    uuid
+  }
+}
