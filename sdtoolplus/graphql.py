@@ -18,10 +18,10 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 GET_ENGAGEMENTS = gql(
     """
     query GetOrgUnitEngagements($uuid: UUID!, $from_date: DateTime!) {
-      org_units(uuids: [$uuid]) {
+      org_units(filter:{uuids: [$uuid]}) {
         objects {
           objects {
-            engagements(from_date: $from_date, to_date: null) {
+            engagements(filter: {from_date: $from_date, to_date: null}) {
               uuid
               validity {
                 from
@@ -38,7 +38,7 @@ GET_ENGAGEMENTS = gql(
 
 def get_graphql_client(settings: SDToolPlusSettings) -> PersistentGraphQLClient:
     return PersistentGraphQLClient(
-        url=f"{settings.mora_base}/graphql/v7",
+        url=f"{settings.mora_base}/graphql/v21",
         client_id=settings.client_id,
         client_secret=settings.client_secret.get_secret_value(),
         auth_realm=settings.auth_realm,

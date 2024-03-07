@@ -4,6 +4,7 @@ from uuid import UUID
 
 import pydantic
 from gql import gql
+from more_itertools import one
 
 
 class MOClass(pydantic.BaseModel):
@@ -37,24 +38,25 @@ class MOClassMap:
             gql(
                 """
                 query GetClassesInFacet($facet_user_key: String!) {
-                    classes(facet_user_keys: [$facet_user_key]) {
-                        objects {
-                            current {
-                                uuid
-                                user_key
-                                name
-                            }
+                  facets(filter: {user_keys: [$facet_user_key]}) {
+                    objects {
+                      current {
+                        classes {
+                          uuid
+                          user_key
+                          name
+                          scope
                         }
+                      }
                     }
+                  }
                 }
                 """
             ),
             {"facet_user_key": facet_user_key},
         )
-        return pydantic.parse_obj_as(
-            list[MOClass],
-            [cls["current"] for cls in doc["classes"]["objects"]],
-        )
+        classes = one(doc["facets"]["objects"])["current"]["classes"]
+        return [pydantic.parse_obj_as(MOClass, cls) for cls in classes]
 
     def __getitem__(self, item: str) -> MOClass:
         """Support dictionary-style item lookups on class name or `user_key`.
