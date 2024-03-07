@@ -45,10 +45,6 @@ from ..tree_diff_executor import TreeDiffExecutor
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
 _TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
 
-pytest_plugins = [
-    "sdtoolplus.tests.integration.fixtures",
-]
-
 
 @pytest.fixture(scope="session")
 def graphql_testing_schema() -> GraphQLSchema:
