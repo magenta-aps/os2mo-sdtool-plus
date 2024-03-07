@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
-from time import sleep
+from datetime import timedelta
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
@@ -76,6 +76,13 @@ async def test_allowed_move_to_obsolete(
 
 
 @pytest.mark.integration_test
+@pytest.mark.parametrize(
+    "eng_start_date",
+    [
+        datetime.now(tz=ZoneInfo("Europe/Copenhagen")),
+        datetime.now(tz=ZoneInfo("Europe/Copenhagen")) + timedelta(days=7),
+    ],
+)
 @patch("sdtoolplus.app.send_email_notification")
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
@@ -96,6 +103,7 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
     sd_get_dep_with_obsolete: GetDepartmentResponse,
     respx_mock: MockRouter,
     sqlite_engine: Engine,
+    eng_start_date: datetime,
 ) -> None:
     """
     It should not be allowed to move a unit with engagements to "Udgåede afdelinger".
@@ -112,7 +120,8 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
 
     # Create an engagement in Department 3 in MO
     await graphql_client._testing__create_engagement(
-        from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen")),
+        # from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen")),# + timedelta(days=7),
+        from_date=eng_start_date,
         org_unit=UUID("30000000-0000-0000-0000-000000000000"),
         person=UUID("a454a30f-5659-4f21-8d3f-a3d043c6d9ac"),  # Margit
         engagement_type=UUID("8acc5743-044b-4c82-9bb9-4e572d82b524"),  # Ansat
@@ -129,7 +138,7 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
     # Assert
     @retry()
     async def verify() -> None:
-        # Verify that Department 3 has the correct parent
+        # Verify that Department 3 has the correct parent, i.e. it has not moved
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("30000000-0000-0000-0000-000000000000")
         )

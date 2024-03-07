@@ -152,9 +152,7 @@ class OrgTreeDiff:
             GET_ENGAGEMENTS,
             variable_values={
                 "uuid": str(org_unit_node.uuid),
-                "from_date": datetime.now(tz=ZoneInfo("Europe/Copenhagen")).strftime(
-                    "%Y-%m-%d %H-%M-%S"
-                ),
+                "from_date": datetime.now(tz=ZoneInfo("Europe/Copenhagen")).isoformat(),
             },
         )
 
