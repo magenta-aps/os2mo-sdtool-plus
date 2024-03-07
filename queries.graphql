@@ -74,6 +74,37 @@ query _Testing_GetOrgUnitTypes {
   }
 }
 
+query _Testing_GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
+  facets(filter: {user_keys: [$facet_user_key]}) {
+    objects {
+      current {
+        classes(filter: {user_keys: [$class_user_key]}) {
+          uuid
+          user_key
+          name
+          scope
+        }
+      }
+    }
+  }
+}
+
+mutation _Testing_CreateEmployee(
+  $uuid: UUID!
+  $given_name: String!,
+  $surname: String!,
+) {
+  employee_create(
+    input: {
+      uuid: $uuid,
+      given_name: $given_name,
+      surname: $surname,
+    }
+  ) {
+    uuid
+  }
+}
+
 mutation _Testing_CreateOrgUnit(
   $uuid: UUID!,
   $name: String!,

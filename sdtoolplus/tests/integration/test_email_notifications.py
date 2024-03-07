@@ -103,6 +103,9 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
     sd_get_dep_with_obsolete: GetDepartmentResponse,
     respx_mock: MockRouter,
     sqlite_engine: Engine,
+    bruce_lee: UUID,
+    job_function: UUID,
+    engagement_type: UUID,
     eng_start_date: datetime,
 ) -> None:
     """
@@ -120,12 +123,11 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
 
     # Create an engagement in Department 3 in MO
     await graphql_client._testing__create_engagement(
-        # from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen")),# + timedelta(days=7),
         from_date=eng_start_date,
         org_unit=UUID("30000000-0000-0000-0000-000000000000"),
-        person=UUID("a454a30f-5659-4f21-8d3f-a3d043c6d9ac"),  # Margit
-        engagement_type=UUID("8acc5743-044b-4c82-9bb9-4e572d82b524"),  # Ansat
-        job_function=UUID("1059df61-eb7f-495d-8c39-91f2a0c5985c"),  # Jurist
+        person=bruce_lee,
+        engagement_type=engagement_type,
+        job_function=job_function,
     )
 
     respx_mock.post(

@@ -27,3 +27,11 @@ facets:
     NY4-niveau:
       title: "NY4-niveau"
       scope: "TEXT"
+  engagement_type:
+    TestAnsat:
+      title: "TestAnsat"
+      scope: "TEXT"
+  engagement_job_function:
+    Ninja:
+      title: "Ninja"
+      scope: "TEXT"
