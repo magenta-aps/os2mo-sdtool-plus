@@ -59,21 +59,6 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
   }
 }
 
-query _Testing_GetOrgUnitTypes {
-  facets(filter: {user_keys: "org_unit_type"}) {
-    objects {
-      current {
-        classes(filter: {user_keys: "Enhed"}) {
-          uuid
-          user_key
-          name
-          scope
-        }
-      }
-    }
-  }
-}
-
 query _Testing_GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
   facets(filter: {user_keys: [$facet_user_key]}) {
     objects {
