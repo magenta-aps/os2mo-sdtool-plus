@@ -128,10 +128,10 @@ class OrgTreeDiff:
             True if the unit is in one of the subtrees of obsolete units or False otherwise
         """
         ancestors_uuids = [node.uuid for node in commonancestors(unit)]
-        for obsolete_unit_root in self.settings.obsolete_unit_roots:
-            if obsolete_unit_root in ancestors_uuids:
-                return True
-        return False
+        return any(
+            obsolete_unit_root in ancestors_uuids
+            for obsolete_unit_root in self.settings.obsolete_unit_roots
+        )
 
     def _has_active_engagements(self, org_unit_node: OrgUnitNode) -> bool:
         """
