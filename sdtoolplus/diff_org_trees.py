@@ -84,9 +84,9 @@ class OrgTreeDiff:
             )
         ]
 
-        # Partition units into 1) those that potentially should be moved to
-        # a subtree of on of the obsolete units ("Udgåede afdelinger") and
-        # 2) the rest of the units to update
+        # Partition units into 1) the units to update without further checking
+        # and 2) those that potentially should be moved to a subtree of on of
+        # the obsolete units ("Udgåede afdelinger")
         units_to_update, units_to_move_to_obsolete_subtree = partition(
             self._in_obsolete_units_subtree, self.units_to_update
         )
