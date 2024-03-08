@@ -156,7 +156,7 @@ class OrgTreeDiff:
             },
         )
 
-        return len(one(one(r["org_units"]["objects"])["objects"])["engagements"]) > 0
+        return len(r["engagements"]["objects"]) > 0
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:
