@@ -30,6 +30,8 @@ def build_email_body(units: list[OrgUnitNode]) -> str:
 
 
 def send_email_notification(settings: SDToolPlusSettings, body: str):
+    assert settings.email_from is not None
+
     recipients = ",".join(settings.email_to)
     logger.info("Sending email notification", recipients=recipients)
 
