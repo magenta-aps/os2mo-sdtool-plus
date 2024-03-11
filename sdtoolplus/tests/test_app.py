@@ -337,7 +337,7 @@ class TestApp:
             )
 
             # Act
-            app_.get_sd_tree()
+            app_.get_sd_tree(MagicMock())
 
             # Assert
             assert mock_get_sd_tree.call_args.args[3] == mo_org_uuid

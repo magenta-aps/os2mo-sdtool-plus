@@ -49,8 +49,7 @@ class App:
         )
         logger.debug("Configured HTTPX client", base_url=self.client.base_url)
 
-    def get_sd_tree(self) -> OrgUnitNode:
-        mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
+    def get_sd_tree(self, mo_org_unit_level_map: MOOrgUnitLevelMap) -> OrgUnitNode:
         sd_client = SDClient(
             self.settings.sd_username,
             self.settings.sd_password.get_secret_value(),
@@ -82,9 +81,11 @@ class App:
         mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
         mo_org_unit_type: MOClass = mo_org_unit_type_map[self.settings.org_unit_type]
 
+        mo_org_unit_level_map = MOOrgUnitLevelMap(self.session)
+
         # Get the SD tree
         logger.info(event="Fetching SD org tree ...")
-        sd_org_tree = self.get_sd_tree()
+        sd_org_tree = self.get_sd_tree(mo_org_unit_level_map)
         logger.debug(
             "SD tree",
             sd_org_tree=repr(sd_org_tree),
