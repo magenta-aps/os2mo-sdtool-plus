@@ -130,10 +130,6 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
         job_function=job_function,
     )
 
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/30000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
-
     # Act
     test_client.post("/trigger")
 
@@ -145,6 +141,70 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
             UUID("30000000-0000-0000-0000-000000000000")
         )
         assert one(dep3.objects).current.parent.uuid == UUID("20000000-0000-0000-0000-000000000000")  # type: ignore
+
+    await verify()
+
+    mock_send_email_notification.assert_called_once()
+
+
+@pytest.mark.integration_test
+@patch("sdtoolplus.app.send_email_notification")
+@patch("sdtoolplus.main.get_engine")
+@patch("sdtoolplus.sd.importer.get_sd_departments")
+@patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.main.run_db_end_operations")
+@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+async def test_not_allowed_move_to_obsolete_when_active_engagement_in_subtree(
+    mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
+    mock_get_sd_organization: MagicMock,
+    mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
+    mock_send_email_notification: MagicMock,
+    test_client: TestClient,
+    graphql_client: GraphQLClient,
+    obsolete_unit_tree_builder: None,
+    sd_get_org_with_2_in_obsolete: GetOrganizationResponse,
+    sd_get_dep_with_obsolete: GetDepartmentResponse,
+    respx_mock: MockRouter,
+    sqlite_engine: Engine,
+    bruce_lee: UUID,
+    job_function: UUID,
+    engagement_type: UUID,
+) -> None:
+    """
+    It should not be allowed to move a unit with engagements to "Udgåede afdelinger".
+    In this test we move Department 2 (having active engagements in its *subtree*)
+    to "Udgåede afdelinger" and an email notifications should be sent.
+    """
+
+    # Arrange
+    org_uuid = (await graphql_client.get_organization()).uuid
+    sd_get_org_with_2_in_obsolete.InstitutionUUIDIdentifier = org_uuid
+
+    mock_get_sd_organization.return_value = sd_get_org_with_2_in_obsolete
+    mock_get_sd_departments.return_value = sd_get_dep_with_obsolete
+
+    # Create an engagement in Department 3 in MO
+    await graphql_client._testing__create_engagement(
+        from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen")),
+        org_unit=UUID("30000000-0000-0000-0000-000000000000"),
+        person=bruce_lee,
+        engagement_type=engagement_type,
+        job_function=job_function,
+    )
+
+    # Act
+    test_client.post("/trigger")
+
+    # Assert
+    @retry()
+    async def verify() -> None:
+        # Verify that Department 3 has the correct parent, i.e. it has not moved
+        dep3 = await graphql_client._testing__get_org_unit(
+            UUID("20000000-0000-0000-0000-000000000000")
+        )
+        assert one(dep3.objects).current.parent.uuid == UUID("10000000-0000-0000-0000-000000000000")  # type: ignore
 
     await verify()
 
