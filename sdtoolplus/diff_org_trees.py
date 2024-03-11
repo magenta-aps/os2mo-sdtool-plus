@@ -178,11 +178,11 @@ class OrgTreeDiff:
             engs_in_subtree: set[OrgUnitUUID],
             nodes_processed: set[OrgUnitUUID],
         ) -> bool:
+            nodes_processed.add(node_to_process.uuid)
             active_engs = self._has_active_engagements(node_to_process)
             if active_engs:
                 engs_in_subtree.add(subtree_root.uuid)
                 engs_in_subtree.add(node_to_process.uuid)
-                nodes_processed.add(node_to_process.uuid)
                 return True
 
             for n in node_to_process.children:
@@ -192,7 +192,6 @@ class OrgTreeDiff:
                 if eng_in_child_subtree:
                     return True
 
-            nodes_processed.add(node_to_process.uuid)
             return False
 
         return add_node_if_subtree_has_engagements(

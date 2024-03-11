@@ -1,10 +1,12 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import uuid
+from unittest.mock import MagicMock
 
 from anytree.render import RenderTree
 from freezegun import freeze_time
 from more_itertools import first
+from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -258,6 +260,123 @@ class TestOrgTreeDiff:
         assert unit_to_update.parent.uuid == uuid.UUID(
             "70000000-0000-0000-0000-000000000000"
         )
+
+    def test_subtree_has_active_engagements(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        sdtoolplus_settings: SDToolPlusSettings,
+        sd_expected_validity: Validity,
+    ):
+        # Arrange
+
+        # This is just a OU tree required by the OrgTreeDiff constructor. It is
+        # not actually used in this test.
+        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, sdtoolplus_settings)
+
+        # Use this subtree for testing _subtree_has_active_engagements
+        #            subtree_root
+        #               /    \
+        #              A      B  <-- B has engagement
+        #                    / \
+        #                   C   D
+        #                        \
+        #                         E  <-- E has engagement
+
+        def mock_has_active_engagements(org_unit_node: OrgUnitNode) -> bool:
+            return True if org_unit_node.name in ["B", "E"] else False
+
+        org_tree_diff._has_active_engagements = mock_has_active_engagements  # type: ignore
+
+        subtree_root = OrgUnitNode(
+            uuid=uuid.UUID("5cb00000-0000-0000-0000-000000000000"),
+            parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+            user_key="subtree_root",
+            name="Subtree Root",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        A = OrgUnitNode(
+            uuid=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            parent=subtree_root,
+            user_key="a",
+            name="A",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        B = OrgUnitNode(
+            uuid=uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            parent=subtree_root,
+            user_key="b",
+            name="B",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        C = OrgUnitNode(
+            uuid=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+            parent=B,
+            user_key="c",
+            name="C",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        D = OrgUnitNode(
+            uuid=uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+            parent=B,
+            user_key="d",
+            name="D",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        E = OrgUnitNode(
+            uuid=uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+            parent=D,
+            user_key="e",
+            name="E",
+            org_unit_level_uuid=uuid.uuid4(),
+            validity=sd_expected_validity,
+        )
+
+        # Act + Assert
+        result = org_tree_diff._subtree_has_active_engagements(subtree_root)
+        assert result is True
+        assert org_tree_diff.nodes_processed == {
+            uuid.UUID("5cb00000-0000-0000-0000-000000000000"),
+            uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+        }
+
+        # Run again (on B) and make sure that memoization is working
+        org_tree_diff._has_active_engagements = MagicMock()  # type: ignore
+        result = org_tree_diff._subtree_has_active_engagements(B)
+        assert result is True
+        assert org_tree_diff.nodes_processed == {
+            uuid.UUID("5cb00000-0000-0000-0000-000000000000"),
+            uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+        }
+        org_tree_diff._has_active_engagements.assert_not_called()
+
+        # Run on D and assure both D and E are processed
+        org_tree_diff._has_active_engagements = mock_has_active_engagements  # type: ignore
+        result = org_tree_diff._subtree_has_active_engagements(D)
+        assert result is True
+        assert org_tree_diff.nodes_processed == {
+            uuid.UUID("5cb00000-0000-0000-0000-000000000000"),
+            uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+            uuid.UUID("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+            uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+        }
+
+        # Make sure set of processed nodes are reset on re-instantiation
+        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, sdtoolplus_settings)
+        assert len(org_tree_diff.nodes_processed) == 0
 
 
 def test_uuid_to_nodes_map(
