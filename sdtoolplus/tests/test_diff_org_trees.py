@@ -55,7 +55,9 @@ class TestOrgTreeDiff:
             parent=dep7,
         )
 
-        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+        org_tree_diff = OrgTreeDiff(
+            mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+        )
 
         # Act
         org_tree_diff._compare_trees()
@@ -98,7 +100,9 @@ class TestOrgTreeDiff:
         )
 
         # Construct tree diff
-        tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+        tree_diff = OrgTreeDiff(
+            mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+        )
 
         # If test fails, print diagnostic information
         print("MO Tree")
@@ -272,7 +276,7 @@ class TestOrgTreeDiff:
         # This is just a OU tree required by the OrgTreeDiff constructor. It is
         # not actually used in this test.
         mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
-        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, sdtoolplus_settings)
+        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
 
         # Use this subtree for testing _subtree_has_active_engagements
         #            subtree_root
@@ -375,7 +379,7 @@ class TestOrgTreeDiff:
         }
 
         # Make sure set of processed nodes are reset on re-instantiation
-        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, sdtoolplus_settings)
+        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
         assert len(org_tree_diff.nodes_processed) == 0
 
 

@@ -105,6 +105,7 @@ class App:
         self.tree_diff = OrgTreeDiff(
             mo_org_tree_as_single,
             sd_org_tree,
+            mo_org_unit_level_map,
             self.settings,
         )
 

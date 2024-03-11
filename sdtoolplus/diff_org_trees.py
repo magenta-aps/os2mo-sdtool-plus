@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from .config import SDToolPlusSettings
 from .graphql import GET_ENGAGEMENTS
 from .graphql import get_graphql_client
+from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 
@@ -54,6 +55,7 @@ class OrgTreeDiff:
         self,
         mo_org_tree: OrgUnitNode,
         sd_org_tree: OrgUnitNode,
+        mo_org_unit_level_map: MOOrgUnitLevelMap,
         settings: SDToolPlusSettings,
     ):
         self.mo_org_tree = mo_org_tree

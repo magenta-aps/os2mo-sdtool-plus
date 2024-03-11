@@ -461,7 +461,9 @@ def mock_org_tree_diff(
         mock_mo_org_unit_level_map,
     )
     # Construct tree diff
-    return OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+    return OrgTreeDiff(
+        mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+    )
 
 
 @pytest.fixture()
@@ -505,7 +507,9 @@ def mock_org_tree_diff_move_afd_from_ny_to_ny(
     dep4.parent = dep5
     # Dangerous: dep4.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+    org_tree_diff = OrgTreeDiff(
+        mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+    )
     return org_tree_diff
 
 
@@ -570,7 +574,9 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
     sd_dep5.parent = sd_dep7
     # Dangerous: sd_dep5.parent_uuid is now wrong
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+    org_tree_diff = OrgTreeDiff(
+        mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+    )
     return org_tree_diff
 
 
@@ -650,7 +656,9 @@ def mock_org_tree_diff_add_and_move_and_rename(
     )
     new_sd_dep5.children = sd_dep5_children
 
-    org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
+    org_tree_diff = OrgTreeDiff(
+        mo_tree, sd_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+    )
     return org_tree_diff
 
 
