@@ -813,7 +813,7 @@ async def base_tree_builder(
     r_org_unit_types = await graphql_client._testing__get_facet_class(
         "org_unit_type", "Enhed"
     )
-    org_unit_type = one(one(r_org_unit_types.objects).current.classes).uuid  # type: ignore
+    org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
 
     now = datetime(1999, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
 
@@ -891,7 +891,7 @@ async def obsolete_unit_tree_builder(
     r_org_unit_types = await graphql_client._testing__get_facet_class(
         "org_unit_type", "Enhed"
     )
-    org_unit_type = one(one(r_org_unit_types.objects).current.classes).uuid  # type: ignore
+    org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
 
     now = datetime(1999, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
 

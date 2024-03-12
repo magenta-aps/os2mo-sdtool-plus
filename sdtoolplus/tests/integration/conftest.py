@@ -166,24 +166,20 @@ async def bruce_lee(graphql_client: GraphQLClient) -> UUID:
 @pytest.fixture
 async def job_function(graphql_client: GraphQLClient) -> UUID:
     return one(
-        one(
-            (
-                await graphql_client._testing__get_facet_class(
-                    "engagement_job_function", "Ninja"
-                )
-            ).objects
-        ).current.classes  # type: ignore
-    ).uuid
+        (
+            await graphql_client._testing__get_facet_class(
+                "engagement_job_function", "Ninja"
+            )
+        ).objects  # type: ignore
+    ).current.uuid
 
 
 @pytest.fixture
 async def engagement_type(graphql_client: GraphQLClient) -> UUID:
     return one(
-        one(
-            (
-                await graphql_client._testing__get_facet_class(
-                    "engagement_type", "TestAnsat"
-                )
-            ).objects
-        ).current.classes  # type: ignore
-    ).uuid
+        (
+            await graphql_client._testing__get_facet_class(
+                "engagement_type", "TestAnsat"
+            )
+        ).objects  # type: ignore
+    ).current.uuid
