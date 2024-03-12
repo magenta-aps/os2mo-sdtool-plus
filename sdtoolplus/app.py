@@ -10,9 +10,10 @@ from httpx import Response
 from httpx import Timeout
 from sdclient.client import SDClient
 
-from .addresses import AddressOperation
 from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
+from .email import build_email_body
+from .email import send_email_notification
 from .graphql import get_graphql_client
 from .log import setup_logging
 from .mo_class import MOClass
@@ -41,6 +42,7 @@ class App:
         self.session = get_graphql_client(settings)
 
         self.mo_org_tree_import = MOOrgTreeImport(self.session)
+
         self.client = httpx.Client(
             base_url=str(self.settings.sd_lon_base_url),
             timeout=Timeout(timeout=self.settings.httpx_timeout_ny_logic),
@@ -99,15 +101,16 @@ class App:
         )
 
         # Construct org tree diff
-        tree_diff = OrgTreeDiff(
+        self.tree_diff = OrgTreeDiff(
             mo_org_tree_as_single,
             sd_org_tree,
+            self.settings,
         )
 
         # Construct tree diff executor
         return TreeDiffExecutor(
             self.session,
-            tree_diff,
+            self.tree_diff,
             mo_org_unit_type,
             self.settings.regex_unit_names_to_remove,
         )
@@ -140,6 +143,12 @@ class App:
                 mutation,
                 result,
             )
+
+    def send_email_notification(self):
+        units_for_email_alerts = self.tree_diff.get_units_for_mails_alert()
+        if units_for_email_alerts:
+            email_body = build_email_body(units_for_email_alerts)
+            send_email_notification(self.settings, email_body)
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> None:
         logger.info("Apply NY logic", org_unit_uuid=org_unit_uuid)

@@ -1,13 +1,20 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from collections.abc import Iterator
+from datetime import datetime
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import structlog
+from anytree.util import commonancestors
+from more_itertools import one
+from more_itertools import partition
 from pydantic import BaseModel
 
+from .config import SDToolPlusSettings
+from .graphql import GET_ENGAGEMENTS
+from .graphql import get_graphql_client
 from .mo_org_unit_importer import OrgUnitNode
-
 
 logger = structlog.get_logger()
 
@@ -47,9 +54,11 @@ class OrgTreeDiff:
         self,
         mo_org_tree: OrgUnitNode,
         sd_org_tree: OrgUnitNode,
+        settings: SDToolPlusSettings,
     ):
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
+        self.settings = settings
 
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
@@ -75,6 +84,22 @@ class OrgTreeDiff:
             )
         ]
 
+        # Partition units into 1) the units to update without further checking
+        # and 2) those that potentially should be moved to a subtree of on of
+        # the obsolete units ("Udgåede afdelinger")
+        units_to_update, units_to_move_to_obsolete_subtree = partition(
+            self._in_obsolete_units_subtree, self.units_to_update
+        )
+
+        # Partition units into 1) those with active engagements and 2) those
+        # who do not have active engagements
+        units_to_move, units_not_to_move = partition(
+            self._has_active_engagements, units_to_move_to_obsolete_subtree
+        )
+
+        self.units_to_update = list(units_to_update) + list(units_to_move)
+        self.units_for_mails_alert = list(units_not_to_move)
+
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
         """
@@ -92,6 +117,47 @@ class OrgTreeDiff:
             or mo_nodes.unit.name != sd_nodes.unit.name
         )
 
+    def _in_obsolete_units_subtree(self, unit: OrgUnitNode) -> bool:
+        """
+        Check if the unit is in the subtree of one of the obsolete units ("Udgåede afdelinger")
+
+        Args:
+             unit: the unit to check
+
+        Returns:
+            True if the unit is in one of the subtrees of obsolete units or False otherwise
+        """
+        ancestors_uuids = [node.uuid for node in commonancestors(unit)]
+        return any(
+            obsolete_unit_root in ancestors_uuids
+            for obsolete_unit_root in self.settings.obsolete_unit_roots
+        )
+
+    def _has_active_engagements(self, org_unit_node: OrgUnitNode) -> bool:
+        """
+        Check if the unit has current or future active engagements
+
+        Args:
+            org_unit_node: the unit to check
+
+        Returns:
+            True if the unit has current or future active engagements or False otherwise
+        """
+
+        # TODO: has to be done in this way for now, but we will use the FastRAMQPI
+        # GraphQL client in the future
+        gql_client = get_graphql_client(self.settings)
+
+        r = gql_client.execute(
+            GET_ENGAGEMENTS,
+            variable_values={
+                "uuid": str(org_unit_node.uuid),
+                "from_date": datetime.now(tz=ZoneInfo("Europe/Copenhagen")).isoformat(),
+            },
+        )
+
+        return len(r["engagements"]["objects"]) > 0
+
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:
             yield unit
@@ -99,3 +165,6 @@ class OrgTreeDiff:
     def get_units_to_update(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_update:
             yield unit
+
+    def get_units_for_mails_alert(self) -> list[OrgUnitNode]:
+        return self.units_for_mails_alert

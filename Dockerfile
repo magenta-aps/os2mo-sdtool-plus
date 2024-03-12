@@ -9,12 +9,13 @@ ENV PYTHONUNBUFFERED=1 \
     POETRY_HOME=/opt/poetry \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_VERSION=1.3.1 \
-    ENVIRONMENT=production
+    ENVIRONMENT=production \
+    RUN_ALEMBIC_MIGRATIONS=true
 
 RUN curl -sSL https://install.python-poetry.org | python3 -
 COPY pyproject.toml poetry.lock ./
 
-RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root --no-dev
+RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root
 
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic

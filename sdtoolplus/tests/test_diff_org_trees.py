@@ -8,6 +8,7 @@ from more_itertools import first
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..config import SDToolPlusSettings
 from ..diff_org_trees import _uuid_to_nodes_map
 from ..diff_org_trees import Nodes
 from ..diff_org_trees import OrgTreeDiff
@@ -24,6 +25,7 @@ class TestOrgTreeDiff:
         mock_sd_get_organization_response,
         mock_sd_get_department_response,
         mock_mo_org_unit_level_map,
+        sdtoolplus_settings,
     ):
         # Arrange
 
@@ -51,7 +53,7 @@ class TestOrgTreeDiff:
             parent=dep7,
         )
 
-        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+        org_tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
 
         # Act
         org_tree_diff._compare_trees()
@@ -82,6 +84,7 @@ class TestOrgTreeDiff:
         mock_sd_get_organization_response: GetOrganizationResponse,
         mock_sd_get_department_response: GetDepartmentResponse,
         mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
+        sdtoolplus_settings: SDToolPlusSettings,
         expected_units_to_add,
     ):
         # Construct MO and SD trees
@@ -93,7 +96,7 @@ class TestOrgTreeDiff:
         )
 
         # Construct tree diff
-        tree_diff = OrgTreeDiff(mo_tree, sd_tree)
+        tree_diff = OrgTreeDiff(mo_tree, sd_tree, sdtoolplus_settings)
 
         # If test fails, print diagnostic information
         print("MO Tree")

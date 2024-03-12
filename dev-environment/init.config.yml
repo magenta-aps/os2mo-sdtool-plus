@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+root_organisation:
+  municipality_code: null
+
+facets:
+  org_unit_type:
+    Enhed:
+      title: "Enhed"
+      scope: "TEXT"
+  org_unit_level:
+    Afdelings-niveau:
+      title: "Afdelings-niveau"
+      scope: "TEXT"
+    NY0-niveau:
+      title: "NY0-niveau"
+      scope: "TEXT"
+    NY1-niveau:
+      title: "NY1-niveau"
+      scope: "TEXT"
+    NY2-niveau:
+      title: "NY2-niveau"
+      scope: "TEXT"
+    NY3-niveau:
+      title: "NY3-niveau"
+      scope: "TEXT"
+    NY4-niveau:
+      title: "NY4-niveau"
+      scope: "TEXT"
+  engagement_type:
+    TestAnsat:
+      title: "TestAnsat"
+      scope: "TEXT"
+  engagement_job_function:
+    Ninja:
+      title: "Ninja"
+      scope: "TEXT"

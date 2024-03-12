@@ -81,7 +81,7 @@ class TestAddOrgUnitMutation:
             "org_unit_level": str(org_unit_level_uuid),
             "validity": {
                 "from": "1999-01-01T00:00:00+01:00",
-                "to": "2000-01-01T00:00:00+01:00",
+                "to": None,
             },
         }
 

@@ -6,7 +6,9 @@ set -o errexit
 set -o pipefail
 
 # Apply Alembic migrations
-alembic upgrade head
+if [ "$RUN_ALEMBIC_MIGRATIONS" = "true" ]; then
+    alembic upgrade head
+fi
 
 # Run app
 if [ "$ENVIRONMENT" = "development" ]; then

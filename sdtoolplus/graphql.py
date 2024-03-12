@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 
+from gql import gql
 from more_itertools import one
 from raclients.graph.client import PersistentGraphQLClient
 
@@ -14,10 +15,36 @@ from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressTypeUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 
+GET_ENGAGEMENTS = gql(
+    """
+    query GetOrgUnitEngagements($uuid: UUID!, $from_date: DateTime!) {
+      engagements(
+        filter: {
+          from_date: $from_date,
+          to_date: null
+          org_unit: {
+              uuids: [$uuid],
+          }
+        }
+      ) {
+        objects {
+          objects {
+            validity {
+              from
+              to
+            }
+          }
+          uuid
+        }
+      }
+    }
+    """
+)
+
 
 def get_graphql_client(settings: SDToolPlusSettings) -> PersistentGraphQLClient:
     return PersistentGraphQLClient(
-        url=f"{settings.mora_base}/graphql/v7",
+        url=f"{settings.mora_base}/graphql/v21",
         client_id=settings.client_id,
         client_secret=settings.client_secret.get_secret_value(),
         auth_realm=settings.auth_realm,
