@@ -36,6 +36,7 @@ from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
+from ..mo_org_unit_importer import OrgUnitLevelUUID
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
@@ -803,8 +804,32 @@ def sqlite_engine() -> Engine:
 
 
 @pytest.fixture
+async def org_unit_type(graphql_client: GraphQLClient) -> uuid.UUID:
+    r_org_unit_types = await graphql_client._testing__get_facet_class(
+        "org_unit_type", "Enhed"
+    )
+    org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
+    return org_unit_type
+
+
+@pytest.fixture
+async def org_unit_levels(graphql_client: GraphQLClient) -> dict[str, OrgUnitLevelUUID]:
+    org_unit_levels = dict()
+    # Careful now - too much logic in the test code!!
+    for org_unit_level in ["Afdelings-niveau", "NY0-niveau", "NY1-niveau"]:
+        r_org_unit_level = await graphql_client._testing__get_facet_class(
+            "org_unit_level", org_unit_level
+        )
+        org_unit_levels[org_unit_level] = one(r_org_unit_level.objects).current.uuid  # type: ignore
+
+    return org_unit_levels
+
+
+@pytest.fixture
 async def base_tree_builder(
     graphql_client: GraphQLClient,
+    org_unit_type: uuid.UUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
 ) -> TestingCreateOrgUnitOrgUnitCreate:
     """
     Build this MO tree:
@@ -818,28 +843,6 @@ async def base_tree_builder(
             └── <OrgUnitNode: Department 6 (60000000-0000-0000-0000-000000000000)>
 
     """
-
-    # Get org unit type and level UUIDs
-    r_org_unit_types = await graphql_client._testing__get_facet_class(
-        "org_unit_type", "Enhed"
-    )
-    org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
-
-    r_org_unit_level_afd = await graphql_client._testing__get_facet_class(
-        "org_unit_level", "Afdelings-niveau"
-    )
-    org_unit_level_afd = one(r_org_unit_level_afd.objects).current.uuid  # type: ignore
-
-    r_org_unit_level_ny0 = await graphql_client._testing__get_facet_class(
-        "org_unit_level", "NY0-niveau"
-    )
-    org_unit_level_ny0 = one(r_org_unit_level_ny0.objects).current.uuid  # type: ignore
-
-    r_org_unit_level_ny1 = await graphql_client._testing__get_facet_class(
-        "org_unit_level", "NY1-niveau"
-    )
-    org_unit_level_ny1 = one(r_org_unit_level_ny1.objects).current.uuid  # type: ignore
-
     now = datetime(1999, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
 
     # Build basic MO tree
@@ -857,7 +860,7 @@ async def base_tree_builder(
         name="Department 1",
         user_key="dep1",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_ny1,
+        org_unit_level=org_unit_levels["NY1-niveau"],
         from_date=now,
         parent=root.uuid,
     )
@@ -867,7 +870,7 @@ async def base_tree_builder(
         name="Department 2",
         user_key="dep2",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_ny0,
+        org_unit_level=org_unit_levels["NY0-niveau"],
         from_date=now,
         parent=dep1.uuid,
     )
@@ -877,7 +880,7 @@ async def base_tree_builder(
         name="Department 3",
         user_key="dep3",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_afd,
+        org_unit_level=org_unit_levels["Afdelings-niveau"],
         from_date=now,
         parent=dep2.uuid,
     )
@@ -887,7 +890,7 @@ async def base_tree_builder(
         name="Department 4",
         user_key="dep4",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_afd,
+        org_unit_level=org_unit_levels["Afdelings-niveau"],
         from_date=now,
         parent=dep2.uuid,
     )
@@ -897,7 +900,7 @@ async def base_tree_builder(
         name="Department 5",
         user_key="dep5",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_ny0,
+        org_unit_level=org_unit_levels["NY0-niveau"],
         from_date=now,
         parent=dep1.uuid,
     )
@@ -907,7 +910,7 @@ async def base_tree_builder(
         name="Department 6",
         user_key="dep6",
         org_unit_type=org_unit_type,
-        org_unit_level=org_unit_level_ny1,
+        org_unit_level=org_unit_levels["NY1-niveau"],
         from_date=now,
         parent=dep5.uuid,
     )
