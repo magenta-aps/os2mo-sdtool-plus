@@ -816,7 +816,7 @@ async def org_unit_type(graphql_client: GraphQLClient) -> uuid.UUID:
 async def org_unit_levels(graphql_client: GraphQLClient) -> dict[str, OrgUnitLevelUUID]:
     org_unit_levels = dict()
     # Careful now - too much logic in the test code!!
-    for org_unit_level in ["Afdelings-niveau", "NY0-niveau", "NY1-niveau"]:
+    for org_unit_level in ["Afdelings-niveau", "NY0-niveau", "NY1-niveau", "non-SD"]:
         r_org_unit_level = await graphql_client._testing__get_facet_class(
             "org_unit_level", org_unit_level
         )

@@ -12,6 +12,7 @@ from anytree.util import commonancestors
 from more_itertools import first
 from more_itertools import partition
 from pydantic import BaseModel
+from ramodels.mo import Validity
 
 from .config import SDToolPlusSettings
 from .graphql import GET_ENGAGEMENTS
@@ -196,7 +197,9 @@ class OrgTreeDiff:
                     user_key="the parent user_key is not used",
                     name="the parent name is not used",
                 ),
-                validity=unit.validity,
+                validity=Validity(
+                    from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
+                ),
             )
             for unit in mo_units_to_obsolete
         ]
