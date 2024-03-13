@@ -3,6 +3,7 @@
 import uuid
 from unittest.mock import MagicMock
 
+import pytest
 from anytree.render import RenderTree
 from freezegun import freeze_time
 from more_itertools import first
@@ -14,8 +15,10 @@ from ..config import SDToolPlusSettings
 from ..diff_org_trees import _uuid_to_nodes_map
 from ..diff_org_trees import Nodes
 from ..diff_org_trees import OrgTreeDiff
+from ..mo_class import MOClass
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
+from ..mo_org_unit_importer import OrgUnitLevelUUID
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
@@ -378,9 +381,62 @@ class TestOrgTreeDiff:
             uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
         }
 
-        # Make sure set of processed nodes are reset on re-instantiation
+        # Make sure sets  nodes are reset on re-instantiation
         org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
         assert len(org_tree_diff.nodes_processed) == 0
+        assert len(org_tree_diff.engs_in_subtree) == 0
+
+    @pytest.mark.parametrize(
+        "level_name, level_uuid, expected",
+        [
+            ("Afdelings-niveau", uuid.uuid4(), True),
+            ("NY0-niveau", uuid.uuid4(), True),
+            ("NY1-niveau", uuid.uuid4(), True),
+            ("NY3½-niveau", uuid.uuid4(), True),
+            ("non-SD", uuid.uuid4(), False),
+        ],
+    )
+    def test_is_sd_org_unit_level(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        sdtoolplus_settings: SDToolPlusSettings,
+        sd_expected_validity: Validity,
+        level_name: str,
+        level_uuid: OrgUnitLevelUUID,
+        expected: bool,
+    ):
+        # Arrange
+
+        mock_mo_org_unit_level_map = MagicMock()
+        mock_mo_org_unit_level_map.classes = [
+            MOClass(
+                uuid=level_uuid,
+                user_key=level_name,
+                name=level_name,
+            )
+        ]
+
+        # This is just a OU tree required by the OrgTreeDiff constructor. It is
+        # not actually used in this test.
+        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+        org_tree_diff = OrgTreeDiff(
+            mo_tree, mo_tree, mock_mo_org_unit_level_map, sdtoolplus_settings
+        )
+
+        # Act
+        actual = org_tree_diff._is_sd_org_unit_level(
+            OrgUnitNode(
+                uuid=uuid.uuid4(),
+                parent_uuid=uuid.uuid4(),
+                user_key="some node",
+                name="Some Node",
+                org_unit_level_uuid=level_uuid,
+                validity=sd_expected_validity,
+            )
+        )
+
+        # Assert
+        assert actual is expected
 
 
 def test_uuid_to_nodes_map(
