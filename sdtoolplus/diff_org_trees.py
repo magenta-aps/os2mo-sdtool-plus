@@ -185,14 +185,12 @@ class OrgTreeDiff:
                 engs_in_subtree.add(node_to_process.uuid)
                 return True
 
-            for n in node_to_process.children:
-                eng_in_child_subtree = add_node_if_subtree_has_engagements(
+            return any(
+                add_node_if_subtree_has_engagements(
                     subtree_root, n, engs_in_subtree, nodes_processed
                 )
-                if eng_in_child_subtree:
-                    return True
-
-            return False
+                for n in node_to_process.children
+            )
 
         return add_node_if_subtree_has_engagements(
             node, node, self.engs_in_subtree, self.nodes_processed
