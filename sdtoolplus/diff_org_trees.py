@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 
 import structlog
 from anytree.util import commonancestors
-from more_itertools import one
 from more_itertools import partition
 from pydantic import BaseModel
 
@@ -15,6 +14,7 @@ from .config import SDToolPlusSettings
 from .graphql import GET_ENGAGEMENTS
 from .graphql import get_graphql_client
 from .mo_org_unit_importer import OrgUnitNode
+from .mo_org_unit_importer import OrgUnitUUID
 
 logger = structlog.get_logger()
 
@@ -60,6 +60,9 @@ class OrgTreeDiff:
         self.sd_org_tree = sd_org_tree
         self.settings = settings
 
+        self.nodes_processed: set[OrgUnitUUID] = set()
+        self.engs_in_subtree: set[OrgUnitUUID] = set()
+
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
 
@@ -94,7 +97,7 @@ class OrgTreeDiff:
         # Partition units into 1) those with active engagements and 2) those
         # who do not have active engagements
         units_to_move, units_not_to_move = partition(
-            self._has_active_engagements, units_to_move_to_obsolete_subtree
+            self._subtree_has_active_engagements, units_to_move_to_obsolete_subtree
         )
 
         self.units_to_update = list(units_to_update) + list(units_to_move)
@@ -157,6 +160,41 @@ class OrgTreeDiff:
         )
 
         return len(r["engagements"]["objects"]) > 0
+
+    def _subtree_has_active_engagements(self, node: OrgUnitNode) -> bool:
+        """
+        Check if a node or the subtree of the node has active engagements.
+        If so, add the node UUID to the self.engs_in_subtree set. The function
+        will also (always) add the node to self.nodes_processed to enhance
+        performance using memoization.
+        """
+
+        if node.uuid in self.nodes_processed:
+            return True if node.uuid in self.engs_in_subtree else False
+
+        def add_node_if_subtree_has_engagements(
+            subtree_root: OrgUnitNode,
+            node_to_process: OrgUnitNode,
+            engs_in_subtree: set[OrgUnitUUID],
+            nodes_processed: set[OrgUnitUUID],
+        ) -> bool:
+            nodes_processed.add(node_to_process.uuid)
+            active_engs = self._has_active_engagements(node_to_process)
+            if active_engs:
+                engs_in_subtree.add(subtree_root.uuid)
+                engs_in_subtree.add(node_to_process.uuid)
+                return True
+
+            return any(
+                add_node_if_subtree_has_engagements(
+                    subtree_root, n, engs_in_subtree, nodes_processed
+                )
+                for n in node_to_process.children
+            )
+
+        return add_node_if_subtree_has_engagements(
+            node, node, self.engs_in_subtree, self.nodes_processed
+        )
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:
