@@ -94,6 +94,7 @@ mutation _Testing_CreateOrgUnit(
   $user_key: String!,
   $from_date: DateTime!,
   $org_unit_type: UUID!,
+  $org_unit_level: UUID,
   $parent: UUID
 ) {
   org_unit_create(
@@ -103,6 +104,7 @@ mutation _Testing_CreateOrgUnit(
       user_key: $user_key,
       validity: {from: $from_date},
       org_unit_type: $org_unit_type,
+      org_unit_level: $org_unit_level,
       parent: $parent
     }
   ) {

@@ -1,22 +1,29 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import re
 from collections.abc import Iterator
 from datetime import datetime
+from itertools import chain
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog
 from anytree.util import commonancestors
+from more_itertools import first
 from more_itertools import partition
 from pydantic import BaseModel
+from ramodels.mo import Validity
 
 from .config import SDToolPlusSettings
 from .graphql import GET_ENGAGEMENTS
 from .graphql import get_graphql_client
+from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 
 logger = structlog.get_logger()
+
+SD_LEVEL_REGEX = re.compile("^NY.+-niveau$|^Afdelings-niveau$")
 
 
 class Nodes(BaseModel):
@@ -54,10 +61,14 @@ class OrgTreeDiff:
         self,
         mo_org_tree: OrgUnitNode,
         sd_org_tree: OrgUnitNode,
+        mo_org_unit_level_map: MOOrgUnitLevelMap,
         settings: SDToolPlusSettings,
     ):
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
+        self.mo_org_unit_levels = {
+            c.uuid: c.name for c in mo_org_unit_level_map.classes
+        }
         self.settings = settings
 
         self.nodes_processed: set[OrgUnitUUID] = set()
@@ -87,11 +98,20 @@ class OrgTreeDiff:
             )
         ]
 
+        # (see https://redmine.magenta.dk/issues/59057#note-31 regarding the
+        # features below)
+
         # Partition units into 1) the units to update without further checking
         # and 2) those that potentially should be moved to a subtree of on of
         # the obsolete units ("Udgåede afdelinger")
         units_to_update, units_to_move_to_obsolete_subtree = partition(
             self._in_obsolete_units_subtree, self.units_to_update
+        )
+
+        # Add the MO units from SD which are no longer found in SD
+        units_to_move_to_obsolete_subtree = chain(
+            units_to_move_to_obsolete_subtree,
+            self._get_mo_units_to_move_to_obsolete(sd_uuid_map, mo_uuid_map),
         )
 
         # Partition units into 1) those with active engagements and 2) those
@@ -135,6 +155,56 @@ class OrgTreeDiff:
             obsolete_unit_root in ancestors_uuids
             for obsolete_unit_root in self.settings.obsolete_unit_roots
         )
+
+    def _get_mo_units_to_move_to_obsolete(
+        self, sd_uuid_map: dict[UUID, Nodes], mo_uuid_map: dict[UUID, Nodes]
+    ) -> list[OrgUnitNode]:
+        """
+        Get the MO units which should be moved to "Udgåede afdelinger". These
+        are the units that:
+        1) Are found in MO, but not in SD
+        2) Are not created manually in MO, i.e. the units must have an SD
+           org_unit_level ("NY-niveau" or "Afdelings-niveau")
+
+        Args:
+            sd_uuid_map: the SD UUID to Nodes map
+            mo_uuid_map: the MO UUID to Nodes map
+
+        Returns:
+            List of MO units which should be moved to "Udgåede afdelinger"
+        """
+
+        # Move units which are found in the MO tree, but not in the SD tree
+        # *and* who do not have an SD org unit level (NY-niveau or
+        # Afdelings-niveau) to obsolete units
+        mo_units_to_obsolete = [
+            mo_nodes.unit
+            for unit_uuid, mo_nodes in mo_uuid_map.items()
+            if (
+                unit_uuid not in sd_uuid_map.keys()
+                and self._is_sd_org_unit_level(mo_nodes.unit)
+            )
+        ]
+
+        # Update the parent to "Udgåede afdelinger" for the units to move
+        mo_units_to_obsolete = [
+            OrgUnitNode(
+                uuid=unit.uuid,
+                user_key=unit.user_key,
+                name=unit.name,
+                parent=OrgUnitNode(
+                    uuid=first(self.settings.obsolete_unit_roots),
+                    user_key="the parent user_key is not used",
+                    name="the parent name is not used",
+                ),
+                validity=Validity(
+                    from_date=datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
+                ),
+            )
+            for unit in mo_units_to_obsolete
+        ]
+
+        return mo_units_to_obsolete
 
     def _has_active_engagements(self, org_unit_node: OrgUnitNode) -> bool:
         """
@@ -195,6 +265,15 @@ class OrgTreeDiff:
         return add_node_if_subtree_has_engagements(
             node, node, self.engs_in_subtree, self.nodes_processed
         )
+
+    def _is_sd_org_unit_level(self, org_unit_node: OrgUnitNode) -> bool:
+        org_unit_level_uuid = org_unit_node.org_unit_level_uuid
+        assert org_unit_level_uuid is not None
+
+        org_unit_level_name = self.mo_org_unit_levels[org_unit_level_uuid]
+        if SD_LEVEL_REGEX.match(org_unit_level_name):
+            return True
+        return False
 
     def get_units_to_add(self) -> Iterator[OrgUnitNode]:
         for unit in self.units_to_add:

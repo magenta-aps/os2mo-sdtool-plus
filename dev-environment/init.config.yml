@@ -27,6 +27,9 @@ facets:
     NY4-niveau:
       title: "NY4-niveau"
       scope: "TEXT"
+    non-SD:
+      title: "non-SD"
+      scope: "TEXT"
   engagement_type:
     TestAnsat:
       title: "TestAnsat"

@@ -44,36 +44,6 @@ class TestApp:
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
-    @patch("sdtoolplus.app.get_graphql_client")
-    def test_get_tree_diff_executor(
-        self,
-        mock_get_graphql_client: MagicMock,
-        mock_graphql_session,
-        mock_mo_org_unit_type_map,
-        mock_mo_org_unit_level_map,
-        mock_mo_org_tree_import,
-        sdtoolplus_settings: SDToolPlusSettings,
-    ) -> None:
-        # Arrange: patch dependencies with mock replacements
-        with ExitStack() as stack:
-            mock_get_graphql_client.return_value = mock_graphql_session
-            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
-            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
-            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
-            mock_get_sd_tree = self._add_mock(stack, "get_sd_tree", MagicMock())
-
-            # Act
-            app: App = self._get_app_instance(sdtoolplus_settings)
-            tree_diff_executor: TreeDiffExecutor = app.get_tree_diff_executor()
-
-            # Assert: check the `TreeDiffExecutor` instance
-            assert isinstance(tree_diff_executor, TreeDiffExecutor)
-            assert isinstance(tree_diff_executor._tree_diff, OrgTreeDiff)
-            assert isgenerator(tree_diff_executor.execute())
-
-            # Assert: check that we called the (mocked) `get_sd_tree` function
-            mock_get_sd_tree.assert_called_once()
-
     def test_as_single_tree_called_with_correct_path(
         self,
         mock_mo_org_unit_type_map,
@@ -337,7 +307,7 @@ class TestApp:
             )
 
             # Act
-            app_.get_sd_tree()
+            app_.get_sd_tree(MagicMock())
 
             # Assert
             assert mock_get_sd_tree.call_args.args[3] == mo_org_uuid

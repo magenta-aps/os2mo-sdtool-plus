@@ -33,6 +33,7 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .db.rundb import Status
 from .depends import GraphQLClient
+from .mo_class import MOOrgUnitLevelMap
 from .tree_tools import tree_as_string
 
 
@@ -94,7 +95,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         """
         For debugging problems. Prints the SD tree.
         """
-        sd_tree = sdtoolplus.get_sd_tree()
+        mo_org_unit_level_map = MOOrgUnitLevelMap(sdtoolplus.session)
+        sd_tree = sdtoolplus.get_sd_tree(mo_org_unit_level_map)
         return tree_as_string(sd_tree)
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)

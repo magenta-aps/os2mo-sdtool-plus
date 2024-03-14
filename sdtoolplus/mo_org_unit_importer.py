@@ -16,6 +16,7 @@ AddressTypeUUID: TypeAlias = UUID
 OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 OrgUnitLevelUUID: TypeAlias = UUID
+OrgUnitTypeUUID: TypeAlias = UUID
 
 
 class AddressType(pydantic.BaseModel):
