@@ -73,6 +73,7 @@ class OrgTreeDiff:
 
         self.nodes_processed: set[OrgUnitUUID] = set()
         self.engs_in_subtree: set[OrgUnitUUID] = set()
+        self.units_with_engs: set[tuple[str, OrgUnitUUID]] = set()
 
         logger.info("Comparing the SD and MO trees")
         self._compare_trees()
@@ -229,7 +230,11 @@ class OrgTreeDiff:
             },
         )
 
-        return len(r["engagements"]["objects"]) > 0
+        has_active_engagements = len(r["engagements"]["objects"]) > 0
+        if has_active_engagements:
+            self.units_with_engs.add((org_unit_node.name, org_unit_node.uuid))
+
+        return has_active_engagements
 
     def _subtree_has_active_engagements(self, node: OrgUnitNode) -> bool:
         """
@@ -285,3 +290,6 @@ class OrgTreeDiff:
 
     def get_units_for_mails_alert(self) -> list[OrgUnitNode]:
         return self.units_for_mails_alert
+
+    def get_units_with_engagements(self) -> set[tuple[str, OrgUnitUUID]]:
+        return self.units_with_engs
