@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from email.mime.text import MIMEText
+from operator import itemgetter
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from smtplib import SMTPException
@@ -11,20 +12,32 @@ import structlog
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
 logger = structlog.get_logger()
 
 
-def build_email_body(units: list[OrgUnitNode]) -> str:
+def build_email_body(
+    subtree_units: list[OrgUnitNode],
+    units_with_engs: set[tuple[str, OrgUnitUUID]],
+) -> str:
     body = (
         "SDTool+ har detekteret, at følgende enheder skal flyttes til 'Udgåede afdelinger',\n"
-        "men enhederne har stadig et eller flere aktive eller fremtidigt aktive engagementer.\n"
-        "Følgende enheder er derfor ikke blevet flyttet:\n\n"
+        "men enhederne eller en af deres underenheder har stadig et eller flere aktive eller\n"
+        "fremtidigt aktive engagementer. Følgende enheder er derfor ikke blevet flyttet:\n\n"
     )
 
-    for unit in units:
+    for unit in subtree_units:
         logger.debug("Add org unit to email body", name=unit.name, uuid=str(unit.uuid))
         body += f"{unit.name} ({str(unit.uuid)})\n"
+
+    units = list(units_with_engs)
+    units.sort(key=itemgetter(0))
+
+    body += "\nDer blev fundet engagementer i:\n"
+
+    for unit_name, unit_uuid in units:
+        body += f"{unit_name} ({str(unit_uuid)})\n"
 
     return body
 
