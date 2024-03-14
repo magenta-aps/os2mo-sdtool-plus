@@ -67,7 +67,7 @@ class OrgTreeDiff:
         self.mo_org_tree = mo_org_tree
         self.sd_org_tree = sd_org_tree
         self.mo_org_unit_levels = {
-            clazz.uuid: clazz.name for clazz in mo_org_unit_level_map.classes
+            c.uuid: c.name for c in mo_org_unit_level_map.classes
         }
         self.settings = settings
 
