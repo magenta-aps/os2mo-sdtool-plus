@@ -7,7 +7,6 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 def test_build_email_body(random_org_unit_node: OrgUnitNode):
     # Act
     body = build_email_body([random_org_unit_node, random_org_unit_node])
-    print(body)
     # Assert
     assert body == (
         "SDTool+ har detekteret, at følgende enheder skal flyttes til 'Udgåede afdelinger',\n"

@@ -38,6 +38,7 @@ from ..mo_class import MOOrgUnitTypeMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitLevelUUID
 from ..mo_org_unit_importer import OrgUnitNode
+from ..mo_org_unit_importer import OrgUnitTypeUUID
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..mo_org_unit_importer import OrgUUID
 from ..sd.tree import build_tree
@@ -828,7 +829,7 @@ async def org_unit_levels(graphql_client: GraphQLClient) -> dict[str, OrgUnitLev
 @pytest.fixture
 async def base_tree_builder(
     graphql_client: GraphQLClient,
-    org_unit_type: uuid.UUID,
+    org_unit_type: OrgUnitTypeUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
 ) -> TestingCreateOrgUnitOrgUnitCreate:
     """
