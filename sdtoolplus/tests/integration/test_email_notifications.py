@@ -83,6 +83,7 @@ async def test_allowed_move_to_obsolete(
         datetime.now(tz=ZoneInfo("Europe/Copenhagen")) + timedelta(days=7),
     ],
 )
+@patch("sdtoolplus.app.build_email_body")
 @patch("sdtoolplus.app.send_email_notification")
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
@@ -96,6 +97,7 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
     mock_send_email_notification: MagicMock,
+    mock_build_email_body: MagicMock,
     test_client: TestClient,
     graphql_client: GraphQLClient,
     obsolete_unit_tree_builder: None,
@@ -144,10 +146,16 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
 
     await verify()
 
+    call = one(mock_build_email_body.call_args_list)
+    units_for_email_alerts, units_with_engs = call.args
+    assert one(units_for_email_alerts).name == "Department 3"
+    assert one(units_with_engs)[0] == "Department 3"
+
     mock_send_email_notification.assert_called_once()
 
 
 @pytest.mark.integration_test
+@patch("sdtoolplus.app.build_email_body")
 @patch("sdtoolplus.app.send_email_notification")
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
@@ -161,6 +169,7 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement_in_subtree(
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
     mock_send_email_notification: MagicMock,
+    mock_build_email_body: MagicMock,
     test_client: TestClient,
     graphql_client: GraphQLClient,
     obsolete_unit_tree_builder: None,
@@ -207,5 +216,10 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement_in_subtree(
         assert one(dep3.objects).current.parent.uuid == UUID("10000000-0000-0000-0000-000000000000")  # type: ignore
 
     await verify()
+
+    call = one(mock_build_email_body.call_args_list)
+    units_for_email_alerts, units_with_engs = call.args
+    assert one(units_for_email_alerts).name == "Department 2"
+    assert one(units_with_engs)[0] == "Department 3"
 
     mock_send_email_notification.assert_called_once()
