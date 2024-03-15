@@ -385,6 +385,7 @@ class TestOrgTreeDiff:
         org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
         assert len(org_tree_diff.nodes_processed) == 0
         assert len(org_tree_diff.engs_in_subtree) == 0
+        assert len(org_tree_diff.units_with_engs) == 0
 
     @pytest.mark.parametrize(
         "level_name, level_uuid, expected",

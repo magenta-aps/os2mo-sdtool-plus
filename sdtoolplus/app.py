@@ -147,9 +147,11 @@ class App:
             )
 
     def send_email_notification(self):
-        units_for_email_alerts = self.tree_diff.get_units_for_mails_alert()
-        if units_for_email_alerts:
-            email_body = build_email_body(units_for_email_alerts)
+        subtrees_with_engs = self.tree_diff.get_subtrees_with_engs()
+        units_with_engs = self.tree_diff.get_units_with_engagements()
+
+        if subtrees_with_engs:
+            email_body = build_email_body(subtrees_with_engs, units_with_engs)
             send_email_notification(self.settings, email_body)
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> None:
