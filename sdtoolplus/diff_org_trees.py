@@ -122,7 +122,7 @@ class OrgTreeDiff:
         )
 
         self.units_to_update = list(units_to_update) + list(units_to_move)
-        self.units_for_mails_alert = list(units_not_to_move)
+        self.subtrees_with_engs = list(units_not_to_move)
 
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
@@ -288,8 +288,8 @@ class OrgTreeDiff:
         for unit in self.units_to_update:
             yield unit
 
-    def get_units_for_mails_alert(self) -> list[OrgUnitNode]:
-        return self.units_for_mails_alert
+    def get_subtrees_with_engs(self) -> list[OrgUnitNode]:
+        return self.subtrees_with_engs
 
     def get_units_with_engagements(self) -> set[tuple[str, OrgUnitUUID]]:
         return self.units_with_engs

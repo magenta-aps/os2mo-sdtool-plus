@@ -18,7 +18,7 @@ logger = structlog.get_logger()
 
 
 def build_email_body(
-    subtree_units: list[OrgUnitNode],
+    subtrees_with_engs: list[OrgUnitNode],
     units_with_engs: set[tuple[str, OrgUnitUUID]],
 ) -> str:
     body = (
@@ -27,17 +27,18 @@ def build_email_body(
         "fremtidigt aktive engagementer. Følgende enheder er derfor ikke blevet flyttet:\n\n"
     )
 
-    for unit in subtree_units:
+    for unit in subtrees_with_engs:
         logger.debug("Add org unit to email body", name=unit.name, uuid=str(unit.uuid))
         body += f"{unit.name} ({str(unit.uuid)})\n"
 
     units = list(units_with_engs)
+    # Sort by the name of the unit
     units.sort(key=itemgetter(0))
 
-    body += "\nDer blev fundet engagementer i:\n"
-
-    for unit_name, unit_uuid in units:
-        body += f"{unit_name} ({str(unit_uuid)})\n"
+    if units:
+        body += "\nDer blev fundet engagementer i:\n"
+        for unit_name, unit_uuid in units:
+            body += f"{unit_name} ({str(unit_uuid)})\n"
 
     return body
 
