@@ -136,10 +136,26 @@ class OrgTreeDiff:
         Returns:
             True if the unit should be updated and False otherwise
         """
-        return (
-            mo_nodes.parent.uuid != sd_nodes.parent.uuid
-            or mo_nodes.unit.name != sd_nodes.unit.name
-        )
+        parent_should_be_updated = mo_nodes.parent.uuid != sd_nodes.parent.uuid
+        name_should_be_updated = mo_nodes.unit.name != sd_nodes.unit.name
+
+        # For debugging
+        if parent_should_be_updated or name_should_be_updated:
+            logger.debug("Name or parent changed", unit_uuid=str(mo_nodes.unit.uuid))
+        if parent_should_be_updated:
+            logger.debug(
+                "Should update unit parent",
+                old_parent=str(mo_nodes.parent.uuid),
+                new_parent=str(sd_nodes.parent.uuid),
+            )
+        if name_should_be_updated:
+            logger.debug(
+                "Should update unit name",
+                old_name=mo_nodes.unit.name,
+                new_name=sd_nodes.unit.name,
+            )
+
+        return parent_should_be_updated or name_should_be_updated
 
     def _in_obsolete_units_subtree(self, unit: OrgUnitNode) -> bool:
         """
