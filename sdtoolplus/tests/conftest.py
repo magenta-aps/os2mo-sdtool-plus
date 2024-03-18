@@ -764,6 +764,7 @@ def sdtoolplus_settings() -> SDToolPlusSettings:
         sd_password=SecretStr(""),
         db_password=SecretStr("secret"),
         mo_subtree_path_for_root=[],
+        obsolete_unit_roots=[uuid.uuid4()],
     )
 
 

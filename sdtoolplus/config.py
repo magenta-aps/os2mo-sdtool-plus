@@ -1,16 +1,13 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from typing import Any
-
 from fastramqpi.config import Settings as FastRAMQPISettings
 from pydantic import AnyHttpUrl
-from pydantic import AnyUrl
 from pydantic import BaseSettings
 from pydantic import EmailStr
 from pydantic import Field
 from pydantic import PositiveInt
-from pydantic import root_validator
 from pydantic import SecretStr
+from pydantic import validator
 
 from .log import LogLevel
 from .mo_org_unit_importer import OrgUnitUUID
@@ -66,7 +63,7 @@ class SDToolPlusSettings(BaseSettings):
     db_name: str = "sdtool_plus"
 
     # List of UUIDs of "Udgåede afdelinger" (there can be several of these)
-    obsolete_unit_roots: list[OrgUnitUUID] = []
+    obsolete_unit_roots: list[OrgUnitUUID]
 
     # Email notifications
     email_notifications_enabled: bool = False
@@ -76,6 +73,12 @@ class SDToolPlusSettings(BaseSettings):
     email_port: PositiveInt = 465
     email_from: EmailStr | None = None
     email_to: list[EmailStr] = []
+
+    @validator("obsolete_unit_roots")
+    def obsolete_unit_roots_not_empty(cls, v):
+        if len(v) == 0:
+            raise ValueError("OBSOLETE_UNIT_ROOTS cannot not be empty")
+        return v
 
     class Config:
         env_nested_delimiter = "__"
