@@ -274,3 +274,7 @@ async def test_move_obsolete_mo_unit_to_obsolete(
     await verify()
 
     mock_send_email_notification.assert_called_once()
+
+    # Act again - no operations should be performed
+    r = test_client.post("/trigger")
+    assert r.json() == []
