@@ -29,6 +29,7 @@ from .addresses import AddressFixer
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
+from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .db.rundb import Status
@@ -98,6 +99,11 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         mo_org_unit_level_map = MOOrgUnitLevelMap(sdtoolplus.session)
         sd_tree = sdtoolplus.get_sd_tree(mo_org_unit_level_map)
         return tree_as_string(sd_tree)
+
+    @fastapi_router.post("/rundb/delete-last-run")
+    def rundb_delete_last_run():
+        delete_last_run(engine)
+        return {"msg": "Last run deleted"}
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(

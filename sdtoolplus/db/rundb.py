@@ -5,6 +5,7 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 
 import structlog
+from sqlalchemy import delete
 from sqlalchemy import desc
 from sqlalchemy import Engine
 from sqlalchemy import select
@@ -39,4 +40,14 @@ def persist_status(engine: Engine, status: Status) -> None:
             status=status.value,
         )
         session.add(run)
+        session.commit()
+
+
+def delete_last_run(engine: Engine) -> None:
+    with Session(engine) as session:
+        statement = select(RunDB.id).order_by(desc(RunDB.id)).limit(1)
+        last_run_id = session.execute(statement).scalar_one_or_none()
+
+        statement = delete(RunDB).where(RunDB.id == last_run_id)
+        session.execute(statement)
         session.commit()
