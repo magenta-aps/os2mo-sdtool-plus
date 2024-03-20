@@ -3,7 +3,6 @@
 import re
 from collections.abc import Iterator
 from datetime import datetime
-from itertools import chain
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -103,26 +102,33 @@ class OrgTreeDiff:
         # features below)
 
         # Partition units into 1) the units to update without further checking
-        # and 2) those that potentially should be moved to a subtree of on of
+        # and 2) those that potentially should be moved to a subtree of one of
         # the obsolete units ("Udgåede afdelinger")
-        units_to_update, units_to_move_to_obsolete_subtree = partition(
+        units_to_update_iter, units_to_move_to_obsolete_subtree_iter = partition(
             self._in_obsolete_units_subtree, self.units_to_update
         )
 
         # Add the MO units from SD which are no longer found in SD
-        units_to_move_to_obsolete_subtree = chain(
-            units_to_move_to_obsolete_subtree,
-            self._get_mo_units_to_move_to_obsolete(sd_uuid_map, mo_uuid_map),
+        units_to_move_to_obsolete_subtree = list(
+            units_to_move_to_obsolete_subtree_iter
+        ) + self._get_mo_units_to_move_to_obsolete(sd_uuid_map, mo_uuid_map)
+
+        logger.debug(
+            "Units to potentially move to obsolete units",
+            units=units_to_move_to_obsolete_subtree,
         )
 
         # Partition units into 1) those with active engagements and 2) those
         # who do not have active engagements
-        units_to_move, units_not_to_move = partition(
+        units_to_move_iter, units_not_to_move_iter = partition(
             self._subtree_has_active_engagements, units_to_move_to_obsolete_subtree
         )
 
-        self.units_to_update = list(units_to_update) + list(units_to_move)
-        self.subtrees_with_engs = list(units_not_to_move)
+        self.units_to_update = list(units_to_update_iter) + list(units_to_move_iter)
+        self.subtrees_with_engs = list(units_not_to_move_iter)
+
+        logger.debug("Units to update", units_to_update=self.units_to_update)
+        logger.debug("Subtrees with engagements", subtrees=self.subtrees_with_engs)
 
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
@@ -182,6 +188,7 @@ class OrgTreeDiff:
         1) Are found in MO, but not in SD
         2) Are not created manually in MO, i.e. the units must have an SD
            org_unit_level ("NY-niveau" or "Afdelings-niveau")
+        3) Are not already in the subtree of "Udgåede afdelinger"
 
         Args:
             sd_uuid_map: the SD UUID to Nodes map
@@ -191,15 +198,13 @@ class OrgTreeDiff:
             List of MO units which should be moved to "Udgåede afdelinger"
         """
 
-        # Move units which are found in the MO tree, but not in the SD tree
-        # *and* who do not have an SD org unit level (NY-niveau or
-        # Afdelings-niveau) to obsolete units
         mo_units_to_obsolete = [
             mo_nodes.unit
             for unit_uuid, mo_nodes in mo_uuid_map.items()
             if (
                 unit_uuid not in sd_uuid_map.keys()
                 and self._is_sd_org_unit_level(mo_nodes.unit)
+                and not self._in_obsolete_units_subtree(mo_nodes.unit)
             )
         ]
 
@@ -220,6 +225,8 @@ class OrgTreeDiff:
             )
             for unit in mo_units_to_obsolete
         ]
+
+        logger.debug("MO units to move to obsolete", units=mo_units_to_obsolete)
 
         return mo_units_to_obsolete
 
