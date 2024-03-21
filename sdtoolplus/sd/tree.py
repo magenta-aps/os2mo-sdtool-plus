@@ -197,7 +197,7 @@ def _get_extra_nodes(
 
     Args:
         existing_nodes: map from OrgUnitUUID to OrgUnitNode of existing nodes
-        sd_departments: map from OrgUnitUUID to the SD Department object
+        sd_departments_map: map from OrgUnitUUID to the SD Department object
 
     Returns:
         Set of UUIDs of the unit found in the response from GetDepartment,
