@@ -135,7 +135,9 @@ class MOOrgTreeImport:
 
     def get_org_units(self, org_unit: OrgUnitUUID | None = None) -> list[OrgUnit]:
         # TODO: fix this and use the auto-generated GraphQL client instead
-        filter_str = "" if org_unit is None else f'(uuids: "{str(org_unit)}")'
+        filter_str = (
+            "" if org_unit is None else f'(filter: {{uuids: ["{str(org_unit)}"]}})'
+        )
         doc = self.session.execute(
             gql(
                 f"""
