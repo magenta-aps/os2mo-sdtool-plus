@@ -187,6 +187,29 @@ def _process_node(
     return new_node
 
 
+def _get_extra_nodes(
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
+    sd_departments_map: dict[OrgUnitUUID, Department],
+) -> set[OrgUnitUUID]:
+    """
+    Get the "extra" units from the GetDepartments response which are
+    not found in the response from GetOrganization.
+
+    Args:
+        existing_nodes: map from OrgUnitUUID to OrgUnitNode of existing nodes
+        sd_departments_map: map from OrgUnitUUID to the SD Department object
+
+    Returns:
+        Set of UUIDs of the unit found in the response from GetDepartment,
+        but not found in the response from GetOrganization
+    """
+
+    existing_nodes_uuids = set(existing_nodes.keys())
+    get_departments_unit_uuids = set(sd_departments_map.keys())
+
+    return get_departments_unit_uuids.difference(existing_nodes_uuids)
+
+
 def build_tree(
     sd_org: GetOrganizationResponse,
     sd_departments: GetDepartmentResponse,
@@ -225,5 +248,9 @@ def build_tree(
             existing_nodes,
             mo_org_unit_level_map,
         )
+
+    # Add "extra" units i.e. the units from GetDepartment which
+    # are not found in GetOrganization
+    extra_node_uuids = _get_extra_nodes(existing_nodes, sd_departments_map)
 
     return root_node
