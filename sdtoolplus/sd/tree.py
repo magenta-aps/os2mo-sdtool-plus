@@ -15,22 +15,22 @@ from sdclient.responses import GetOrganizationResponse
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
-from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
 
 def create_node(
-    dep_uuid: UUID,
+    dep_uuid: OrgUnitUUID,
     dep_name: str,
     dep_identifier: str,
     dep_level_identifier: str,
     dep_validity: Validity,
     parent: OrgUnitNode,
     addresses: list[Address],
-    existing_nodes: dict[UUID, OrgUnitNode],
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
@@ -69,7 +69,7 @@ def create_node(
 
 def _get_sd_departments_map(
     sd_departments: GetDepartmentResponse,
-) -> dict[UUID, Department]:
+) -> dict[OrgUnitUUID, Department]:
     """
     A mapping from an SD department UUID to the SD departments itself.
 
@@ -114,8 +114,8 @@ def get_sd_validity(dep: Department) -> Validity:
 def _process_node(
     dep_ref: DepartmentReference,
     root_node: OrgUnitNode,
-    sd_departments_map: dict[UUID, Department],
-    existing_nodes: dict[UUID, OrgUnitNode],
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
@@ -211,7 +211,7 @@ def build_tree(
 
     sd_departments_map = _get_sd_departments_map(sd_departments)
 
-    existing_nodes: dict[UUID, OrgUnitNode] = {}
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode] = {}
     for dep_refs in one(sd_org.Organization).DepartmentReference:
         _process_node(
             dep_refs,
