@@ -40,8 +40,11 @@ def create_node(
     Args:
         dep_uuid: the SD department UUID
         dep_name: the SD department name
+        dep_identifier: the SD department identifier
         dep_level_identifier: the SD department level identifier ("NY1", etc.)
+        dep_validity: the SD department validity
         parent: the parent of this node
+        addresses: list of unit addresses
         existing_nodes: dictionary of already existing nodes
         mo_org_unit_level_map: dictionary-like object of MO org unit levels
 
@@ -196,6 +199,8 @@ def build_tree(
     Args:
         sd_org: the response from the SD endpoint GetOrganization
         sd_departments: the response from the SD endpoint GetDepartment
+        mo_org_unit_level_map: the MO org unit level map
+        sd_root_uuid: the SD root UUID
 
     Returns:
         The SD organization unit tree structure.
