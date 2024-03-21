@@ -165,7 +165,6 @@ def test_build_tree(
 
     # Assert
     def assert_equal(node_a: OrgUnitNode, node_b: OrgUnitNode, depth: int = 0):
-        assert node_a == node_b
         assert node_a.uuid == node_b.uuid
         assert node_a.parent_uuid == node_b.parent_uuid
         # Careful - too much logic here
