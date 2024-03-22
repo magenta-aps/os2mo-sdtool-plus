@@ -1,11 +1,15 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
+from unittest.mock import MagicMock
 from uuid import UUID
 from uuid import uuid4
 
 from ramodels.mo import Validity
+from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
+from sdclient.responses import DepartmentParent
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -14,12 +18,14 @@ from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.models import AddressTypeUserKey
+from sdtoolplus.sd.tree import _get_extra_nodes
+from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
 from sdtoolplus.tests.conftest import SharedIdentifier
 
 
-def test_build_tree(
+def test_build_extra_tree(
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_extra_units: GetDepartmentResponse,
     mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -156,8 +162,48 @@ def test_build_tree(
         validity=sd_expected_validity,
     )
 
+    def mock_get_department_parent(
+        query_params: GetDepartmentParentRequest,
+    ) -> GetDepartmentParentResponse:
+        unit_uuid = query_params.DepartmentUUIDIdentifier
+        if unit_uuid == UUID("95000000-0000-0000-0000-000000000000"):
+            return GetDepartmentParentResponse(
+                DepartmentParent=DepartmentParent(
+                    DepartmentUUIDIdentifier=UUID(
+                        "10000000-0000-0000-0000-000000000000"
+                    )
+                )
+            )
+        elif unit_uuid == UUID("96000000-0000-0000-0000-000000000000"):
+            return GetDepartmentParentResponse(
+                DepartmentParent=DepartmentParent(
+                    DepartmentUUIDIdentifier=UUID(
+                        "95000000-0000-0000-0000-000000000000"
+                    )
+                )
+            )
+        elif unit_uuid == UUID("97000000-0000-0000-0000-000000000000"):
+            return GetDepartmentParentResponse(
+                DepartmentParent=DepartmentParent(
+                    DepartmentUUIDIdentifier=UUID(
+                        "96000000-0000-0000-0000-000000000000"
+                    )
+                )
+            )
+
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_department_parent = mock_get_department_parent
+
     # Act
-    actual_tree = build_tree(
+    root_node = build_tree(
+        mock_sd_get_organization_response,
+        mock_sd_get_department_response_extra_units,
+        mock_mo_org_unit_level_map,
+    )
+
+    actual_tree = build_extra_tree(
+        mock_sd_client,
+        root_node,
         mock_sd_get_organization_response,
         mock_sd_get_department_response_extra_units,
         mock_mo_org_unit_level_map,
@@ -222,3 +268,33 @@ def test_get_sd_validity(
     sd_dep.DeactivationDate = date(9999, 12, 31)
     sd_actual_validity = get_sd_validity(sd_dep)
     assert sd_actual_validity.to_date is None
+
+
+def test_get_extra_nodes(
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response_extra_units: GetDepartmentResponse,
+) -> None:
+    # Act
+    extra_node_uuids = _get_extra_nodes(
+        mock_sd_get_organization_response, mock_sd_get_department_response_extra_units
+    )
+
+    # Assert
+    assert extra_node_uuids == {
+        UUID("95000000-0000-0000-0000-000000000000"),
+        UUID("96000000-0000-0000-0000-000000000000"),
+        UUID("97000000-0000-0000-0000-000000000000"),
+    }
+
+
+def test_get_extra_nodes_with_no_extra(
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+) -> None:
+    # Act
+    extra_node_uuids = _get_extra_nodes(
+        mock_sd_get_organization_response, mock_sd_get_department_response
+    )
+
+    # Assert
+    assert extra_node_uuids == set()

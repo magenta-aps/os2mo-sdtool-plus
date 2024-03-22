@@ -5,8 +5,11 @@ from datetime import date
 from datetime import datetime
 from uuid import UUID
 
+from anytree import find
 from more_itertools import one
 from ramodels.mo import Validity
+from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
@@ -188,26 +191,90 @@ def _process_node(
 
 
 def _get_extra_nodes(
-    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
-    sd_departments_map: dict[OrgUnitUUID, Department],
+    sd_org: GetOrganizationResponse,
+    sd_departments: GetDepartmentResponse,
 ) -> set[OrgUnitUUID]:
     """
     Get the "extra" units from the GetDepartments response which are
     not found in the response from GetOrganization.
 
     Args:
-        existing_nodes: map from OrgUnitUUID to OrgUnitNode of existing nodes
-        sd_departments_map: map from OrgUnitUUID to the SD Department object
+        sd_org: the response from the SD endpoint GetOrganization
+        sd_departments: the response from the SD endpoint GetDepartment
 
     Returns:
         Set of UUIDs of the unit found in the response from GetDepartment,
         but not found in the response from GetOrganization
     """
 
-    existing_nodes_uuids = set(existing_nodes.keys())
-    get_departments_unit_uuids = set(sd_departments_map.keys())
+    def add_unit(existing_nodes_uuids: set[OrgUnitUUID], dep_ref: DepartmentReference):
+        existing_nodes_uuids.add(dep_ref.DepartmentUUIDIdentifier)
+        for d in dep_ref.DepartmentReference:
+            add_unit(existing_nodes_uuids, d)
+
+    dep_refs = one(sd_org.Organization).DepartmentReference
+    existing_nodes_uuids: set[OrgUnitUUID] = set()
+    for dep_ref in dep_refs:
+        add_unit(existing_nodes_uuids, dep_ref)
+
+    get_departments_unit_uuids = set(
+        dep.DepartmentUUIDIdentifier for dep in sd_departments.Department
+    )
 
     return get_departments_unit_uuids.difference(existing_nodes_uuids)
+
+
+def _get_parent_node(
+    sd_client: SDClient,
+    unit_uuid: OrgUnitUUID,
+    root_node: OrgUnitNode,
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    sd_institution_uuid_identifier: UUID,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+    extra_node_uuids: set[OrgUnitUUID],
+) -> OrgUnitNode:
+    parent_uuid = sd_client.get_department_parent(
+        GetDepartmentParentRequest(
+            EffectiveDate=datetime.now().date(),
+            DepartmentUUIDIdentifier=unit_uuid,
+        )
+    ).DepartmentParent.DepartmentUUIDIdentifier
+
+    if parent_uuid == sd_institution_uuid_identifier:
+        return root_node
+
+    # Try to find the parent in the root_node tree
+    parent = find(root_node, lambda node: node.uuid == parent_uuid)
+    if parent is not None:
+        return parent
+
+    # Cannot find parent in root_node tree, so we have to create it, but first
+    # we must find the parents parent
+    parents_parent = _get_parent_node(
+        sd_client,
+        parent_uuid,
+        root_node,
+        sd_departments_map,
+        sd_institution_uuid_identifier,
+        mo_org_unit_level_map,
+        extra_node_uuids,
+    )
+    extra_node_uuids.remove(parent_uuid)
+
+    parent_sd_dep = sd_departments_map[parent_uuid]
+    parent_node = OrgUnitNode(
+        uuid=parent_uuid,
+        parent_uuid=parents_parent.uuid,
+        parent=parents_parent,
+        user_key=parent_sd_dep.DepartmentIdentifier,
+        name=parent_sd_dep.DepartmentName,
+        org_unit_level_uuid=mo_org_unit_level_map[
+            parent_sd_dep.DepartmentLevelIdentifier
+        ].uuid,
+        validity=get_sd_validity(parent_sd_dep),
+    )
+
+    return parent_node
 
 
 def build_tree(
@@ -249,8 +316,49 @@ def build_tree(
             mo_org_unit_level_map,
         )
 
-    # Add "extra" units i.e. the units from GetDepartment which
-    # are not found in GetOrganization
-    extra_node_uuids = _get_extra_nodes(existing_nodes, sd_departments_map)
+    return root_node
+
+
+def build_extra_tree(
+    sd_client: SDClient,
+    root_node: OrgUnitNode,
+    sd_org: GetOrganizationResponse,
+    sd_departments: GetDepartmentResponse,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+) -> OrgUnitNode:
+    """
+    Add the "extra" units from the GetDepartments response, which are
+    not found in the response from GetOrganization, to the root_node tree
+    """
+
+    sd_departments_map = _get_sd_departments_map(sd_departments)
+    extra_node_uuids = _get_extra_nodes(sd_org, sd_departments)
+
+    while extra_node_uuids:
+        unit_uuid = extra_node_uuids.pop()
+
+        parent_node = _get_parent_node(
+            sd_client,
+            unit_uuid,
+            root_node,
+            sd_departments_map,
+            sd_org.InstitutionUUIDIdentifier,
+            mo_org_unit_level_map,
+            extra_node_uuids,
+        )
+
+        sd_dep = sd_departments_map[unit_uuid]
+
+        OrgUnitNode(
+            uuid=unit_uuid,
+            parent_uuid=parent_node.uuid,
+            parent=parent_node,
+            user_key=sd_dep.DepartmentIdentifier,
+            name=sd_dep.DepartmentName,
+            org_unit_level_uuid=mo_org_unit_level_map[
+                sd_dep.DepartmentLevelIdentifier
+            ].uuid,
+            validity=get_sd_validity(sd_dep),
+        )
 
     return root_node
