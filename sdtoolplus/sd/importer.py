@@ -70,7 +70,9 @@ def get_sd_tree(
     sd_departments = get_sd_departments(sd_client, institution_identifier, today, today)
     # print(sd_departments)
 
-    return build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
+    return build_tree(
+        sd_client, sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid
+    )
 
 
 def get_sd_units(

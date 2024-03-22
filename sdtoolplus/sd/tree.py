@@ -5,12 +5,16 @@ from datetime import date
 from datetime import datetime
 from uuid import UUID
 
+from anytree import find
 from more_itertools import one
 from ramodels.mo import Validity
+from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
+from setuptools.command.sdist import sdist
 
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
@@ -210,7 +214,95 @@ def _get_extra_nodes(
     return get_departments_unit_uuids.difference(existing_nodes_uuids)
 
 
+def _get_parent_node(
+    sd_client: SDClient,
+    unit_uuid: OrgUnitUUID,
+    root_node: OrgUnitNode,
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    sd_institution_uuid_identifier: UUID,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+    extra_node_uuids: set[OrgUnitUUID],
+) -> OrgUnitNode:
+    parent_uuid = sd_client.get_department_parent(
+        GetDepartmentParentRequest(
+            EffectiveDate=datetime.now().date(),
+            DepartmentUUIDIdentifier=unit_uuid,
+        )
+    ).DepartmentParent.DepartmentUUIDIdentifier
+
+    if parent_uuid == sd_institution_uuid_identifier:
+        return root_node
+
+    # Try to find the parent in the root_node tree
+    parent = find(root_node, lambda node: node.uuid == parent_uuid)
+    if parent is not None:
+        return parent
+
+    # Cannot find parent in root_node tree, so we have to create it, but first
+    # we must find the parents parent
+    extra_node_uuids.remove(parent_uuid)
+    parents_parent = _get_parent_node(
+        sd_client, root_node, parent_uuid, extra_node_uuids
+    )
+
+    parent_sd_dep = sd_departments_map[parent_uuid]
+    parent_node = OrgUnitNode(
+        uuid=parent_uuid,
+        parent_uuid=parents_parent.uuid,
+        parent=parents_parent,
+        user_key=parent_sd_dep.DepartmentIdentifier,
+        name=parent_sd_dep.DepartmentName,
+        org_unit_level_uuid=mo_org_unit_level_map[
+            parent_sd_dep.DepartmentLevelIdentifier
+        ].uuid,
+        validity=get_sd_validity(parent_sd_dep),
+    )
+
+    return parent_node
+
+
+def _build_extra_tree(
+    sd_client: SDClient,
+    root_node: OrgUnitNode,
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    sd_institution_uuid_identifier: UUID,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+    extra_node_uuids: set[OrgUnitUUID],
+):
+    """
+    Add the "extra" units from the GetDepartments response, which are
+    not found in the response from GetOrganization, to the root_node tree
+    """
+    while extra_node_uuids:
+        unit_uuid = extra_node_uuids.pop()
+
+        parent_node = _get_parent_node(
+            sd_client,
+            unit_uuid,
+            root_node,
+            sd_departments_map,
+            sd_institution_uuid_identifier,
+            mo_org_unit_level_map,
+            extra_node_uuids,
+        )
+
+        sd_dep = sd_departments_map[unit_uuid]
+
+        OrgUnitNode(
+            uuid=unit_uuid,
+            parent_uuid=parent_node.uuid,
+            parent=parent_node,
+            user_key=sd_dep.DepartmentIdentifier,
+            name=sd_dep.DepartmentName,
+            org_unit_level_uuid=mo_org_unit_level_map[
+                sd_dep.DepartmentLevelIdentifier
+            ].uuid,
+            validity=get_sd_validity(sd_dep),
+        )
+
+
 def build_tree(
+    sd_client: SDClient,
     sd_org: GetOrganizationResponse,
     sd_departments: GetDepartmentResponse,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -252,5 +344,13 @@ def build_tree(
     # Add "extra" units i.e. the units from GetDepartment which
     # are not found in GetOrganization
     extra_node_uuids = _get_extra_nodes(existing_nodes, sd_departments_map)
+    _build_extra_tree(
+        sd_client,
+        root_node,
+        sd_departments_map,
+        sd_org.InstitutionUUIDIdentifier,
+        mo_org_unit_level_map,
+        extra_node_uuids,
+    )
 
     return root_node
