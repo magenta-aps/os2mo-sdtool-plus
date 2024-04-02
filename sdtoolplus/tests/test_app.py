@@ -1,25 +1,22 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from contextlib import ExitStack
-from inspect import isgenerator
 from typing import Any
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
+from fastramqpi.raclients.graph.client import PersistentGraphQLClient
 from httpx import Response
 from more_itertools import one
-from raclients.graph.client import PersistentGraphQLClient
 
 from ..app import App
 from ..config import SDToolPlusSettings
-from ..diff_org_trees import OrgTreeDiff
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..sd.tree import build_tree
 from ..tree_diff_executor import TreeDiffExecutor
-from .conftest import mock_graphql_session
 from .conftest import SharedIdentifier
 
 
