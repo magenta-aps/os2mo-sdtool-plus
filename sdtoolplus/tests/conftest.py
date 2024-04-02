@@ -13,6 +13,7 @@ import pytest
 from anytree import Resolver
 from fastapi.testclient import TestClient
 from fastramqpi.config import Settings as FastRAMQPISettings
+from fastramqpi.ramqp.config import AMQPConnectionSettings
 from gql.client import AsyncClientSession
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
@@ -20,7 +21,6 @@ from graphql.language.ast import DocumentNode
 from more_itertools import one
 from pydantic import SecretStr
 from ramodels.mo import Validity
-from ramqp.config import AMQPConnectionSettings
 from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import DepartmentParent
 from sdclient.responses import GetDepartmentParentResponse

@@ -7,12 +7,12 @@ from typing import Any
 from typing import Iterator
 
 import structlog
+from fastramqpi.raclients.graph.client import GraphQLClient
 from gql.dsl import dsl_gql
 from gql.dsl import DSLMutation
 from gql.dsl import DSLSchema
 from gql.dsl import DSLType
 from graphql import DocumentNode
-from raclients.graph.client import GraphQLClient
 from ramodels.mo import Validity
 
 from .diff_org_trees import OrgTreeDiff
