@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import pytest
 from fastramqpi.config import Settings as FastRAMQPISettings
-from ramqp.config import AMQPConnectionSettings
+from fastramqpi.ramqp.config import AMQPConnectionSettings
 
 from sdtoolplus.config import SDToolPlusSettings
 
