@@ -21,6 +21,9 @@ from more_itertools import one
 from pydantic import SecretStr
 from ramodels.mo import Validity
 from ramqp.config import AMQPConnectionSettings
+from sdclient.requests import GetDepartmentParentRequest
+from sdclient.responses import DepartmentParent
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from sqlalchemy import create_engine
@@ -430,6 +433,36 @@ def mock_sd_get_department_response_extra_units() -> GetDepartmentResponse:
     }
     sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
     return sd_departments
+
+
+def mock_get_department_parent(
+    query_params: GetDepartmentParentRequest,
+) -> GetDepartmentParentResponse:
+    unit_uuid = query_params.DepartmentUUIDIdentifier
+    if unit_uuid == uuid.UUID("95000000-0000-0000-0000-000000000000"):
+        return GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=uuid.UUID(
+                    "10000000-0000-0000-0000-000000000000"
+                )
+            )
+        )
+    elif unit_uuid == uuid.UUID("96000000-0000-0000-0000-000000000000"):
+        return GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=uuid.UUID(
+                    "95000000-0000-0000-0000-000000000000"
+                )
+            )
+        )
+    elif unit_uuid == uuid.UUID("97000000-0000-0000-0000-000000000000"):
+        return GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=uuid.UUID(
+                    "96000000-0000-0000-0000-000000000000"
+                )
+            )
+        )
 
 
 @pytest.fixture()

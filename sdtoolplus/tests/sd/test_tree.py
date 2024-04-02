@@ -6,10 +6,7 @@ from uuid import UUID
 from uuid import uuid4
 
 from ramodels.mo import Validity
-from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
-from sdclient.responses import DepartmentParent
-from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -22,6 +19,7 @@ from sdtoolplus.sd.tree import _get_extra_nodes
 from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
+from sdtoolplus.tests.conftest import mock_get_department_parent
 from sdtoolplus.tests.conftest import SharedIdentifier
 
 
@@ -161,35 +159,6 @@ def test_build_extra_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
         validity=sd_expected_validity,
     )
-
-    def mock_get_department_parent(
-        query_params: GetDepartmentParentRequest,
-    ) -> GetDepartmentParentResponse:
-        unit_uuid = query_params.DepartmentUUIDIdentifier
-        if unit_uuid == UUID("95000000-0000-0000-0000-000000000000"):
-            return GetDepartmentParentResponse(
-                DepartmentParent=DepartmentParent(
-                    DepartmentUUIDIdentifier=UUID(
-                        "10000000-0000-0000-0000-000000000000"
-                    )
-                )
-            )
-        elif unit_uuid == UUID("96000000-0000-0000-0000-000000000000"):
-            return GetDepartmentParentResponse(
-                DepartmentParent=DepartmentParent(
-                    DepartmentUUIDIdentifier=UUID(
-                        "95000000-0000-0000-0000-000000000000"
-                    )
-                )
-            )
-        elif unit_uuid == UUID("97000000-0000-0000-0000-000000000000"):
-            return GetDepartmentParentResponse(
-                DepartmentParent=DepartmentParent(
-                    DepartmentUUIDIdentifier=UUID(
-                        "96000000-0000-0000-0000-000000000000"
-                    )
-                )
-            )
 
     mock_sd_client = MagicMock()
     mock_sd_client.get_department_parent = mock_get_department_parent
