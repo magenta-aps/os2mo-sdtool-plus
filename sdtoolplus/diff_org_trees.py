@@ -100,12 +100,9 @@ class OrgTreeDiff:
         # Partition units into 1) the units to update without further checking
         # and 2) those that potentially should be moved to a subtree of one of
         # the obsolete units ("Udgåede afdelinger")
-        units_to_update_iter, units_to_move_to_obsolete_subtree_iter = partition(
+        units_to_update, units_to_move_to_obsolete_subtree = partition(
             self._in_obsolete_units_subtree, self.units_to_update
         )
-
-        # Add the MO units from SD which are no longer found in SD
-        units_to_move_to_obsolete_subtree = list(units_to_move_to_obsolete_subtree_iter)
 
         logger.debug(
             "Units to potentially move to obsolete units",
@@ -114,12 +111,12 @@ class OrgTreeDiff:
 
         # Partition units into 1) those with active engagements and 2) those
         # who do not have active engagements
-        units_to_move_iter, units_not_to_move_iter = partition(
+        units_to_move, units_not_to_move = partition(
             self._subtree_has_active_engagements, units_to_move_to_obsolete_subtree
         )
 
-        self.units_to_update = list(units_to_update_iter) + list(units_to_move_iter)
-        self.subtrees_with_engs = list(units_not_to_move_iter)
+        self.units_to_update = list(units_to_update) + list(units_to_move)
+        self.subtrees_with_engs = list(units_not_to_move)
 
         logger.debug("Units to update", units_to_update=self.units_to_update)
         logger.debug("Subtrees with engagements", subtrees=self.subtrees_with_engs)
