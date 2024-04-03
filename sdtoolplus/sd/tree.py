@@ -14,6 +14,7 @@ from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
+from structlog import get_logger
 
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
@@ -23,6 +24,8 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
+
+logger = get_logger()
 
 
 def create_node(
@@ -232,13 +235,16 @@ def _get_parent_node(
     sd_institution_uuid_identifier: UUID,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
     extra_node_uuids: set[OrgUnitUUID],
-) -> OrgUnitNode:
-    parent_uuid = sd_client.get_department_parent(
-        GetDepartmentParentRequest(
-            EffectiveDate=datetime.now().date(),
-            DepartmentUUIDIdentifier=unit_uuid,
-        )
-    ).DepartmentParent.DepartmentUUIDIdentifier
+) -> OrgUnitNode | None:
+    try:
+        parent_uuid = sd_client.get_department_parent(
+            GetDepartmentParentRequest(
+                EffectiveDate=datetime.now().date(),
+                DepartmentUUIDIdentifier=unit_uuid,
+            )
+        ).DepartmentParent.DepartmentUUIDIdentifier
+    except ValueError:
+        return None
 
     if parent_uuid == sd_institution_uuid_identifier:
         return root_node
@@ -259,7 +265,13 @@ def _get_parent_node(
         mo_org_unit_level_map,
         extra_node_uuids,
     )
-    extra_node_uuids.remove(parent_uuid)
+    try:
+        extra_node_uuids.remove(parent_uuid)
+    except KeyError:
+        # Parent already removed
+        pass
+    if parents_parent is None:
+        return None
 
     parent_sd_dep = sd_departments_map[parent_uuid]
     parent_node = OrgUnitNode(
@@ -334,6 +346,12 @@ def build_extra_tree(
     sd_departments_map = _get_sd_departments_map(sd_departments)
     extra_node_uuids = _get_extra_nodes(sd_org, sd_departments)
 
+    logger.debug(
+        "Extra nodes",
+        extra_node_uuids={str(uuid) for uuid in extra_node_uuids},
+        extra_nodes=len(extra_node_uuids),
+    )
+
     while extra_node_uuids:
         unit_uuid = extra_node_uuids.pop()
 
@@ -346,6 +364,8 @@ def build_extra_tree(
             mo_org_unit_level_map,
             extra_node_uuids,
         )
+        if parent_node is None:
+            continue
 
         sd_dep = sd_departments_map[unit_uuid]
 

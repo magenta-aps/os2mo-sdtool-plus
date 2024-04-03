@@ -429,6 +429,33 @@ def mock_sd_get_department_response_extra_units() -> GetDepartmentResponse:
                 "DepartmentName": "Department 97",
                 "DepartmentUUIDIdentifier": "97000000-0000-0000-0000-000000000000",
             },
+            # SD unit with no parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep51",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 51",
+                "DepartmentUUIDIdentifier": "51000000-0000-0000-0000-000000000000",
+            },
+            # SD unit with parent, but child does not have parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep52",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 52",
+                "DepartmentUUIDIdentifier": "52000000-0000-0000-0000-000000000000",
+            },
+            # SD unit with no parent, but its parent has a parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep53",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 53",
+                "DepartmentUUIDIdentifier": "53000000-0000-0000-0000-000000000000",
+            },
         ],
     }
     sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
@@ -460,6 +487,18 @@ def mock_get_department_parent(
             DepartmentParent=DepartmentParent(
                 DepartmentUUIDIdentifier=uuid.UUID(
                     "96000000-0000-0000-0000-000000000000"
+                )
+            )
+        )
+    elif unit_uuid == uuid.UUID("51000000-0000-0000-0000-000000000000"):
+        raise ValueError()
+    elif unit_uuid == uuid.UUID("52000000-0000-0000-0000-000000000000"):
+        raise ValueError()
+    elif unit_uuid == uuid.UUID("53000000-0000-0000-0000-000000000000"):
+        return GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=uuid.UUID(
+                    "52000000-0000-0000-0000-000000000000"
                 )
             )
         )
