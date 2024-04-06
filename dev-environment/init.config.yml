@@ -30,6 +30,13 @@ facets:
     non-SD:
       title: "non-SD"
       scope: "TEXT"
+  org_unit_address_type:
+    Pnummer:
+      title: "P-nummer"
+      scope: "PNUMBER"
+    AddressMailUnit:
+      title: "Postadresse"
+      scope: "DAR"
   engagement_type:
     TestAnsat:
       title: "TestAnsat"
