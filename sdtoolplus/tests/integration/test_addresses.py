@@ -106,3 +106,73 @@ async def test_addresses_update(
         assert actual_postal_address.value == "0a3f50bb-de5a-32b8-e044-0003ba298018"
 
     await verify()
+
+
+@pytest.mark.integration_test
+@patch("sdtoolplus.main.get_engine")
+@patch("sdtoolplus.sd.importer.get_sd_departments")
+@patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.main.run_db_end_operations")
+@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+async def test_addresses_add(
+    mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
+    mock_get_sd_organization: MagicMock,
+    mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
+    test_client: TestClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+) -> None:
+    """
+    We test that a non-existing postal address and an non-existing
+    P-number are added. The call to DAR for the code is not mocked, i.e.
+    the test depends on a working connection to DAR.
+    """
+
+    # Arrange
+    org_uuid = (await graphql_client.get_organization()).uuid
+    mock_sd_get_organization_response.InstitutionUUIDIdentifier = org_uuid
+
+    mock_get_sd_organization.return_value = mock_sd_get_organization_response
+    mock_get_sd_departments.return_value = mock_sd_get_department_response
+
+    pnumber_addr_type_uuid = await get_address_type_uuid(
+        graphql_client, AddressTypeUserKey.PNUMBER_ADDR.value
+    )
+
+    postal_addr_type_uuid = await get_address_type_uuid(
+        graphql_client, AddressTypeUserKey.POSTAL_ADDR.value
+    )
+
+    # Act
+    test_client.post("/trigger/addresses")
+
+    # Assert
+    @retry()
+    async def verify() -> None:
+        # Verify the P-number address
+        actual_pnumber_addresses = await graphql_client._testing__get_org_unit_address(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            addr_type=pnumber_addr_type_uuid,
+        )
+
+        actual_pnumber_address = one(
+            one(actual_pnumber_addresses.objects).current.addresses  # type: ignore
+        )
+        assert actual_pnumber_address.value == "1234567890"
+
+        # Verify the postal address
+        actual_postal_addresses = await graphql_client._testing__get_org_unit_address(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            addr_type=postal_addr_type_uuid,
+        )
+
+        actual_postal_address = one(
+            one(actual_postal_addresses.objects).current.addresses  # type: ignore
+        )
+        assert actual_postal_address.value == "0a3f50bb-de5a-32b8-e044-0003ba298018"
+
+    await verify()
