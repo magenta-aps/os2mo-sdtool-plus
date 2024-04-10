@@ -43,11 +43,11 @@ def test_build_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY1-niveau"].uuid,
         addresses=[
             Address(
-                name="Hovedgaden 1, 1000 Andeby",
+                name="Baggesensvej 14, 6000 Kolding",
                 address_type=AddressType(user_key=AddressTypeUserKey.POSTAL_ADDR.value),
             ),
             Address(
-                name="123456789",
+                name="1234567890",
                 address_type=AddressType(
                     user_key=AddressTypeUserKey.PNUMBER_ADDR.value
                 ),

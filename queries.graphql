@@ -156,3 +156,16 @@ mutation _Testing_CreateEngagement(
     uuid
   }
 }
+
+query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
+  org_units(filter: {uuids: [$org_unit]}) {
+    objects {
+      current {
+        addresses(filter: {address_types: [$addr_type]}) {
+          value
+          user_key
+        }
+      }
+    }
+  }
+}
