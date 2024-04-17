@@ -356,12 +356,12 @@ def mock_sd_get_department_response_extra_units() -> GetDepartmentResponse:
                 "DepartmentName": "Department 1",
                 "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
                 "PostalAddress": {
-                    "StandardAddressIdentifier": "Hovedgaden 1",
-                    "PostalCode": 1000,
-                    "DistrictName": "Andeby",
+                    "StandardAddressIdentifier": "Baggesensvej 14",
+                    "PostalCode": 6000,
+                    "DistrictName": "Kolding",
                     "MunicipalityCode": 2000,
                 },
-                "ProductionUnitIdentifier": 123456789,
+                "ProductionUnitIdentifier": 1234567890,
             },
             {
                 "ActivationDate": "1999-01-01",
