@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import abc
 import datetime
-import uuid
 from typing import Any
 from typing import Iterator
 
@@ -20,7 +19,7 @@ from .filters import filter_by_uuid
 from .filters import remove_by_name
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
-
+from .mo_org_unit_importer import OrgUnitUUID
 
 logger = structlog.get_logger()
 
@@ -88,9 +87,9 @@ class UpdateOrgUnitMutation(Mutation):
             },
         }
 
-    def execute(self) -> uuid.UUID:
+    def execute(self) -> OrgUnitUUID:
         result: dict = self._session.execute(self.gql)
-        return uuid.UUID(result["org_unit_update"]["uuid"])
+        return OrgUnitUUID(result["org_unit_update"]["uuid"])
 
 
 class AddOrgUnitMutation(Mutation):
@@ -124,9 +123,9 @@ class AddOrgUnitMutation(Mutation):
             "validity": self._get_validity_dict_or_none(self.org_unit_node.validity),  # type: ignore
         }
 
-    def execute(self) -> uuid.UUID:
+    def execute(self) -> OrgUnitUUID:
         result: dict = self._session.execute(self.gql)
-        return uuid.UUID(result["org_unit_create"]["uuid"])
+        return OrgUnitUUID(result["org_unit_create"]["uuid"])
 
 
 AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
@@ -150,8 +149,8 @@ class TreeDiffExecutor:
         )
 
     def execute(
-        self, org_unit: uuid.UUID | None = None, dry_run: bool = False
-    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, uuid.UUID]]:
+        self, org_unit: OrgUnitUUID | None = None, dry_run: bool = False
+    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, OrgUnitUUID]]:
         # Add new units first
         units_to_add = filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
         units_to_add = remove_by_name(self.regex_unit_names_to_remove, units_to_add)
