@@ -834,9 +834,11 @@ def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
     mock_org_tree_diff: OrgTreeDiff,
     mock_mo_org_unit_type: MOClass,
+    sdtoolplus_settings: SDToolPlusSettings,
 ) -> TreeDiffExecutor:
     return TreeDiffExecutor(
         mock_graphql_session,  # type: ignore
+        sdtoolplus_settings,
         mock_org_tree_diff,
         mock_mo_org_unit_type,
         [],
