@@ -41,6 +41,16 @@ GET_ENGAGEMENTS = gql(
     """
 )
 
+UPDATE_ORG_UNIT = gql(
+    """
+    mutation UpdateOrgUnit($input: OrganisationUnitUpdateInput!) {
+      org_unit_update(input: $input) {
+        uuid
+      }
+    }
+    """
+)
+
 
 def get_graphql_client(settings: SDToolPlusSettings) -> PersistentGraphQLClient:
     return PersistentGraphQLClient(

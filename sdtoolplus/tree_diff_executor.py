@@ -4,22 +4,34 @@ import abc
 import datetime
 from typing import Any
 from typing import Iterator
+from zoneinfo import ZoneInfo
 
 import structlog
 from fastramqpi.raclients.graph.client import GraphQLClient
+from fastramqpi.raclients.graph.client import PersistentGraphQLClient
 from gql.dsl import dsl_gql
 from gql.dsl import DSLMutation
 from gql.dsl import DSLSchema
 from gql.dsl import DSLType
+from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
 from ramodels.mo import Validity
+from sdclient.client import SDClient
+from sdclient.date_utils import sd_date_to_mo_date_str
+from sdclient.requests import GetDepartmentRequest
 
+from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
 from .filters import filter_by_uuid
 from .filters import remove_by_name
+from .graphql import UPDATE_ORG_UNIT
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
+
+V_DATE_OUTSIDE_ORG_UNIT_RANGE = "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
+TIMEZONE = ZoneInfo("Europe/Copenhagen")
+MIN_MO_DATE = datetime.date(1930, 1, 1)
 
 logger = structlog.get_logger()
 
@@ -131,22 +143,116 @@ class AddOrgUnitMutation(Mutation):
 AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 
 
+def _fix_parent_unit_validity(
+    mo_client: PersistentGraphQLClient,
+    sd_client: SDClient,
+    instutution_identifier: str,
+    org_unit_node: OrgUnitNode,
+) -> None:
+    if org_unit_node.parent is None:
+        logger.warning("Parent is None. No-op")
+        return
+
+    logger.debug(
+        "Fixing validity for parent unit",
+        unit=str(org_unit_node.uuid),
+        parent=str(org_unit_node.parent.uuid),
+    )
+
+    r_get_department = sd_client.get_department(
+        GetDepartmentRequest(
+            InstitutionIdentifier=instutution_identifier,
+            DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
+            ActivationDate=MIN_MO_DATE,
+            DeactivationDate=datetime.datetime.now(tz=TIMEZONE),
+            DepartmentNameIndicator=True,
+            UUIDIndicator=True,
+        )
+    )
+
+    # Get earliest SD start date for the department
+    earliest_start_date = min(dep.ActivationDate for dep in r_get_department.Department)
+
+    # Make sure the parent validity covers the unit validity
+    assert org_unit_node.validity is not None
+    start_date = min(earliest_start_date, org_unit_node.validity.from_date.date())
+    start_date = max(start_date, MIN_MO_DATE)
+
+    # Get latest end date for the department
+    # TODO: we could potentially run into issues with an end date being smaller
+    #       than the end date for the org unit itself
+    end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
+
+    logger.debug(
+        "Update org unit with new dates", start_date=start_date, end_date=end_date
+    )
+
+    try:
+        mo_client.execute(
+            UPDATE_ORG_UNIT,
+            variable_values={
+                "input": {
+                    "uuid": str(org_unit_node.uuid),
+                    "validity": {
+                        "from": sd_date_to_mo_date_str(start_date),
+                        "to": sd_date_to_mo_date_str(end_date),
+                    },
+                }
+            },
+        )
+    except TransportQueryError as error:
+        if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
+            _fix_parent_unit_validity(
+                mo_client, sd_client, instutution_identifier, org_unit_node.parent
+            )
+        else:
+            raise error
+
+
 class TreeDiffExecutor:
     def __init__(
         self,
-        session: GraphQLClient,
+        session: PersistentGraphQLClient,
+        settings: SDToolPlusSettings,
         tree_diff: OrgTreeDiff,
         mo_org_unit_type: MOClass,
         regex_unit_names_to_remove: list[str],
     ):
         self._session = session
+        self.settings = settings
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
         self.regex_unit_names_to_remove = regex_unit_names_to_remove
 
+        self.sd_client = SDClient(
+            self.settings.sd_username,
+            self.settings.sd_password.get_secret_value(),
+        )
+
         logger.debug(
             "Regexs for units to remove by name", regexs=regex_unit_names_to_remove
         )
+
+    def _add_unit(self, add_mutation: AnyMutation, unit: OrgUnitNode) -> OrgUnitUUID:
+        try:
+            result = add_mutation.execute()
+        except TransportQueryError as error:
+            logger.warning(
+                "Date outside org unit range",
+                unit_uuid=str(unit.uuid),
+                parent_uuid=str(unit.parent.uuid),
+            )
+            if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
+                _fix_parent_unit_validity(
+                    self._session,
+                    self.sd_client,
+                    self.settings.sd_institution_identifier,
+                    unit,
+                )
+            else:
+                raise error
+            result = add_mutation.execute()
+        return result
 
     def execute(
         self, org_unit: OrgUnitUUID | None = None, dry_run: bool = False
@@ -159,7 +265,7 @@ class TreeDiffExecutor:
                 self._session, unit, self.mo_org_unit_type
             )
             if not dry_run:
-                result = add_mutation.execute()
+                result = self._add_unit(add_mutation, unit)
             else:
                 result = unit.uuid
             yield unit, add_mutation, result
