@@ -172,12 +172,12 @@ def _fix_unit_validity(
     start_date = max(earliest_start_date, MIN_MO_DATE + datetime.timedelta(days=1))
 
     # Get latest end date for the department
-    latest_end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
+    end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
 
     logger.debug(
-        "SD department dates",
-        earliest_start_date=earliest_start_date,
-        latest_end_date=latest_end_date,
+        "Update org unit with new dates",
+        earliest_start_date=start_date,
+        latest_end_date=end_date,
     )
 
     try:
@@ -188,7 +188,7 @@ def _fix_unit_validity(
                     "uuid": str(org_unit_node.uuid),
                     "validity": {
                         "from": sd_date_to_mo_date_str(start_date),
-                        "to": sd_date_to_mo_date_str(latest_end_date),
+                        "to": sd_date_to_mo_date_str(end_date),
                     },
                 }
             },
@@ -226,6 +226,27 @@ class TreeDiffExecutor:
             "Regexs for units to remove by name", regexs=regex_unit_names_to_remove
         )
 
+    def _add_unit(self, add_mutation: AnyMutation, unit: OrgUnitNode) -> OrgUnitUUID:
+        try:
+            result = add_mutation.execute()
+        except TransportQueryError as error:
+            logger.warning(
+                "Date outside org unit range",
+                unit_uuid=str(unit.uuid),
+                parent_uuid=str(unit.parent.uuid),
+            )
+            if str(error) == V_DATE_OUTSIDE_ORG_UNIT_RANGE:
+                _fix_unit_validity(
+                    self._session,
+                    self.sd_client,
+                    self.settings.sd_institution_identifier,
+                    unit.parent,
+                )
+            else:
+                raise error
+            result = add_mutation.execute()
+        return result
+
     def execute(
         self, org_unit: OrgUnitUUID | None = None, dry_run: bool = False
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, OrgUnitUUID]]:
@@ -237,23 +258,7 @@ class TreeDiffExecutor:
                 self._session, unit, self.mo_org_unit_type
             )
             if not dry_run:
-                try:
-                    result = add_mutation.execute()
-                except TransportQueryError as error:
-                    logger.warning(
-                        "Date outside org unit range",
-                        unit_uuid=str(unit.uuid),
-                        parent_uuid=str(unit.parent.uuid),
-                    )
-                    if str(error) == V_DATE_OUTSIDE_ORG_UNIT_RANGE:
-                        _fix_unit_validity(
-                            self._session,
-                            self.sd_client,
-                            self.settings.sd_institution_identifier,
-                            unit.parent,
-                        )
-                    else:
-                        raise error
+                result = self._add_unit(add_mutation, unit)
             else:
                 result = unit.uuid
             yield unit, add_mutation, result
