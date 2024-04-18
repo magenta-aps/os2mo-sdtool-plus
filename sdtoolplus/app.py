@@ -112,6 +112,7 @@ class App:
         # Construct tree diff executor
         return TreeDiffExecutor(
             self.session,
+            self.settings,
             self.tree_diff,
             mo_org_unit_type,
             self.settings.regex_unit_names_to_remove,
