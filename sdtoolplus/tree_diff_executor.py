@@ -143,22 +143,26 @@ class AddOrgUnitMutation(Mutation):
 AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 
 
-def _fix_unit_validity(
+def _fix_parent_unit_validity(
     mo_client: PersistentGraphQLClient,
     sd_client: SDClient,
     instutution_identifier: str,
     org_unit_node: OrgUnitNode,
 ) -> None:
-    if org_unit_node is None:
-        logger.warning("org_unit_node is None. No-op")
+    if org_unit_node.parent is None:
+        logger.warning("Parent is None. No-op")
         return
 
-    logger.debug("Fixing validity for unit", unit=str(org_unit_node.uuid))
+    logger.debug(
+        "Fixing validity for parent unit",
+        unit=str(org_unit_node.uuid),
+        parent=str(org_unit_node.parent.uuid),
+    )
 
     r_get_department = sd_client.get_department(
         GetDepartmentRequest(
             InstitutionIdentifier=instutution_identifier,
-            DepartmentUUIDIdentifier=org_unit_node.uuid,
+            DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
             ActivationDate=MIN_MO_DATE,
             DeactivationDate=datetime.datetime.now(tz=TIMEZONE),
             DepartmentNameIndicator=True,
@@ -168,16 +172,19 @@ def _fix_unit_validity(
 
     # Get earliest SD start date for the department
     earliest_start_date = min(dep.ActivationDate for dep in r_get_department.Department)
-    # Hack required due to "jernbanetid" issues
-    start_date = max(earliest_start_date, MIN_MO_DATE + datetime.timedelta(days=1))
+
+    # Make sure the parent validity covers the unit validity
+    assert org_unit_node.validity is not None
+    start_date = min(earliest_start_date, org_unit_node.validity.from_date.date())
+    start_date = max(start_date, MIN_MO_DATE)
 
     # Get latest end date for the department
+    # TODO: we could potentially run into issues with an end date being smaller
+    #       than the end date for the org unit itself
     end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
 
     logger.debug(
-        "Update org unit with new dates",
-        earliest_start_date=start_date,
-        latest_end_date=end_date,
+        "Update org unit with new dates", start_date=start_date, end_date=end_date
     )
 
     try:
@@ -195,7 +202,7 @@ def _fix_unit_validity(
         )
     except TransportQueryError as error:
         if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
-            _fix_unit_validity(
+            _fix_parent_unit_validity(
                 mo_client, sd_client, instutution_identifier, org_unit_node.parent
             )
         else:
@@ -236,11 +243,11 @@ class TreeDiffExecutor:
                 parent_uuid=str(unit.parent.uuid),
             )
             if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
-                _fix_unit_validity(
+                _fix_parent_unit_validity(
                     self._session,
                     self.sd_client,
                     self.settings.sd_institution_identifier,
-                    unit.parent,
+                    unit,
                 )
             else:
                 raise error
