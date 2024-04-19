@@ -348,7 +348,7 @@ def build_extra_tree(
 
     logger.debug(
         "Extra nodes",
-        extra_node_uuids={str(uuid) for uuid in extra_node_uuids},
+        # extra_node_uuids={str(uuid) for uuid in extra_node_uuids},
         extra_nodes=len(extra_node_uuids),
     )
 
