@@ -194,7 +194,7 @@ def _fix_unit_validity(
             },
         )
     except TransportQueryError as error:
-        if str(error) == V_DATE_OUTSIDE_ORG_UNIT_RANGE:
+        if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
             _fix_unit_validity(
                 mo_client, sd_client, instutution_identifier, org_unit_node.parent
             )
