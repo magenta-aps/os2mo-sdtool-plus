@@ -78,7 +78,7 @@ class UpdateOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
-        logger.info("Updating org unit...", input=self.dsl_mutation_input)
+        logger.debug("Updating org unit...", input=self.dsl_mutation_input)
         expr = self._dsl_schema_mutation.org_unit_update.args(
             input=self.dsl_mutation_input,
         )
@@ -116,7 +116,7 @@ class AddOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
-        logger.info("Creating org unit...", input=self.dsl_mutation_input)
+        logger.debug("Creating org unit...", input=self.dsl_mutation_input)
         return DSLMutation(
             self._dsl_schema_mutation.org_unit_create.args(
                 input=self.dsl_mutation_input,
@@ -127,7 +127,7 @@ class AddOrgUnitMutation(Mutation):
     def dsl_mutation_input(self) -> dict[str, Any]:
         return {
             "uuid": str(self.org_unit_node.uuid),  # type: ignore
-            "parent": str(self.org_unit_node.parent_uuid),  # type: ignore
+            "parent": str(self.org_unit_node.parent.uuid),  # type: ignore
             "user_key": self.org_unit_node.user_key,
             "name": self.org_unit_node.name,  # type: ignore
             "org_unit_type": str(self.mo_org_unit_type.uuid),  # type: ignore
@@ -184,7 +184,9 @@ def _fix_parent_unit_validity(
     end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
 
     logger.debug(
-        "Update org unit with new dates", start_date=start_date, end_date=end_date
+        "Update parent org unit with new dates",
+        start_date=start_date,
+        end_date=end_date,
     )
 
     try:
@@ -192,7 +194,7 @@ def _fix_parent_unit_validity(
             UPDATE_ORG_UNIT,
             variable_values={
                 "input": {
-                    "uuid": str(org_unit_node.uuid),
+                    "uuid": str(org_unit_node.parent.uuid),
                     "validity": {
                         "from": sd_date_to_mo_date_str(start_date),
                         "to": sd_date_to_mo_date_str(end_date),
@@ -261,6 +263,12 @@ class TreeDiffExecutor:
         units_to_add = filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
         units_to_add = remove_by_name(self.regex_unit_names_to_remove, units_to_add)
         for unit in units_to_add:
+            logger.info(
+                "Add unit",
+                unit=str(unit.uuid),
+                name=unit.name,
+                parent=str(unit.parent.uuid),
+            )
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
             )
@@ -278,6 +286,7 @@ class TreeDiffExecutor:
             self.regex_unit_names_to_remove, units_to_update
         )
         for unit in units_to_update:
+            logger.info("Update unit", unit=str(unit.uuid), name=unit.name)
             update_mutation = UpdateOrgUnitMutation(self._session, unit)
             if not dry_run:
                 result = update_mutation.execute()
