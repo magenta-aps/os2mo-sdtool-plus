@@ -235,7 +235,7 @@ class TreeDiffExecutor:
                 unit_uuid=str(unit.uuid),
                 parent_uuid=str(unit.parent.uuid),
             )
-            if str(error) == V_DATE_OUTSIDE_ORG_UNIT_RANGE:
+            if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
                 _fix_unit_validity(
                     self._session,
                     self.sd_client,
