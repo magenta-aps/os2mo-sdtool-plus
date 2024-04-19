@@ -54,9 +54,18 @@ class TestAddOrgUnitMutation:
         parent_uuid = uuid.uuid4()
         org_unit_level_uuid = uuid.uuid4()
 
+        parent = OrgUnitNode(
+            uuid=parent_uuid,
+            parent=None,
+            user_key="root",
+            name="<root>",
+            org_unit_level_uuid=org_unit_level_uuid,
+            validity=sd_expected_validity,
+        )
+
         org_unit_node = OrgUnitNode(
             uuid=unit_uuid,
-            parent_uuid=parent_uuid,
+            parent=parent,
             user_key="dep",
             name="Department",
             org_unit_level_uuid=org_unit_level_uuid,
