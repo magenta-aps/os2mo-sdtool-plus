@@ -462,6 +462,75 @@ def mock_sd_get_department_response_extra_units() -> GetDepartmentResponse:
     return sd_departments
 
 
+@pytest.fixture()
+def mock_sd_get_department_response_date_range_errors() -> GetDepartmentResponse:
+    sd_departments_json = {
+        "RegionIdentifier": "RI",
+        "InstitutionIdentifier": "II",
+        "Department": [
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep1",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 1",
+                "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Baggesensvej 14",
+                    "PostalCode": 6000,
+                    "DistrictName": "Kolding",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 1234567890,
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep2",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 2",
+                "DepartmentUUIDIdentifier": str(
+                    SharedIdentifier.grandchild_org_unit_uuid
+                ),
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep3",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 3",
+                "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep4",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 4",
+                "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep5",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 5",
+                "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1997-01-01",  # Extend parents ActivationDates
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep6",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 6",
+                "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000",
+            },
+        ],
+    }
+    sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
+    return sd_departments
+
+
 def mock_get_department_parent(
     query_params: GetDepartmentParentRequest,
 ) -> GetDepartmentParentResponse:
