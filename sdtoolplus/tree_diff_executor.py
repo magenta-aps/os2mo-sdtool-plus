@@ -273,7 +273,14 @@ class TreeDiffExecutor:
                 self._session, unit, self.mo_org_unit_type
             )
             if not dry_run:
-                result = self._add_unit(add_mutation, unit)
+                # TODO: remove if-clause below once the integration test
+                #  sdtoolplus.tests.integration.test_tree_structure
+                #  .test_build_tree_date_range_errors
+                #  is passing (awaiting #60582)
+                if self.settings.extend_parent_validities:
+                    result = self._add_unit(add_mutation, unit)
+                else:
+                    result = add_mutation.execute()
             else:
                 result = unit.uuid
             yield unit, add_mutation, result
