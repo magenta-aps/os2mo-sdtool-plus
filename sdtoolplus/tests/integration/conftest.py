@@ -1,5 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
+from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
 
@@ -267,3 +269,64 @@ async def engagement_type(graphql_client: GraphQLClient) -> UUID:
             )
         ).objects  # type: ignore
     ).current.uuid
+
+
+def get_department_response_for_date_range_error(
+    department_number: str,
+    earliest_start_date: date,
+) -> str:
+    """
+    Generate the GetDepartment response for the date range error integration
+    test sdtoolplus.tests.integration.test_tree_structure.test_build_tree_date_range_errors
+
+    Args:
+        department_number: the SD department number
+        earliest_start_date: the earliest department start date in the SD response
+    """
+
+    # Simple asserts to make sure the string is consistent - we are not trying
+    # make a generel and more complex solution here!
+    assert int(department_number) > 0
+    assert date(1950, 1, 1) < earliest_start_date < date(1998, 5, 31)
+
+    dep_id = f"dep{department_number}"
+    dep_uuid = f"{department_number}0000000-0000-0000-0000-000000000000"
+    dep_name = f"Department {department_number}"
+
+    response = '<?xml version="1.0" encoding="UTF-8" ?>'
+    '<GetDepartment20111201 creationDateTime="2024-04-22T10:05:14" >'
+    "  <RequestStructure>"
+    "    <InstitutionIdentifier>XY</InstitutionIdentifier>"
+    "    <DepartmentUUIDIdentifier>50000000-0000-0000-0000-000000000000</DepartmentUUIDIdentifier>"
+    "    <ActivationDate>1930-01-01</ActivationDate>"
+    "    <DeactivationDate>2024-04-22</DeactivationDate>"
+    "    <ContactInformationIndicator>false</ContactInformationIndicator>"
+    "    <DepartmentNameIndicator>true</DepartmentNameIndicator>"
+    "    <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>"
+    "    <PostalAddressIndicator>false</PostalAddressIndicator>"
+    "    <ProductionUnitIndicator>false</ProductionUnitIndicator>"
+    "    <UUIDIndicator>true</UUIDIndicator>"
+    "  </RequestStructure>"
+    "  <RegionIdentifier>RI</RegionIdentifier>"
+    "  <RegionUUIDIdentifier>4b80fcea-c23f-4d3c-82fd-69c0b180c62d</RegionUUIDIdentifier>"
+    "  <InstitutionIdentifier>II</InstitutionIdentifier>"
+    "  <InstitutionUUIDIdentifier>3db34422-91bd-4580-975c-ea240adb5dd9</InstitutionUUIDIdentifier>"
+    "  <Department>"
+    f"    <ActivationDate>{earliest_start_date.strftime('%y-%m-%d')}</ActivationDate>"
+    "    <DeactivationDate>1998-05-31</DeactivationDate>"
+    f"    <DepartmentIdentifier>{dep_id}</DepartmentIdentifier>"
+    f"    <DepartmentUUIDIdentifier>{dep_uuid}</DepartmentUUIDIdentifier>"
+    "    <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>"
+    f"    <DepartmentName>Department{department_number}</DepartmentName>"
+    "  </Department>"
+    "  <Department>"
+    "    <ActivationDate>1998-06-01</ActivationDate>"
+    "    <DeactivationDate>9999-12-31</DeactivationDate>"
+    f"    <DepartmentIdentifier>{dep_id}</DepartmentIdentifier>"
+    f"    <DepartmentUUIDIdentifier>{dep_uuid}</DepartmentUUIDIdentifier>"
+    "    <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>"
+    f"    <DepartmentName>{dep_name}</DepartmentName>"
+    "  </Department>"
+    "</GetDepartment20111201>"
+
+    return response
