@@ -63,6 +63,7 @@ def get_sd_tree(
     institution_identifier: str,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
     sd_root_uuid: UUID | None = None,
+    build_full_tree: bool = False,
 ) -> OrgUnitNode:
     # TODO: add docstring
     today = date.today()
@@ -74,15 +75,16 @@ def get_sd_tree(
 
     root_node = build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
 
-    # Add "extra" units i.e. the units from GetDepartment which
-    # are not found in GetOrganization
-    build_extra_tree(
-        sd_client,
-        root_node,
-        sd_org,
-        sd_departments,
-        mo_org_unit_level_map,
-    )
+    if build_full_tree:
+        # Add "extra" units i.e. the units from GetDepartment which
+        # are not found in GetOrganization
+        build_extra_tree(
+            sd_client,
+            root_node,
+            sd_org,
+            sd_departments,
+            mo_org_unit_level_map,
+        )
 
     return root_node
 
