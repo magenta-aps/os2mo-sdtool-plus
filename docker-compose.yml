@@ -34,6 +34,8 @@ services:
 
       OBSOLETE_UNIT_ROOTS: '["cccccccc-cccc-cccc-cccc-cccccccccccc"]'
 
+      BUILD_EXTRA_TREE: "true"
+
       EMAIL_NOTIFICATIONS_ENABLED: "true"
       EMAIL_HOST: "sandbox.smtp.mailtrap.io"
       EMAIL_USER: "70e58fda8d0426"

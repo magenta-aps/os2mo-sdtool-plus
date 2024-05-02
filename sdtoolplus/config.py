@@ -69,6 +69,12 @@ class SDToolPlusSettings(BaseSettings):
     # exceeds that of the parent unit
     extend_parent_validities: bool = False
 
+    # If true, we will build the entire SD tree, i.e. by including
+    # the units found in SDs GetDepartment, but not in GetOrganization.
+    # The units missing from the latter are those in the tree branches,
+    # who do not have an "Afdelings-niveau" as leafs.
+    build_extra_tree: bool = False
+
     # Email notifications
     email_notifications_enabled: bool = False
     email_host: str = ""

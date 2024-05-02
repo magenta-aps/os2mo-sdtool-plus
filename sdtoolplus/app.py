@@ -66,6 +66,7 @@ class App:
             self.settings.sd_institution_identifier,
             mo_org_unit_level_map,
             sd_root_uuid,
+            self.settings.build_extra_tree,
         )
 
     def get_mo_tree(self) -> OrgUnitNode:
