@@ -167,7 +167,11 @@ async def _update_or_add_postal_address(
     try:
         dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
     except:
-        logger.error("Could not get address UUID from DAR!")
+        logger.error(
+            "Could not get address UUID from DAR!",
+            unit_uuid=str(sd_unit.uuid),
+            addr=sd_addr.name,
+        )
         return None
 
     mo_addr = _get_unit_address(mo_unit, AddressTypeUserKey.POSTAL_ADDR.value)
