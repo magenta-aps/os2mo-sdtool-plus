@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from operator import itemgetter
+from typing import cast
 
 import click
 from httpx import Client
@@ -99,26 +100,38 @@ def main(
     )
 
     csv = []
+    errors = []
     for sd_dep, addr in sd_dep_with_postal_addresses:
-        assert addr is not None
+        try:
+            assert addr is not None
 
-        print(
-            f"{str(sd_dep.DepartmentUUIDIdentifier)}\t{sd_dep.DepartmentName}\t\t{addr}"
-        )
-
-        category, dar_uuid = get_dar_cat_and_uuid(addr)
-        dar_addr_str = get_dar_address(dar_uuid)
-
-        csv.append(
-            (
-                sd_dep.DepartmentName,
-                str(sd_dep.DepartmentUUIDIdentifier),
-                addr,
-                category,
-                dar_addr_str,
-                str(dar_uuid),
+            print(
+                f"{str(sd_dep.DepartmentUUIDIdentifier)}\t{sd_dep.DepartmentName}\t\t{addr}"
             )
-        )
+
+            category, dar_uuid = get_dar_cat_and_uuid(addr)
+            dar_addr_str = get_dar_address(dar_uuid)
+
+            csv.append(
+                (
+                    sd_dep.DepartmentName,
+                    str(sd_dep.DepartmentUUIDIdentifier),
+                    addr,
+                    category,
+                    dar_addr_str,
+                    str(dar_uuid),
+                )
+            )
+        except Exception as err:
+            print(str(err))
+            errors.append(
+                (
+                    str(sd_dep.DepartmentUUIDIdentifier),
+                    cast(str, sd_dep.DepartmentName),
+                    addr or "",
+                    str(err),
+                )
+            )
 
     # Sort after 1) category and 2) unit name
     csv.sort(key=itemgetter(3, 0))
@@ -126,6 +139,9 @@ def main(
 
     with open("/tmp/adresser.csv", "w") as fp:
         fp.writelines([";".join(line) + "\n" for line in csv])
+
+    with open("/tmp/errors.csv", "w") as fp:
+        fp.writelines([";".join(line) + "\n" for line in errors])
 
 
 if __name__ == "__main__":
