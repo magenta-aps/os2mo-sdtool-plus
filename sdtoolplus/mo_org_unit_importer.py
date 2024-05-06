@@ -11,6 +11,7 @@ from gql import gql
 from pydantic import parse_obj_as
 from ramodels.mo import Validity
 
+# TODO: replace TypeAlias with NewType, e.g. NewType("OrgUnitUUID", UUID)
 AddressUUID: TypeAlias = UUID
 AddressTypeUUID: TypeAlias = UUID
 OrgUUID: TypeAlias = UUID
