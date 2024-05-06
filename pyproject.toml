@@ -12,6 +12,7 @@ repository = "https://git.magenta.dk/rammearkitektur/os2mo-sdtool-plus"
 keywords = ["os2mo", "sd"]
 
 [tool.poetry.dependencies]
+# TODO: add ruff - https://docs.astral.sh/ruff/rules/#pydocstyle-d
 ariadne-codegen = {extras = ["subscriptions"], version = "^0.7.1"}
 python = "^3.11"
 click = "^8.1.3"
