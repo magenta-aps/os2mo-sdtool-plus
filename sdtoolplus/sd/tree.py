@@ -265,11 +265,9 @@ def _get_parent_node(
         mo_org_unit_level_map,
         extra_node_uuids,
     )
-    try:
-        extra_node_uuids.remove(parent_uuid)
-    except KeyError:
-        # Parent already removed
-        pass
+
+    extra_node_uuids.discard(parent_uuid)
+
     if parents_parent is None:
         return None
 
