@@ -534,43 +534,24 @@ def mock_sd_get_department_response_date_range_errors() -> GetDepartmentResponse
 def mock_get_department_parent(
     query_params: GetDepartmentParentRequest,
 ) -> GetDepartmentParentResponse:
+    parent_map = {
+        "95000000-0000-0000-0000-000000000000": "10000000-0000-0000-0000-000000000000",
+        "96000000-0000-0000-0000-000000000000": "95000000-0000-0000-0000-000000000000",
+        "97000000-0000-0000-0000-000000000000": "96000000-0000-0000-0000-000000000000",
+        "53000000-0000-0000-0000-000000000000": "52000000-0000-0000-0000-000000000000",
+    }
+
     unit_uuid = query_params.DepartmentUUIDIdentifier
-    if unit_uuid == uuid.UUID("95000000-0000-0000-0000-000000000000"):
+    parent_uuid = parent_map.get(str(unit_uuid))
+
+    if parent_uuid is not None:
         return GetDepartmentParentResponse(
             DepartmentParent=DepartmentParent(
-                DepartmentUUIDIdentifier=uuid.UUID(
-                    "10000000-0000-0000-0000-000000000000"
-                )
+                DepartmentUUIDIdentifier=uuid.UUID(parent_uuid)
             )
         )
-    elif unit_uuid == uuid.UUID("96000000-0000-0000-0000-000000000000"):
-        return GetDepartmentParentResponse(
-            DepartmentParent=DepartmentParent(
-                DepartmentUUIDIdentifier=uuid.UUID(
-                    "95000000-0000-0000-0000-000000000000"
-                )
-            )
-        )
-    elif unit_uuid == uuid.UUID("97000000-0000-0000-0000-000000000000"):
-        return GetDepartmentParentResponse(
-            DepartmentParent=DepartmentParent(
-                DepartmentUUIDIdentifier=uuid.UUID(
-                    "96000000-0000-0000-0000-000000000000"
-                )
-            )
-        )
-    elif unit_uuid == uuid.UUID("51000000-0000-0000-0000-000000000000"):
-        raise ValueError()
-    elif unit_uuid == uuid.UUID("52000000-0000-0000-0000-000000000000"):
-        raise ValueError()
-    elif unit_uuid == uuid.UUID("53000000-0000-0000-0000-000000000000"):
-        return GetDepartmentParentResponse(
-            DepartmentParent=DepartmentParent(
-                DepartmentUUIDIdentifier=uuid.UUID(
-                    "52000000-0000-0000-0000-000000000000"
-                )
-            )
-        )
+
+    raise ValueError()
 
 
 @pytest.fixture()
