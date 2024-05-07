@@ -33,6 +33,7 @@ services:
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
       OBSOLETE_UNIT_ROOTS: '["cccccccc-cccc-cccc-cccc-cccccccccccc"]'
+      EXTEND_PARENT_VALIDITIES: "true"
 
       BUILD_EXTRA_TREE: "true"
 
