@@ -10,6 +10,7 @@ from freezegun import freeze_time
 from graphql import GraphQLSchema
 from more_itertools import one
 
+from ..config import SDToolPlusSettings
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_org_unit_importer import OrgUnitNode
@@ -53,9 +54,18 @@ class TestAddOrgUnitMutation:
         parent_uuid = uuid.uuid4()
         org_unit_level_uuid = uuid.uuid4()
 
+        parent = OrgUnitNode(
+            uuid=parent_uuid,
+            parent=None,
+            user_key="root",
+            name="<root>",
+            org_unit_level_uuid=org_unit_level_uuid,
+            validity=sd_expected_validity,
+        )
+
         org_unit_node = OrgUnitNode(
             uuid=unit_uuid,
-            parent_uuid=parent_uuid,
+            parent=parent,
             user_key="dep",
             name="Department",
             org_unit_level_uuid=org_unit_level_uuid,
@@ -92,9 +102,11 @@ class TestTreeDiffExecutor:
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
         mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
     ):
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
             [],
@@ -119,6 +131,7 @@ class TestTreeDiffExecutor:
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff_move_afd_from_ny_to_ny: OrgTreeDiff,
         mock_mo_org_unit_type,
+        sdtoolplus_settings: SDToolPlusSettings,
     ):
         """
         Test the case where we move an SD "Afdelings-niveau" from
@@ -132,6 +145,7 @@ class TestTreeDiffExecutor:
 
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
             [],
@@ -163,10 +177,12 @@ class TestTreeDiffExecutor:
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
         mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
     ):
         with patch.object(mock_graphql_session, "execute") as mock_session_execute:
             tree_diff_executor = TreeDiffExecutor(
                 mock_graphql_session,  # type: ignore
+                sdtoolplus_settings,
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
                 [],
@@ -184,10 +200,12 @@ class TestTreeDiffExecutor:
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
         mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
             [],
@@ -208,10 +226,12 @@ class TestTreeDiffExecutor:
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
         mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
             ["^.*5$", "^.*6$"],

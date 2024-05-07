@@ -12,6 +12,8 @@ from sdclient.responses import GetOrganizationResponse
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.addresses import get_addresses
+from sdtoolplus.sd.tree import _get_extra_nodes
+from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import create_node
 from sdtoolplus.sd.tree import get_sd_validity
@@ -61,6 +63,7 @@ def get_sd_tree(
     institution_identifier: str,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
     sd_root_uuid: UUID | None = None,
+    build_full_tree: bool = False,
 ) -> OrgUnitNode:
     # TODO: add docstring
     today = date.today()
@@ -70,7 +73,20 @@ def get_sd_tree(
     sd_departments = get_sd_departments(sd_client, institution_identifier, today, today)
     # print(sd_departments)
 
-    return build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
+    root_node = build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
+
+    if build_full_tree:
+        # Add "extra" units i.e. the units from GetDepartment which
+        # are not found in GetOrganization
+        build_extra_tree(
+            sd_client,
+            root_node,
+            sd_org,
+            sd_departments,
+            mo_org_unit_level_map,
+        )
+
+    return root_node
 
 
 def get_sd_units(

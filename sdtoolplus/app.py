@@ -66,6 +66,7 @@ class App:
             self.settings.sd_institution_identifier,
             mo_org_unit_level_map,
             sd_root_uuid,
+            self.settings.build_extra_tree,
         )
 
     def get_mo_tree(self) -> OrgUnitNode:
@@ -112,6 +113,7 @@ class App:
         # Construct tree diff executor
         return TreeDiffExecutor(
             self.session,
+            self.settings,
             self.tree_diff,
             mo_org_unit_type,
             self.settings.regex_unit_names_to_remove,

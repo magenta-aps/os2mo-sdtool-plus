@@ -5,32 +5,38 @@ from datetime import date
 from datetime import datetime
 from uuid import UUID
 
+from anytree import find
 from more_itertools import one
 from ramodels.mo import Validity
+from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
+from structlog import get_logger
 
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
-from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
+logger = get_logger()
+
 
 def create_node(
-    dep_uuid: UUID,
+    dep_uuid: OrgUnitUUID,
     dep_name: str,
     dep_identifier: str,
     dep_level_identifier: str,
     dep_validity: Validity,
     parent: OrgUnitNode,
     addresses: list[Address],
-    existing_nodes: dict[UUID, OrgUnitNode],
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
@@ -40,8 +46,11 @@ def create_node(
     Args:
         dep_uuid: the SD department UUID
         dep_name: the SD department name
+        dep_identifier: the SD department identifier
         dep_level_identifier: the SD department level identifier ("NY1", etc.)
+        dep_validity: the SD department validity
         parent: the parent of this node
+        addresses: list of unit addresses
         existing_nodes: dictionary of already existing nodes
         mo_org_unit_level_map: dictionary-like object of MO org unit levels
 
@@ -69,7 +78,7 @@ def create_node(
 
 def _get_sd_departments_map(
     sd_departments: GetDepartmentResponse,
-) -> dict[UUID, Department]:
+) -> dict[OrgUnitUUID, Department]:
     """
     A mapping from an SD department UUID to the SD departments itself.
 
@@ -114,8 +123,8 @@ def get_sd_validity(dep: Department) -> Validity:
 def _process_node(
     dep_ref: DepartmentReference,
     root_node: OrgUnitNode,
-    sd_departments_map: dict[UUID, Department],
-    existing_nodes: dict[UUID, OrgUnitNode],
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode],
     mo_org_unit_level_map: MOOrgUnitLevelMap,
 ) -> OrgUnitNode:
     """
@@ -184,6 +193,100 @@ def _process_node(
     return new_node
 
 
+def _get_extra_nodes(
+    sd_org: GetOrganizationResponse,
+    sd_departments: GetDepartmentResponse,
+) -> set[OrgUnitUUID]:
+    """
+    Get the "extra" units from the GetDepartments response which are
+    not found in the response from GetOrganization.
+
+    Args:
+        sd_org: the response from the SD endpoint GetOrganization
+        sd_departments: the response from the SD endpoint GetDepartment
+
+    Returns:
+        Set of UUIDs of the unit found in the response from GetDepartment,
+        but not found in the response from GetOrganization
+    """
+
+    def add_unit(existing_nodes_uuids: set[OrgUnitUUID], dep_ref: DepartmentReference):
+        existing_nodes_uuids.add(dep_ref.DepartmentUUIDIdentifier)
+        for d in dep_ref.DepartmentReference:
+            add_unit(existing_nodes_uuids, d)
+
+    dep_refs = one(sd_org.Organization).DepartmentReference
+    existing_nodes_uuids: set[OrgUnitUUID] = set()
+    for dep_ref in dep_refs:
+        add_unit(existing_nodes_uuids, dep_ref)
+
+    get_departments_unit_uuids = set(
+        dep.DepartmentUUIDIdentifier for dep in sd_departments.Department
+    )
+
+    return get_departments_unit_uuids.difference(existing_nodes_uuids)
+
+
+def _get_parent_node(
+    sd_client: SDClient,
+    unit_uuid: OrgUnitUUID,
+    root_node: OrgUnitNode,
+    sd_departments_map: dict[OrgUnitUUID, Department],
+    sd_institution_uuid_identifier: UUID,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+    extra_node_uuids: set[OrgUnitUUID],
+) -> OrgUnitNode | None:
+    try:
+        parent_uuid = sd_client.get_department_parent(
+            GetDepartmentParentRequest(
+                EffectiveDate=datetime.now().date(),
+                DepartmentUUIDIdentifier=unit_uuid,
+            )
+        ).DepartmentParent.DepartmentUUIDIdentifier
+    except ValueError:
+        return None
+
+    if parent_uuid == sd_institution_uuid_identifier:
+        return root_node
+
+    # Try to find the parent in the root_node tree
+    parent = find(root_node, lambda node: node.uuid == parent_uuid)
+    if parent is not None:
+        return parent
+
+    # Cannot find parent in root_node tree, so we have to create it, but first
+    # we must find the parents parent
+    parents_parent = _get_parent_node(
+        sd_client,
+        parent_uuid,
+        root_node,
+        sd_departments_map,
+        sd_institution_uuid_identifier,
+        mo_org_unit_level_map,
+        extra_node_uuids,
+    )
+
+    extra_node_uuids.discard(parent_uuid)
+
+    if parents_parent is None:
+        return None
+
+    parent_sd_dep = sd_departments_map[parent_uuid]
+    parent_node = OrgUnitNode(
+        uuid=parent_uuid,
+        parent_uuid=parents_parent.uuid,
+        parent=parents_parent,
+        user_key=parent_sd_dep.DepartmentIdentifier,
+        name=parent_sd_dep.DepartmentName,
+        org_unit_level_uuid=mo_org_unit_level_map[
+            parent_sd_dep.DepartmentLevelIdentifier
+        ].uuid,
+        validity=get_sd_validity(parent_sd_dep),
+    )
+
+    return parent_node
+
+
 def build_tree(
     sd_org: GetOrganizationResponse,
     sd_departments: GetDepartmentResponse,
@@ -196,6 +299,8 @@ def build_tree(
     Args:
         sd_org: the response from the SD endpoint GetOrganization
         sd_departments: the response from the SD endpoint GetDepartment
+        mo_org_unit_level_map: the MO org unit level map
+        sd_root_uuid: the SD root UUID
 
     Returns:
         The SD organization unit tree structure.
@@ -211,7 +316,7 @@ def build_tree(
 
     sd_departments_map = _get_sd_departments_map(sd_departments)
 
-    existing_nodes: dict[UUID, OrgUnitNode] = {}
+    existing_nodes: dict[OrgUnitUUID, OrgUnitNode] = {}
     for dep_refs in one(sd_org.Organization).DepartmentReference:
         _process_node(
             dep_refs,
@@ -219,6 +324,59 @@ def build_tree(
             sd_departments_map,
             existing_nodes,
             mo_org_unit_level_map,
+        )
+
+    return root_node
+
+
+def build_extra_tree(
+    sd_client: SDClient,
+    root_node: OrgUnitNode,
+    sd_org: GetOrganizationResponse,
+    sd_departments: GetDepartmentResponse,
+    mo_org_unit_level_map: MOOrgUnitLevelMap,
+) -> OrgUnitNode:
+    """
+    Add the "extra" units from the GetDepartments response, which are
+    not found in the response from GetOrganization, to the root_node tree
+    """
+
+    sd_departments_map = _get_sd_departments_map(sd_departments)
+    extra_node_uuids = _get_extra_nodes(sd_org, sd_departments)
+
+    logger.debug(
+        "Extra nodes",
+        # extra_node_uuids={str(uuid) for uuid in extra_node_uuids},
+        extra_nodes=len(extra_node_uuids),
+    )
+
+    while extra_node_uuids:
+        unit_uuid = extra_node_uuids.pop()
+
+        parent_node = _get_parent_node(
+            sd_client,
+            unit_uuid,
+            root_node,
+            sd_departments_map,
+            sd_org.InstitutionUUIDIdentifier,
+            mo_org_unit_level_map,
+            extra_node_uuids,
+        )
+        if parent_node is None:
+            continue
+
+        sd_dep = sd_departments_map[unit_uuid]
+
+        OrgUnitNode(
+            uuid=unit_uuid,
+            parent_uuid=parent_node.uuid,
+            parent=parent_node,
+            user_key=sd_dep.DepartmentIdentifier,
+            name=sd_dep.DepartmentName,
+            org_unit_level_uuid=mo_org_unit_level_map[
+                sd_dep.DepartmentLevelIdentifier
+            ].uuid,
+            validity=get_sd_validity(sd_dep),
         )
 
     return root_node

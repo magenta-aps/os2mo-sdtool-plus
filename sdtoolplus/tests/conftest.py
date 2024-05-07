@@ -13,6 +13,7 @@ import pytest
 from anytree import Resolver
 from fastapi.testclient import TestClient
 from fastramqpi.config import Settings as FastRAMQPISettings
+from fastramqpi.ramqp.config import AMQPConnectionSettings
 from gql.client import AsyncClientSession
 from graphql import build_schema as build_graphql_schema
 from graphql import GraphQLSchema
@@ -20,7 +21,9 @@ from graphql.language.ast import DocumentNode
 from more_itertools import one
 from pydantic import SecretStr
 from ramodels.mo import Validity
-from ramqp.config import AMQPConnectionSettings
+from sdclient.requests import GetDepartmentParentRequest
+from sdclient.responses import DepartmentParent
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from sqlalchemy import create_engine
@@ -340,6 +343,218 @@ def mock_sd_get_department_response() -> GetDepartmentResponse:
 
 
 @pytest.fixture()
+def mock_sd_get_department_response_extra_units() -> GetDepartmentResponse:
+    sd_departments_json = {
+        "RegionIdentifier": "RI",
+        "InstitutionIdentifier": "II",
+        "Department": [
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep1",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 1",
+                "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Baggesensvej 14",
+                    "PostalCode": 6000,
+                    "DistrictName": "Kolding",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 1234567890,
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep2",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 2",
+                "DepartmentUUIDIdentifier": str(
+                    SharedIdentifier.grandchild_org_unit_uuid
+                ),
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep3",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 3",
+                "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep4",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 4",
+                "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep5",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 5",
+                "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep6",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 6",
+                "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep95",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 95",
+                "DepartmentUUIDIdentifier": "95000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep96",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 96",
+                "DepartmentUUIDIdentifier": "96000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep97",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 97",
+                "DepartmentUUIDIdentifier": "97000000-0000-0000-0000-000000000000",
+            },
+            # SD unit with no parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep51",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 51",
+                "DepartmentUUIDIdentifier": "51000000-0000-0000-0000-000000000000",
+            },
+            # SD unit with parent, but child does not have parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep52",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 52",
+                "DepartmentUUIDIdentifier": "52000000-0000-0000-0000-000000000000",
+            },
+            # SD unit with no parent, but its parent has a parent
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep53",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 53",
+                "DepartmentUUIDIdentifier": "53000000-0000-0000-0000-000000000000",
+            },
+        ],
+    }
+    sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
+    return sd_departments
+
+
+@pytest.fixture()
+def mock_sd_get_department_response_date_range_errors() -> GetDepartmentResponse:
+    sd_departments_json = {
+        "RegionIdentifier": "RI",
+        "InstitutionIdentifier": "II",
+        "Department": [
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep1",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                "DepartmentName": "Department 1",
+                "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Baggesensvej 14",
+                    "PostalCode": 6000,
+                    "DistrictName": "Kolding",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 1234567890,
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep2",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 2",
+                "DepartmentUUIDIdentifier": str(
+                    SharedIdentifier.grandchild_org_unit_uuid
+                ),
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep3",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 3",
+                "DepartmentUUIDIdentifier": "30000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep4",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 4",
+                "DepartmentUUIDIdentifier": "40000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep5",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "Department 5",
+                "DepartmentUUIDIdentifier": "50000000-0000-0000-0000-000000000000",
+            },
+            {
+                "ActivationDate": "1997-01-01",  # Extend parents ActivationDates
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep6",
+                "DepartmentLevelIdentifier": "Afdelings-niveau",
+                "DepartmentName": "Department 6",
+                "DepartmentUUIDIdentifier": "60000000-0000-0000-0000-000000000000",
+            },
+        ],
+    }
+    sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
+    return sd_departments
+
+
+def mock_get_department_parent(
+    query_params: GetDepartmentParentRequest,
+) -> GetDepartmentParentResponse:
+    parent_map = {
+        "95000000-0000-0000-0000-000000000000": "10000000-0000-0000-0000-000000000000",
+        "96000000-0000-0000-0000-000000000000": "95000000-0000-0000-0000-000000000000",
+        "97000000-0000-0000-0000-000000000000": "96000000-0000-0000-0000-000000000000",
+        "53000000-0000-0000-0000-000000000000": "52000000-0000-0000-0000-000000000000",
+    }
+
+    unit_uuid = query_params.DepartmentUUIDIdentifier
+    parent_uuid = parent_map.get(str(unit_uuid))
+
+    if parent_uuid is not None:
+        return GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=uuid.UUID(parent_uuid)
+            )
+        )
+
+    raise ValueError()
+
+
+@pytest.fixture()
 def sd_expected_validity() -> Validity:
     """Construct a `Validity` instance corresponding to the periods indicated by the
     `ActivationDate`/`DeactivationDate` pairs returned by
@@ -387,11 +602,11 @@ class MockMOOrgUnitLevelMap(MOOrgUnitLevelMap):
 
 @pytest.fixture()
 def mock_mo_org_unit_level_map(
-    mock_sd_get_department_response,
+    mock_sd_get_department_response_extra_units,
 ) -> MockMOOrgUnitLevelMap:
     valid_dep_level_identifiers: list[str] = [
         dep.DepartmentLevelIdentifier
-        for dep in mock_sd_get_department_response.Department
+        for dep in mock_sd_get_department_response_extra_units.Department
     ]
     return MockMOOrgUnitLevelMap(valid_dep_level_identifiers)
 
@@ -669,9 +884,11 @@ def mock_tree_diff_executor(
     mock_graphql_session: _MockGraphQLSession,
     mock_org_tree_diff: OrgTreeDiff,
     mock_mo_org_unit_type: MOClass,
+    sdtoolplus_settings: SDToolPlusSettings,
 ) -> TreeDiffExecutor:
     return TreeDiffExecutor(
         mock_graphql_session,  # type: ignore
+        sdtoolplus_settings,
         mock_org_tree_diff,
         mock_mo_org_unit_type,
         [],

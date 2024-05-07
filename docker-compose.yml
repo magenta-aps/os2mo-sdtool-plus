@@ -1,7 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-version: "3.10"
-
 networks:
   os2mo_default:
     external: true
@@ -35,6 +33,9 @@ services:
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
 
       OBSOLETE_UNIT_ROOTS: '["cccccccc-cccc-cccc-cccc-cccccccccccc"]'
+      EXTEND_PARENT_VALIDITIES: "true"
+
+      BUILD_EXTRA_TREE: "true"
 
       EMAIL_NOTIFICATIONS_ENABLED: "true"
       EMAIL_HOST: "sandbox.smtp.mailtrap.io"
