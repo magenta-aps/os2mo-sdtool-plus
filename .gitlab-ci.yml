@@ -70,7 +70,7 @@ Test:
 Integration-test:
   extends:
     - .integration-test:mo
-  parallel: 1
+  parallel: 2
   variables:
       RUN_ALEMBIC_MIGRATIONS: "false"
       MORA_BASE: "http://mo:5000"
