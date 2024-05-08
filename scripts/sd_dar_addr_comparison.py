@@ -66,7 +66,7 @@ def _remove_if_obsolete(
         if node is None:
             continue
         ancestor_uuids = [ancestor.uuid for ancestor in node.ancestors]
-        if obsolete_uuid not in ancestor_uuids:
+        if obsolete_uuid not in ancestor_uuids + [node.uuid]:
             non_obsolete_departments.append((sd_dep, addr))
     return non_obsolete_departments
 
