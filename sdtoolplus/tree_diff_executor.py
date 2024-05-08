@@ -203,6 +203,23 @@ def _fix_parent_unit_validity(
             },
         )
     except TransportQueryError as error:
+        # TODO: there is a problem with this recursion since the following need
+        #   to be addressed:
+        #   1) If the call to the below _fix_parent_unit_validity raises a
+        #      TransportQueryError, we need to call the above mo_client.execute
+        #      again, which is currently not happening
+        #   2) we also need to provide the widest validity date range to the
+        #      recursion function and retry the UPDATE_ORG_UNIT call with these
+        #      dates
+        #   3) It has been suggested that the problem described in Redmine case
+        #      #60582 can be circumvented by adding the parent to the
+        #      UPDATE_ORG_UNIT in which case we effectively (maybe) trigger
+        #      a correct date range validation for edit operations - this
+        #      option will however not currently be pursued due to time issues
+        #   Due to the issue in #60582 the call below to to
+        #   _fix_parent_unit_validity will never raise an exception, i.e.
+        #   we will current not run into any issues - other than inconsistent
+        #   data in MO requiring fixing by custom scripts :-)
         if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
             _fix_parent_unit_validity(
                 mo_client, sd_client, instutution_identifier, org_unit_node.parent
