@@ -7,6 +7,7 @@ from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
+import pytest
 from anytree import find_by_attr
 from fastramqpi.raclients.graph.client import PersistentGraphQLClient
 from httpx import Response
@@ -350,8 +351,17 @@ class TestApp:
         # Assert
         assert not app_._should_apply_ny_logic(mutation, MagicMock(), False)
 
-    def test_should_apply_ny_logic_return_false_for_obsolete_unit(
+    @pytest.mark.parametrize(
+        "obsolete_unit_roots, expected",
+        [
+            ([UUID("10000000-0000-0000-0000-000000000000")], False),
+            ([], True),
+        ],
+    )
+    def test_should_apply_ny_logic_for_obsolete_unit(
         self,
+        obsolete_unit_roots: list[OrgUnitUUID],
+        expected: bool,
         sdtoolplus_settings: SDToolPlusSettings,
         mock_sd_get_organization_response: GetOrganizationResponse,
         mock_sd_get_department_response: GetDepartmentResponse,
@@ -367,7 +377,7 @@ class TestApp:
         app_: App = self._get_app_instance(
             sdtoolplus_settings,
             # Pretend Department 1 is equivalent to "Udgåede afdelinger"
-            obsolete_unit_roots=[UUID("10000000-0000-0000-0000-000000000000")],
+            obsolete_unit_roots=obsolete_unit_roots,
         )
 
         dep4 = find_by_attr(
@@ -377,4 +387,4 @@ class TestApp:
         mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4)
 
         # Assert
-        assert not app_._should_apply_ny_logic(mutation, dep4, False)
+        assert app_._should_apply_ny_logic(mutation, dep4, False) == expected
