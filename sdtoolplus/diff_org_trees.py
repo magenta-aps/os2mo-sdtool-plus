@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import re
 from collections.abc import Iterator
 from datetime import datetime
+from functools import partial
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -49,6 +49,25 @@ def _uuid_to_nodes_map(tree: OrgUnitNode) -> dict[UUID, Nodes]:
         return parent_map
 
     return add_node_children(tree, dict())
+
+
+def in_obsolete_units_subtree(
+    unit: OrgUnitNode, obsolete_unit_roots: list[OrgUnitUUID]
+) -> bool:
+    """
+    Check if the unit is in the subtree of one of the obsolete units ("Udgåede afdelinger")
+
+    Args:
+         unit: the unit to check
+
+    Returns:
+        True if the unit is in one of the subtrees of obsolete units or False otherwise
+    """
+    ancestors_uuids = [node.uuid for node in commonancestors(unit)]
+    return any(
+        obsolete_unit_root in ancestors_uuids
+        for obsolete_unit_root in obsolete_unit_roots
+    )
 
 
 class OrgTreeDiff:
@@ -101,7 +120,11 @@ class OrgTreeDiff:
         # and 2) those that potentially should be moved to a subtree of one of
         # the obsolete units ("Udgåede afdelinger")
         units_to_update, units_to_move_to_obsolete_subtree = partition(
-            self._in_obsolete_units_subtree, self.units_to_update
+            partial(
+                in_obsolete_units_subtree,
+                obsolete_unit_roots=self.settings.obsolete_unit_roots,
+            ),
+            self.units_to_update,
         )
 
         logger.debug(
@@ -153,22 +176,6 @@ class OrgTreeDiff:
             )
 
         return parent_should_be_updated or name_should_be_updated
-
-    def _in_obsolete_units_subtree(self, unit: OrgUnitNode) -> bool:
-        """
-        Check if the unit is in the subtree of one of the obsolete units ("Udgåede afdelinger")
-
-        Args:
-             unit: the unit to check
-
-        Returns:
-            True if the unit is in one of the subtrees of obsolete units or False otherwise
-        """
-        ancestors_uuids = [node.uuid for node in commonancestors(unit)]
-        return any(
-            obsolete_unit_root in ancestors_uuids
-            for obsolete_unit_root in self.settings.obsolete_unit_roots
-        )
 
     def _has_active_engagements(self, org_unit_node: OrgUnitNode) -> bool:
         """
