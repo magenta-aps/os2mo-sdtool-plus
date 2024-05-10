@@ -75,6 +75,10 @@ class SDToolPlusSettings(BaseSettings):
     # who do not have an "Afdelings-niveau" as leafs.
     build_extra_tree: bool = False
 
+    # If true, only the postal addresses from the line management
+    # ("Linjeorganisationen") org units are synchronized
+    only_sync_line_mgmt_postal_addresses: bool = False
+
     # Email notifications
     email_notifications_enabled: bool = False
     email_host: str = ""
