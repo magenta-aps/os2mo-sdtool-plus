@@ -1024,9 +1024,7 @@ def sqlite_engine() -> Engine:
 
 @pytest.fixture
 async def org_unit_type(graphql_client: GraphQLClient) -> uuid.UUID:
-    r_org_unit_types = await graphql_client._testing__get_facet_class(
-        "org_unit_type", "Enhed"
-    )
+    r_org_unit_types = await graphql_client.get_facet_class("org_unit_type", "Enhed")
     org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
     return org_unit_type
 
@@ -1036,7 +1034,7 @@ async def org_unit_levels(graphql_client: GraphQLClient) -> dict[str, OrgUnitLev
     org_unit_levels = dict()
     # Careful now - too much logic in the test code!!
     for org_unit_level in ["Afdelings-niveau", "NY0-niveau", "NY1-niveau", "non-SD"]:
-        r_org_unit_level = await graphql_client._testing__get_facet_class(
+        r_org_unit_level = await graphql_client.get_facet_class(
             "org_unit_level", org_unit_level
         )
         org_unit_levels[org_unit_level] = one(r_org_unit_level.objects).current.uuid  # type: ignore
@@ -1141,9 +1139,7 @@ async def base_tree_builder(
 async def obsolete_unit_tree_builder(
     graphql_client: GraphQLClient, base_tree_builder: TestingCreateOrgUnitOrgUnitCreate
 ):
-    r_org_unit_types = await graphql_client._testing__get_facet_class(
-        "org_unit_type", "Enhed"
-    )
+    r_org_unit_types = await graphql_client.get_facet_class("org_unit_type", "Enhed")
     org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
 
     now = datetime(1999, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
