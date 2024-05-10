@@ -156,7 +156,7 @@ class TestApp:
                 ]
             )
             assert mock_graphql_execute.call_count == num_add_or_update_ops
-            assert mock_client_post.call_count == num_add_or_update_ops
+            assert mock_client_post.call_count == 2  # No of update operations
 
     def test_execute_filter(
         self,
