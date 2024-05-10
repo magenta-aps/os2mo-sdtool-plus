@@ -25,6 +25,7 @@ from .mo_org_unit_importer import OrgUnitUUID
 from .sd.importer import get_sd_tree
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
+from .tree_diff_executor import UpdateOrgUnitMutation
 
 
 logger = structlog.get_logger()
@@ -140,7 +141,7 @@ class App:
             org_unit=org_unit, dry_run=dry_run
         ):
             logger.info("Successfully executed mutation", org_unit=str(org_unit))
-            if not dry_run:
+            if isinstance(mutation, UpdateOrgUnitMutation) and not dry_run:
                 self._call_apply_ny_logic(result)  # type: ignore
             yield (
                 org_unit_node,
