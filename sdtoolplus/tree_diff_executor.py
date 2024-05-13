@@ -21,6 +21,7 @@ from sdclient.date_utils import sd_date_to_mo_date_str
 from sdclient.requests import GetDepartmentRequest
 
 from .config import SDToolPlusSettings
+from .config import TIMEZONE
 from .diff_org_trees import OrgTreeDiff
 from .filters import filter_by_uuid
 from .filters import remove_by_name
@@ -30,7 +31,6 @@ from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 
 V_DATE_OUTSIDE_ORG_UNIT_RANGE = "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
-TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 logger = structlog.get_logger()
 
@@ -162,7 +162,7 @@ def _fix_parent_unit_validity(
         GetDepartmentRequest(
             InstitutionIdentifier=settings.sd_institution_identifier,
             DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
-            ActivationDate=settings.min_mo_date,
+            ActivationDate=settings.min_mo_datetime,
             DeactivationDate=datetime.datetime.now(tz=TIMEZONE),
             DepartmentNameIndicator=True,
             UUIDIndicator=True,
@@ -175,7 +175,7 @@ def _fix_parent_unit_validity(
     # Make sure the parent validity covers the unit validity
     assert org_unit_node.validity is not None
     start_date = min(earliest_start_date, org_unit_node.validity.from_date.date())
-    start_date = max(start_date, settings.min_mo_date)
+    start_date = max(start_date, settings.min_mo_datetime)
 
     # Get latest end date for the department
     # TODO: we could potentially run into issues with an end date being smaller

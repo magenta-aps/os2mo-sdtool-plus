@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastramqpi.config import Settings as FastRAMQPISettings
 from pydantic import AnyHttpUrl
@@ -13,6 +14,9 @@ from pydantic import validator
 
 from .log import LogLevel
 from .mo_org_unit_importer import OrgUnitUUID
+
+
+TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -81,9 +85,9 @@ class SDToolPlusSettings(BaseSettings):
     # ("Linjeorganisationen") org units are synchronized
     only_sync_line_mgmt_postal_addresses: bool = False
 
-    # Truncate the SD unit start dates to min_mo_date, if the SD start date
-    # for a unit is before this date
-    min_mo_date: date = date(1930, 1, 1)
+    # Truncate the SD unit start dates to min_mo_datetime, if the SD start date
+    # for a unit is before this datetime
+    min_mo_datetime: datetime = datetime(1930, 1, 1, tzinfo=TIMEZONE)
 
     # Email notifications
     email_notifications_enabled: bool = False
