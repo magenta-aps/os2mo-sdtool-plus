@@ -160,19 +160,19 @@ class OrgTreeDiff:
         name_should_be_updated = mo_nodes.unit.name != sd_nodes.unit.name
 
         # For debugging
-        if parent_should_be_updated or name_should_be_updated:
-            logger.debug("Name or parent changed", unit_uuid=str(mo_nodes.unit.uuid))
         if parent_should_be_updated:
             logger.debug(
                 "Should update unit parent",
                 old_parent=str(mo_nodes.parent.uuid),
                 new_parent=str(sd_nodes.parent.uuid),
+                unit_uuid=str(mo_nodes.unit.uuid),
             )
         if name_should_be_updated:
             logger.debug(
                 "Should update unit name",
                 old_name=mo_nodes.unit.name,
                 new_name=sd_nodes.unit.name,
+                unit_uuid=str(mo_nodes.unit.uuid),
             )
 
         return parent_should_be_updated or name_should_be_updated
