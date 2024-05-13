@@ -31,7 +31,6 @@ from .mo_org_unit_importer import OrgUnitUUID
 
 V_DATE_OUTSIDE_ORG_UNIT_RANGE = "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
-MIN_MO_DATE = datetime.date(1930, 1, 1)
 
 logger = structlog.get_logger()
 
@@ -146,7 +145,7 @@ AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 def _fix_parent_unit_validity(
     mo_client: PersistentGraphQLClient,
     sd_client: SDClient,
-    instutution_identifier: str,
+    settings: SDToolPlusSettings,
     org_unit_node: OrgUnitNode,
 ) -> None:
     if org_unit_node.parent is None:
@@ -161,9 +160,9 @@ def _fix_parent_unit_validity(
 
     r_get_department = sd_client.get_department(
         GetDepartmentRequest(
-            InstitutionIdentifier=instutution_identifier,
+            InstitutionIdentifier=settings.sd_institution_identifier,
             DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
-            ActivationDate=MIN_MO_DATE,
+            ActivationDate=settings.min_mo_date,
             DeactivationDate=datetime.datetime.now(tz=TIMEZONE),
             DepartmentNameIndicator=True,
             UUIDIndicator=True,
@@ -176,7 +175,7 @@ def _fix_parent_unit_validity(
     # Make sure the parent validity covers the unit validity
     assert org_unit_node.validity is not None
     start_date = min(earliest_start_date, org_unit_node.validity.from_date.date())
-    start_date = max(start_date, MIN_MO_DATE)
+    start_date = max(start_date, settings.min_mo_date)
 
     # Get latest end date for the department
     # TODO: we could potentially run into issues with an end date being smaller
@@ -222,7 +221,7 @@ def _fix_parent_unit_validity(
         #   data in MO requiring fixing by custom scripts :-)
         if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
             _fix_parent_unit_validity(
-                mo_client, sd_client, instutution_identifier, org_unit_node.parent
+                mo_client, sd_client, settings, org_unit_node.parent
             )
         else:
             raise error
@@ -265,7 +264,7 @@ class TreeDiffExecutor:
                 _fix_parent_unit_validity(
                     self._session,
                     self.sd_client,
-                    self.settings.sd_institution_identifier,
+                    self.settings,
                     unit,
                 )
             else:
