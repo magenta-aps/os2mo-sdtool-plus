@@ -11,6 +11,7 @@ from httpx import Timeout
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
+from .diff_org_trees import in_obsolete_units_subtree
 from .diff_org_trees import OrgTreeDiff
 from .email import build_email_body
 from .email import send_email_notification
@@ -141,7 +142,7 @@ class App:
             org_unit=org_unit, dry_run=dry_run
         ):
             logger.info("Successfully executed mutation", org_unit=str(org_unit))
-            if isinstance(mutation, UpdateOrgUnitMutation) and not dry_run:
+            if self._should_apply_ny_logic(mutation, org_unit_node, dry_run):
                 self._call_apply_ny_logic(result)  # type: ignore
             yield (
                 org_unit_node,
@@ -156,6 +157,19 @@ class App:
         if subtrees_with_engs:
             email_body = build_email_body(subtrees_with_engs, units_with_engs)
             send_email_notification(self.settings, email_body)
+
+    def _should_apply_ny_logic(
+        self, mutation: AnyMutation, org_unit_node: OrgUnitNode, dry_run: bool
+    ) -> bool:
+        if (
+            dry_run
+            or not isinstance(mutation, UpdateOrgUnitMutation)
+            or in_obsolete_units_subtree(
+                org_unit_node, self.settings.obsolete_unit_roots
+            )
+        ):
+            return False
+        return True
 
     def _call_apply_ny_logic(self, org_unit_uuid: OrgUnitUUID) -> None:
         logger.info("Apply NY logic", org_unit_uuid=org_unit_uuid)

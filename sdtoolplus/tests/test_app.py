@@ -7,16 +7,24 @@ from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
+import pytest
+from anytree import find_by_attr
 from fastramqpi.raclients.graph.client import PersistentGraphQLClient
 from httpx import Response
 from more_itertools import one
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 
 from ..app import App
 from ..config import SDToolPlusSettings
+from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import OrgUnitNode
 from ..mo_org_unit_importer import OrgUnitUUID
 from ..sd.tree import build_tree
+from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import TreeDiffExecutor
+from ..tree_diff_executor import UpdateOrgUnitMutation
+from .conftest import _MockGraphQLSession
 from .conftest import SharedIdentifier
 
 
@@ -320,3 +328,63 @@ class TestApp:
 
         # Assert
         assert app_.client.timeout.read == 120
+
+    def test_should_apply_ny_logic_return_false_for_dry_run(
+        self,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        app_: App = self._get_app_instance(sdtoolplus_settings)
+
+        # Assert
+        assert not app_._should_apply_ny_logic(MagicMock(), MagicMock(), True)
+
+    def test_should_apply_ny_logic_return_false_for_add_operation(
+        self,
+        sdtoolplus_settings: SDToolPlusSettings,
+        mock_graphql_session: _MockGraphQLSession,
+    ):
+        # Arrange
+        app_: App = self._get_app_instance(sdtoolplus_settings)
+        mutation = AddOrgUnitMutation(mock_graphql_session, MagicMock(), MagicMock())
+
+        # Assert
+        assert not app_._should_apply_ny_logic(mutation, MagicMock(), False)
+
+    @pytest.mark.parametrize(
+        "obsolete_unit_roots, expected",
+        [
+            ([UUID("10000000-0000-0000-0000-000000000000")], False),
+            ([], True),
+        ],
+    )
+    def test_should_apply_ny_logic_for_obsolete_unit(
+        self,
+        obsolete_unit_roots: list[OrgUnitUUID],
+        expected: bool,
+        sdtoolplus_settings: SDToolPlusSettings,
+        mock_sd_get_organization_response: GetOrganizationResponse,
+        mock_sd_get_department_response: GetDepartmentResponse,
+        mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
+        mock_graphql_session: _MockGraphQLSession,
+    ):
+        # Arrange
+        sd_tree = build_tree(
+            mock_sd_get_organization_response,
+            mock_sd_get_department_response,
+            mock_mo_org_unit_level_map,
+        )
+        app_: App = self._get_app_instance(
+            sdtoolplus_settings,
+            # Pretend Department 1 is equivalent to "Udgåede afdelinger"
+            obsolete_unit_roots=obsolete_unit_roots,
+        )
+
+        dep4 = find_by_attr(
+            sd_tree, UUID("40000000-0000-0000-0000-000000000000"), "uuid"
+        )
+
+        mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4)
+
+        # Assert
+        assert app_._should_apply_ny_logic(mutation, dep4, False) == expected
