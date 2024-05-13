@@ -124,6 +124,10 @@ class OrgUnitNode(anytree.AnyNode):
     def validity(self) -> Validity | None:
         return self._instance.validity
 
+    @validity.setter
+    def validity(self, validity: Validity) -> None:
+        self._instance.validity = validity
+
     @property
     def addresses(self) -> list[Address]:
         return self._instance.addresses
