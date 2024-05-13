@@ -227,6 +227,24 @@ def _fix_parent_unit_validity(
             raise error
 
 
+def _truncate_start_date(
+    org_unit_node: OrgUnitNode, min_start_date: datetime.datetime
+) -> None:
+    """
+    Truncate the start date of the unit to min_start_date, if the start date
+    of the unit is before this date.
+
+    Args:
+        org_unit_node: the unit to truncate
+        min_start_date: the minimum start date of the unit
+    """
+    assert org_unit_node.validity is not None
+    org_unit_node.validity = Validity(
+        from_date=max(org_unit_node.validity.from_date, min_start_date),
+        to_date=org_unit_node.validity.to_date,
+    )
+
+
 class TreeDiffExecutor:
     def __init__(
         self,

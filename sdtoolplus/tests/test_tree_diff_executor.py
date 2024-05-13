@@ -4,18 +4,22 @@ import uuid
 from datetime import date
 from datetime import datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import pytest
 from freezegun import freeze_time
 from graphql import GraphQLSchema
 from more_itertools import one
+from ramodels.mo import Validity
 
 from ..config import SDToolPlusSettings
 from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOClass
 from ..mo_org_unit_importer import OrgUnitNode
+from ..tree_diff_executor import _truncate_start_date
 from ..tree_diff_executor import AddOrgUnitMutation
 from ..tree_diff_executor import Mutation
+from ..tree_diff_executor import TIMEZONE
 from ..tree_diff_executor import TreeDiffExecutor
 from ..tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
@@ -244,3 +248,23 @@ class TestTreeDiffExecutor:
         unit_names = [tup[0].name for tup in units_to_mutate]
         assert "Department 5" not in unit_names
         assert "Department 6" not in unit_names
+
+
+@pytest.mark.parametrize(
+    "initial_start_date, expected",
+    [
+        (datetime(1999, 1, 1, tzinfo=TIMEZONE), datetime(2000, 1, 1, tzinfo=TIMEZONE)),
+        (datetime(2001, 1, 1, tzinfo=TIMEZONE), datetime(2001, 1, 1, tzinfo=TIMEZONE)),
+    ],
+)
+def test_truncate_start_date(
+    initial_start_date: datetime, expected: datetime, random_org_unit_node: OrgUnitNode
+) -> None:
+    # Arrange
+    random_org_unit_node.validity = Validity(from_date=initial_start_date)
+
+    # Act
+    _truncate_start_date(random_org_unit_node, datetime(2000, 1, 1, tzinfo=TIMEZONE))
+
+    # Assert
+    assert random_org_unit_node.validity.from_date == expected
