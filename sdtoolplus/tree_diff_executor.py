@@ -303,6 +303,10 @@ class TreeDiffExecutor:
                 name=unit.name,
                 parent=str(unit.parent.uuid),
             )
+
+            # Not optimal - we are mutating the loop variable...
+            _truncate_start_date(unit, self.settings.min_mo_datetime)
+
             add_mutation = AddOrgUnitMutation(
                 self._session, unit, self.mo_org_unit_type
             )

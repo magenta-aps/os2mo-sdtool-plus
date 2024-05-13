@@ -248,6 +248,34 @@ class TestTreeDiffExecutor:
         assert "Department 5" not in unit_names
         assert "Department 6" not in unit_names
 
+    def test_start_date_truncation(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        sdtoolplus_settings.min_mo_datetime = datetime(2000, 1, 1, tzinfo=TIMEZONE)
+
+        tree_diff_executor = TreeDiffExecutor(
+            mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
+            mock_org_tree_diff,
+            mock_mo_org_unit_type,
+            [],
+        )
+
+        # Act
+        org_unit_node, mutation, result = one(
+            tree_diff_executor.execute(
+                org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
+            )
+        )
+
+        # Assert
+        assert org_unit_node.validity.from_date == sdtoolplus_settings.min_mo_datetime  # type: ignore
+
 
 @pytest.mark.parametrize(
     "initial_start_date, expected",
