@@ -15,6 +15,7 @@ from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from ..app import _get_sd_root_uuid
 from ..app import App
 from ..config import SDToolPlusSettings
 from ..mo_class import MOOrgUnitLevelMap
@@ -388,3 +389,33 @@ class TestApp:
 
         # Assert
         assert app_._should_apply_ny_logic(mutation, dep4, False) == expected
+
+
+UNIT_UUID1 = OrgUnitUUID(str(uuid4()))
+UNIT_UUID2 = OrgUnitUUID(str(uuid4()))
+
+
+@pytest.mark.parametrize(
+    "mo_subtree_path_for_root, use_mo_root_uuid_as_sd_root_uuid, expected",
+    [
+        ([], False, None),
+        ([], True, SharedIdentifier.root_org_uuid),
+        ([UNIT_UUID1], False, UNIT_UUID1),
+        ([UNIT_UUID1, UNIT_UUID2], False, UNIT_UUID2),
+        ([UNIT_UUID1], True, UNIT_UUID1),
+    ],
+)
+def test_get_sd_root_uuid(
+    mo_subtree_path_for_root: list[OrgUnitUUID],
+    use_mo_root_uuid_as_sd_root_uuid: bool,
+    expected: OrgUnitUUID | None,
+):
+    # Act
+    actual = _get_sd_root_uuid(
+        SharedIdentifier.root_org_uuid,
+        use_mo_root_uuid_as_sd_root_uuid,
+        mo_subtree_path_for_root,
+    )
+
+    # Assert
+    assert actual == expected

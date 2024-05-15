@@ -8,6 +8,7 @@ import sentry_sdk
 import structlog
 from httpx import Response
 from httpx import Timeout
+from more_itertools import last
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
@@ -23,6 +24,7 @@ from .mo_class import MOOrgUnitTypeMap
 from .mo_org_unit_importer import MOOrgTreeImport
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
+from .mo_org_unit_importer import OrgUUID
 from .sd.importer import get_sd_tree
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
@@ -30,6 +32,27 @@ from .tree_diff_executor import UpdateOrgUnitMutation
 
 
 logger = structlog.get_logger()
+
+
+def _get_sd_root_uuid(
+    org_uuid: OrgUUID,
+    use_mo_root_uuid_as_sd_root_uuid: bool,
+    mo_subtree_path_for_root: list[OrgUnitUUID],
+) -> OrgUUID | OrgUnitUUID | None:
+    """
+    Get the effective SD root unit UUID to use
+
+    Args:
+        org_uuid: MOs organization UUID
+        use_mo_root_uuid_as_sd_root_uuid: value of the corresponding ENV
+        mo_subtree_path_for_root: value of the corresponding ENV
+
+    Returns:
+         The effective root UUID to use or None
+    """
+    if mo_subtree_path_for_root:
+        return last(mo_subtree_path_for_root)
+    return org_uuid if use_mo_root_uuid_as_sd_root_uuid else None
 
 
 class App:
@@ -57,10 +80,10 @@ class App:
             self.settings.sd_password.get_secret_value(),
         )
 
-        sd_root_uuid = (
-            self.mo_org_tree_import.get_org_uuid()
-            if self.settings.use_mo_root_uuid_as_sd_root_uuid
-            else None
+        sd_root_uuid = _get_sd_root_uuid(
+            self.mo_org_tree_import.get_org_uuid(),
+            self.settings.use_mo_root_uuid_as_sd_root_uuid,
+            self.settings.mo_subtree_path_for_root,
         )
 
         return get_sd_tree(
