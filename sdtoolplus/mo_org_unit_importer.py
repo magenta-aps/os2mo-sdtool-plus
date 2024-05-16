@@ -96,6 +96,10 @@ class OrgUnitNode(anytree.AnyNode):
     def uuid(self) -> OrgUnitUUID:
         return self._instance.uuid
 
+    @uuid.setter
+    def uuid(self, org_unit_uuid: OrgUnitUUID):
+        self._instance.uuid = org_unit_uuid
+
     @property
     def parent_uuid(self) -> OrgUnitUUID | None:
         return self._instance.parent_uuid
@@ -192,7 +196,9 @@ class MOOrgTreeImport:
         ]
         return parse_obj_as(list[OrgUnit], org_units)
 
-    def as_single_tree(self, path: str = "") -> OrgUnitNode:
+    def as_single_tree(
+        self, root_uuid: OrgUUID | OrgUnitUUID, path: str = ""
+    ) -> OrgUnitNode:
         """
         Generates a (sub)tree of OUs from the units in MO.
         The feature is most easily explained by an example. Assume the OU
@@ -206,10 +212,10 @@ class MOOrgTreeImport:
                 / \
                H   I
 
-        Calling the function as 'instance.as_single_tree("uuidC/uuidG")'
+        Calling the function as 'instance.as_single_tree(root_uuid, "uuidC/uuidG")'
         returns the tree:
 
-                root (UUID of the MO organisation)
+                root (root_uuid)
                 / \
                H   I
 
@@ -218,7 +224,7 @@ class MOOrgTreeImport:
 
         children = self._build_trees(self.get_org_units())
         root = OrgUnitNode(
-            uuid=self.get_org_uuid(),
+            uuid=root_uuid,
             parent_uuid=None,
             user_key="root",
             name="<root>",
@@ -230,7 +236,7 @@ class MOOrgTreeImport:
             resolver = anytree.Resolver("uuid")
             new_root = resolver.get(root, path)
             root = OrgUnitNode(
-                uuid=self.get_org_uuid(),
+                uuid=root_uuid,
                 parent_uuid=None,
                 user_key="root",
                 name="<root>",

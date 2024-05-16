@@ -55,6 +55,25 @@ def _get_sd_root_uuid(
     return org_uuid if use_mo_root_uuid_as_sd_root_uuid else None
 
 
+def _get_mo_root_uuid(
+    org_uuid: OrgUUID,
+    mo_subtree_path_for_root: list[OrgUnitUUID],
+) -> OrgUUID | OrgUnitUUID:
+    """
+    Get the effective MO root unit UUID to use
+
+    Args:
+        org_uuid: MOs organization UUID
+        mo_subtree_path_for_root: value of the corresponding ENV
+
+    Returns:
+         The effective root UUID to use
+    """
+    if mo_subtree_path_for_root:
+        return last(mo_subtree_path_for_root)
+    return org_uuid
+
+
 class App:
     def __init__(self, settings: SDToolPlusSettings):
         self.settings: SDToolPlusSettings = settings
@@ -98,7 +117,15 @@ class App:
         mo_subtree_path_for_root = App._get_effective_root_path(
             self.settings.mo_subtree_path_for_root
         )
-        return self.mo_org_tree_import.as_single_tree(mo_subtree_path_for_root)
+
+        mo_root_uuid = _get_mo_root_uuid(
+            self.mo_org_tree_import.get_org_uuid(),
+            self.settings.mo_subtree_path_for_root,
+        )
+
+        return self.mo_org_tree_import.as_single_tree(
+            mo_root_uuid, mo_subtree_path_for_root
+        )
 
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
         logger.debug("Getting TreeDiffExecutor")
