@@ -93,10 +93,12 @@ class TestMOOrgTreeImport:
 
     def test_as_single_tree(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
-        root = instance.as_single_tree()
+        root_uuid = uuid4()
+        root = instance.as_single_tree(root_uuid)
         assert isinstance(root, OrgUnitNode)
         assert root.children == tuple(mock_graphql_session.expected_trees)
         assert root.is_root
+        assert root.uuid == root_uuid
         assert [child.is_leaf for child in root.children]
 
     def test_as_single_tree_for_subtree(self, mock_graphql_session):
@@ -113,10 +115,10 @@ class TestMOOrgTreeImport:
                 / \
                H   I
 
-        Calling the function as 'instance.as_single_tree("uuidC/uuidG")' should
+        Calling the function as 'instance.as_single_tree(root_uuid, "uuidC/uuidG")' should
         return the tree:
 
-                root (UUID of the MO organisation)
+                root (root_uuid)
                 / \
                H   I
         """
@@ -172,12 +174,12 @@ class TestMOOrgTreeImport:
 
         instance = MOOrgTreeImport(mock_graphql_session)
         instance._build_trees = MagicMock(return_value=[unit1, unit2])
-        instance.get_org_uuid = lambda: SharedIdentifier.root_org_uuid
 
         # Act
         actual = instance.as_single_tree(
+            SharedIdentifier.root_org_uuid,
             "20000000-0000-0000-0000-000000000000/"
-            "22000000-0000-0000-0000-000000000000"
+            "22000000-0000-0000-0000-000000000000",
         )
 
         # Assert
@@ -186,6 +188,7 @@ class TestMOOrgTreeImport:
         assert isinstance(actual, OrgUnitNode)
         assert actual.children == (unit221, unit222)
         assert actual.is_root
+        assert actual.uuid == SharedIdentifier.root_org_uuid
 
     def test_ensure_get_org_units_not_cached(self):
         assert not hasattr(MOOrgTreeImport.get_org_units, "__wrapped__")

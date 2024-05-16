@@ -64,9 +64,6 @@ async def test_two_new_departments_in_sd(
     """
 
     # Arrange
-    org_uuid = (await graphql_client.get_organization()).uuid
-    mock_sd_get_organization_response.InstitutionUUIDIdentifier = org_uuid
-
     get_org_dep7_and_dep8 = {
         "DepartmentIdentifier": "Afd",
         "DepartmentUUIDIdentifier": "80000000-0000-0000-0000-000000000000",
