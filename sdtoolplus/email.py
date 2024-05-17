@@ -3,7 +3,6 @@
 from email.mime.text import MIMEText
 from operator import itemgetter
 from smtplib import SMTP
-from smtplib import SMTP_SSL
 from smtplib import SMTPException
 from ssl import PROTOCOL_TLSv1_2
 from ssl import SSLContext
@@ -40,6 +39,8 @@ def build_email_body(
         for unit_name, unit_uuid in units:
             body += f"{unit_name} ({str(unit_uuid)})\n"
 
+    body += "\nMvh. SDTool+ (denne email kan ikke besvares)\n"
+
     return body
 
 
@@ -51,7 +52,7 @@ def send_email_notification(settings: SDToolPlusSettings, body: str):
 
     msg = MIMEText(body)
     msg["Subject"] = "SDTool+ advarsel"
-    msg["From"] = settings.email_from
+    msg["From"] = f"SDTool+ <{settings.email_from}>"
     msg["To"] = recipients
 
     context = SSLContext(PROTOCOL_TLSv1_2)
