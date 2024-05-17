@@ -116,6 +116,10 @@ class OrgUnitNode(anytree.AnyNode):
     def org_unit_hierarchy(self) -> OrgUnitHierarchyUUID | None:
         return self._instance.org_unit_hierarchy
 
+    @org_unit_hierarchy.setter
+    def org_unit_hierarchy(self, org_unit_hierarchy: OrgUnitHierarchyUUID) -> None:
+        self._instance.org_unit_hierarchy = org_unit_hierarchy
+
     @property
     def validity(self) -> Validity | None:
         return self._instance.validity
