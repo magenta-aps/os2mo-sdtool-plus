@@ -199,6 +199,10 @@ async def _update_or_add_postal_address(
     return None
 
 
+def _get_mo_unit_map(mo_units: list[OrgUnitNode]) -> dict[OrgUnitUUID, OrgUnitNode]:
+    return {mo_unit.uuid: mo_unit for mo_unit in mo_units}
+
+
 class AddressFixer:
     def __init__(
         self,
@@ -235,9 +239,7 @@ class AddressFixer:
         mo_units = filter_by_uuid(org_unit, mo_units)
         mo_units = remove_by_name(self.settings.regex_unit_names_to_remove, mo_units)
 
-        mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
-            mo_unit.uuid: mo_unit for mo_unit in mo_units
-        }
+        mo_unit_map = _get_mo_unit_map(mo_units)
 
         # Only fix units that are already in MO
         sd_units = [
