@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import click
 from anytree.cachedsearch import find_by_attr
+from fastramqpi.raclients.graph.client import GraphQLClient
 from httpx import Client
 from httpx import Timeout
 from more_itertools import first
@@ -103,13 +104,57 @@ def _remove_if_obsolete(
     help="The UUID of the top obsolete unit ('Udgåede afdelinger'). "
     "If set, units below this unit will be excluded",
 )
+@click.option(
+    "--auth-server",
+    "auth_server",
+    type=click.STRING,
+    default="http://localhost:8090/auth",
+    help="Keycloak auth server URL",
+)
+@click.option(
+    "--client-id",
+    "client_id",
+    type=click.STRING,
+    default="dipex",
+    help="Keycloak client id",
+)
+@click.option(
+    "--client-secret",
+    "client_secret",
+    type=click.STRING,
+    required=True,
+    help="Keycloak client secret for the DIPEX client",
+)
+@click.option(
+    "--mo-base-url",
+    "mo_base_url",
+    type=click.STRING,
+    default="http://localhost:5000",
+    help="Base URL for calling MO",
+)
 def main(
     username: str,
     password: str,
     institution_identifier: str,
     exclude_obsolete_uuid: UUID,
+    auth_server: str,
+    client_id: str,
+    client_secret: str,
+    mo_base_url: str,
 ):
     sd_client = SDClient(username, password)
+
+    timeout = 120
+    gql_client = GraphQLClient(
+        url=f"{mo_base_url}/graphql/v22",
+        client_id=client_id,
+        client_secret=client_secret,
+        auth_server=auth_server,  # type: ignore
+        auth_realm="mo",
+        execute_timeout=timeout,
+        httpx_client_kwargs={"timeout": timeout},
+        sync=True,
+    )
 
     print("Get SD departments and their addresses")
     sd_departments = get_sd_departments(
