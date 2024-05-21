@@ -16,6 +16,8 @@ from sdclient.client import SDClient
 from sdclient.responses import Department
 
 from sdtoolplus.addresses import DARAddressUUID
+from sdtoolplus.log import LogLevel
+from sdtoolplus.log import setup_logging
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
@@ -85,7 +87,7 @@ def _get_mo_org_unit_hierarchy(gql_client: GraphQLClient) -> dict[UUID, UUID | N
     r = gql_client.execute(QUERY_GET_ORG_UNIT)
     objs = r["org_units"]["objects"]
     return {
-        UUID(obj["current"]["uuid"]): obj["current"]["org_unit_hierarchy"]
+        UUID(obj["current"]["uuid"]): UUID(obj["current"]["org_unit_hierarchy"])
         for obj in objs
     }
 
@@ -96,7 +98,7 @@ def _is_line_management(
     line_management_class: UUID,
 ) -> bool:
     return (
-        mo_org_unit_hierarchy[sd_dep_addr[0].DepartmentUUIDIdentifier]
+        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)
         == line_management_class
     )
 
@@ -130,20 +132,21 @@ def _is_line_management(
     "--auth-server",
     "auth_server",
     type=click.STRING,
-    default="http://localhost:8090/auth",
+    default="http://keycloak-service:8080/auth",
     help="Keycloak auth server URL",
 )
 @click.option(
     "--client-id",
     "client_id",
     type=click.STRING,
-    default="dipex",
+    default="integration_sdtool_plus",
     help="Keycloak client id",
 )
 @click.option(
     "--client-secret",
     "client_secret",
     type=click.STRING,
+    envvar="CLIENT_SECRET",
     required=True,
     help="Keycloak client secret for the DIPEX client",
 )
@@ -151,7 +154,7 @@ def _is_line_management(
     "--mo-base-url",
     "mo_base_url",
     type=click.STRING,
-    default="http://localhost:5000",
+    default="http://mo-service:5000",
     help="Base URL for calling MO",
 )
 def main(
@@ -196,6 +199,7 @@ def main(
     print("Total number of SD units:", len(sd_dep_with_postal_addresses))
 
     line_mgmt_class = _get_line_management_class(gql_client)
+    print("line_mgmt_class", line_mgmt_class)
 
     print("Get MO org unit hierarchies")
     mo_org_unit_hierarchy = _get_mo_org_unit_hierarchy(gql_client)
@@ -264,4 +268,5 @@ def main(
 
 
 if __name__ == "__main__":
+    setup_logging(LogLevel.DEBUG)  # Shut up GraphQL
     main()
