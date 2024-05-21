@@ -51,6 +51,8 @@ include:
   - project: rammearkitektur/os2mo
     file:
       - gitlab-ci-templates/integration-test-meta.v1.yml
+    rules:
+      - <<: *if-merge-request
   - project: labs/salt-automation
     ref: master
     file:
@@ -93,3 +95,5 @@ Integration-test:
       EMAIL_USER: "email_user"
       EMAIL_PASSWORD: "secret"
       EMAIL_TO: '["to@example.org"]'
+  rules:
+    - <<: *if-merge-request
