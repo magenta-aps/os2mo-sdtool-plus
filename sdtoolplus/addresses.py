@@ -203,6 +203,13 @@ def _get_mo_unit_map(mo_units: list[OrgUnitNode]) -> dict[OrgUnitUUID, OrgUnitNo
     return {mo_unit.uuid: mo_unit for mo_unit in mo_units}
 
 
+def _get_sd_units_in_mo(
+    sd_units: list[OrgUnitNode], mo_unit_map: dict[OrgUnitUUID, OrgUnitNode]
+) -> list[OrgUnitNode]:
+    # Only fix units that are already in MO
+    return [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
+
+
 class AddressFixer:
     def __init__(
         self,
@@ -240,11 +247,7 @@ class AddressFixer:
         mo_units = remove_by_name(self.settings.regex_unit_names_to_remove, mo_units)
 
         mo_unit_map = _get_mo_unit_map(mo_units)
-
-        # Only fix units that are already in MO
-        sd_units = [
-            sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()
-        ]
+        sd_units = _get_sd_units_in_mo(sd_units, mo_unit_map)
 
         # Handle P-number addresses
         async for operation, org_unit_node, addr in _update_or_add_addresses(
