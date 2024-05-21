@@ -9,9 +9,11 @@ from uuid import uuid4
 import click
 from anytree.cachedsearch import find_by_attr
 from fastramqpi.raclients.graph.client import GraphQLClient
+from gql import gql
 from httpx import Client
 from httpx import Timeout
 from more_itertools import first
+from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.responses import Department
 
@@ -23,6 +25,38 @@ from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
 from sdtoolplus.sd.importer import get_sd_tree
+
+
+QUERY_GET_LINE_MANAGEMENT_CLASS = gql(
+    """
+    query GetLineManagementClass {
+      classes(filter: {facet_user_keys: "org_unit_hierarchy", user_keys: "linjeorg"}) {
+        objects {
+          current {
+            uuid
+            user_key
+            name
+          }
+        }
+      }
+    }
+    """
+)
+
+QUERY_GET_ORG_UNIT = gql(
+    """
+    query GetOrgUnit {
+      org_units {
+        objects {
+          current {
+            org_unit_hierarchy
+            uuid
+          }
+        }
+      }
+    }
+    """
+)
 
 
 class FakeMOOrgUnitTypeMap(MOOrgUnitLevelMap):
@@ -70,6 +104,31 @@ def _remove_if_obsolete(
         if obsolete_uuid not in ancestor_uuids + [node.uuid]:
             non_obsolete_departments.append((sd_dep, addr))
     return non_obsolete_departments
+
+
+def _get_line_management_class(gql_client: GraphQLClient) -> UUID:
+    r = gql_client.execute(QUERY_GET_LINE_MANAGEMENT_CLASS)
+    return UUID(one(r["classes"]["objects"])["current"]["uuid"])
+
+
+def _get_mo_org_unit_hierarchy(gql_client: GraphQLClient) -> dict[UUID, UUID | None]:
+    r = gql_client.execute(QUERY_GET_ORG_UNIT)
+    objs = r["org_units"]["objects"]
+    return {
+        UUID(obj["current"]["uuid"]): obj["current"]["org_unit_hierarchy"]
+        for obj in objs
+    }
+
+
+def _is_line_management(
+    sd_dep_addr: tuple[Department, str | None],
+    mo_org_unit_hierarchy: dict[UUID, UUID | None],
+    line_management_class: UUID,
+) -> bool:
+    return (
+        mo_org_unit_hierarchy[sd_dep_addr[0].DepartmentUUIDIdentifier]
+        == line_management_class
+    )
 
 
 @click.command()
@@ -173,6 +232,18 @@ def main(
         if addr.address_type.user_key == AddressTypeUserKey.POSTAL_ADDR.value
     ]
     print("Total number of SD units:", len(sd_dep_with_postal_addresses))
+
+    line_mgmt_class = _get_line_management_class(gql_client)
+
+    print("Get MO org unit hierarchies")
+    mo_org_unit_hierarchy = _get_mo_org_unit_hierarchy(gql_client)
+
+    print("Filter out OUs not part of line management")
+    sd_dep_with_postal_addresses = [
+        sd_dep_addr
+        for sd_dep_addr in sd_dep_with_postal_addresses
+        if _is_line_management(sd_dep_addr, mo_org_unit_hierarchy, line_mgmt_class)
+    ]
 
     if exclude_obsolete_uuid:
         print("Excluding obsolete units...")
