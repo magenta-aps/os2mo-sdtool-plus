@@ -16,6 +16,7 @@ from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
+from sdtoolplus.filters import filter_by_line_management
 from sdtoolplus.filters import filter_by_uuid
 from sdtoolplus.filters import remove_by_name
 from sdtoolplus.graphql import add_address
@@ -199,6 +200,17 @@ async def _update_or_add_postal_address(
     return None
 
 
+def _get_mo_unit_map(mo_units: list[OrgUnitNode]) -> dict[OrgUnitUUID, OrgUnitNode]:
+    return {mo_unit.uuid: mo_unit for mo_unit in mo_units}
+
+
+def _get_sd_units_in_mo(
+    sd_units: list[OrgUnitNode], mo_unit_map: dict[OrgUnitUUID, OrgUnitNode]
+) -> list[OrgUnitNode]:
+    # Only fix units that are already in MO
+    return [sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()]
+
+
 class AddressFixer:
     def __init__(
         self,
@@ -235,14 +247,8 @@ class AddressFixer:
         mo_units = filter_by_uuid(org_unit, mo_units)
         mo_units = remove_by_name(self.settings.regex_unit_names_to_remove, mo_units)
 
-        mo_unit_map: dict[OrgUnitUUID, OrgUnitNode] = {
-            mo_unit.uuid: mo_unit for mo_unit in mo_units
-        }
-
-        # Only fix units that are already in MO
-        sd_units = [
-            sd_unit for sd_unit in sd_units if sd_unit.uuid in mo_unit_map.keys()
-        ]
+        mo_unit_map = _get_mo_unit_map(mo_units)
+        sd_units = _get_sd_units_in_mo(sd_units, mo_unit_map)
 
         # Handle P-number addresses
         async for operation, org_unit_node, addr in _update_or_add_addresses(
@@ -254,6 +260,14 @@ class AddressFixer:
             dry_run,
         ):
             yield operation, org_unit_node, addr
+
+        mo_units = await filter_by_line_management(
+            self.settings.only_sync_line_mgmt_postal_addresses,
+            self.gql_client,
+            mo_units,
+        )
+        mo_unit_map = _get_mo_unit_map(mo_units)
+        sd_units = _get_sd_units_in_mo(sd_units, mo_unit_map)
 
         # Handle postal addresses
         async for operation, org_unit_node, addr in _update_or_add_addresses(

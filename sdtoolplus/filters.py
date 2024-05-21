@@ -3,8 +3,44 @@
 import re
 from typing import Iterable
 
+from more_itertools import one
+
+from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+
+
+async def filter_by_line_management(
+    filter_by_line_mgmt: bool,
+    gql_client: GraphQLClient,
+    org_units: Iterable[OrgUnitNode],
+) -> list[OrgUnitNode]:
+    """
+    Select the org unit that are part of the line management.
+
+    Args:
+        filter_by_line_mgmt: if true, select only units part of the line management
+        gql_client: the GraphQLClient
+        org_units: Iterator of org units to filter
+
+    Returns:
+        List of OrgUnitNodes who match the org unit hierarchy
+    """
+    if not filter_by_line_mgmt:
+        return list(org_units)
+
+    facet_class_resp = await gql_client.get_facet_class(
+        "org_unit_hierarchy", "linjeorg"
+    )
+    current = one(facet_class_resp.objects).current
+    assert current is not None
+    line_mgmt_class_uuid = current.uuid
+
+    return [
+        org_unit
+        for org_unit in org_units
+        if org_unit.org_unit_hierarchy == line_mgmt_class_uuid
+    ]
 
 
 def filter_by_uuid(

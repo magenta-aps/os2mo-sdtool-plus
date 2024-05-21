@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
-from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
 
@@ -253,9 +252,7 @@ async def bruce_lee(graphql_client: GraphQLClient) -> UUID:
 async def job_function(graphql_client: GraphQLClient) -> UUID:
     return one(
         (
-            await graphql_client._testing__get_facet_class(
-                "engagement_job_function", "Ninja"
-            )
+            await graphql_client.get_facet_class("engagement_job_function", "Ninja")
         ).objects  # type: ignore
     ).current.uuid
 
@@ -264,9 +261,7 @@ async def job_function(graphql_client: GraphQLClient) -> UUID:
 async def engagement_type(graphql_client: GraphQLClient) -> UUID:
     return one(
         (
-            await graphql_client._testing__get_facet_class(
-                "engagement_type", "TestAnsat"
-            )
+            await graphql_client.get_facet_class("engagement_type", "TestAnsat")
         ).objects  # type: ignore
     ).current.uuid
 

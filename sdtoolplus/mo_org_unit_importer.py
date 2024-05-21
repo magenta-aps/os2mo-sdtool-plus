@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from functools import cache
+from typing import NewType
 from typing import Self
 from typing import TypeAlias
 from uuid import UUID
@@ -18,6 +19,7 @@ OrgUUID: TypeAlias = UUID
 OrgUnitUUID: TypeAlias = UUID
 OrgUnitLevelUUID: TypeAlias = UUID
 OrgUnitTypeUUID: TypeAlias = UUID
+OrgUnitHierarchyUUID = NewType("OrgUnitHierarchyUUID", UUID)
 
 
 class AddressType(pydantic.BaseModel):
@@ -38,6 +40,7 @@ class OrgUnit(pydantic.BaseModel):
     user_key: str
     name: str
     org_unit_level_uuid: OrgUnitLevelUUID | None
+    org_unit_hierarchy: OrgUnitHierarchyUUID | None
     validity: Validity | None
     addresses: list[Address] = []
 
@@ -52,6 +55,7 @@ class OrgUnitNode(anytree.AnyNode):
         parent: Self | None = None,
         children: list["OrgUnitNode"] | None = None,
         org_unit_level_uuid: OrgUnitLevelUUID | None = None,
+        org_unit_hierarchy: OrgUnitHierarchyUUID | None = None,
         addresses: list[Address] = [],
         validity: Validity | None = None,
     ):
@@ -62,6 +66,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=user_key,
             name=name,
             org_unit_level_uuid=org_unit_level_uuid,
+            org_unit_hierarchy=org_unit_hierarchy,
             addresses=addresses,
             validity=validity,
         )
@@ -74,6 +79,7 @@ class OrgUnitNode(anytree.AnyNode):
             user_key=org_unit.user_key,
             name=org_unit.name,
             org_unit_level_uuid=org_unit.org_unit_level_uuid,
+            org_unit_hierarchy=org_unit.org_unit_hierarchy,
             addresses=org_unit.addresses,
             validity=org_unit.validity,
         )
@@ -105,6 +111,14 @@ class OrgUnitNode(anytree.AnyNode):
     @property
     def org_unit_level_uuid(self) -> OrgUnitLevelUUID | None:
         return self._instance.org_unit_level_uuid
+
+    @property
+    def org_unit_hierarchy(self) -> OrgUnitHierarchyUUID | None:
+        return self._instance.org_unit_hierarchy
+
+    @org_unit_hierarchy.setter
+    def org_unit_hierarchy(self, org_unit_hierarchy: OrgUnitHierarchyUUID) -> None:
+        self._instance.org_unit_hierarchy = org_unit_hierarchy
 
     @property
     def validity(self) -> Validity | None:
@@ -151,6 +165,7 @@ class MOOrgTreeImport:
                                 user_key
                                 name
                                 org_unit_level_uuid
+                                org_unit_hierarchy
                                 addresses {{
                                     uuid
                                     value

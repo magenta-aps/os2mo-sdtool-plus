@@ -59,7 +59,7 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
   }
 }
 
-query _Testing_GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
+query GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
   classes(filter: {user_keys: [$class_user_key], facet: {user_keys: [$facet_user_key]}}) {
     objects {
       current {
