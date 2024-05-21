@@ -30,6 +30,10 @@ facets:
     non-SD:
       title: "non-SD"
       scope: "TEXT"
+  org_unit_hierarchy:
+    linjeorg:
+      title: "Linjeorganisation"
+      scope: "TEXT"
   org_unit_address_type:
     Pnummer:
       title: "P-nummer"

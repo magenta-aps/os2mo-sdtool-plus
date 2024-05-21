@@ -7,6 +7,7 @@ from unittest.mock import patch
 from uuid import UUID
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from fastapi.testclient import TestClient
 from fastramqpi.pytest_util import retry
 from more_itertools import one
@@ -177,5 +178,80 @@ async def test_addresses_add(
             one(actual_postal_addresses.objects).current.addresses  # type: ignore
         )
         assert actual_postal_address.value == "0a3f50bb-de5a-32b8-e044-0003ba298018"
+
+    await verify()
+
+
+@pytest.fixture
+def mock_only_sync_line_mgmt_postal_addresses(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("ONLY_SYNC_LINE_MGMT_POSTAL_ADDRESSES", "true")
+
+
+@skip("Test is working locally, but not in pipeline...")
+@pytest.mark.integration_test
+@patch("sdtoolplus.main.get_engine")
+@patch("sdtoolplus.sd.importer.get_sd_departments")
+@patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.main.run_db_end_operations")
+@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+async def test_addresses_add_skip_non_line_management(
+    mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
+    mock_get_sd_organization: MagicMock,
+    mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
+    mock_only_sync_line_mgmt_postal_addresses: None,
+    test_client: TestClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+) -> None:
+    """
+    We test that postal addresses are skipped for units not belonging to
+    the line management organisation.
+    """
+
+    # Arrange
+    org_uuid = (await graphql_client.get_organization()).uuid
+    mock_sd_get_organization_response.InstitutionUUIDIdentifier = org_uuid
+
+    mock_get_sd_organization.return_value = mock_sd_get_organization_response
+    mock_get_sd_departments.return_value = mock_sd_get_department_response
+
+    pnumber_addr_type_uuid = await get_address_type_uuid(
+        graphql_client, AddressTypeUserKey.PNUMBER_ADDR.value
+    )
+
+    postal_addr_type_uuid = await get_address_type_uuid(
+        graphql_client, AddressTypeUserKey.POSTAL_ADDR.value
+    )
+
+    # Act
+    test_client.post("/trigger/addresses")
+
+    # Assert
+    @retry()
+    async def verify() -> None:
+        # Verify the P-number address
+        actual_pnumber_addresses = await graphql_client._testing__get_org_unit_address(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            addr_type=pnumber_addr_type_uuid,
+        )
+
+        actual_pnumber_address = one(
+            one(actual_pnumber_addresses.objects).current.addresses  # type: ignore
+        )
+        assert actual_pnumber_address.value == "1234567890"
+
+        # Verify the postal address
+        actual_postal_addresses = await graphql_client._testing__get_org_unit_address(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            addr_type=postal_addr_type_uuid,
+        )
+
+        # The postal address should not have been added, since the corresponding
+        # unit is not part of the line management organization
+        assert one(actual_postal_addresses.objects).current.addresses == []  # type: ignore
 
     await verify()

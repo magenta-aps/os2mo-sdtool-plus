@@ -16,6 +16,7 @@ from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
+from sdtoolplus.filters import filter_by_line_management
 from sdtoolplus.filters import filter_by_uuid
 from sdtoolplus.filters import remove_by_name
 from sdtoolplus.graphql import add_address
@@ -259,6 +260,14 @@ class AddressFixer:
             dry_run,
         ):
             yield operation, org_unit_node, addr
+
+        mo_units = await filter_by_line_management(
+            self.settings.only_sync_line_mgmt_postal_addresses,
+            self.gql_client,
+            mo_units,
+        )
+        mo_unit_map = _get_mo_unit_map(mo_units)
+        sd_units = _get_sd_units_in_mo(sd_units, mo_unit_map)
 
         # Handle postal addresses
         async for operation, org_unit_node, addr in _update_or_add_addresses(
