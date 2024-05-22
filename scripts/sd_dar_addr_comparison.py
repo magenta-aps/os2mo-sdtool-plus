@@ -132,6 +132,7 @@ def _is_line_management(
     "--auth-server",
     "auth_server",
     type=click.STRING,
+    envvar="AUTH_SERVER",
     default="http://keycloak-service:8080/auth",
     help="Keycloak auth server URL",
 )
@@ -148,13 +149,14 @@ def _is_line_management(
     type=click.STRING,
     envvar="CLIENT_SECRET",
     required=True,
-    help="Keycloak client secret for the DIPEX client",
+    help="Keycloak client secret",
 )
 @click.option(
     "--mo-base-url",
     "mo_base_url",
     type=click.STRING,
     default="http://mo-service:5000",
+    envvar="MORA_BASE",
     help="Base URL for calling MO",
 )
 def main(
