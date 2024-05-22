@@ -269,6 +269,8 @@ class TestTreeDiffExecutor:
         # Act
         org_unit_node, mutation, result = one(
             tree_diff_executor.execute(
+                # Run the TreeDiffExecutor on a random (new) unit having
+                # a validity before the MIN_MO_DATETIME
                 org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
             )
         )
