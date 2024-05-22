@@ -26,4 +26,6 @@ def test_build_email_body(random_org_unit_node: OrgUnitNode):
         "Der blev fundet engagementer i:\n"
         "Department A (aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa)\n"
         "Department B (bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb)\n"
+        "\n"
+        "Mvh. SDTool+ (denne email kan ikke besvares)\n"
     )

@@ -84,7 +84,7 @@ class SDToolPlusSettings(BaseSettings):
     email_host: str = ""
     email_user: str = ""
     email_password: SecretStr = SecretStr("")
-    email_port: PositiveInt = 465
+    email_port: PositiveInt = 587
     email_from: EmailStr | None = None
     email_to: list[EmailStr] = []
 
