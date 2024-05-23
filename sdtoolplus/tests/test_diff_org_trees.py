@@ -19,6 +19,7 @@ from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
+from .conftest import SharedIdentifier
 
 
 class TestOrgTreeDiff:
@@ -92,7 +93,9 @@ class TestOrgTreeDiff:
         expected_units_to_add,
     ):
         # Construct MO and SD trees
-        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+            SharedIdentifier.root_org_uuid
+        )
         sd_tree = build_tree(
             mock_sd_get_organization_response,
             mock_sd_get_department_response,
@@ -275,7 +278,9 @@ class TestOrgTreeDiff:
 
         # This is just a OU tree required by the OrgTreeDiff constructor. It is
         # not actually used in this test.
-        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree()
+        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+            SharedIdentifier.root_org_uuid
+        )
         org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
 
         # Use this subtree for testing _subtree_has_active_engagements

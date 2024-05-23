@@ -56,7 +56,6 @@ async def test_two_new_departments_in_sd(
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response: GetDepartmentResponse,
-    respx_mock: MockRouter,
 ) -> None:
     """
     Two new units, Department 7 and Department 8, are added to the root of the
@@ -64,9 +63,6 @@ async def test_two_new_departments_in_sd(
     """
 
     # Arrange
-    org_uuid = (await graphql_client.get_organization()).uuid
-    mock_sd_get_organization_response.InstitutionUUIDIdentifier = org_uuid
-
     get_org_dep7_and_dep8 = {
         "DepartmentIdentifier": "Afd",
         "DepartmentUUIDIdentifier": "80000000-0000-0000-0000-000000000000",
@@ -116,13 +112,6 @@ async def test_two_new_departments_in_sd(
 
     mock_get_sd_organization.return_value = mock_sd_get_organization_response
     mock_get_sd_departments.return_value = mock_sd_get_department_response
-
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/70000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/80000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
 
     # Act
     test_client.post("/trigger")
@@ -184,7 +173,6 @@ async def test_build_tree_extra_units_are_added(
     obsolete_unit_tree_builder: None,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_extra_units: GetDepartmentResponse,
-    respx_mock: MockRouter,
     org_unit_type: OrgUnitTypeUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
 ) -> None:
@@ -200,16 +188,6 @@ async def test_build_tree_extra_units_are_added(
 
     mock_get_sd_organization.return_value = mock_sd_get_organization_response
     mock_get_sd_departments.return_value = mock_sd_get_department_response_extra_units
-
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/95000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/96000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
-    respx_mock.post(
-        "http://sdlon:8000/trigger/apply-ny-logic/97000000-0000-0000-0000-000000000000"
-    ).mock(return_value=Response(200))
 
     # Act
     test_client.post("/trigger")
