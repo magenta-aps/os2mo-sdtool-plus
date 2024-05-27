@@ -1,35 +1,61 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+# NOTE: For now, this script is specific for Silkeborg, since we are doing
+# some line management filtering. The script can quite easily be adapted
+# to skip/adjust this line management filtering
 from datetime import datetime
 from operator import itemgetter
 from typing import cast
 from uuid import UUID
-from uuid import uuid4
 
 import click
-from anytree.cachedsearch import find_by_attr
+from fastramqpi.raclients.graph.client import GraphQLClient
+from gql import gql
 from httpx import Client
 from httpx import Timeout
 from more_itertools import first
+from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.responses import Department
 
 from sdtoolplus.addresses import DARAddressUUID
-from sdtoolplus.mo_class import MOClass
-from sdtoolplus.mo_class import MOOrgUnitLevelMap
-from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.log import LogLevel
+from sdtoolplus.log import setup_logging
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
-from sdtoolplus.sd.importer import get_sd_tree
 
 
-class FakeMOOrgUnitTypeMap(MOOrgUnitLevelMap):
-    def __init__(self):
-        self.fake_uuid = uuid4()
+QUERY_GET_LINE_MANAGEMENT_CLASS = gql(
+    """
+    query GetLineManagementClass {
+      classes(filter: {facet_user_keys: "org_unit_hierarchy", user_keys: "linjeorg"}) {
+        objects {
+          current {
+            uuid
+            user_key
+            name
+          }
+        }
+      }
+    }
+    """
+)
 
-    def __getitem__(self, item: str) -> MOClass:
-        return MOClass(uuid=self.fake_uuid, user_key="not used", name="not used")
+QUERY_GET_ORG_UNIT = gql(
+    """
+    query GetOrgUnit {
+      org_units {
+        objects {
+          current {
+            org_unit_hierarchy
+            uuid
+          }
+        }
+      }
+    }
+    """
+)
 
 
 httpx_client = Client(
@@ -55,20 +81,29 @@ def format_csv_field(field: str | None) -> str:
     return field if field is not None else "-"
 
 
-def _remove_if_obsolete(
-    sd_dep_with_postal_addresses: list[tuple[Department, str | None]],
-    sd_tree: OrgUnitNode,
-    obsolete_uuid: UUID,
-) -> list[tuple[Department, str | None]]:
-    non_obsolete_departments: list[tuple[Department, str | None]] = []
-    for sd_dep, addr in sd_dep_with_postal_addresses:
-        node = find_by_attr(sd_tree, sd_dep.DepartmentUUIDIdentifier, "uuid")
-        if node is None:
-            continue
-        ancestor_uuids = [ancestor.uuid for ancestor in node.ancestors]
-        if obsolete_uuid not in ancestor_uuids + [node.uuid]:
-            non_obsolete_departments.append((sd_dep, addr))
-    return non_obsolete_departments
+def _get_line_management_class(gql_client: GraphQLClient) -> UUID:
+    r = gql_client.execute(QUERY_GET_LINE_MANAGEMENT_CLASS)
+    return UUID(one(r["classes"]["objects"])["current"]["uuid"])
+
+
+def _get_mo_org_unit_hierarchy(gql_client: GraphQLClient) -> dict[UUID, UUID | None]:
+    r = gql_client.execute(QUERY_GET_ORG_UNIT)
+    objs = r["org_units"]["objects"]
+    return {
+        UUID(obj["current"]["uuid"]): UUID(obj["current"]["org_unit_hierarchy"])
+        for obj in objs
+    }
+
+
+def _is_line_management(
+    sd_dep_addr: tuple[Department, str | None],
+    mo_org_unit_hierarchy: dict[UUID, UUID | None],
+    line_management_class: UUID,
+) -> bool:
+    return (
+        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)
+        == line_management_class
+    )
 
 
 @click.command()
@@ -97,19 +132,58 @@ def _remove_if_obsolete(
     help="SD institution identifier",
 )
 @click.option(
-    "--exclude-obsolete-uuid",
-    "exclude_obsolete_uuid",
-    type=click.UUID,
-    help="The UUID of the top obsolete unit ('Udgåede afdelinger'). "
-    "If set, units below this unit will be excluded",
+    "--auth-server",
+    "auth_server",
+    type=click.STRING,
+    envvar="AUTH_SERVER",
+    default="http://keycloak-service:8080/auth",
+    help="Keycloak auth server URL",
+)
+@click.option(
+    "--client-id",
+    "client_id",
+    type=click.STRING,
+    default="integration_sdtool_plus",
+    help="Keycloak client id",
+)
+@click.option(
+    "--client-secret",
+    "client_secret",
+    type=click.STRING,
+    envvar="CLIENT_SECRET",
+    required=True,
+    help="Keycloak client secret",
+)
+@click.option(
+    "--mo-base-url",
+    "mo_base_url",
+    type=click.STRING,
+    default="http://mo-service:5000",
+    envvar="MORA_BASE",
+    help="Base URL for calling MO",
 )
 def main(
     username: str,
     password: str,
     institution_identifier: str,
-    exclude_obsolete_uuid: UUID,
+    auth_server: str,
+    client_id: str,
+    client_secret: str,
+    mo_base_url: str,
 ):
     sd_client = SDClient(username, password)
+
+    timeout = 120
+    gql_client = GraphQLClient(
+        url=f"{mo_base_url}/graphql/v22",
+        client_id=client_id,
+        client_secret=client_secret,
+        auth_server=auth_server,  # type: ignore
+        auth_realm="mo",
+        execute_timeout=timeout,
+        httpx_client_kwargs={"timeout": timeout},
+        sync=True,
+    )
 
     print("Get SD departments and their addresses")
     sd_departments = get_sd_departments(
@@ -129,20 +203,20 @@ def main(
     ]
     print("Total number of SD units:", len(sd_dep_with_postal_addresses))
 
-    if exclude_obsolete_uuid:
-        print("Excluding obsolete units...")
-        sd_tree = get_sd_tree(
-            sd_client,
-            institution_identifier,
-            FakeMOOrgUnitTypeMap(),  # Not important when we are not writing to MO
-            build_full_tree=True,
-        )
-        sd_dep_with_postal_addresses = _remove_if_obsolete(
-            sd_dep_with_postal_addresses,
-            sd_tree,
-            exclude_obsolete_uuid,
-        )
-        print("Number of SD units after exclude:", len(sd_dep_with_postal_addresses))
+    # The line management part is Silkeborg specific
+    line_mgmt_class = _get_line_management_class(gql_client)
+    print("line_mgmt_class", line_mgmt_class)
+
+    print("Get MO org unit hierarchies")
+    mo_org_unit_hierarchy = _get_mo_org_unit_hierarchy(gql_client)
+
+    print("Filter out OUs not part of line management")
+    sd_dep_with_postal_addresses = [
+        sd_dep_addr
+        for sd_dep_addr in sd_dep_with_postal_addresses
+        if _is_line_management(sd_dep_addr, mo_org_unit_hierarchy, line_mgmt_class)
+    ]
+    print("Number of SD units after filtering:", len(sd_dep_with_postal_addresses))
 
     print("Generate CSV file")
     csv_header = (
@@ -200,4 +274,5 @@ def main(
 
 
 if __name__ == "__main__":
+    setup_logging(LogLevel.DEBUG)  # Shut up GraphQL
     main()
