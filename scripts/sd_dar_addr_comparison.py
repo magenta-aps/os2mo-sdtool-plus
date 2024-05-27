@@ -1,5 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+# NOTE: For now, this script is specific for Silkeborg, since we are doing
+# some line management filtering. The script can quite easily be adapted
+# to skip/adjust this line management filtering
 from datetime import datetime
 from operator import itemgetter
 from typing import cast
@@ -200,6 +203,7 @@ def main(
     ]
     print("Total number of SD units:", len(sd_dep_with_postal_addresses))
 
+    # The line management part is Silkeborg specific
     line_mgmt_class = _get_line_management_class(gql_client)
     print("line_mgmt_class", line_mgmt_class)
 
