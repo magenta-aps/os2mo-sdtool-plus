@@ -327,9 +327,10 @@ class TreeDiffExecutor:
         units_to_update = filter_by_uuid(
             org_unit, self._tree_diff.get_units_to_update()
         )
-        units_to_update = remove_by_name(
-            self.settings.regex_unit_names_to_remove, units_to_update
-        )
+        if self.settings.apply_name_filter_on_update:
+            units_to_update = remove_by_name(
+                self.settings.regex_unit_names_to_remove, units_to_update
+            )
         for unit in units_to_update:
             logger.info("Update unit", unit=str(unit.uuid), name=unit.name)
             update_mutation = UpdateOrgUnitMutation(self._session, unit)

@@ -58,9 +58,12 @@ class SDToolPlusSettings(BaseSettings):
     # the UUID of the SD root to match the MO organization UUID
     use_mo_root_uuid_as_sd_root_uuid: bool = False
 
-    # Do not add or update org units whose names match one or more of these
+    # Do not add org units whose names match one or more of these
     # regular expressions
     regex_unit_names_to_remove: list[str] = []
+
+    # Apply regex name filter on updates
+    apply_name_filter_on_update: bool = True
 
     # Database settings for the RunDB
     db_user: str = "sdtool_plus"
