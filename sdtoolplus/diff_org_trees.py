@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 import structlog
 from anytree.util import commonancestors
+from more_itertools import one
 from more_itertools import partition
 from pydantic import BaseModel
 
@@ -199,8 +200,9 @@ class OrgTreeDiff:
                 "from_date": datetime.now(tz=ZoneInfo("Europe/Copenhagen")).isoformat(),
             },
         )
-
-        has_active_engagements = len(r["engagements"]["objects"]) > 0
+        has_active_engagements = (
+            len(one(r["org_units"]["objects"])["current"]["engagements"]) > 0
+        )
         if has_active_engagements:
             self.units_with_engs.add((org_unit_node.name, org_unit_node.uuid))
 
