@@ -112,7 +112,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
         for org_unit_node, mutation, result in tree_diff_executor.execute():
             assert org_unit_node is not None
@@ -151,7 +150,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act
@@ -188,7 +186,6 @@ class TestTreeDiffExecutor:
                 sdtoolplus_settings,
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
-                [],
             )
             for org_unit_node, mutation, result in tree_diff_executor.execute(
                 dry_run=True
@@ -211,7 +208,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act
@@ -232,12 +228,13 @@ class TestTreeDiffExecutor:
         sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
+        sdtoolplus_settings.regex_unit_names_to_remove = ["^.*5$", "^.*6$"]
+
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            ["^.*5$", "^.*6$"],
         )
 
         # Act
@@ -263,7 +260,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act

@@ -893,7 +893,6 @@ def mock_tree_diff_executor(
         sdtoolplus_settings,
         mock_org_tree_diff,
         mock_mo_org_unit_type,
-        [],
     )
 
 

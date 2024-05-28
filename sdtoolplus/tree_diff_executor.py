@@ -4,7 +4,6 @@ import abc
 import datetime
 from typing import Any
 from typing import Iterator
-from zoneinfo import ZoneInfo
 
 import structlog
 from fastramqpi.raclients.graph.client import GraphQLClient
@@ -252,13 +251,11 @@ class TreeDiffExecutor:
         settings: SDToolPlusSettings,
         tree_diff: OrgTreeDiff,
         mo_org_unit_type: MOClass,
-        regex_unit_names_to_remove: list[str],
     ):
         self._session = session
         self.settings = settings
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
-        self.regex_unit_names_to_remove = regex_unit_names_to_remove
 
         self.sd_client = SDClient(
             self.settings.sd_username,
@@ -266,7 +263,8 @@ class TreeDiffExecutor:
         )
 
         logger.debug(
-            "Regexs for units to remove by name", regexs=regex_unit_names_to_remove
+            "Regexs for units to remove by name",
+            regexs=self.settings.regex_unit_names_to_remove,
         )
 
     def _add_unit(self, add_mutation: AnyMutation, unit: OrgUnitNode) -> OrgUnitUUID:
@@ -295,7 +293,9 @@ class TreeDiffExecutor:
     ) -> Iterator[tuple[OrgUnitNode, AnyMutation, OrgUnitUUID]]:
         # Add new units first
         units_to_add = filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
-        units_to_add = remove_by_name(self.regex_unit_names_to_remove, units_to_add)
+        units_to_add = remove_by_name(
+            self.settings.regex_unit_names_to_remove, units_to_add
+        )
         for unit in units_to_add:
             logger.info(
                 "Add unit",
@@ -328,7 +328,7 @@ class TreeDiffExecutor:
             org_unit, self._tree_diff.get_units_to_update()
         )
         units_to_update = remove_by_name(
-            self.regex_unit_names_to_remove, units_to_update
+            self.settings.regex_unit_names_to_remove, units_to_update
         )
         for unit in units_to_update:
             logger.info("Update unit", unit=str(unit.uuid), name=unit.name)
