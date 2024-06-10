@@ -112,7 +112,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
         for org_unit_node, mutation, result in tree_diff_executor.execute():
             assert org_unit_node is not None
@@ -151,7 +150,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act
@@ -188,7 +186,6 @@ class TestTreeDiffExecutor:
                 sdtoolplus_settings,
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
-                [],
             )
             for org_unit_node, mutation, result in tree_diff_executor.execute(
                 dry_run=True
@@ -211,7 +208,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act
@@ -232,12 +228,13 @@ class TestTreeDiffExecutor:
         sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
+        sdtoolplus_settings.regex_unit_names_to_remove = ["^.*5$", "^.*6$"]
+
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            ["^.*5$", "^.*6$"],
         )
 
         # Act
@@ -247,6 +244,31 @@ class TestTreeDiffExecutor:
         unit_names = [tup[0].name for tup in units_to_mutate]
         assert "Department 5" not in unit_names
         assert "Department 6" not in unit_names
+
+    def test_execute_remove_by_name_no_update_name_filter(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        mock_org_tree_diff: OrgTreeDiff,
+        mock_mo_org_unit_type: MOClass,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        sdtoolplus_settings.regex_unit_names_to_remove = ["^.*1$"]
+        sdtoolplus_settings.apply_name_filter_on_update = False
+
+        tree_diff_executor = TreeDiffExecutor(
+            mock_graphql_session,  # type: ignore
+            sdtoolplus_settings,
+            mock_org_tree_diff,
+            mock_mo_org_unit_type,
+        )
+
+        # Act
+        units_to_mutate: list[tuple] = list(tree_diff_executor.execute())
+
+        # Assert
+        unit_names = [tup[0].name for tup in units_to_mutate]
+        assert "Department 1" in unit_names
 
     def test_start_date_truncation(
         self,
@@ -263,7 +285,6 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
-            [],
         )
 
         # Act

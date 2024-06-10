@@ -168,7 +168,6 @@ class App:
             self.settings,
             self.tree_diff,
             mo_org_unit_type,
-            self.settings.regex_unit_names_to_remove,
         )
 
     def execute(
