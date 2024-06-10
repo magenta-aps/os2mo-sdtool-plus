@@ -47,7 +47,7 @@ def build_email_body(
 def send_email_notification(settings: SDToolPlusSettings, body: str):
     assert settings.email_from is not None
 
-    recipients = ",".join(settings.email_to)
+    recipients = ", ".join(settings.email_to)
     logger.info("Sending email notification", recipients=recipients)
 
     msg = MIMEText(body)
@@ -63,6 +63,8 @@ def send_email_notification(settings: SDToolPlusSettings, body: str):
             smtp_client.login(
                 settings.email_user, settings.email_password.get_secret_value()
             )
-            smtp_client.sendmail(settings.email_from, recipients, msg.as_string())
+            smtp_client.sendmail(
+                settings.email_from, settings.email_to, msg.as_string()
+            )
     except SMTPException as error:
         logger.error("Could not send email!", error=str(error))
