@@ -60,9 +60,10 @@ def send_email_notification(settings: SDToolPlusSettings, body: str):
     try:
         with SMTP(settings.email_host, settings.email_port) as smtp_client:
             smtp_client.starttls(context=context)
-            smtp_client.login(
-                settings.email_user, settings.email_password.get_secret_value()
-            )
+            if settings.email_use_login:
+                smtp_client.login(
+                    settings.email_user, settings.email_password.get_secret_value()
+                )
             smtp_client.sendmail(
                 settings.email_from, settings.email_to, msg.as_string()
             )
