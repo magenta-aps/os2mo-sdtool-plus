@@ -71,3 +71,23 @@ def test_email_to(
         "To: email@to1.dk, email@to2.dk\n\n"
         "Email body",
     )
+
+
+@patch("sdtoolplus.email.SMTP")
+def test_email_login_disabled(
+    mock_SMTP: MagicMock, sdtoolplus_settings: SDToolPlusSettings
+) -> None:
+    # Arrange
+    sdtoolplus_settings.email_use_login = False  # This is the important setting
+    sdtoolplus_settings.email_host = "smtp.example.org"
+    sdtoolplus_settings.email_from = EmailStr("email@from.dk")
+    sdtoolplus_settings.email_to = [EmailStr("email@to1.dk"), EmailStr("email@to2.dk")]
+
+    mock_smtp_client = MagicMock()
+    mock_SMTP.return_value.__enter__.return_value = mock_smtp_client
+
+    # Act
+    send_email_notification(sdtoolplus_settings, "Email body")
+
+    # Assert
+    mock_smtp_client.login.assert_not_called()

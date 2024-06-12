@@ -98,6 +98,7 @@ class SDToolPlusSettings(BaseSettings):
     email_user: str = ""
     email_password: SecretStr = SecretStr("")
     email_port: PositiveInt = 587
+    email_use_login: bool = True
     email_from: EmailStr | None = None
     email_to: list[EmailStr] = []
 
