@@ -189,6 +189,14 @@ class OrgTreeDiff:
             True if the unit has current or future active engagements or False otherwise
         """
 
+        ##### MEGA HACK: Disable email notifications for these units #####
+        # See https://redmine.magenta.dk/issues/61134
+
+        if org_unit_node.uuid in self.settings.email_notifications_disabled_units:
+            return False
+
+        ##################################################################
+
         # TODO: has to be done in this way for now, but we will use the FastRAMQPI
         # GraphQL client in the future
         gql_client = get_graphql_client(self.settings)

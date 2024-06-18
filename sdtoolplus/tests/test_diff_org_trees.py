@@ -17,6 +17,7 @@ from ..diff_org_trees import OrgTreeDiff
 from ..mo_class import MOOrgUnitLevelMap
 from ..mo_org_unit_importer import MOOrgTreeImport
 from ..mo_org_unit_importer import OrgUnitNode
+from ..mo_org_unit_importer import OrgUnitUUID
 from ..sd.tree import build_tree
 from .conftest import _MockGraphQLSession
 from .conftest import SharedIdentifier
@@ -388,6 +389,30 @@ class TestOrgTreeDiff:
         assert len(org_tree_diff.nodes_processed) == 0
         assert len(org_tree_diff.engs_in_subtree) == 0
         assert len(org_tree_diff.units_with_engs) == 0
+
+    def test_has_active_engagements_return_false_for_email_skip_list(
+        self,
+        mock_graphql_session: _MockGraphQLSession,
+        sdtoolplus_settings: SDToolPlusSettings,
+        random_org_unit_node: OrgUnitNode,
+    ):
+        # Arrange
+
+        # This is just a OU tree required by the OrgTreeDiff constructor. It is
+        # not actually used in this test.
+        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+            SharedIdentifier.root_org_uuid
+        )
+        sdtoolplus_settings.email_notifications_disabled_units = [
+            OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+        ]
+        org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
+
+        # Act
+        result = org_tree_diff._has_active_engagements(random_org_unit_node)
+
+        # Assert
+        assert result is False
 
 
 def test_uuid_to_nodes_map(

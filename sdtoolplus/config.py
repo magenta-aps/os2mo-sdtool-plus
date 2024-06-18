@@ -102,6 +102,11 @@ class SDToolPlusSettings(BaseSettings):
     email_from: EmailStr | None = None
     email_to: list[EmailStr] = []
 
+    ##### MEGA HACK: Disable email notifications for these units #####
+    # See https://redmine.magenta.dk/issues/61134
+    email_notifications_disabled_units: list[OrgUnitUUID] = []
+    ##################################################################
+
     @validator("obsolete_unit_roots")
     def obsolete_unit_roots_not_empty(cls, v):
         if len(v) == 0:
