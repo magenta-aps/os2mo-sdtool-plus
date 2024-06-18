@@ -217,6 +217,7 @@ class App:
         subtrees_with_engs = {
             subtree
             for subtree in subtrees_with_engs
+            # subtree[1] is the UUID of the org unit
             if not subtree[1] in self.settings.email_notifications_disabled_units
         }
 
