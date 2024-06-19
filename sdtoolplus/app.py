@@ -203,6 +203,23 @@ class App:
         subtrees_with_engs = self.tree_diff.get_subtrees_with_engs()
         units_with_engs = self.tree_diff.get_units_with_engagements()
 
+        # Disable email notifications for these units
+        # (see https://redmine.magenta.dk/issues/61134). This code is not
+        # optimal, since there may be situations where there are units with
+        # active engagement further down the tree in the "subtree" nodes that are
+        # filtered out below. Email notifications will therefor NOT be sent for
+        # these nodes even though this should be the case. Unfortunately, there
+        # is no easy way to address this problem in this place of the code. The
+        # filter should therefor be removed when
+        # https://redmine.magenta.dk/issues/60975 has been fixed at which point
+        # it should no longer be necessary.
+
+        subtrees_with_engs = [
+            node
+            for node in subtrees_with_engs
+            if node.uuid not in self.settings.email_notifications_disabled_units
+        ]
+
         if subtrees_with_engs:
             email_body = build_email_body(subtrees_with_engs, units_with_engs)
             send_email_notification(self.settings, email_body)
