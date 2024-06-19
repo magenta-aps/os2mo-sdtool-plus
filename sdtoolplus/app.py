@@ -214,12 +214,11 @@ class App:
         # https://redmine.magenta.dk/issues/60975 has been fixed at which point
         # it should no longer be necessary.
 
-        subtrees_with_engs = {
-            subtree
-            for subtree in subtrees_with_engs
-            # subtree[1] is the UUID of the org unit
-            if not subtree[1] in self.settings.email_notifications_disabled_units
-        }
+        subtrees_with_engs = [
+            node
+            for node in subtrees_with_engs
+            if node.uuid not in self.settings.email_notifications_disabled_units
+        ]
 
         if subtrees_with_engs:
             email_body = build_email_body(subtrees_with_engs, units_with_engs)
