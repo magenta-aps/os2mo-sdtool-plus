@@ -132,7 +132,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Finished adding or updating org unit objects")
 
         # Send email notifications for illegal moves
-        if settings.email_notifications_enabled:
+        if settings.email_notifications_enabled and not dry_run:
             sdtoolplus.send_email_notification()
 
         run_db_end_operations(engine, dry_run)
