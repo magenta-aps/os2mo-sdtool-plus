@@ -75,10 +75,19 @@ def _get_mo_root_uuid(
 
 
 class App:
-    def __init__(self, settings: SDToolPlusSettings):
+    def __init__(
+        self, settings: SDToolPlusSettings, current_inst_id: str | None = None
+    ):
         self.settings: SDToolPlusSettings = settings
 
         setup_logging(self.settings.log_level)
+
+        self.current_inst_id = (
+            current_inst_id
+            if current_inst_id is not None
+            else settings.sd_institution_identifier
+        )
+        logger.info("Current InstitutionIdentifier", current_inst_id=current_inst_id)
 
         if self.settings.sentry_dsn:
             sentry_sdk.init(dsn=self.settings.sentry_dsn)
@@ -107,7 +116,7 @@ class App:
 
         return get_sd_tree(
             sd_client,
-            self.settings.sd_institution_identifier,
+            self.current_inst_id,
             mo_org_unit_level_map,
             sd_root_uuid,
             self.settings.build_extra_tree,
@@ -166,6 +175,7 @@ class App:
         return TreeDiffExecutor(
             self.session,
             self.settings,
+            self.current_inst_id,
             self.tree_diff,
             mo_org_unit_type,
         )

@@ -110,6 +110,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
@@ -148,6 +149,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
         )
@@ -184,6 +186,7 @@ class TestTreeDiffExecutor:
             tree_diff_executor = TreeDiffExecutor(
                 mock_graphql_session,  # type: ignore
                 sdtoolplus_settings,
+                sdtoolplus_settings.sd_institution_identifier,
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
             )
@@ -206,6 +209,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
@@ -233,6 +237,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
@@ -259,6 +264,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
@@ -283,6 +289,7 @@ class TestTreeDiffExecutor:
         tree_diff_executor = TreeDiffExecutor(
             mock_graphql_session,  # type: ignore
             sdtoolplus_settings,
+            sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
