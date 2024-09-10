@@ -77,7 +77,6 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     )
     fastramqpi.add_context(settings=settings)
 
-    sdtoolplus: App = App(settings)
     engine = get_engine(settings)
 
     fastapi_router = APIRouter()
@@ -88,6 +87,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         For debugging problems. Prints the part of the MO tree that
         should be compared to the SD tree.
         """
+        sdtoolplus: App = App(settings)
         mo_tree = sdtoolplus.get_mo_tree()
         return tree_as_string(mo_tree)
 
@@ -96,6 +96,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         """
         For debugging problems. Prints the SD tree.
         """
+        sdtoolplus: App = App(settings)
         mo_org_unit_level_map = MOOrgUnitLevelMap(sdtoolplus.session)
         sd_tree = sdtoolplus.get_sd_tree(mo_org_unit_level_map)
         return tree_as_string(sd_tree)
@@ -118,6 +119,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         )
         if run_db_start_operations_resp is not None:
             return run_db_start_operations_resp
+
+        sdtoolplus: App = App(settings)
 
         results: list[dict] = [
             {
