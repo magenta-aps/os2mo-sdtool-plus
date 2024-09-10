@@ -110,6 +110,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     async def trigger(
         response: Response,
         org_unit: UUID | None = None,
+        inst_id: str | None = None,
         dry_run: bool = False,
     ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
@@ -120,7 +121,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         if run_db_start_operations_resp is not None:
             return run_db_start_operations_resp
 
-        sdtoolplus: App = App(settings)
+        sdtoolplus: App = App(settings, inst_id)
 
         results: list[dict] = [
             {
