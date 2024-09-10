@@ -218,11 +218,13 @@ class AddressFixer:
         sd_client: SDClient,
         dar_client: AsyncDARClient,
         settings: SDToolPlusSettings,
+        current_inst_id: str,
     ):
         self.gql_client = gql_client
         self.sd_client = sd_client
         self.dar_client = dar_client
         self.settings = settings
+        self.current_inst_id = current_inst_id
 
     async def fix_addresses(
         self,
@@ -236,7 +238,7 @@ class AddressFixer:
 
         # Get the SD units
         logger.info("Getting SD units...")
-        sd_units = get_sd_units(self.sd_client, self.settings.sd_institution_identifier)
+        sd_units = get_sd_units(self.sd_client, self.current_inst_id)
 
         # Get the MO units
         logger.info("Getting MO units...")

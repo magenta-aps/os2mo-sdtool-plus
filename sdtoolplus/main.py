@@ -149,6 +149,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         response: Response,
         gql_client: GraphQLClient,
         org_unit: UUID | None = None,
+        inst_id: str | None = None,
         dry_run: bool = False,
     ) -> list[dict] | dict:
         logger.info("Starting address run", org_unit=str(org_unit), dry_run=dry_run)
@@ -167,6 +168,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             ),
             AsyncDARClient(),
             settings,
+            inst_id if inst_id is not None else settings.sd_institution_identifier,
         )
 
         results: list[dict] = [
