@@ -16,6 +16,7 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..app import _get_mo_root_uuid
+from ..app import _get_mo_subtree_path_for_root
 from ..app import _get_sd_root_uuid
 from ..app import App
 from ..config import SDToolPlusSettings
@@ -74,6 +75,43 @@ class TestApp:
                     SharedIdentifier.child_org_unit_uuid,
                     SharedIdentifier.grandchild_org_unit_uuid,
                 ],
+            )
+
+            # Act
+            app.get_tree_diff_executor()
+
+            # Assert
+            mock_as_single_tree.assert_called_once_with(
+                UUID("20000000-0000-0000-0000-000000000000"),
+                f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}",
+            )
+
+    def test_as_single_tree_called_with_correct_path_for_multiple_inst_ids(
+        self,
+        mock_mo_org_unit_type_map,
+        mock_mo_org_unit_level_map,
+        mock_mo_org_tree_import,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        with ExitStack() as stack:
+            # Arrange
+            self._add_mock(stack, "MOOrgUnitTypeMap", mock_mo_org_unit_type_map)
+            self._add_mock(stack, "MOOrgUnitLevelMap", mock_mo_org_unit_level_map)
+            self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
+            self._add_mock(stack, "get_sd_tree", MagicMock())
+
+            mock_as_single_tree = MagicMock()
+            mock_mo_org_tree_import.as_single_tree = mock_as_single_tree
+
+            app: App = self._get_app_instance(
+                sdtoolplus_settings,
+                "II",
+                mo_subtree_paths_for_root={
+                    "II": [
+                        SharedIdentifier.child_org_unit_uuid,
+                        SharedIdentifier.grandchild_org_unit_uuid,
+                    ],
+                },
             )
 
             # Act
@@ -266,11 +304,12 @@ class TestApp:
     def _get_app_instance(
         self,
         sdtoolplus_settings: SDToolPlusSettings,
+        current_inst_id: str | None = None,
         **kwargs: Any,
     ) -> App:
         for name, value in kwargs.items():
             setattr(sdtoolplus_settings, name, value)
-        return App(sdtoolplus_settings)
+        return App(sdtoolplus_settings, current_inst_id)
 
     def test_get_effective_root_path(self):
         # Arrange
@@ -444,3 +483,55 @@ def test_get_mo_root_uuid(
 
     # Assert
     assert actual == expected
+
+
+def test__get_mo_subtree_path_for_root_single_inst_id(
+    sdtoolplus_settings: SDToolPlusSettings,
+):
+    # Arrange
+    sdtoolplus_settings.mo_subtree_path_for_root = [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+    # Act
+    subtree_path_for_root = _get_mo_subtree_path_for_root(sdtoolplus_settings, "II")
+
+    # Assert
+    assert subtree_path_for_root == [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+
+def test__get_mo_subtree_path_for_root_multiple_inst_ids(
+    sdtoolplus_settings: SDToolPlusSettings,
+):
+    # Arrange
+    sdtoolplus_settings.mo_subtree_paths_for_root = {
+        "II": [
+            UUID("10000000-0000-0000-0000-000000000000"),
+            UUID("20000000-0000-0000-0000-000000000000"),
+        ],
+        "II2": [
+            UUID("30000000-0000-0000-0000-000000000000"),
+            UUID("40000000-0000-0000-0000-000000000000"),
+        ],
+    }
+
+    # Act
+    subtree_path_for_root_ii = _get_mo_subtree_path_for_root(sdtoolplus_settings, "II")
+    subtree_path_for_root_ii2 = _get_mo_subtree_path_for_root(
+        sdtoolplus_settings, "II2"
+    )
+
+    # Assert
+    assert subtree_path_for_root_ii == [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+    assert subtree_path_for_root_ii2 == [
+        UUID("30000000-0000-0000-0000-000000000000"),
+        UUID("40000000-0000-0000-0000-000000000000"),
+    ]

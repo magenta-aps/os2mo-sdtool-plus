@@ -34,6 +34,14 @@ from .tree_diff_executor import UpdateOrgUnitMutation
 logger = structlog.get_logger()
 
 
+def _get_mo_subtree_path_for_root(
+    settings: SDToolPlusSettings, current_inst_id: str
+) -> list[OrgUnitUUID]:
+    if settings.mo_subtree_paths_for_root is not None:
+        return settings.mo_subtree_paths_for_root[current_inst_id]
+    return settings.mo_subtree_path_for_root
+
+
 def _get_sd_root_uuid(
     org_uuid: OrgUUID,
     use_mo_root_uuid_as_sd_root_uuid: bool,
@@ -75,10 +83,22 @@ def _get_mo_root_uuid(
 
 
 class App:
-    def __init__(self, settings: SDToolPlusSettings):
+    def __init__(
+        self, settings: SDToolPlusSettings, current_inst_id: str | None = None
+    ):
         self.settings: SDToolPlusSettings = settings
 
         setup_logging(self.settings.log_level)
+
+        self.current_inst_id = (
+            current_inst_id
+            if current_inst_id is not None
+            else settings.sd_institution_identifier
+        )
+        logger.info("Current InstitutionIdentifier", current_inst_id=current_inst_id)
+        self.mo_subtree_path_for_root = _get_mo_subtree_path_for_root(
+            self.settings, self.current_inst_id
+        )
 
         if self.settings.sentry_dsn:
             sentry_sdk.init(dsn=self.settings.sentry_dsn)
@@ -102,12 +122,12 @@ class App:
         sd_root_uuid = _get_sd_root_uuid(
             self.mo_org_tree_import.get_org_uuid(),
             self.settings.use_mo_root_uuid_as_sd_root_uuid,
-            self.settings.mo_subtree_path_for_root,
+            self.mo_subtree_path_for_root,
         )
 
         return get_sd_tree(
             sd_client,
-            self.settings.sd_institution_identifier,
+            self.current_inst_id,
             mo_org_unit_level_map,
             sd_root_uuid,
             self.settings.build_extra_tree,
@@ -115,12 +135,12 @@ class App:
 
     def get_mo_tree(self) -> OrgUnitNode:
         mo_subtree_path_for_root = App._get_effective_root_path(
-            self.settings.mo_subtree_path_for_root
+            self.mo_subtree_path_for_root
         )
 
         mo_root_uuid = _get_mo_root_uuid(
             self.mo_org_tree_import.get_org_uuid(),
-            self.settings.mo_subtree_path_for_root,
+            self.mo_subtree_path_for_root,
         )
 
         return self.mo_org_tree_import.as_single_tree(
@@ -166,6 +186,7 @@ class App:
         return TreeDiffExecutor(
             self.session,
             self.settings,
+            self.current_inst_id,
             self.tree_diff,
             mo_org_unit_type,
         )

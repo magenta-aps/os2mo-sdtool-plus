@@ -145,6 +145,7 @@ def _fix_parent_unit_validity(
     mo_client: PersistentGraphQLClient,
     sd_client: SDClient,
     settings: SDToolPlusSettings,
+    current_inst_id: str,
     org_unit_node: OrgUnitNode,
 ) -> None:
     if org_unit_node.parent is None:
@@ -159,7 +160,7 @@ def _fix_parent_unit_validity(
 
     r_get_department = sd_client.get_department(
         GetDepartmentRequest(
-            InstitutionIdentifier=settings.sd_institution_identifier,
+            InstitutionIdentifier=current_inst_id,
             DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
             ActivationDate=settings.min_mo_datetime.date(),
             DeactivationDate=datetime.datetime.now(tz=TIMEZONE).date(),
@@ -220,7 +221,7 @@ def _fix_parent_unit_validity(
         #   data in MO requiring fixing by custom scripts :-)
         if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
             _fix_parent_unit_validity(
-                mo_client, sd_client, settings, org_unit_node.parent
+                mo_client, sd_client, settings, current_inst_id, org_unit_node.parent
             )
         else:
             raise error
@@ -249,11 +250,13 @@ class TreeDiffExecutor:
         self,
         session: PersistentGraphQLClient,
         settings: SDToolPlusSettings,
+        current_inst_id: str,
         tree_diff: OrgTreeDiff,
         mo_org_unit_type: MOClass,
     ):
         self._session = session
         self.settings = settings
+        self.current_inst_id = current_inst_id
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
 
@@ -281,6 +284,7 @@ class TreeDiffExecutor:
                     self._session,
                     self.sd_client,
                     self.settings,
+                    self.current_inst_id,
                     unit,
                 )
             else:
