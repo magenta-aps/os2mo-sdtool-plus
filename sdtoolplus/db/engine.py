@@ -11,4 +11,4 @@ def get_db_url(settings: SDToolPlusSettings) -> str:
 
 
 def get_engine(settings: SDToolPlusSettings) -> Engine:
-    return create_engine(get_db_url(settings))
+    return create_engine(get_db_url(settings), pool_pre_ping=True)
