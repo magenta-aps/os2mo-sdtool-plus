@@ -96,6 +96,9 @@ class App:
             else settings.sd_institution_identifier
         )
         logger.info("Current InstitutionIdentifier", current_inst_id=current_inst_id)
+        self.mo_subtree_path_for_root = _get_mo_subtree_path_for_root(
+            self.settings, self.current_inst_id
+        )
 
         if self.settings.sentry_dsn:
             sentry_sdk.init(dsn=self.settings.sentry_dsn)
@@ -119,7 +122,7 @@ class App:
         sd_root_uuid = _get_sd_root_uuid(
             self.mo_org_tree_import.get_org_uuid(),
             self.settings.use_mo_root_uuid_as_sd_root_uuid,
-            self.settings.mo_subtree_path_for_root,
+            self.mo_subtree_path_for_root,
         )
 
         return get_sd_tree(
@@ -132,12 +135,12 @@ class App:
 
     def get_mo_tree(self) -> OrgUnitNode:
         mo_subtree_path_for_root = App._get_effective_root_path(
-            self.settings.mo_subtree_path_for_root
+            self.mo_subtree_path_for_root
         )
 
         mo_root_uuid = _get_mo_root_uuid(
             self.mo_org_tree_import.get_org_uuid(),
-            self.settings.mo_subtree_path_for_root,
+            self.mo_subtree_path_for_root,
         )
 
         return self.mo_org_tree_import.as_single_tree(
