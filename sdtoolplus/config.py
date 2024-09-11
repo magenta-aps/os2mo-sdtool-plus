@@ -37,6 +37,12 @@ class SDToolPlusSettings(BaseSettings):
     # list of UUIDs
     mo_subtree_path_for_root: list[OrgUnitUUID] = []
 
+    # Same as the above, but for the case where there are multiple
+    # InstitutionIdentifiers. In this case we make a map from the InstitutionIdentifier
+    # to the list of OrgUnitUUIDs. If this ENV is set, it will take precedence over the
+    # above.
+    mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None = None
+
     # Configures log level
     log_level: LogLevel = LogLevel.INFO
 

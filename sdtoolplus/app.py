@@ -34,6 +34,14 @@ from .tree_diff_executor import UpdateOrgUnitMutation
 logger = structlog.get_logger()
 
 
+def _get_mo_subtree_path_for_root(
+    settings: SDToolPlusSettings, current_inst_id: str
+) -> list[OrgUnitUUID]:
+    if settings.mo_subtree_paths_for_root is not None:
+        return settings.mo_subtree_paths_for_root[current_inst_id]
+    return settings.mo_subtree_path_for_root
+
+
 def _get_sd_root_uuid(
     org_uuid: OrgUUID,
     use_mo_root_uuid_as_sd_root_uuid: bool,

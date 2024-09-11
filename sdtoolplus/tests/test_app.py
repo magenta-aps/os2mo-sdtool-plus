@@ -16,6 +16,7 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from ..app import _get_mo_root_uuid
+from ..app import _get_mo_subtree_path_for_root
 from ..app import _get_sd_root_uuid
 from ..app import App
 from ..config import SDToolPlusSettings
@@ -444,3 +445,55 @@ def test_get_mo_root_uuid(
 
     # Assert
     assert actual == expected
+
+
+def test__get_mo_subtree_path_for_root_single_inst_id(
+    sdtoolplus_settings: SDToolPlusSettings,
+):
+    # Arrange
+    sdtoolplus_settings.mo_subtree_path_for_root = [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+    # Act
+    subtree_path_for_root = _get_mo_subtree_path_for_root(sdtoolplus_settings, "II")
+
+    # Assert
+    assert subtree_path_for_root == [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+
+def test__get_mo_subtree_path_for_root_multiple_inst_ids(
+    sdtoolplus_settings: SDToolPlusSettings,
+):
+    # Arrange
+    sdtoolplus_settings.mo_subtree_paths_for_root = {
+        "II": [
+            UUID("10000000-0000-0000-0000-000000000000"),
+            UUID("20000000-0000-0000-0000-000000000000"),
+        ],
+        "II2": [
+            UUID("30000000-0000-0000-0000-000000000000"),
+            UUID("40000000-0000-0000-0000-000000000000"),
+        ],
+    }
+
+    # Act
+    subtree_path_for_root_ii = _get_mo_subtree_path_for_root(sdtoolplus_settings, "II")
+    subtree_path_for_root_ii2 = _get_mo_subtree_path_for_root(
+        sdtoolplus_settings, "II2"
+    )
+
+    # Assert
+    assert subtree_path_for_root_ii == [
+        UUID("10000000-0000-0000-0000-000000000000"),
+        UUID("20000000-0000-0000-0000-000000000000"),
+    ]
+
+    assert subtree_path_for_root_ii2 == [
+        UUID("30000000-0000-0000-0000-000000000000"),
+        UUID("40000000-0000-0000-0000-000000000000"),
+    ]
