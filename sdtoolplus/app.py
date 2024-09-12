@@ -262,7 +262,9 @@ class App:
         logger.info("Apply NY logic", org_unit_uuid=org_unit_uuid)
 
         url: str = f"/trigger/apply-ny-logic/{org_unit_uuid}"
-        response: Response = self.client.post(url)
+        response: Response = self.client.post(
+            url, params={"institution_identifier": self.current_inst_id}
+        )
 
         # NOTE: if _call_apply_ny_logic fails, you will have to make the
         # failing POST request again manually to make sure the NY logic

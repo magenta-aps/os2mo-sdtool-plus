@@ -275,7 +275,8 @@ class TestApp:
 
             # Assert
             mock_client_post.assert_called_once_with(
-                f"/trigger/apply-ny-logic/{org_unit_uuid}"
+                f"/trigger/apply-ny-logic/{org_unit_uuid}",
+                params={"institution_identifier": "sd_institution_identifier"},
             )
             mock_response.raise_for_status.assert_called_once()
 
