@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import re
+from unittest.mock import call
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
@@ -14,6 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..app import App
 from ..config import SDToolPlusSettings
 from ..db.rundb import Status
+from ..main import background_run
 from ..main import create_app
 
 
@@ -195,3 +197,32 @@ class TestFastAPIApp:
         )
         val: float = float(match.groupdict()["val"])
         return val
+
+
+@patch("sdtoolplus.main.persist_status")
+def test_background_run(
+    mock_persist_status: MagicMock, sdtoolplus_settings: SDToolPlusSettings
+):
+    # Arrange
+    mock_sdtoolplus_app = MagicMock(spec=App)
+    mock_engine = MagicMock()
+
+    with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app) as m_app:
+        # Act
+        background_run(sdtoolplus_settings, mock_engine, ["AB", "CD"])
+
+        # Assert
+
+        # Make sure the constructor is called twice with the correct args
+        assert m_app.call_count == 2
+        call1, call2 = m_app.call_args_list
+        assert call1 == call(sdtoolplus_settings, "AB")
+        assert call2 == call(sdtoolplus_settings, "CD")
+
+        # Make sure execute is called twice with the correct args
+        assert mock_sdtoolplus_app.execute.call_count == 2
+        call1, call2 = mock_sdtoolplus_app.execute.call_args_list
+        assert call1 == call(org_unit=None, dry_run=False)
+        assert call2 == call(org_unit=None, dry_run=False)
+
+        mock_persist_status.assert_called_once_with(mock_engine, Status.COMPLETED)
