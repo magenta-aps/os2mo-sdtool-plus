@@ -105,6 +105,65 @@ class TestFastAPIApp:
             )
             assert response.json() == {"msg": "Org tree sync started in background"}
 
+    @pytest.mark.parametrize(
+        "org_unit, inst_id, dry_run, expected_inst_id_list",
+        [
+            (UUID("10000000-0000-0000-0000-000000000000"), "AB", False, ["AB"]),
+            (UUID("20000000-0000-0000-0000-000000000000"), "CD", True, ["CD"]),
+        ],
+    )
+    @patch("sdtoolplus.main.get_engine")
+    @patch("sdtoolplus.main.background_run")
+    @patch("sdtoolplus.main.persist_status")
+    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
+    def test_post_trigger_multiple_inst_ids_dry_and_inst_id(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        mock_background_run: MagicMock,
+        mock_get_engine: MagicMock,
+        org_unit: UUID | None,
+        inst_id: str | None,
+        dry_run: bool,
+        expected_inst_id_list: list[str],
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        # Arrange
+        sdtoolplus_settings.mo_subtree_paths_for_root = {
+            "AB": [],
+            "CD": [],
+        }
+
+        mock_sdtoolplus_app = MagicMock(spec=App)
+
+        mock_engine = MagicMock()
+        mock_get_engine.return_value = mock_engine
+
+        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
+            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
+
+            # Act
+            response: Response = client.post(
+                "/trigger-multiple-inst-ids",
+                params={
+                    "org_unit": str(org_unit),
+                    "inst_id": inst_id,
+                    "dry_run": dry_run,
+                },
+            )
+
+            # Assert
+            if not dry_run:
+                mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
+            mock_background_run.assert_called_once_with(
+                mock_engine,
+                sdtoolplus_settings,
+                expected_inst_id_list,
+                org_unit,
+                dry_run,
+            )
+            assert response.json() == {"msg": "Org tree sync started in background"}
+
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.RUNNING)
     def test_post_trigger_aborts_when_rundb_status_is_running(
