@@ -5,9 +5,11 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
 
+import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
 from sqlalchemy import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from ..app import App
 from ..config import SDToolPlusSettings
@@ -134,6 +136,48 @@ class TestFastAPIApp:
             assert response.status_code == 200
             assert response.json() == []
             mock_persist_status.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "rundb_status, endpoint_response_status",
+        [
+            (
+                Status.COMPLETED,
+                0,
+            ),
+            (
+                Status.RUNNING,
+                1,
+            ),
+        ],
+    )
+    def test_rundb_get_status(
+        self,
+        rundb_status: Status,
+        endpoint_response_status: int,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
+
+        with patch("sdtoolplus.main.get_status", return_value=rundb_status):
+            # Act
+            response = client.get("/rundb/status")
+
+            # Assert
+            assert response.status_code == 200
+            assert response.text == str(endpoint_response_status)
+
+    def test_rundb_get_status_on_error(self, sdtoolplus_settings: SDToolPlusSettings):
+        # Arrange
+        client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
+
+        with patch("sdtoolplus.main.get_status", side_effect=SQLAlchemyError()):
+            # Act
+            response = client.get("/rundb/status")
+
+            # Assert
+            assert response.status_code == 200
+            assert response.text == str(3)
 
     def _get_last_run_metric(
         self,
