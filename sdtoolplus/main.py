@@ -10,6 +10,7 @@ To run:
     $ poetry run docker/start.sh
 """
 from typing import Any
+from typing import cast
 from uuid import UUID
 
 import structlog
@@ -160,8 +161,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return results
 
-    @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
-    async def trigger(
+    @fastapi_router.post("/trigger-multiple-inst-ids", status_code=HTTP_200_OK)
+    async def trigger_multiple_inst_ids(
         response: Response,
         org_unit: UUID | None = None,
         inst_id: str | None = None,
@@ -175,23 +176,32 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         if run_db_start_operations_resp is not None:
             return run_db_start_operations_resp
 
-        sdtoolplus: App = App(settings, inst_id)
+        if inst_id is not None:
+            inst_ids = [inst_id]
+        else:
+            assert settings.mo_subtree_paths_for_root is not None
+            inst_ids = cast(list[str], settings.mo_subtree_paths_for_root.keys())
 
-        results: list[dict] = [
-            {
-                "type": mutation.__class__.__name__,
-                "unit": repr(org_unit_node),
-                "mutation_result": str(result),
-            }
-            for org_unit_node, mutation, result in sdtoolplus.execute(
-                org_unit=org_unit, dry_run=dry_run
+        # Will be run as an asyncio background run shortly...
+        results: list[dict] = []
+        for ii in inst_ids:
+            sdtoolplus: App = App(settings, ii)
+
+            results.extend(
+                {
+                    "type": mutation.__class__.__name__,
+                    "unit": repr(org_unit_node),
+                    "mutation_result": str(result),
+                }
+                for org_unit_node, mutation, result in sdtoolplus.execute(
+                    org_unit=org_unit, dry_run=dry_run
+                )
             )
-        ]
-        logger.info("Finished adding or updating org unit objects")
+            logger.info("Finished adding or updating org unit objects", inst_id=ii)
 
-        # Send email notifications for illegal moves
-        if settings.email_notifications_enabled and not dry_run:
-            sdtoolplus.send_email_notification()
+            # Send email notifications for illegal moves
+            if settings.email_notifications_enabled and not dry_run:
+                sdtoolplus.send_email_notification()
 
         run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
