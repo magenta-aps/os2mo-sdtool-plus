@@ -101,6 +101,22 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         sd_tree = sdtoolplus.get_sd_tree(mo_org_unit_level_map)
         return tree_as_string(sd_tree)
 
+    @fastapi_router.get("/rundb/status")
+    def rundb_get_status() -> int:
+        """
+        Get the RunDB status and return a job-runner.sh (curl) friendly integer
+        status.
+
+        Returns:
+            0 if status is "completed", 1 if status is "running" and 3 in case of
+            an error.
+        """
+        try:
+            status = get_status(engine)
+            return 0 if status == Status.COMPLETED else 1
+        except:
+            return 3
+
     @fastapi_router.post("/rundb/delete-last-run")
     def rundb_delete_last_run():
         delete_last_run(engine)
