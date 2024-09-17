@@ -160,6 +160,44 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return results
 
+    @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
+    async def trigger(
+        response: Response,
+        org_unit: UUID | None = None,
+        inst_id: str | None = None,
+        dry_run: bool = False,
+    ) -> list[dict] | dict:
+        logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
+
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
+
+        sdtoolplus: App = App(settings, inst_id)
+
+        results: list[dict] = [
+            {
+                "type": mutation.__class__.__name__,
+                "unit": repr(org_unit_node),
+                "mutation_result": str(result),
+            }
+            for org_unit_node, mutation, result in sdtoolplus.execute(
+                org_unit=org_unit, dry_run=dry_run
+            )
+        ]
+        logger.info("Finished adding or updating org unit objects")
+
+        # Send email notifications for illegal moves
+        if settings.email_notifications_enabled and not dry_run:
+            sdtoolplus.send_email_notification()
+
+        run_db_end_operations(engine, dry_run)
+        logger.info("Run completed!")
+
+        return results
+
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
         response: Response,
