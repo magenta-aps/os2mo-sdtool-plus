@@ -199,9 +199,21 @@ class TestFastAPIApp:
         return val
 
 
+@pytest.mark.parametrize(
+    "org_unit, dry_run",
+    [
+        (None, False),
+        (UUID("10000000-0000-0000-0000-000000000000"), False),
+        (UUID("10000000-0000-0000-0000-000000000000"), True),
+        (UUID("10000000-0000-0000-0000-000000000000"), True),
+    ],
+)
 @patch("sdtoolplus.main.persist_status")
 def test_background_run(
-    mock_persist_status: MagicMock, sdtoolplus_settings: SDToolPlusSettings
+    mock_persist_status: MagicMock,
+    sdtoolplus_settings: SDToolPlusSettings,
+    org_unit: UUID | None,
+    dry_run: bool,
 ):
     # Arrange
     mock_sdtoolplus_app = MagicMock(spec=App)
@@ -209,7 +221,9 @@ def test_background_run(
 
     with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app) as m_app:
         # Act
-        background_run(sdtoolplus_settings, mock_engine, ["AB", "CD"])
+        background_run(
+            sdtoolplus_settings, mock_engine, ["AB", "CD"], org_unit, dry_run
+        )
 
         # Assert
 
@@ -222,7 +236,11 @@ def test_background_run(
         # Make sure execute is called twice with the correct args
         assert mock_sdtoolplus_app.execute.call_count == 2
         call1, call2 = mock_sdtoolplus_app.execute.call_args_list
-        assert call1 == call(org_unit=None, dry_run=False)
-        assert call2 == call(org_unit=None, dry_run=False)
+        assert call1 == call(org_unit=org_unit, dry_run=dry_run)
+        assert call2 == call(org_unit=org_unit, dry_run=dry_run)
 
-        mock_persist_status.assert_called_once_with(mock_engine, Status.COMPLETED)
+        # Careful here - no logic in the test code!
+        if not dry_run:
+            mock_persist_status.assert_called_once_with(mock_engine, Status.COMPLETED)
+        else:
+            mock_persist_status.assert_not_called()
