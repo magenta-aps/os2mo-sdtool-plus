@@ -212,7 +212,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             inst_ids = [inst_id]
         else:
             assert settings.mo_subtree_paths_for_root is not None
-            inst_ids = cast(list[str], settings.mo_subtree_paths_for_root.keys())
+            inst_ids = list(settings.mo_subtree_paths_for_root.keys())
 
         loop = asyncio.get_running_loop()
         loop.call_soon(background_run, engine, settings, inst_ids, org_unit, dry_run)

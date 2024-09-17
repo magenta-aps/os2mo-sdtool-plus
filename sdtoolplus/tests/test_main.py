@@ -69,6 +69,42 @@ class TestFastAPIApp:
                 == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
             )
 
+    @patch("sdtoolplus.main.get_engine")
+    @patch("sdtoolplus.main.background_run")
+    @patch("sdtoolplus.main.persist_status")
+    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
+    def test_post_trigger_multiple_inst_ids(
+        self,
+        mock_get_status: MagicMock,
+        mock_persist_status: MagicMock,
+        mock_background_run: MagicMock,
+        mock_get_engine: MagicMock,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ) -> None:
+        # Arrange
+        sdtoolplus_settings.mo_subtree_paths_for_root = {
+            "AB": [],
+            "CD": [],
+        }
+
+        mock_sdtoolplus_app = MagicMock(spec=App)
+
+        mock_engine = MagicMock()
+        mock_get_engine.return_value = mock_engine
+
+        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
+            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
+
+            # Act
+            response: Response = client.post("/trigger-multiple-inst-ids")
+
+            # Assert
+            mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
+            mock_background_run.assert_called_once_with(
+                mock_engine, sdtoolplus_settings, ["AB", "CD"], None, False
+            )
+            assert response.json() == {"msg": "Org tree sync started in background"}
+
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.RUNNING)
     def test_post_trigger_aborts_when_rundb_status_is_running(
