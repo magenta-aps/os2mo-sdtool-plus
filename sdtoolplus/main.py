@@ -14,6 +14,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter
+from fastapi import BackgroundTasks
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
@@ -64,6 +65,37 @@ def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
     if not dry_run:
         persist_status(engine, Status.COMPLETED)
     dipex_last_success_timestamp.set_to_current_time()
+
+
+def background_run(
+    settings: SDToolPlusSettings,
+    engine: Engine,
+    inst_ids: list[str],
+    org_unit: UUID | None = None,
+    dry_run: bool = False,
+) -> None:
+    """
+    Run org tree sync in background for all institutions.
+
+    Args:
+        settings: the SDToolPlusSettings
+        engine: the SQLAlchemy DB engine
+        inst_ids: list of the SD InstitutionIdentifiers
+        org_unit: if not None, only run for this unit
+        dry_run: if True, no changes will be written in MO
+    """
+    for ii in inst_ids:
+        logger.info("Starting background run", inst_id=ii)
+        sdtoolplus: App = App(settings, ii)
+        sdtoolplus.execute(org_unit=org_unit, dry_run=dry_run)
+        logger.info("Finished background run", inst_id=ii)
+
+        # Send email notifications for illegal moves
+        if settings.email_notifications_enabled and not dry_run:
+            sdtoolplus.send_email_notification()
+
+    run_db_end_operations(engine, dry_run)
+    logger.info("Run completed!")
 
 
 def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
@@ -159,6 +191,34 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Run completed!")
 
         return results
+
+    @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
+    async def trigger_all_inst_ids(
+        response: Response,
+        background_tasks: BackgroundTasks,
+        org_unit: UUID | None = None,
+        inst_id: str | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, str]:
+        logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
+
+        run_db_start_operations_resp = run_db_start_operations(
+            engine, dry_run, response
+        )
+        if run_db_start_operations_resp is not None:
+            return run_db_start_operations_resp
+
+        if inst_id is not None:
+            inst_ids = [inst_id]
+        else:
+            assert settings.mo_subtree_paths_for_root is not None
+            inst_ids = list(settings.mo_subtree_paths_for_root.keys())
+
+        background_tasks.add_task(
+            background_run, settings, engine, inst_ids, org_unit, dry_run
+        )
+
+        return {"msg": "Org tree sync started in background"}
 
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
