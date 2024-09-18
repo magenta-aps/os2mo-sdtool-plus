@@ -101,7 +101,7 @@ class TestFastAPIApp:
             # Assert
             mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
             mock_background_run.assert_called_once_with(
-                mock_engine, sdtoolplus_settings, ["AB", "CD"], None, False
+                sdtoolplus_settings, mock_engine, ["AB", "CD"], None, False
             )
             assert response.json() == {"msg": "Org tree sync started in background"}
 
@@ -156,8 +156,8 @@ class TestFastAPIApp:
             if not dry_run:
                 mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
             mock_background_run.assert_called_once_with(
-                mock_engine,
                 sdtoolplus_settings,
+                mock_engine,
                 expected_inst_id_list,
                 org_unit,
                 dry_run,

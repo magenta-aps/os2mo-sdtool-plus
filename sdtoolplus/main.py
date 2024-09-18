@@ -9,13 +9,12 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
-import asyncio
 from typing import Any
-from typing import cast
 from uuid import UUID
 
 import structlog
 from fastapi import APIRouter
+from fastapi import BackgroundTasks
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi import Response
@@ -196,6 +195,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
     async def trigger_all_inst_ids(
         response: Response,
+        background_tasks: BackgroundTasks,
         org_unit: UUID | None = None,
         inst_id: str | None = None,
         dry_run: bool = False,
@@ -214,8 +214,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             assert settings.mo_subtree_paths_for_root is not None
             inst_ids = list(settings.mo_subtree_paths_for_root.keys())
 
-        loop = asyncio.get_running_loop()
-        loop.call_soon(background_run, engine, settings, inst_ids, org_unit, dry_run)
+        background_tasks.add_task(
+            background_run, settings, engine, inst_ids, org_unit, dry_run
+        )
 
         return {"msg": "Org tree sync started in background"}
 
