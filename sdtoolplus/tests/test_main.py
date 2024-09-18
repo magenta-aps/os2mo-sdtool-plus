@@ -73,7 +73,7 @@ class TestFastAPIApp:
     @patch("sdtoolplus.main.background_run")
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
-    def test_post_trigger_multiple_inst_ids(
+    def test_post_trigger_all_inst_ids(
         self,
         mock_get_status: MagicMock,
         mock_persist_status: MagicMock,
@@ -96,7 +96,7 @@ class TestFastAPIApp:
             client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
 
             # Act
-            response: Response = client.post("/trigger-multiple-inst-ids")
+            response: Response = client.post("/trigger-all-inst-ids")
 
             # Assert
             mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
@@ -116,7 +116,7 @@ class TestFastAPIApp:
     @patch("sdtoolplus.main.background_run")
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
-    def test_post_trigger_multiple_inst_ids_dry_and_inst_id(
+    def test_post_trigger_all_inst_ids_dry_and_inst_id(
         self,
         mock_get_status: MagicMock,
         mock_persist_status: MagicMock,
@@ -144,7 +144,7 @@ class TestFastAPIApp:
 
             # Act
             response: Response = client.post(
-                "/trigger-multiple-inst-ids",
+                "/trigger-all-inst-ids",
                 params={
                     "org_unit": str(org_unit),
                     "inst_id": inst_id,

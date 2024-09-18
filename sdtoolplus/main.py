@@ -193,8 +193,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return results
 
-    @fastapi_router.post("/trigger-multiple-inst-ids", status_code=HTTP_200_OK)
-    async def trigger_multiple_inst_ids(
+    @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
+    async def trigger_all_inst_ids(
         response: Response,
         org_unit: UUID | None = None,
         inst_id: str | None = None,
