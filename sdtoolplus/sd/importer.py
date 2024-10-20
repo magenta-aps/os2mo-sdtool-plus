@@ -8,6 +8,9 @@ from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetOrganizationRequest
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
+from tenacity import retry
+from tenacity import stop_after_attempt
+from tenacity import wait_fixed
 
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
@@ -17,6 +20,11 @@ from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
 
 
+RETRY_WAIT_TIME = 15
+RETRY_ATTEMPTS = 10
+
+
+@retry(wait=wait_fixed(RETRY_WAIT_TIME), stop=stop_after_attempt(RETRY_ATTEMPTS))
 def get_sd_organization(
     sd_client: SDClient,
     institution_identifier: str,
@@ -34,6 +42,7 @@ def get_sd_organization(
     return sd_client.get_organization(req)
 
 
+@retry(wait=wait_fixed(RETRY_WAIT_TIME), stop=stop_after_attempt(RETRY_ATTEMPTS))
 def get_sd_departments(
     sd_client: SDClient,
     institution_identifier: str,
