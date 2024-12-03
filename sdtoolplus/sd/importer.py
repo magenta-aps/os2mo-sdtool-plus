@@ -24,7 +24,11 @@ RETRY_WAIT_TIME = 15
 RETRY_ATTEMPTS = 10
 
 
-@retry(wait=wait_fixed(RETRY_WAIT_TIME), stop=stop_after_attempt(RETRY_ATTEMPTS))
+@retry(
+    wait=wait_fixed(RETRY_WAIT_TIME),
+    stop=stop_after_attempt(RETRY_ATTEMPTS),
+    reraise=True,
+)
 def get_sd_organization(
     sd_client: SDClient,
     institution_identifier: str,
@@ -42,7 +46,11 @@ def get_sd_organization(
     return sd_client.get_organization(req)
 
 
-@retry(wait=wait_fixed(RETRY_WAIT_TIME), stop=stop_after_attempt(RETRY_ATTEMPTS))
+@retry(
+    wait=wait_fixed(RETRY_WAIT_TIME),
+    stop=stop_after_attempt(RETRY_ATTEMPTS),
+    reraise=True,
+)
 def get_sd_departments(
     sd_client: SDClient,
     institution_identifier: str,
