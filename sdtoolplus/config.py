@@ -113,12 +113,6 @@ class SDToolPlusSettings(BaseSettings):
     email_notifications_disabled_units: list[OrgUnitUUID] = []
     ##################################################################
 
-    @validator("obsolete_unit_roots")
-    def obsolete_unit_roots_not_empty(cls, v):
-        if len(v) == 0:
-            raise ValueError("OBSOLETE_UNIT_ROOTS cannot not be empty")
-        return v
-
     class Config:
         env_nested_delimiter = "__"
 
