@@ -46,6 +46,8 @@ def _get_sd_root_uuid(
     org_uuid: OrgUUID,
     use_mo_root_uuid_as_sd_root_uuid: bool,
     mo_subtree_path_for_root: list[OrgUnitUUID],
+    mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None,
+    current_inst_id: str,
 ) -> OrgUUID | OrgUnitUUID | None:
     """
     Get the effective SD root unit UUID to use
@@ -58,6 +60,9 @@ def _get_sd_root_uuid(
     Returns:
          The effective root UUID to use or None
     """
+    if mo_subtree_paths_for_root is not None:
+        return last(mo_subtree_paths_for_root[current_inst_id])
+
     if mo_subtree_path_for_root:
         return last(mo_subtree_path_for_root)
     return org_uuid if use_mo_root_uuid_as_sd_root_uuid else None
@@ -123,6 +128,8 @@ class App:
             self.mo_org_tree_import.get_org_uuid(),
             self.settings.use_mo_root_uuid_as_sd_root_uuid,
             self.mo_subtree_path_for_root,
+            self.settings.mo_subtree_paths_for_root,
+            self.current_inst_id,
         )
 
         return get_sd_tree(
