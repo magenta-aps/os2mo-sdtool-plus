@@ -87,7 +87,15 @@ def background_run(
     for ii in inst_ids:
         logger.info("Starting background run", inst_id=ii)
         sdtoolplus: App = App(settings, ii)
-        sdtoolplus.execute(org_unit=org_unit, dry_run=dry_run)
+        for org_unit_node, mutation, result in sdtoolplus.execute(
+            org_unit=org_unit, dry_run=dry_run
+        ):
+            logger.info(
+                "Processed unit",
+                org_unit_name=org_unit_node.name,
+                org_unit_uuid=str(org_unit_node.uuid),
+            )
+
         logger.info("Finished background run", inst_id=ii)
 
         # Send email notifications for illegal moves
