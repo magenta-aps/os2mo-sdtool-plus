@@ -322,17 +322,14 @@ def test_background_run(
 
         # Assert
 
-        # Make sure the constructor is called twice with the correct args
-        assert m_app.call_count == 2
-        call1, call2 = m_app.call_args_list
+        # Make sure the constructor is called once with the correct args
+        assert m_app.call_count == 1
+        call1 = m_app.call_args_list[0]
         assert call1 == call(sdtoolplus_settings, "AB")
-        assert call2 == call(sdtoolplus_settings, "CD")
 
-        # Make sure execute is called twice with the correct args
-        assert mock_sdtoolplus_app.execute.call_count == 2
-        call1, call2 = mock_sdtoolplus_app.execute.call_args_list
-        assert call1 == call(org_unit=org_unit, dry_run=dry_run)
-        assert call2 == call(org_unit=org_unit, dry_run=dry_run)
+        call1, call2 = mock_sdtoolplus_app.set_inst_id.call_args_list
+        assert call1 == call("AB")
+        assert call2 == call("CD")
 
         # Careful here - no logic in the test code!
         if not dry_run:

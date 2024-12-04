@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from functools import cache
 from typing import Iterator
 from uuid import UUID
 
@@ -110,6 +111,7 @@ class App:
 
         self.session = get_graphql_client(settings)
 
+        self.clear_mo_tree_cache()
         self.mo_org_tree_import = MOOrgTreeImport(self.session)
 
         self.client = httpx.Client(
@@ -117,6 +119,9 @@ class App:
             timeout=Timeout(timeout=self.settings.httpx_timeout_ny_logic),
         )
         logger.debug("Configured HTTPX client", base_url=self.client.base_url)
+
+    def set_inst_id(self, inst_id: str) -> None:
+        self.current_inst_id = inst_id
 
     def get_sd_tree(self, mo_org_unit_level_map: MOOrgUnitLevelMap) -> OrgUnitNode:
         sd_client = SDClient(
@@ -140,6 +145,7 @@ class App:
             self.settings.build_extra_tree,
         )
 
+    @cache
     def get_mo_tree(self) -> OrgUnitNode:
         mo_subtree_path_for_root = App._get_effective_root_path(
             self.mo_subtree_path_for_root
@@ -150,9 +156,19 @@ class App:
             self.mo_subtree_path_for_root,
         )
 
+        logger.debug(
+            "Getting MO tree...",
+            mo_root_uuid=str(mo_root_uuid),
+            mo_subtree_path_for_root=mo_subtree_path_for_root,
+        )
+
         return self.mo_org_tree_import.as_single_tree(
             mo_root_uuid, mo_subtree_path_for_root
         )
+
+    def clear_mo_tree_cache(self) -> None:
+        logger.info("Clearing MO tree cache")
+        self.get_mo_tree.cache_clear()
 
     def get_tree_diff_executor(self) -> TreeDiffExecutor:
         logger.debug("Getting TreeDiffExecutor")
