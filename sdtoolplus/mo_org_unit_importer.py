@@ -159,6 +159,7 @@ class MOOrgTreeImport:
         )
         return parse_obj_as(OrgUUID, doc["org"]["uuid"])
 
+    @cache
     def get_org_units(self, org_unit: OrgUnitUUID | None = None) -> list[OrgUnit]:
         # TODO: fix this and use the auto-generated GraphQL client instead
         logger.debug("Getting OUs from MO...")
