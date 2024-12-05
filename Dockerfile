@@ -27,3 +27,9 @@ COPY sdtoolplus ./sdtoolplus
 RUN apt update && apt install -y jq vim less
 
 ENTRYPOINT ["./docker/start.sh"]
+
+# Add build version to the environment last to avoid build cache misses
+ARG COMMIT_TAG
+ARG COMMIT_SHA
+ENV COMMIT_TAG=${COMMIT_TAG:-HEAD} \
+    COMMIT_SHA=${COMMIT_SHA}

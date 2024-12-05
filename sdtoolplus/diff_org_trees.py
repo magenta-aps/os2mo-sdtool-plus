@@ -128,15 +128,16 @@ class OrgTreeDiff:
             self.units_to_update,
         )
 
+        units_to_move_to_obsolete_subtree_list = list(units_to_move_to_obsolete_subtree)
         logger.debug(
             "Units to potentially move to obsolete units",
-            units=units_to_move_to_obsolete_subtree,
+            units=units_to_move_to_obsolete_subtree_list,
         )
 
         # Partition units into 1) those with active engagements and 2) those
         # who do not have active engagements
         units_to_move, units_not_to_move = partition(
-            self._subtree_has_active_engagements, units_to_move_to_obsolete_subtree
+            self._subtree_has_active_engagements, units_to_move_to_obsolete_subtree_list
         )
 
         self.units_to_update = list(units_to_update) + list(units_to_move)

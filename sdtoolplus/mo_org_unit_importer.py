@@ -8,6 +8,7 @@ from uuid import UUID
 
 import anytree
 import pydantic
+import structlog
 from gql import gql
 from pydantic import parse_obj_as
 from ramodels.mo import Validity
@@ -20,6 +21,8 @@ OrgUnitUUID: TypeAlias = UUID
 OrgUnitLevelUUID: TypeAlias = UUID
 OrgUnitTypeUUID: TypeAlias = UUID
 OrgUnitHierarchyUUID = NewType("OrgUnitHierarchyUUID", UUID)
+
+logger = structlog.get_logger()
 
 
 class AddressType(pydantic.BaseModel):
@@ -156,8 +159,11 @@ class MOOrgTreeImport:
         )
         return parse_obj_as(OrgUUID, doc["org"]["uuid"])
 
+    @cache
     def get_org_units(self, org_unit: OrgUnitUUID | None = None) -> list[OrgUnit]:
         # TODO: fix this and use the auto-generated GraphQL client instead
+        logger.debug("Getting OUs from MO...")
+
         filter_str = (
             "" if org_unit is None else f'(filter: {{uuids: ["{str(org_unit)}"]}})'
         )
@@ -194,6 +200,9 @@ class MOOrgTreeImport:
             for n in doc["org_units"]["objects"]
             if n["current"] is not None
         ]
+
+        logger.debug("Got OUs from MO")
+
         return parse_obj_as(list[OrgUnit], org_units)
 
     def as_single_tree(
@@ -222,6 +231,8 @@ class MOOrgTreeImport:
         If 'path' is the empty string, the whole tree is returned
         """
 
+        logger.debug("Build MO tree")
+
         children = self._build_trees(self.get_org_units())
         root = OrgUnitNode(
             uuid=root_uuid,
@@ -243,6 +254,8 @@ class MOOrgTreeImport:
                 children=new_root.children,
                 org_unit_level_uuid=None,
             )
+
+        logger.debug("MO root", path=path, root=root)
 
         return root
 

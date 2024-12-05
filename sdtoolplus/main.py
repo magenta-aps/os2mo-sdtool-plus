@@ -20,6 +20,7 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from more_itertools import first
 from os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 from sqlalchemy import Engine
@@ -84,9 +85,11 @@ def background_run(
         org_unit: if not None, only run for this unit
         dry_run: if True, no changes will be written in MO
     """
+    sdtoolplus: App = App(settings, first(inst_ids))
+
     for ii in inst_ids:
         logger.info("Starting background run", inst_id=ii)
-        sdtoolplus: App = App(settings, ii)
+        sdtoolplus.set_inst_id(ii)
         for org_unit_node, mutation, result in sdtoolplus.execute(
             org_unit=org_unit, dry_run=dry_run
         ):

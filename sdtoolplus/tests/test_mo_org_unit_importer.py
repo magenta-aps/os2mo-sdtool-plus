@@ -190,9 +190,6 @@ class TestMOOrgTreeImport:
         assert actual.is_root
         assert actual.uuid == SharedIdentifier.root_org_uuid
 
-    def test_ensure_get_org_units_not_cached(self):
-        assert not hasattr(MOOrgTreeImport.get_org_units, "__wrapped__")
-
 
 class TestOrgUnitNode:
     def test_constructor(self, sd_expected_validity):
