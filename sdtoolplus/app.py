@@ -111,6 +111,7 @@ class App:
 
         self.session = get_graphql_client(settings)
 
+        self.mo_tree_children: list[OrgUnitNode] | None = None
         self.mo_org_tree_import = MOOrgTreeImport(self.session)
         self.clear_mo_tree_cache()
 
@@ -164,9 +165,11 @@ class App:
             mo_subtree_path_for_root=mo_subtree_path_for_root,
         )
 
-        return self.mo_org_tree_import.as_single_tree(
-            mo_root_uuid, mo_subtree_path_for_root
+        tree, self.mo_tree_children = self.mo_org_tree_import.as_single_tree(
+            mo_root_uuid, mo_subtree_path_for_root, self.mo_tree_children
         )
+
+        return tree
 
     def clear_mo_tree_cache(self) -> None:
         logger.info("Clearing MO tree cache")
