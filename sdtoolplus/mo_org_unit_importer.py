@@ -231,6 +231,8 @@ class MOOrgTreeImport:
         If 'path' is the empty string, the whole tree is returned
         """
 
+        logger.debug("Build MO tree")
+
         children = self._build_trees(self.get_org_units())
         root = OrgUnitNode(
             uuid=root_uuid,
@@ -252,6 +254,8 @@ class MOOrgTreeImport:
                 children=new_root.children,
                 org_unit_level_uuid=None,
             )
+
+        logger.debug("MO root", path=path, root=root)
 
         return root
 
