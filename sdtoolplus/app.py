@@ -122,6 +122,9 @@ class App:
 
     def set_inst_id(self, inst_id: str) -> None:
         self.current_inst_id = inst_id
+        self.mo_subtree_path_for_root = _get_mo_subtree_path_for_root(
+            self.settings, self.current_inst_id
+        )
 
     def get_sd_tree(self, mo_org_unit_level_map: MOOrgUnitLevelMap) -> OrgUnitNode:
         sd_client = SDClient(
