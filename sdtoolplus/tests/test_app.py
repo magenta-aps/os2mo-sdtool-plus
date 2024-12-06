@@ -66,7 +66,7 @@ class TestApp:
             self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
             self._add_mock(stack, "get_sd_tree", MagicMock())
 
-            mock_as_single_tree = MagicMock()
+            mock_as_single_tree = MagicMock(return_value=(MagicMock(), MagicMock()))
             mock_mo_org_tree_import.as_single_tree = mock_as_single_tree
 
             app: App = self._get_app_instance(
@@ -84,6 +84,7 @@ class TestApp:
             mock_as_single_tree.assert_called_once_with(
                 UUID("20000000-0000-0000-0000-000000000000"),
                 f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}",
+                None,
             )
 
     def test_as_single_tree_called_with_correct_path_for_multiple_inst_ids(
@@ -100,7 +101,7 @@ class TestApp:
             self._add_mock(stack, "MOOrgTreeImport", mock_mo_org_tree_import)
             self._add_mock(stack, "get_sd_tree", MagicMock())
 
-            mock_as_single_tree = MagicMock()
+            mock_as_single_tree = MagicMock(return_value=(MagicMock(), MagicMock()))
             mock_mo_org_tree_import.as_single_tree = mock_as_single_tree
 
             app: App = self._get_app_instance(
@@ -121,6 +122,7 @@ class TestApp:
             mock_as_single_tree.assert_called_once_with(
                 UUID("20000000-0000-0000-0000-000000000000"),
                 f"{str(SharedIdentifier.child_org_unit_uuid)}/{str(SharedIdentifier.grandchild_org_unit_uuid)}",
+                None,
             )
 
     @patch("sdtoolplus.app.get_graphql_client")

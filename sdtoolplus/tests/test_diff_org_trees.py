@@ -93,8 +93,8 @@ class TestOrgTreeDiff:
         expected_units_to_add,
     ):
         # Construct MO and SD trees
-        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
-            SharedIdentifier.root_org_uuid
+        mo_tree, _ = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+            SharedIdentifier.root_org_uuid, "", None
         )
         sd_tree = build_tree(
             mock_sd_get_organization_response,
@@ -278,8 +278,8 @@ class TestOrgTreeDiff:
 
         # This is just a OU tree required by the OrgTreeDiff constructor. It is
         # not actually used in this test.
-        mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
-            SharedIdentifier.root_org_uuid
+        mo_tree, _ = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+            SharedIdentifier.root_org_uuid, "", None
         )
         org_tree_diff = OrgTreeDiff(mo_tree, mo_tree, MagicMock(), sdtoolplus_settings)
 

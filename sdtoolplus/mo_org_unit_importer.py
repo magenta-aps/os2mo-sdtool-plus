@@ -206,8 +206,11 @@ class MOOrgTreeImport:
         return parse_obj_as(list[OrgUnit], org_units)
 
     def as_single_tree(
-        self, root_uuid: OrgUUID | OrgUnitUUID, path: str = ""
-    ) -> OrgUnitNode:
+        self,
+        root_uuid: OrgUUID | OrgUnitUUID,
+        path: str = "",
+        children: list[OrgUnitNode] | None = None,
+    ) -> tuple[OrgUnitNode, list[OrgUnitNode]]:
         """
         Generates a (sub)tree of OUs from the units in MO.
         The feature is most easily explained by an example. Assume the OU
@@ -233,7 +236,8 @@ class MOOrgTreeImport:
 
         logger.debug("Build MO tree")
 
-        children = self._build_trees(self.get_org_units())
+        if children is None:
+            children = self._build_trees(self.get_org_units())
         root = OrgUnitNode(
             uuid=root_uuid,
             parent_uuid=None,
@@ -257,7 +261,7 @@ class MOOrgTreeImport:
 
         logger.debug("MO root", path=path, root=root)
 
-        return root
+        return root, children
 
     def _build_trees(self, org_units: list[OrgUnit]) -> list[OrgUnitNode]:
         # Convert list of `OrgUnit` objects to list of `OrgUnitNode` objects

@@ -671,8 +671,8 @@ def mock_org_tree_diff(
     sdtoolplus_settings,
 ) -> OrgTreeDiff:
     # Construct MO and SD trees
-    mo_tree = MOOrgTreeImport(mock_graphql_session).as_single_tree(
-        SharedIdentifier.root_org_uuid
+    mo_tree, _ = MOOrgTreeImport(mock_graphql_session).as_single_tree(
+        SharedIdentifier.root_org_uuid, "", None
     )
     sd_tree = build_tree(
         mock_sd_get_organization_response,
