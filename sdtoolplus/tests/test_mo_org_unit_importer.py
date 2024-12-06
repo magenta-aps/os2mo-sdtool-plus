@@ -94,7 +94,7 @@ class TestMOOrgTreeImport:
     def test_as_single_tree(self, mock_graphql_session):
         instance = MOOrgTreeImport(mock_graphql_session)
         root_uuid = uuid4()
-        root = instance.as_single_tree(root_uuid)
+        root, _ = instance.as_single_tree(root_uuid, "", None)
         assert isinstance(root, OrgUnitNode)
         assert root.children == tuple(mock_graphql_session.expected_trees)
         assert root.is_root
@@ -176,10 +176,11 @@ class TestMOOrgTreeImport:
         instance._build_trees = MagicMock(return_value=[unit1, unit2])
 
         # Act
-        actual = instance.as_single_tree(
+        actual, _ = instance.as_single_tree(
             SharedIdentifier.root_org_uuid,
             "20000000-0000-0000-0000-000000000000/"
             "22000000-0000-0000-0000-000000000000",
+            None,
         )
 
         # Assert
