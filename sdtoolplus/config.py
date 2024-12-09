@@ -31,6 +31,7 @@ class SDToolPlusSettings(BaseSettings):
     auth_realm: str = "mo"
     auth_server: str = "http://keycloak:8080/auth"
 
+    apply_ny_logic: bool = True
     httpx_timeout_ny_logic: PositiveInt = 120
 
     # Compare the SD tree to the MO tree found at the path. The path must be a
