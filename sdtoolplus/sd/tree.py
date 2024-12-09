@@ -227,6 +227,15 @@ def _get_extra_nodes(
     return get_departments_unit_uuids.difference(existing_nodes_uuids)
 
 
+def _get_department_parent(sd_client: SDClient, unit_uuid: OrgUnitUUID) -> OrgUnitUUID:
+    return sd_client.get_department_parent(
+        GetDepartmentParentRequest(
+            EffectiveDate=datetime.now().date(),
+            DepartmentUUIDIdentifier=unit_uuid,
+        )
+    ).DepartmentParent.DepartmentUUIDIdentifier
+
+
 def _get_parent_node(
     sd_client: SDClient,
     unit_uuid: OrgUnitUUID,
@@ -237,12 +246,7 @@ def _get_parent_node(
     extra_node_uuids: set[OrgUnitUUID],
 ) -> OrgUnitNode | None:
     try:
-        parent_uuid = sd_client.get_department_parent(
-            GetDepartmentParentRequest(
-                EffectiveDate=datetime.now().date(),
-                DepartmentUUIDIdentifier=unit_uuid,
-            )
-        ).DepartmentParent.DepartmentUUIDIdentifier
+        parent_uuid = _get_department_parent(sd_client, unit_uuid)
     except ValueError:
         return None
 
