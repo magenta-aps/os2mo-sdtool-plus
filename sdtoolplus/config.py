@@ -10,12 +10,13 @@ from pydantic import EmailStr
 from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
-from pydantic import validator
 
 from .log import LogLevel
 from .mo_org_unit_importer import OrgUnitUUID
 
 
+SD_RETRY_WAIT_TIME = 15
+SD_RETRY_ATTEMPTS = 10
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 

@@ -12,6 +12,8 @@ from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
+from sdtoolplus.config import SD_RETRY_ATTEMPTS
+from sdtoolplus.config import SD_RETRY_WAIT_TIME
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.addresses import get_addresses
@@ -20,13 +22,9 @@ from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
 
 
-RETRY_WAIT_TIME = 15
-RETRY_ATTEMPTS = 10
-
-
 @retry(
-    wait=wait_fixed(RETRY_WAIT_TIME),
-    stop=stop_after_attempt(RETRY_ATTEMPTS),
+    wait=wait_fixed(SD_RETRY_WAIT_TIME),
+    stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
 def get_sd_organization(
@@ -47,8 +45,8 @@ def get_sd_organization(
 
 
 @retry(
-    wait=wait_fixed(RETRY_WAIT_TIME),
-    stop=stop_after_attempt(RETRY_ATTEMPTS),
+    wait=wait_fixed(SD_RETRY_WAIT_TIME),
+    stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
 def get_sd_departments(
