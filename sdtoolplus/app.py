@@ -62,7 +62,10 @@ def _get_sd_root_uuid(
          The effective root UUID to use or None
     """
     if mo_subtree_paths_for_root is not None:
-        return last(mo_subtree_paths_for_root[current_inst_id])
+        return last(
+            mo_subtree_paths_for_root[current_inst_id],
+            org_uuid if use_mo_root_uuid_as_sd_root_uuid else None,
+        )
 
     if mo_subtree_path_for_root:
         return last(mo_subtree_path_for_root)

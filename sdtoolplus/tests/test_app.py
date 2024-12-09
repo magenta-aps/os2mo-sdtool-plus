@@ -491,6 +491,26 @@ def test_get_sd_root_uuid_multiple_institutions():
 
 
 @pytest.mark.parametrize(
+    "use_mo_root_uuid_as_sd_root_uuid,expected",
+    [(False, None), (True, SharedIdentifier.root_org_uuid)],
+)
+def test_get_sd_root_uuid_empty_path(
+    use_mo_root_uuid_as_sd_root_uuid: bool, expected: bool | UUID
+):
+    # Act
+    actual = _get_sd_root_uuid(
+        SharedIdentifier.root_org_uuid,
+        use_mo_root_uuid_as_sd_root_uuid,
+        [],
+        {"II": []},
+        "II",
+    )
+
+    # Assert
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
     "mo_subtree_path_for_root, expected",
     [
         ([], SharedIdentifier.root_org_uuid),
