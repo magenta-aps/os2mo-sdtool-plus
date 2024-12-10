@@ -3,6 +3,7 @@
 from datetime import date
 from uuid import UUID
 
+import structlog
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetOrganizationRequest
@@ -22,6 +23,8 @@ from sdtoolplus.sd.tree import get_sd_validity
 
 RETRY_WAIT_TIME = 15
 RETRY_ATTEMPTS = 10
+
+logger = structlog.get_logger()
 
 
 @retry(
@@ -83,11 +86,15 @@ def get_sd_tree(
     # TODO: add docstring
     today = date.today()
 
+    logger.debug("Get SD organization...")
     sd_org = get_sd_organization(sd_client, institution_identifier, today, today)
     # print(sd_org)
+
+    logger.debug("Get SD departments...")
     sd_departments = get_sd_departments(sd_client, institution_identifier, today, today)
     # print(sd_departments)
 
+    logger.debug("Build SD tree...")
     root_node = build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
 
     if build_full_tree:
