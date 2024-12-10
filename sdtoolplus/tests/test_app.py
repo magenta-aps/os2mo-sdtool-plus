@@ -375,6 +375,19 @@ class TestApp:
         # Assert
         assert app_.client.timeout.read == 120
 
+    def test_should_apply_ny_logic_return_false_when_disabled(
+        self,
+        sdtoolplus_settings: SDToolPlusSettings,
+    ):
+        # Arrange
+        sdtoolplus_settings.apply_ny_logic = False
+        app_: App = self._get_app_instance(sdtoolplus_settings)
+
+        # Assert
+        assert not app_._should_apply_ny_logic(
+            MagicMock(spec=UpdateOrgUnitMutation), MagicMock(return_value=False), False
+        )
+
     def test_should_apply_ny_logic_return_false_for_dry_run(
         self,
         sdtoolplus_settings: SDToolPlusSettings,
@@ -383,7 +396,9 @@ class TestApp:
         app_: App = self._get_app_instance(sdtoolplus_settings)
 
         # Assert
-        assert not app_._should_apply_ny_logic(MagicMock(), MagicMock(), True)
+        assert not app_._should_apply_ny_logic(
+            MagicMock(spec=UpdateOrgUnitMutation), MagicMock(return_value=False), True
+        )
 
     def test_should_apply_ny_logic_return_false_for_add_operation(
         self,

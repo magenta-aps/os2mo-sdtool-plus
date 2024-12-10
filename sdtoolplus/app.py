@@ -280,7 +280,8 @@ class App:
         self, mutation: AnyMutation, org_unit_node: OrgUnitNode, dry_run: bool
     ) -> bool:
         if (
-            dry_run
+            self.settings.apply_ny_logic is False
+            or dry_run
             or not isinstance(mutation, UpdateOrgUnitMutation)
             or in_obsolete_units_subtree(
                 org_unit_node, self.settings.obsolete_unit_roots
