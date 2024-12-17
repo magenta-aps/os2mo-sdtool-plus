@@ -46,7 +46,7 @@ def setup_logging(log_level: LogLevel) -> None:
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(fmt="iso", utc=True),
-            structlog.dev.ConsoleRenderer(),
+            structlog.dev.ConsoleRenderer(colors=False),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(log_level_value),
     )
