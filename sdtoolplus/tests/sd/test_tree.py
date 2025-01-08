@@ -43,11 +43,11 @@ def test_build_extra_tree(
             └── <OrgUnitNode: Department 96 (96000000-0000-0000-0000-000000000000)>
                 └── <OrgUnitNode: Department 97 (97000000-0000-0000-0000-000000000000)>
 
-    The SD tree build entirely from the data returned by the SD GetOrganization
+    The SD tree is build entirely from the data returned by the SD GetOrganization
     endpoint does not necessarily contain ALL units in SD, i.e. the response
     from this endpoint will only contain units belonging to tree branches in
     which the leaf node is an "Afdelings-niveau". It is therefore usually the
-    case that response from GetDepartments contains more units than those
+    case that the response from GetDepartments contains more units than those
     returned from GetOrganization. In order to build the FULL SD tree, we will
     therefore need to add the "extra" units from the GetDepartments endpoint
     to the tree (finding parent relationships via GetDepartmentParent).
