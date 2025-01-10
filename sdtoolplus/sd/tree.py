@@ -15,7 +15,12 @@ from sdclient.responses import DepartmentReference
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from structlog import get_logger
+from tenacity import retry
+from tenacity import stop_after_attempt
+from tenacity import wait_fixed
 
+from sdtoolplus.config import SD_RETRY_ATTEMPTS
+from sdtoolplus.config import SD_RETRY_WAIT_TIME
 from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
@@ -227,6 +232,22 @@ def _get_extra_nodes(
     return get_departments_unit_uuids.difference(existing_nodes_uuids)
 
 
+# TODO: This retrying mechanism makes the (integration) test suite very slow. Work out
+# a solution to this problem later
+@retry(
+    wait=wait_fixed(SD_RETRY_WAIT_TIME),
+    stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
+    reraise=True,
+)
+def _get_department_parent(sd_client: SDClient, unit_uuid: OrgUnitUUID) -> OrgUnitUUID:
+    return sd_client.get_department_parent(
+        GetDepartmentParentRequest(
+            EffectiveDate=datetime.now().date(),
+            DepartmentUUIDIdentifier=unit_uuid,
+        )
+    ).DepartmentParent.DepartmentUUIDIdentifier
+
+
 def _get_parent_node(
     sd_client: SDClient,
     unit_uuid: OrgUnitUUID,
@@ -237,12 +258,7 @@ def _get_parent_node(
     extra_node_uuids: set[OrgUnitUUID],
 ) -> OrgUnitNode | None:
     try:
-        parent_uuid = sd_client.get_department_parent(
-            GetDepartmentParentRequest(
-                EffectiveDate=datetime.now().date(),
-                DepartmentUUIDIdentifier=unit_uuid,
-            )
-        ).DepartmentParent.DepartmentUUIDIdentifier
+        parent_uuid = _get_department_parent(sd_client, unit_uuid)
     except ValueError:
         return None
 

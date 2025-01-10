@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import _get_extra_nodes
 from sdtoolplus.sd.tree import build_extra_tree
@@ -23,7 +25,9 @@ from sdtoolplus.tests.conftest import mock_get_department_parent
 from sdtoolplus.tests.conftest import SharedIdentifier
 
 
+@patch("sdtoolplus.sd.tree._get_department_parent")
 def test_build_extra_tree(
+    mock__get_department_parent: MagicMock,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_extra_units: GetDepartmentResponse,
     mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -43,11 +47,11 @@ def test_build_extra_tree(
             └── <OrgUnitNode: Department 96 (96000000-0000-0000-0000-000000000000)>
                 └── <OrgUnitNode: Department 97 (97000000-0000-0000-0000-000000000000)>
 
-    The SD tree build entirely from the data returned by the SD GetOrganization
+    The SD tree is build entirely from the data returned by the SD GetOrganization
     endpoint does not necessarily contain ALL units in SD, i.e. the response
     from this endpoint will only contain units belonging to tree branches in
     which the leaf node is an "Afdelings-niveau". It is therefore usually the
-    case that response from GetDepartments contains more units than those
+    case that the response from GetDepartments contains more units than those
     returned from GetOrganization. In order to build the FULL SD tree, we will
     therefore need to add the "extra" units from the GetDepartments endpoint
     to the tree (finding parent relationships via GetDepartmentParent).
@@ -160,6 +164,14 @@ def test_build_extra_tree(
         validity=sd_expected_validity,
     )
 
+    mock__get_department_parent.side_effect = [
+        OrgUnitUUID("96000000-0000-0000-0000-000000000000"),
+        OrgUnitUUID("95000000-0000-0000-0000-000000000000"),
+        OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+        ValueError(),
+        ValueError(),
+        ValueError(),
+    ]
     mock_sd_client = MagicMock()
     mock_sd_client.get_department_parent = mock_get_department_parent
 
@@ -171,7 +183,7 @@ def test_build_extra_tree(
     )
 
     actual_tree = build_extra_tree(
-        mock_sd_client,
+        MagicMock(),
         root_node,
         mock_sd_get_organization_response,
         mock_sd_get_department_response_extra_units,
