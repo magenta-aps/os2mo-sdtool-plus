@@ -232,6 +232,8 @@ def _get_extra_nodes(
     return get_departments_unit_uuids.difference(existing_nodes_uuids)
 
 
+# TODO: This retrying mechanism makes the (integration) test suite very slow. Work out
+# a solution to this problem later
 @retry(
     wait=wait_fixed(SD_RETRY_WAIT_TIME),
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
