@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import _get_extra_nodes
 from sdtoolplus.sd.tree import build_extra_tree
@@ -23,7 +25,9 @@ from sdtoolplus.tests.conftest import mock_get_department_parent
 from sdtoolplus.tests.conftest import SharedIdentifier
 
 
+@patch("sdtoolplus.sd.tree._get_department_parent")
 def test_build_extra_tree(
+    mock__get_department_parent: MagicMock,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_extra_units: GetDepartmentResponse,
     mock_mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -160,6 +164,14 @@ def test_build_extra_tree(
         validity=sd_expected_validity,
     )
 
+    mock__get_department_parent.side_effect = [
+        OrgUnitUUID("96000000-0000-0000-0000-000000000000"),
+        OrgUnitUUID("95000000-0000-0000-0000-000000000000"),
+        OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+        ValueError(),
+        ValueError(),
+        ValueError(),
+    ]
     mock_sd_client = MagicMock()
     mock_sd_client.get_department_parent = mock_get_department_parent
 
@@ -171,7 +183,7 @@ def test_build_extra_tree(
     )
 
     actual_tree = build_extra_tree(
-        mock_sd_client,
+        MagicMock(),
         root_node,
         mock_sd_get_organization_response,
         mock_sd_get_department_response_extra_units,
