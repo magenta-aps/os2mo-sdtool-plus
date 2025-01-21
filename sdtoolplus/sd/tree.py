@@ -9,6 +9,7 @@ from anytree import find
 from more_itertools import one
 from ramodels.mo import Validity
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
@@ -243,12 +244,15 @@ def _get_extra_nodes(
 def _get_department_parent(
     sd_client: SDClient, unit_uuid: OrgUnitUUID
 ) -> GetDepartmentParentResponse | None:
-    return sd_client.get_department_parent(
-        GetDepartmentParentRequest(
-            EffectiveDate=datetime.now().date(),
-            DepartmentUUIDIdentifier=unit_uuid,
+    try:
+        return sd_client.get_department_parent(
+            GetDepartmentParentRequest(
+                EffectiveDate=datetime.now().date(),
+                DepartmentUUIDIdentifier=unit_uuid,
+            )
         )
-    )
+    except SDRootElementNotFound:
+        return None
 
 
 def _get_parent_node(
