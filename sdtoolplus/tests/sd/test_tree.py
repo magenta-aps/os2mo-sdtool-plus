@@ -9,6 +9,8 @@ from uuid import uuid4
 from ramodels.mo import Validity
 from sdclient.client import SDClient
 from sdclient.responses import Department
+from sdclient.responses import DepartmentParent
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -167,12 +169,24 @@ def test_build_extra_tree(
     )
 
     mock__get_department_parent.side_effect = [
-        OrgUnitUUID("96000000-0000-0000-0000-000000000000"),
-        OrgUnitUUID("95000000-0000-0000-0000-000000000000"),
-        OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
-        ValueError(),
-        ValueError(),
-        ValueError(),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("96000000-0000-0000-0000-000000000000")
+            )
+        ),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("95000000-0000-0000-0000-000000000000")
+            )
+        ),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("10000000-0000-0000-0000-000000000000")
+            )
+        ),
+        None,
+        None,
+        None,
     ]
     mock_sd_client = MagicMock()
     mock_sd_client.get_department_parent = mock_get_department_parent
