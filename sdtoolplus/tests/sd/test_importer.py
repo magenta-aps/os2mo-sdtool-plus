@@ -63,7 +63,7 @@ def test_get_sd_organization_retry_mechanism(
     mock_sd_client = MagicMock()
     mock_sd_client.get_organization = MagicMock(
         side_effect=[
-            SDCallError("msg", "endpoint", SDRequest()),
+            SDCallError("msg"),
             mock_sd_get_organization_response,
         ]
     )
@@ -82,7 +82,7 @@ def test_get_sd_departments_retry_mechanism(
     mock_sd_client = MagicMock()
     mock_sd_client.get_department = MagicMock(
         side_effect=[
-            SDCallError("msg", "endpoint", SDRequest()),
+            SDCallError("msg"),
             mock_sd_get_department_response,
         ]
     )

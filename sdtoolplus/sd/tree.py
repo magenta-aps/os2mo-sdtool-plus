@@ -9,9 +9,11 @@ from anytree import find
 from more_itertools import one
 from ramodels.mo import Validity
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
 from sdclient.responses import DepartmentReference
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from structlog import get_logger
@@ -239,13 +241,18 @@ def _get_extra_nodes(
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
-def _get_department_parent(sd_client: SDClient, unit_uuid: OrgUnitUUID) -> OrgUnitUUID:
-    return sd_client.get_department_parent(
-        GetDepartmentParentRequest(
-            EffectiveDate=datetime.now().date(),
-            DepartmentUUIDIdentifier=unit_uuid,
+def _get_department_parent(
+    sd_client: SDClient, unit_uuid: OrgUnitUUID
+) -> GetDepartmentParentResponse | None:
+    try:
+        return sd_client.get_department_parent(
+            GetDepartmentParentRequest(
+                EffectiveDate=datetime.now().date(),
+                DepartmentUUIDIdentifier=unit_uuid,
+            )
         )
-    ).DepartmentParent.DepartmentUUIDIdentifier
+    except SDRootElementNotFound:
+        return None
 
 
 def _get_parent_node(
@@ -258,7 +265,10 @@ def _get_parent_node(
     extra_node_uuids: set[OrgUnitUUID],
 ) -> OrgUnitNode | None:
     try:
-        parent_uuid = _get_department_parent(sd_client, unit_uuid)
+        parent_dep = _get_department_parent(sd_client, unit_uuid)
+        if parent_dep is None:
+            return None
+        parent_uuid = parent_dep.DepartmentParent.DepartmentUUIDIdentifier
     except ValueError:
         return None
 

@@ -7,7 +7,10 @@ from uuid import UUID
 from uuid import uuid4
 
 from ramodels.mo import Validity
+from sdclient.client import SDClient
 from sdclient.responses import Department
+from sdclient.responses import DepartmentParent
+from sdclient.responses import GetDepartmentParentResponse
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
@@ -18,6 +21,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import _get_extra_nodes
+from sdtoolplus.sd.tree import _get_parent_node
 from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
@@ -165,12 +169,24 @@ def test_build_extra_tree(
     )
 
     mock__get_department_parent.side_effect = [
-        OrgUnitUUID("96000000-0000-0000-0000-000000000000"),
-        OrgUnitUUID("95000000-0000-0000-0000-000000000000"),
-        OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
-        ValueError(),
-        ValueError(),
-        ValueError(),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("96000000-0000-0000-0000-000000000000")
+            )
+        ),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("95000000-0000-0000-0000-000000000000")
+            )
+        ),
+        GetDepartmentParentResponse(
+            DepartmentParent=DepartmentParent(
+                DepartmentUUIDIdentifier=UUID("10000000-0000-0000-0000-000000000000")
+            )
+        ),
+        None,
+        None,
+        None,
     ]
     mock_sd_client = MagicMock()
     mock_sd_client.get_department_parent = mock_get_department_parent
@@ -282,3 +298,21 @@ def test_get_extra_nodes_with_no_extra(
 
     # Assert
     assert extra_node_uuids == set()
+
+
+@patch("sdtoolplus.sd.tree._get_department_parent", return_value=None)
+def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
+    mock__get_department_parent: MagicMock,
+):
+    # Arrange
+    sd_client = MagicMock(spec=SDClient)
+    ou_uuid = uuid4()
+
+    # Act
+    parent_node = _get_parent_node(
+        sd_client, ou_uuid, MagicMock(), dict(), uuid4(), MagicMock(), set()
+    )
+
+    # Assert
+    mock__get_department_parent.assert_called_once_with(sd_client, ou_uuid)
+    assert parent_node is None
