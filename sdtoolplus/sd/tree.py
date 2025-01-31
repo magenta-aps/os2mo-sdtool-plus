@@ -30,7 +30,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.addresses import get_addresses
 
-_ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
+ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")
 
 logger = get_logger()
 
@@ -117,7 +117,7 @@ def get_sd_validity(dep: Department) -> Validity:
                 hour=0,
                 minute=0,
                 second=0,
-                tzinfo=_ASSUMED_SD_TIMEZONE,
+                tzinfo=ASSUMED_SD_TIMEZONE,
             )
         return sd_date  # None
 
