@@ -63,6 +63,9 @@ pytest-asyncio = "^0.23.4"
 [tool.pytest.ini_options]
 asyncio_mode="auto"
 
+[tool.mypy]
+plugins = "pydantic.mypy, pydantic.v1.mypy"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
