@@ -17,7 +17,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
-class DepartmentTimeline(BaseModel):
+class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]
 
@@ -36,7 +36,7 @@ def get_department_timeline(
     sd_client: SDClient,
     inst_id: str,
     unit_uuid: OrgUnitUUID,
-) -> DepartmentTimeline:
+) -> UnitTimeline:
     department = sd_client.get_department(
         GetDepartmentRequest(
             InstitutionIdentifier=inst_id,
@@ -68,7 +68,7 @@ def get_department_timeline(
     )
     name_intervals = combine_intervals(name_intervals)
 
-    return DepartmentTimeline(
+    return UnitTimeline(
         active=Timeline[Active](intervals=active_intervals),
         name=Timeline[UnitName](intervals=name_intervals),
     )
