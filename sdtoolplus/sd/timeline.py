@@ -48,7 +48,7 @@ def get_department_timeline(
         )
     )
 
-    active_intervals = (
+    active_intervals = tuple(
         Active(
             start=_sd_start_datetime(dep.ActivationDate),
             end=_sd_end_datetime(dep.DeactivationDate),
@@ -58,7 +58,7 @@ def get_department_timeline(
     )
     active_intervals = combine_intervals(active_intervals)
 
-    name_intervals = (
+    name_intervals = tuple(
         UnitName(
             start=_sd_start_datetime(dep.ActivationDate),
             end=_sd_end_datetime(dep.DeactivationDate),

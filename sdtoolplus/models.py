@@ -63,7 +63,7 @@ class UnitName(Interval[str]):
     pass
 
 
-def combine_intervals(intervals: list[Interval[V]]) -> list[Interval[V]]:
+def combine_intervals(intervals: tuple[T, ...]) -> tuple[T, ...]:
     """
     Combine adjacent interval entities with same values.
 
@@ -75,14 +75,14 @@ def combine_intervals(intervals: list[Interval[V]]) -> list[Interval[V]]:
         intervals: The interval entities to combine.
 
     Returns:
-        List of combined interval entities.
+        Tuple of combined interval entities.
     """
     interval_groups = split_when(
         intervals, lambda i1, i2: i1.end < i2.start or i1.value != i2.value
     )
-    return [
+    return tuple(
         first(group).copy(update={"end": last(group).end}) for group in interval_groups
-    ]
+    )
 
 
 class Timeline(GenericModel, Generic[T]):
@@ -154,7 +154,7 @@ class Timeline(GenericModel, Generic[T]):
         )
         endpoints.sort()
 
-        intervals = []
+        interval_list = []
         for endpoint1, endpoint2 in pairwise(endpoints):
             our_entity = self.entity_at(endpoint1)
             their_entity = other.entity_at(endpoint1)
@@ -164,7 +164,7 @@ class Timeline(GenericModel, Generic[T]):
 
             if not our_value == their_value:
                 template_entity = our_entity if our_value is not None else their_entity
-                intervals.append(
+                interval_list.append(
                     template_entity.copy(  # type: ignore
                         update={
                             "start": endpoint1,
@@ -174,7 +174,7 @@ class Timeline(GenericModel, Generic[T]):
                     )
                 )
 
-        intervals = combine_intervals(intervals)
+        intervals = combine_intervals(tuple(interval_list))
 
         return self.__class__(intervals=intervals)
 

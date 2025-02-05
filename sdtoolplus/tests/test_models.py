@@ -92,36 +92,36 @@ def test_combine_intervals():
     t6 = datetime(2006, 1, 1, tzinfo=timezone.utc)
 
     # Arrange
-    intervals = [
+    intervals = (
         Active(start=t1, end=t2, value=True),
         Active(start=t3, end=t4, value=True),
         Active(start=t4, end=t5, value=True),
         Active(start=t5, end=t6, value=True),
         Active(start=t6, end=INFINITY, value=False),
-    ]
+    )
 
     # Act
     condensed = combine_intervals(intervals)
 
     # Assert
-    assert condensed == [
+    assert condensed == (
         Active(start=t1, end=t2, value=True),
         Active(start=t3, end=t6, value=True),
         Active(start=t6, end=INFINITY, value=False),
-    ]
+    )
 
 
 def test_combine_intervals_empty_input():
     # Act
-    condensed = combine_intervals([])
+    condensed = combine_intervals(tuple())
 
     # Assert
-    assert condensed == []
+    assert condensed == tuple()
 
 
 def test_combine_intervals_single_input():
     # Arrange
-    intervals = [Active(start=MINUS_INFINITY, end=INFINITY, value=True)]
+    intervals = (Active(start=MINUS_INFINITY, end=INFINITY, value=True),)
 
     # Act
     condensed = combine_intervals(intervals)
