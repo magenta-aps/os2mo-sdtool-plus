@@ -72,6 +72,36 @@ query GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
   }
 }
 
+query GetOrgUnitTimeline($unit_uuid: [UUID!]!) {
+  org_units(filter: { uuids: $unit_uuid, from_date: null, to_date: null }) {
+    objects {
+      validities {
+        validity {
+          from
+          to
+        }
+        uuid
+        name
+        parent {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+mutation UpdateOrgUnit($input: OrganisationUnitUpdateInput!) {
+  org_unit_update(input: $input) {
+    uuid
+  }
+}
+
+mutation TerminateOrgUnit($input: OrganisationUnitTerminateInput!) {
+  org_unit_terminate(input: $input) {
+    uuid
+  }
+}
+
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
   $given_name: String!,
