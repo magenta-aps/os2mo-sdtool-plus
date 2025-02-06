@@ -12,6 +12,7 @@ from more_itertools import first
 from more_itertools import last
 from more_itertools import only
 from more_itertools import split_when
+from pydantic import BaseModel
 from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -180,3 +181,8 @@ class Timeline(GenericModel, Generic[T]):
 
     class Config:
         frozen = True
+
+
+class UnitTimeline(BaseModel):
+    active: Timeline[Active]
+    name: Timeline[UnitName]
