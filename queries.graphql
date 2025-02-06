@@ -90,6 +90,18 @@ query GetOrgUnitTimeline($unit_uuid: [UUID!]!) {
   }
 }
 
+mutation UpdateOrgUnit($input: OrganisationUnitUpdateInput!) {
+  org_unit_update(input: $input) {
+    uuid
+  }
+}
+
+mutation TerminateOrgUnit($input: OrganisationUnitTerminateInput!) {
+  org_unit_terminate(input: $input) {
+    uuid
+  }
+}
+
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
   $given_name: String!,
