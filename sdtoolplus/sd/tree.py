@@ -269,6 +269,9 @@ def _get_parent_node(
         if parent_dep is None:
             return None
         parent_uuid = parent_dep.DepartmentParent.DepartmentUUIDIdentifier
+        if parent_uuid == unit_uuid:
+            # Unit is its own parent in SD!
+            return None
     except ValueError:
         return None
 

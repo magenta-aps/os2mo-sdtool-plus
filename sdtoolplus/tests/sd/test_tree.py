@@ -316,3 +316,25 @@ def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
     # Assert
     mock__get_department_parent.assert_called_once_with(sd_client, ou_uuid)
     assert parent_node is None
+
+
+@patch("sdtoolplus.sd.tree._get_department_parent")
+def test__get_parent_node_returns_none_when_unit_is_its_own_parent(
+    mock__get_department_parent: MagicMock,
+):
+    # Arrange
+    sd_client = MagicMock(spec=SDClient)
+    ou_uuid = uuid4()
+
+    mock__get_department_parent.return_value = GetDepartmentParentResponse(
+        DepartmentParent=DepartmentParent(DepartmentUUIDIdentifier=ou_uuid)
+    )
+
+    # Act
+    parent_node = _get_parent_node(
+        sd_client, ou_uuid, MagicMock(), dict(), uuid4(), MagicMock(), set()
+    )
+
+    # Assert
+    mock__get_department_parent.assert_called_once_with(sd_client, ou_uuid)
+    assert parent_node is None
