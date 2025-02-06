@@ -5,7 +5,6 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
-from pydantic import BaseModel
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 
@@ -14,12 +13,8 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
-
-
-class UnitTimeline(BaseModel):
-    active: Timeline[Active]
-    name: Timeline[UnitName]
 
 
 def _sd_start_datetime(d: date) -> datetime:
