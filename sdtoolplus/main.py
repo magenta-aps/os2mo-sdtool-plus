@@ -21,7 +21,7 @@ from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from more_itertools import first
-from os2mo_dar_client import AsyncDARClient
+from fastramqpi.os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
@@ -299,6 +299,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         Returns:
             Dictionary with status
         """
+        logger.info(f"Syncing timeline for OU ({str(org_unit)})")
 
         sd_client = SDClient(
             settings.sd_username,

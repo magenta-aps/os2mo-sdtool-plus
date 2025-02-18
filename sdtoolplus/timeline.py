@@ -70,4 +70,4 @@ async def update_ou(
     )
 
     await update_ou_name(gql_client, org_unit, diff.name)
-    await terminate_ou(gql_client, org_unit, diff.active)
+    # await terminate_ou(gql_client, org_unit, diff.active)

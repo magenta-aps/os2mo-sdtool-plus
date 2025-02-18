@@ -8,6 +8,7 @@ services:
   sdtool-plus:
     build:
       context: .
+    entrypoint: ["sleep", "inf"]
     environment:
       ENVIRONMENT: "development"
 
@@ -31,6 +32,10 @@ services:
       FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
       FASTRAMQPI__CLIENT_ID: "dipex"
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+      FASTRAMQPI__DATABASE__USER: "fastramqpi"
+      FASTRAMQPI__DATABASE__PASSWORD: "fastramqpi"
+      FASTRAMQPI__DATABASE__HOST: "db"
+      FASTRAMQPI__DATABASE__NAME: "fastramqpi"
 
       OBSOLETE_UNIT_ROOTS: '["cccccccc-cccc-cccc-cccc-cccccccccccc"]'
       EXTEND_PARENT_VALIDITIES: "true"
@@ -64,6 +69,20 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
+    networks:
+      os2mo_default:
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+  db:
+    image: postgres:16  # Set image in global.sls
+    environment:
+      POSTGRES_USER: fastramqpi
+      POSTGRES_PASSWORD: fastramqpi
+      POSTGRES_DB: fastramqpi
     networks:
       os2mo_default:
     healthcheck:
