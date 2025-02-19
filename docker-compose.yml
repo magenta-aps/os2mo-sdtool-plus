@@ -48,9 +48,8 @@ services:
     networks:
       - os2mo_default
     volumes:
-      - type: bind
-        source: ./sdtoolplus
-        target: /app/sdtoolplus
+      - ./sdtoolplus/:/app/sdtoolplus/:ro
+      - ./tests/:/app/tests/:ro
     depends_on:
       sd-db-init:
         condition: service_completed_successfully

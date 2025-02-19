@@ -10,14 +10,14 @@ from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..config import SDToolPlusSettings
-from ..diff_org_trees import _uuid_to_nodes_map
-from ..diff_org_trees import Nodes
-from ..diff_org_trees import OrgTreeDiff
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUnitNode
-from ..sd.tree import build_tree
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.diff_org_trees import _uuid_to_nodes_map
+from sdtoolplus.diff_org_trees import Nodes
+from sdtoolplus.diff_org_trees import OrgTreeDiff
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.sd.tree import build_tree
 from .conftest import _MockGraphQLSession
 from .conftest import SharedIdentifier
 

@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0
 import pytest
 
-from ..mo_class import MOClass
-from ..mo_class import MOClassMap
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_class import MOOrgUnitTypeMap
+from sdtoolplus.mo_class import MOClass
+from sdtoolplus.mo_class import MOClassMap
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_class import MOOrgUnitTypeMap
 from .conftest import _MockGraphQLSessionGetClassesInFacet
 
 

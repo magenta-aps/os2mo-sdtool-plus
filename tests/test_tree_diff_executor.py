@@ -11,16 +11,16 @@ from graphql import GraphQLSchema
 from more_itertools import one
 from ramodels.mo import Validity
 
-from ..config import SDToolPlusSettings
-from ..config import TIMEZONE
-from ..diff_org_trees import OrgTreeDiff
-from ..mo_class import MOClass
-from ..mo_org_unit_importer import OrgUnitNode
-from ..tree_diff_executor import _truncate_start_date
-from ..tree_diff_executor import AddOrgUnitMutation
-from ..tree_diff_executor import Mutation
-from ..tree_diff_executor import TreeDiffExecutor
-from ..tree_diff_executor import UpdateOrgUnitMutation
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.config import TIMEZONE
+from sdtoolplus.diff_org_trees import OrgTreeDiff
+from sdtoolplus.mo_class import MOClass
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.tree_diff_executor import _truncate_start_date
+from sdtoolplus.tree_diff_executor import AddOrgUnitMutation
+from sdtoolplus.tree_diff_executor import Mutation
+from sdtoolplus.tree_diff_executor import TreeDiffExecutor
+from sdtoolplus.tree_diff_executor import UpdateOrgUnitMutation
 from .conftest import _MockGraphQLSession
 
 

@@ -9,13 +9,13 @@ from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
 
-from ..mo_org_unit_importer import Address
-from ..mo_org_unit_importer import AddressType
-from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUnit
-from ..mo_org_unit_importer import OrgUnitNode
-from ..mo_org_unit_importer import OrgUUID
-from ..models import AddressTypeUserKey
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
+from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
+from sdtoolplus.mo_org_unit_importer import OrgUnit
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUUID
+from sdtoolplus.models import AddressTypeUserKey
 from .conftest import SharedIdentifier
 
 
