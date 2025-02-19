@@ -1010,7 +1010,6 @@ def test_client() -> Iterator[TestClient]:
         yield client
 
 
-# @pytest.mark.asyncio
 @pytest.fixture
 async def graphql_client(test_client: TestClient) -> AsyncClientSession:
     """Authenticated GraphQL codegen client for OS2mo."""
