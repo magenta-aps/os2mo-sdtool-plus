@@ -17,6 +17,7 @@ from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
 V = TypeVar("V")
 
@@ -61,6 +62,14 @@ class Active(Interval[bool]):
 
 
 class UnitName(Interval[str]):
+    pass
+
+
+class UnitUUID(Interval[OrgUnitUUID]):
+    pass
+
+
+class Profession(Interval[str]):
     pass
 
 
@@ -186,3 +195,10 @@ class Timeline(GenericModel, Generic[T]):
 class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]
+
+
+class EngagementTimeline(BaseModel):
+    unit_uuid: Timeline[UnitUUID]
+    profession: Timeline[Profession]
+    active: Timeline[Active]
+    # TODO: add WorkTime if required
