@@ -21,8 +21,8 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
-from os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK

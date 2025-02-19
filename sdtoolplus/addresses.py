@@ -10,8 +10,8 @@ from typing import TypeAlias
 from uuid import UUID
 
 import structlog
+from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import only
-from os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
