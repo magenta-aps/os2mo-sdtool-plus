@@ -9,9 +9,9 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import pytest
-from fastapi.testclient import TestClient
 from fastramqpi.pytest_util import retry
 from freezegun import freeze_time
+from httpx import AsyncClient
 from httpx import Response
 from more_itertools import one
 from respx import MockRouter
@@ -50,7 +50,7 @@ async def test_two_new_departments_in_sd(
     mock_get_sd_organization: MagicMock,
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     mock_sd_get_organization_response: GetOrganizationResponse,
@@ -113,7 +113,7 @@ async def test_two_new_departments_in_sd(
     mock_get_sd_departments.return_value = mock_sd_get_department_response
 
     # Act
-    test_client.post("/trigger")
+    await test_client.post("/trigger")
 
     # Assert
     @retry()
@@ -167,7 +167,7 @@ async def test_build_tree_extra_units_are_added(
     mock_get_sd_departments: MagicMock,
     MockSDClient: MagicMock,
     mock_get_engine: MagicMock,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     obsolete_unit_tree_builder: None,
     mock_sd_get_organization_response: GetOrganizationResponse,
@@ -189,7 +189,7 @@ async def test_build_tree_extra_units_are_added(
     mock_get_sd_departments.return_value = mock_sd_get_department_response_extra_units
 
     # Act
-    test_client.post("/trigger")
+    await test_client.post("/trigger")
 
     # Assert
     @retry()
@@ -219,7 +219,7 @@ async def test_build_tree_extra_units_are_added(
     await verify()
 
     # Act again - no operations should be performed
-    r = test_client.post("/trigger")
+    r = await test_client.post("/trigger")
     assert r.json() == []
 
 
@@ -239,7 +239,7 @@ async def test_build_tree_date_range_errors(
     mock_get_sd_departments: MagicMock,
     MockSDClient: MagicMock,
     mock_get_engine: MagicMock,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_date_range_errors: GetDepartmentResponse,
@@ -367,7 +367,7 @@ async def test_build_tree_date_range_errors(
     )
 
     # Act
-    test_client.post("/trigger")
+    await test_client.post("/trigger")
 
     # Assert
     @retry()
@@ -398,5 +398,5 @@ async def test_build_tree_date_range_errors(
     await verify()
 
     # Act again - no operations should be performed
-    r = test_client.post("/trigger")
+    r = await test_client.post("/trigger")
     assert r.json() == []
