@@ -200,3 +200,5 @@ class UnitTimeline(BaseModel):
 class EngagementTimeline(BaseModel):
     unit_uuid: Timeline[UnitUUID]
     profession: Timeline[Profession]
+    active: Timeline[Active]
+    # TODO: add WorkTime if required
