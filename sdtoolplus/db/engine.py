@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from sqlalchemy import create_engine
 from sqlalchemy import Engine
+from sqlalchemy import create_engine
 
 from sdtoolplus.config import SDToolPlusSettings
 

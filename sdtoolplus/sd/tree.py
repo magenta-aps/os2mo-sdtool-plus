@@ -1,7 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import zoneinfo
-from datetime import date, datetime
+from datetime import date
+from datetime import datetime
 from uuid import UUID
 
 from anytree import find  # type: ignore
@@ -10,19 +11,23 @@ from ramodels.mo import Validity
 from sdclient.client import SDClient
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentParentRequest
-from sdclient.responses import (
-    Department,
-    DepartmentReference,
-    GetDepartmentParentResponse,
-    GetDepartmentResponse,
-    GetOrganizationResponse,
-)
+from sdclient.responses import Department
+from sdclient.responses import DepartmentReference
+from sdclient.responses import GetDepartmentParentResponse
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 from structlog import get_logger
-from tenacity import retry, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity import stop_after_attempt
+from tenacity import wait_fixed
 
-from sdtoolplus.config import SD_RETRY_ATTEMPTS, SD_RETRY_WAIT_TIME
-from sdtoolplus.mo_class import MOClass, MOOrgUnitLevelMap
-from sdtoolplus.mo_org_unit_importer import Address, OrgUnitNode, OrgUnitUUID
+from sdtoolplus.config import SD_RETRY_ATTEMPTS
+from sdtoolplus.config import SD_RETRY_WAIT_TIME
+from sdtoolplus.mo_class import MOClass
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.addresses import get_addresses
 
 _ASSUMED_SD_TIMEZONE = zoneinfo.ZoneInfo("Europe/Copenhagen")

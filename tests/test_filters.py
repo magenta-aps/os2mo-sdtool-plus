@@ -16,7 +16,6 @@ from sdtoolplus.filters import remove_by_name
 from sdtoolplus.mo_org_unit_importer import OrgUnitHierarchyUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 
-
 LINE_MGMT_CLASS_UUID = uuid4()
 
 

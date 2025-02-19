@@ -15,10 +15,10 @@ from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
+from sdtoolplus.app import App
 from sdtoolplus.app import _get_mo_root_uuid
 from sdtoolplus.app import _get_mo_subtree_path_for_root
 from sdtoolplus.app import _get_sd_root_uuid
-from sdtoolplus.app import App
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
@@ -27,8 +27,9 @@ from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.tree_diff_executor import AddOrgUnitMutation
 from sdtoolplus.tree_diff_executor import TreeDiffExecutor
 from sdtoolplus.tree_diff_executor import UpdateOrgUnitMutation
-from .conftest import _MockGraphQLSession
+
 from .conftest import SharedIdentifier
+from .conftest import _MockGraphQLSession
 
 
 class TestApp:

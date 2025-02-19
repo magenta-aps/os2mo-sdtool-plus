@@ -5,14 +5,13 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 
 import structlog
+from sqlalchemy import Engine
 from sqlalchemy import delete
 from sqlalchemy import desc
-from sqlalchemy import Engine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from sdtoolplus.db.models import RunDB
-
 
 logger = structlog.get_logger()
 

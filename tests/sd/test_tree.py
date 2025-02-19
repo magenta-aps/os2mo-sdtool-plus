@@ -24,8 +24,8 @@ from sdtoolplus.sd.tree import _get_parent_node
 from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
-from tests.conftest import mock_get_department_parent
 from tests.conftest import SharedIdentifier
+from tests.conftest import mock_get_department_parent
 
 
 @patch("sdtoolplus.sd.tree._get_department_parent")

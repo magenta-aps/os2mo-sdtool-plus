@@ -12,8 +12,8 @@ from more_itertools import last
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
-from .diff_org_trees import in_obsolete_units_subtree
 from .diff_org_trees import OrgTreeDiff
+from .diff_org_trees import in_obsolete_units_subtree
 from .email import build_email_body
 from .email import send_email_notification
 from .graphql import get_graphql_client
@@ -29,7 +29,6 @@ from .sd.importer import get_sd_tree
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 from .tree_diff_executor import UpdateOrgUnitMutation
-
 
 logger = structlog.get_logger()
 

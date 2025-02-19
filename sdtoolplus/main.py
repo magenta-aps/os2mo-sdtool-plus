@@ -32,14 +32,13 @@ from .addresses import AddressFixer
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
+from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .db.rundb import Status
 from .depends import GraphQLClient
 from .mo_class import MOOrgUnitLevelMap
 from .tree_tools import tree_as_string
-
 
 logger = structlog.get_logger()
 

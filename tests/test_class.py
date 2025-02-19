@@ -6,6 +6,7 @@ from sdtoolplus.mo_class import MOClass
 from sdtoolplus.mo_class import MOClassMap
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_class import MOOrgUnitTypeMap
+
 from .conftest import _MockGraphQLSessionGetClassesInFacet
 
 

@@ -78,6 +78,24 @@ asyncio_mode="auto"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = [
+    # isort
+    "I"
+]
+ignore = [
+  # Allow function calls in arguments, like `Depends(...)`
+  "B008",
+  # Allow lines longer than 90 characters if ruff-format decides so
+  "E501"
+]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
 [tool.deptry.per_rule_ignores]
 DEP002 = [
   # uvicorn is used by the Dockerfile

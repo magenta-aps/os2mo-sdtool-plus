@@ -3,10 +3,10 @@
 from sqlalchemy import create_engine
 
 from sdtoolplus.db.models import Base
+from sdtoolplus.db.rundb import Status
 from sdtoolplus.db.rundb import delete_last_run
 from sdtoolplus.db.rundb import get_status
 from sdtoolplus.db.rundb import persist_status
-from sdtoolplus.db.rundb import Status
 
 
 def test_persist_and_get_status():

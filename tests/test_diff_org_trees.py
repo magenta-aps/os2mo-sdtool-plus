@@ -11,15 +11,16 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
 from sdtoolplus.config import SDToolPlusSettings
-from sdtoolplus.diff_org_trees import _uuid_to_nodes_map
 from sdtoolplus.diff_org_trees import Nodes
 from sdtoolplus.diff_org_trees import OrgTreeDiff
+from sdtoolplus.diff_org_trees import _uuid_to_nodes_map
 from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.sd.tree import build_tree
-from .conftest import _MockGraphQLSession
+
 from .conftest import SharedIdentifier
+from .conftest import _MockGraphQLSession
 
 
 class TestOrgTreeDiff:

@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from datetime import datetime
+from datetime import timedelta
+from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -10,7 +12,8 @@ from fastramqpi.pytest_util import retry
 from httpx import Response
 from more_itertools import one
 from respx import MockRouter
-from sdclient.responses import GetDepartmentResponse, GetOrganizationResponse
+from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetOrganizationResponse
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 

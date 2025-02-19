@@ -25,7 +25,6 @@ from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
 
-
 QUERY_GET_LINE_MANAGEMENT_CLASS = gql(
     """
     query GetLineManagementClass {
