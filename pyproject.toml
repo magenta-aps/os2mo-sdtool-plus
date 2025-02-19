@@ -17,7 +17,7 @@ python = "^3.11"
 click = "^8"
 gql = "^3"
 anytree = "^2"
-pydantic = "^1"
+pydantic = {version = "^1", extras=["email"]}
 more-itertools = "^9"
 another-sd-client = "^1"
 uvicorn = "^0.23"
