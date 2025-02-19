@@ -21,15 +21,10 @@ RUN python -m venv $VIRTUAL_ENV
 COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
-COPY alembic.ini ./alembic.ini
-COPY alembic ./alembic
-COPY docker/start.sh ./docker/start.sh
 COPY scripts ./scripts
 COPY sdtoolplus ./sdtoolplus
 
-ENV ENVIRONMENT=production \
-    RUN_ALEMBIC_MIGRATIONS=true
-CMD ["./docker/start.sh"]
+CMD ["uvicorn", "--factory", "sdtoolplus.main:create_app", "--host", "0.0.0.0"]
 
 # Add build version to the environment last to avoid build cache misses
 ARG COMMIT_TAG

@@ -1,15 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-"""
-To run:
-
-    $ cd os2mo-sdtool-plus
-    $ export MORA_BASE=http://localhost:5000
-    $ export AUTH_SERVER=...
-    $ export CLIENT_SECRET=...
-    $ poetry run docker/start.sh
-"""
-
 from typing import Any
 from uuid import UUID
 
@@ -27,6 +17,8 @@ from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
+
+from sdtoolplus.db.models import Base
 
 from .addresses import AddressFixer
 from .app import App
@@ -117,10 +109,15 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         settings=settings.fastramqpi,
         graphql_client_cls=GraphQLClient,
         graphql_version=21,
+        database_metadata=Base.metadata,
     )
     fastramqpi.add_context(settings=settings)
 
+    sessionmaker = fastramqpi.get_context()["sessionmaker"]
+
     engine = get_engine(settings)
+
+    # TODO
 
     fastapi_router = APIRouter()
 

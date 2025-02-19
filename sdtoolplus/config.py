@@ -13,8 +13,8 @@ from pydantic import SecretStr
 
 from .mo_org_unit_importer import OrgUnitUUID
 
-SD_RETRY_WAIT_TIME = 15
-SD_RETRY_ATTEMPTS = 10
+SD_RETRY_WAIT_TIME = 1
+SD_RETRY_ATTEMPTS = 1
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
 
 
@@ -31,7 +31,7 @@ class SDToolPlusSettings(BaseSettings):
     auth_server: str = "http://keycloak:8080/auth"
 
     apply_ny_logic: bool = True
-    httpx_timeout_ny_logic: PositiveInt = 120
+    httpx_timeout_ny_logic: PositiveInt = 1
 
     # Compare the SD tree to the MO tree found at the path. The path must be a
     # list of UUIDs

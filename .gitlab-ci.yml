@@ -71,7 +71,6 @@ Integration-test:
     - .integration-test:mo
   parallel: 2
   variables:
-      RUN_ALEMBIC_MIGRATIONS: "false"
       MORA_BASE: "http://mo:5000"
       CLIENT_ID: "dipex"
       CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"

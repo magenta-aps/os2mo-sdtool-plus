@@ -2,11 +2,9 @@
 # SPDX-License-Identifier: MPL-2.0
 services:
   sdtool-plus:
-    build:
-      context: .
+    build: .
+    command: [ "uvicorn", "--factory", "sdtoolplus.main:create_app", "--host", "0.0.0.0", "--reload" ]
     environment:
-      ENVIRONMENT: "development"
-
       FASTRAMQPI__LOG_LEVEL: "INFO"
       FASTRAMQPI__JSON_LOGS: False
 
