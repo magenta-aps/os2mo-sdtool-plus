@@ -45,9 +45,7 @@ def persist_status(engine: Engine, status: Status) -> None:
 
 def delete_last_run(engine: Engine) -> None:
     with Session(engine) as session:
-        statement = select(RunDB.id).order_by(desc(RunDB.id)).limit(1)
-        last_run_id = session.execute(statement).scalar_one_or_none()
-
-        statement = delete(RunDB).where(RunDB.id == last_run_id)
+        last_run = select(RunDB.id).order_by(desc(RunDB.id)).limit(1)
+        statement = delete(RunDB).where(RunDB.id == last_run)
         session.execute(statement)
         session.commit()

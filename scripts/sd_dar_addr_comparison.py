@@ -101,7 +101,7 @@ def _is_line_management(
     line_management_class: UUID,
 ) -> bool:
     return (
-        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)
+        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)  # type: ignore
         == line_management_class
     )
 
@@ -267,7 +267,7 @@ def main(
     csv.insert(0, csv_header)
 
     with open("/tmp/adresser.csv", "w") as fp:
-        fp.writelines([";".join(line) + "\n" for line in csv])
+        fp.writelines([";".join(line) + "\n" for line in csv])  # type: ignore
 
     with open("/tmp/errors.csv", "w") as fp:
         fp.writelines([";".join(line) + "\n" for line in errors])

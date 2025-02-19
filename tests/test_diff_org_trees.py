@@ -3,7 +3,7 @@
 import uuid
 from unittest.mock import MagicMock
 
-from anytree.render import RenderTree
+from anytree.render import RenderTree  # type: ignore
 from freezegun import freeze_time
 from more_itertools import first
 from ramodels.mo import Validity

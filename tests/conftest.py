@@ -10,7 +10,7 @@ from typing import Iterator
 from zoneinfo import ZoneInfo
 
 import pytest
-from anytree import Resolver
+from anytree import Resolver  # type: ignore
 from fastapi.testclient import TestClient
 from fastramqpi.config import Settings as FastRAMQPISettings
 from fastramqpi.ramqp.config import AMQPConnectionSettings

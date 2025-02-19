@@ -147,9 +147,11 @@ async def _update_or_add_pnumber_address(
 async def _get_dar_addr_uuid(
     dar_client: AsyncDARClient, addr: Address
 ) -> DARAddressUUID:
+    assert addr.name is not None
     async with dar_client:
         r = await dar_client.cleanse_single(addr.name)
         return DARAddressUUID(r["id"])
+    assert False
 
 
 async def _update_or_add_postal_address(

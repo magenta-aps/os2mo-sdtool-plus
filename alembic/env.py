@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from logging.config import fileConfig
 
-from alembic import context  # type: ignore
+from alembic import context
 from sdtoolplus.config import get_settings
 from sdtoolplus.db.engine import get_db_url
 from sdtoolplus.db.engine import get_engine

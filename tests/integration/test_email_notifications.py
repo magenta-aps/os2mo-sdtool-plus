@@ -1,9 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from datetime import datetime
-from datetime import timedelta
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock, patch
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -12,8 +10,7 @@ from fastramqpi.pytest_util import retry
 from httpx import Response
 from more_itertools import one
 from respx import MockRouter
-from sdclient.responses import GetDepartmentResponse
-from sdclient.responses import GetOrganizationResponse
+from sdclient.responses import GetDepartmentResponse, GetOrganizationResponse
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
@@ -68,9 +65,9 @@ async def test_allowed_move_to_obsolete(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("30000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID(
+        assert one(dep3.objects).current.parent.uuid == UUID(  # type: ignore
             "cccccccc-cccc-cccc-cccc-cccccccccccc"
-        )  # type: ignore
+        )
 
     await verify()
 
@@ -143,9 +140,9 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("30000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID(
+        assert one(dep3.objects).current.parent.uuid == UUID(  # type: ignore
             "20000000-0000-0000-0000-000000000000"
-        )  # type: ignore
+        )
 
     await verify()
 
@@ -215,9 +212,9 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement_in_subtree(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("20000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID(
+        assert one(dep3.objects).current.parent.uuid == UUID(  # type: ignore
             "10000000-0000-0000-0000-000000000000"
-        )  # type: ignore
+        )
 
     await verify()
 
