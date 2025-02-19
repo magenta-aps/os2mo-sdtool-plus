@@ -19,8 +19,6 @@ from sdclient.client import SDClient
 from sdclient.responses import Department
 
 from sdtoolplus.addresses import DARAddressUUID
-from sdtoolplus.log import LogLevel
-from sdtoolplus.log import setup_logging
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
@@ -273,5 +271,4 @@ def main(
 
 
 if __name__ == "__main__":
-    setup_logging(LogLevel.DEBUG)  # Shut up GraphQL
     main()

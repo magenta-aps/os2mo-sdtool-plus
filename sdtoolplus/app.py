@@ -17,7 +17,6 @@ from .diff_org_trees import in_obsolete_units_subtree
 from .email import build_email_body
 from .email import send_email_notification
 from .graphql import get_graphql_client
-from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
@@ -94,8 +93,6 @@ class App:
         self, settings: SDToolPlusSettings, current_inst_id: str | None = None
     ):
         self.settings: SDToolPlusSettings = settings
-
-        setup_logging(self.settings.log_level)
 
         self.current_inst_id = (
             current_inst_id

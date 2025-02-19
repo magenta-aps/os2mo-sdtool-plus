@@ -11,7 +11,8 @@ services:
     environment:
       ENVIRONMENT: "development"
 
-      LOG_LEVEL: "DEBUG"
+      FASTRAMQPI__LOG_LEVEL: "INFO"
+      FASTRAMQPI__JSON_LOGS: False
 
       MORA_BASE: "http://mo:5000"
       CLIENT_ID: "dipex"

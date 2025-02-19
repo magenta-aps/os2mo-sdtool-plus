@@ -11,7 +11,6 @@ from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
 
-from .log import LogLevel
 from .mo_org_unit_importer import OrgUnitUUID
 
 SD_RETRY_WAIT_TIME = 15
@@ -43,9 +42,6 @@ class SDToolPlusSettings(BaseSettings):
     # to the list of OrgUnitUUIDs. If this ENV is set, it will take precedence over the
     # above.
     mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None = None
-
-    # Configures log level
-    log_level: LogLevel = LogLevel.INFO
 
     # Configures Sentry error monitoring
     sentry_dsn: str | None = None
