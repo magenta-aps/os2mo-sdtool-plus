@@ -128,13 +128,13 @@ class TestMOOrgTreeImport:
             user_key="unit1",
             name="unit1",
         )
-        unit11 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("11000000-0000-0000-0000-000000000000"),
             user_key="unit11",
             name="unit11",
             parent=unit1,
         )
-        unit12 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("12000000-0000-0000-0000-000000000000"),
             user_key="unit12",
             name="unit12",
@@ -146,7 +146,7 @@ class TestMOOrgTreeImport:
             user_key="unit2",
             name="unit2",
         )
-        unit21 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("21000000-0000-0000-0000-000000000000"),
             user_key="unit21",
             name="unit21",

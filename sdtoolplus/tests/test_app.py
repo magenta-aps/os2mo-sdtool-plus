@@ -46,9 +46,7 @@ class TestApp:
         with ExitStack() as stack:
             mock_sentry_sdk_init = self._add_mock(stack, "sentry_sdk.init")
             # Act
-            app: App = self._get_app_instance(
-                sdtoolplus_settings, sentry_dsn="sentry_dsn"
-            )
+            self._get_app_instance(sdtoolplus_settings, sentry_dsn="sentry_dsn")
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 

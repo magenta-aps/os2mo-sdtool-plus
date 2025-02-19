@@ -158,7 +158,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         try:
             status = get_status(engine)
             return 0 if status == Status.COMPLETED else 1
-        except:
+        except Exception:
             return 3
 
     @fastapi_router.post("/rundb/delete-last-run")

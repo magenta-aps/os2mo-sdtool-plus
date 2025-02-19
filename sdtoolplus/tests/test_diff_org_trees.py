@@ -49,7 +49,7 @@ class TestOrgTreeDiff:
             name="Department 7",
             parent=sd_tree,
         )
-        dep8 = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("80000000-0000-0000-0000-000000000000"),
             user_key="dep8",
             name="Department 8",
@@ -306,7 +306,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        A = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             parent=subtree_root,
             user_key="a",
@@ -324,7 +324,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        C = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
             parent=B,
             user_key="c",
@@ -342,7 +342,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        E = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
             parent=D,
             user_key="e",

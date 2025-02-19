@@ -288,7 +288,7 @@ async def test_build_tree_date_range_errors(
         parent=dep1.uuid,
     )
 
-    dep3 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         UUID("30000000-0000-0000-0000-000000000000"),
         name="Department 3",
         user_key="dep3",
@@ -298,7 +298,7 @@ async def test_build_tree_date_range_errors(
         parent=dep2.uuid,
     )
 
-    dep4 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         UUID("40000000-0000-0000-0000-000000000000"),
         name="Department 4",
         user_key="dep4",
@@ -308,7 +308,7 @@ async def test_build_tree_date_range_errors(
         parent=dep2.uuid,
     )
 
-    dep5 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         UUID("50000000-0000-0000-0000-000000000000"),
         name="Department 5",
         user_key="dep5",

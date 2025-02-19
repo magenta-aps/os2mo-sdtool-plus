@@ -763,7 +763,7 @@ def mock_org_tree_diff_move_ny_from_ny_to_ny(
         mock_sd_get_department_response,
         mock_mo_org_unit_level_map,
     )
-    mo_dep7 = OrgUnitNode(
+    OrgUnitNode(
         uuid=uuid.UUID("70000000-0000-0000-0000-000000000000"),
         parent_uuid=uuid.UUID("00000000-0000-0000-0000-000000000000"),
         user_key="dep7",
@@ -1094,7 +1094,7 @@ async def base_tree_builder(
         parent=dep1.uuid,
     )
 
-    dep3 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         uuid.UUID("30000000-0000-0000-0000-000000000000"),
         name="Department 3",
         user_key="dep3",
@@ -1104,7 +1104,7 @@ async def base_tree_builder(
         parent=dep2.uuid,
     )
 
-    dep4 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         uuid.UUID("40000000-0000-0000-0000-000000000000"),
         name="Department 4",
         user_key="dep4",
@@ -1124,7 +1124,7 @@ async def base_tree_builder(
         parent=dep1.uuid,
     )
 
-    dep6 = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         uuid.UUID("60000000-0000-0000-0000-000000000000"),
         name="Department 6",
         user_key="dep6",
@@ -1148,7 +1148,7 @@ async def obsolete_unit_tree_builder(
 
     # Build MO tree with a unit for "Udgåede afdelinger"
 
-    obsolete_units = await graphql_client._testing__create_org_unit(
+    await graphql_client._testing__create_org_unit(
         uuid=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
         name="Udgåede afdelinger",
         user_key="udgåede afdelinger",
