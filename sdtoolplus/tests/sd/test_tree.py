@@ -18,7 +18,6 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import _get_extra_nodes
 from sdtoolplus.sd.tree import _get_parent_node

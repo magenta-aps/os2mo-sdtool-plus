@@ -260,9 +260,7 @@ async def job_function(graphql_client: GraphQLClient) -> UUID:
 @pytest.fixture
 async def engagement_type(graphql_client: GraphQLClient) -> UUID:
     return one(
-        (
-            await graphql_client.get_facet_class("engagement_type", "TestAnsat")
-        ).objects  # type: ignore
+        (await graphql_client.get_facet_class("engagement_type", "TestAnsat")).objects  # type: ignore
     ).current.uuid
 
 

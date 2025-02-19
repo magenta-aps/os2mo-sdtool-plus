@@ -9,6 +9,7 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
+
 from typing import Any
 from uuid import UUID
 

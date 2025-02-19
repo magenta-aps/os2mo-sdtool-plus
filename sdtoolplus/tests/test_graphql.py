@@ -3,7 +3,6 @@
 from datetime import datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
-from zoneinfo import ZoneInfo
 
 import pytest
 from ramodels.mo import Validity

@@ -2,12 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from unittest.mock import MagicMock
-from unittest.mock import patch
 
 import pytest
 from sdclient.exceptions import SDCallError
 from sdclient.requests import GetDepartmentRequest
-from sdclient.requests import SDRequest
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 

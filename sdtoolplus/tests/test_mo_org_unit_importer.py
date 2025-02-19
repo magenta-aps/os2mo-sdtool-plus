@@ -5,7 +5,6 @@ from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
-from anytree import RenderTree
 from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
@@ -178,8 +177,7 @@ class TestMOOrgTreeImport:
         # Act
         actual, _ = instance.as_single_tree(
             SharedIdentifier.root_org_uuid,
-            "20000000-0000-0000-0000-000000000000/"
-            "22000000-0000-0000-0000-000000000000",
+            "20000000-0000-0000-0000-000000000000/22000000-0000-0000-0000-000000000000",
             None,
         )
 

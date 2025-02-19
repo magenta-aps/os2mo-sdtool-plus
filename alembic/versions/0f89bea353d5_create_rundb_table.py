@@ -7,13 +7,13 @@ Revises:
 Create Date: 2023-11-30 14:56:26.866561
 
 """
+
 from typing import Sequence
 from typing import Union
 
 import sqlalchemy as sa
 
 from alembic import op  # type: ignore
-from sdtoolplus.db.models import RunDB
 
 # revision identifiers, used by Alembic.
 revision: str = "0f89bea353d5"

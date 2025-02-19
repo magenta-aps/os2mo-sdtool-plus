@@ -3,7 +3,6 @@
 import unittest
 from datetime import date
 from datetime import datetime
-from time import sleep
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
@@ -199,17 +198,23 @@ async def test_build_tree_extra_units_are_added(
         dep7 = await graphql_client._testing__get_org_unit(
             UUID("95000000-0000-0000-0000-000000000000")
         )
-        assert one(dep7.objects).current.parent.uuid == UUID("10000000-0000-0000-0000-000000000000")  # type: ignore
+        assert one(dep7.objects).current.parent.uuid == UUID(
+            "10000000-0000-0000-0000-000000000000"
+        )  # type: ignore
 
         dep8 = await graphql_client._testing__get_org_unit(
             UUID("96000000-0000-0000-0000-000000000000")
         )
-        assert one(dep8.objects).current.parent.uuid == UUID("95000000-0000-0000-0000-000000000000")  # type: ignore
+        assert one(dep8.objects).current.parent.uuid == UUID(
+            "95000000-0000-0000-0000-000000000000"
+        )  # type: ignore
 
         dep9 = await graphql_client._testing__get_org_unit(
             UUID("97000000-0000-0000-0000-000000000000")
         )
-        assert one(dep9.objects).current.parent.uuid == UUID("96000000-0000-0000-0000-000000000000")  # type: ignore
+        assert one(dep9.objects).current.parent.uuid == UUID(
+            "96000000-0000-0000-0000-000000000000"
+        )  # type: ignore
 
     await verify()
 

@@ -68,7 +68,9 @@ async def test_allowed_move_to_obsolete(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("30000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")  # type: ignore
+        assert one(dep3.objects).current.parent.uuid == UUID(
+            "cccccccc-cccc-cccc-cccc-cccccccccccc"
+        )  # type: ignore
 
     await verify()
 
@@ -141,7 +143,9 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("30000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID("20000000-0000-0000-0000-000000000000")  # type: ignore
+        assert one(dep3.objects).current.parent.uuid == UUID(
+            "20000000-0000-0000-0000-000000000000"
+        )  # type: ignore
 
     await verify()
 
@@ -211,7 +215,9 @@ async def test_not_allowed_move_to_obsolete_when_active_engagement_in_subtree(
         dep3 = await graphql_client._testing__get_org_unit(
             UUID("20000000-0000-0000-0000-000000000000")
         )
-        assert one(dep3.objects).current.parent.uuid == UUID("10000000-0000-0000-0000-000000000000")  # type: ignore
+        assert one(dep3.objects).current.parent.uuid == UUID(
+            "10000000-0000-0000-0000-000000000000"
+        )  # type: ignore
 
     await verify()
 
