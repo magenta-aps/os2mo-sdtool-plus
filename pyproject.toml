@@ -36,7 +36,9 @@ types-python-dateutil = "^2"
 
 [tool.poetry.group.pre-commit.dependencies]
 pre-commit = "^3"
-# TODO: add ruff - https://docs.astral.sh/ruff/rules/#pydocstyle-d
+ruff = "^0.9"
+deptry = "^0.23"
+mypy = "^1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7"
