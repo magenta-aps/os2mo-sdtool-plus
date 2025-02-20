@@ -14,6 +14,8 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngId
 from sdtoolplus.models import EngName
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitUUID
 from sdtoolplus.sd.timeline import get_department_timeline
@@ -115,6 +117,41 @@ def test_get_department_timeline():
                 start=datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
                 value="name4",
+            ),
+        )
+    )
+
+    assert department_timeline.unit_id == Timeline[UnitId](
+        intervals=(
+            UnitId(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP1",
+            ),
+            UnitId(
+                start=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP2",
+            ),
+            UnitId(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP1",
+            ),
+        )
+    )
+
+    assert department_timeline.unit_level == Timeline[UnitLevel](
+        intervals=(
+            UnitLevel(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="NY0-niveau",
+            ),
+            UnitLevel(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value="NY0-niveau",
             ),
         )
     )

@@ -21,6 +21,8 @@ from sdtoolplus.models import EngId
 from sdtoolplus.models import EngName
 from sdtoolplus.models import T
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import UnitUUID
@@ -78,10 +80,16 @@ def get_department_timeline(
         Active, department.Department, "DepartmentName", True
     )
     name_intervals = _get_intervals(UnitName, department.Department, "DepartmentName")
+    id_intervals = _get_intervals(UnitId, department.Department, "DepartmentIdentifier")
+    level_intervals = _get_intervals(
+        UnitLevel, department.Department, "DepartmentLevelIdentifier"
+    )
 
     return UnitTimeline(
         active=Timeline[Active](intervals=active_intervals),
         name=Timeline[UnitName](intervals=name_intervals),
+        unit_id=Timeline[UnitId](intervals=id_intervals),
+        unit_level=Timeline[UnitLevel](intervals=level_intervals),
     )
 
 

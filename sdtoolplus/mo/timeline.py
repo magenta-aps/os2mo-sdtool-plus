@@ -10,6 +10,8 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 
@@ -25,6 +27,8 @@ async def get_ou_timeline(
         return UnitTimeline(
             active=Timeline[Active](intervals=tuple()),
             name=Timeline[UnitName](intervals=tuple()),
+            unit_id=Timeline[UnitId](intervals=tuple()),
+            unit_level=Timeline[UnitLevel](intervals=tuple()),
         )
 
     validities = one(objects).validities
