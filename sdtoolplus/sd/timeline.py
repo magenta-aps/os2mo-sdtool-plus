@@ -4,11 +4,14 @@ from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
+from typing import Any
+from typing import TypeVar
 
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetEmploymentChangedRequest
+from sdclient.responses import DefaultDates
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
@@ -23,6 +26,9 @@ from sdtoolplus.models import UnitUUID
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
+D = TypeVar("D", bound=DefaultDates)
+
+
 def _sd_start_datetime(d: date) -> datetime:
     return datetime.combine(d, time.min, ASSUMED_SD_TIMEZONE)
 
@@ -31,6 +37,24 @@ def _sd_end_datetime(d: date) -> datetime:
     if d == date.max:
         return datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE)
     return datetime.combine(d + timedelta(days=1), time.min, ASSUMED_SD_TIMEZONE)
+
+
+def _get_intervals(
+    interval_class: type[T],
+    objs: list[D],
+    value_attr: str,
+    force_value: Any = None,
+) -> tuple[T, ...]:
+    intervals = tuple(
+        interval_class(
+            start=_sd_start_datetime(obj.ActivationDate),
+            end=_sd_end_datetime(obj.DeactivationDate),
+            value=getattr(obj, value_attr) if force_value is None else force_value,
+        )
+        for obj in objs
+    )
+    intervals = combine_intervals(intervals)
+    return intervals
 
 
 def get_department_timeline(
@@ -49,25 +73,10 @@ def get_department_timeline(
         )
     )
 
-    active_intervals = tuple(
-        Active(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
-            value=True,
-        )
-        for dep in department.Department
+    active_intervals = _get_intervals(
+        Active, department.Department, "DepartmentName", True
     )
-    active_intervals = combine_intervals(active_intervals)
-
-    name_intervals = tuple(
-        UnitName(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
-            value=dep.DepartmentName,
-        )
-        for dep in department.Department
-    )
-    name_intervals = combine_intervals(name_intervals)
+    name_intervals = _get_intervals(UnitName, department.Department, "DepartmentName")
 
     return UnitTimeline(
         active=Timeline[Active](intervals=active_intervals),
@@ -104,35 +113,15 @@ def get_engagement_timeline(
             active=Timeline[Active](intervals=tuple()),
         )
 
-    unit_uuid_intervals = tuple(
-        UnitUUID(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
-            value=dep.DepartmentUUIDIdentifier,
-        )
-        for dep in employment.EmploymentDepartment
+    unit_uuid_intervals = _get_intervals(
+        UnitUUID, employment.EmploymentDepartment, "DepartmentUUIDIdentifier"
     )
-    unit_uuid_intervals = combine_intervals(unit_uuid_intervals)
-
-    profession_intervals = tuple(
-        Profession(
-            start=_sd_start_datetime(prof.ActivationDate),
-            end=_sd_end_datetime(prof.DeactivationDate),
-            value=prof.EmploymentName,
-        )
-        for prof in employment.Profession
+    profession_intervals = _get_intervals(
+        Profession, employment.Profession, "EmploymentName"
     )
-    profession_intervals = combine_intervals(profession_intervals)
-
-    active_intervals = tuple(
-        Active(
-            start=_sd_start_datetime(status.ActivationDate),
-            end=_sd_end_datetime(status.DeactivationDate),
-            value=True,
-        )
-        for status in employment.EmploymentStatus
+    active_intervals = _get_intervals(
+        Active, employment.EmploymentStatus, "EmploymentStatusCode", True
     )
-    active_intervals = combine_intervals(active_intervals)
 
     return EngagementTimeline(
         unit_uuid=Timeline[UnitUUID](intervals=unit_uuid_intervals),
