@@ -1,9 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-networks:
-  os2mo_default:
-    external: true
-
 services:
   sdtool-plus:
     build:
@@ -11,7 +7,8 @@ services:
     environment:
       ENVIRONMENT: "development"
 
-      LOG_LEVEL: "DEBUG"
+      FASTRAMQPI__LOG_LEVEL: "INFO"
+      FASTRAMQPI__JSON_LOGS: False
 
       MORA_BASE: "http://mo:5000"
       CLIENT_ID: "dipex"
@@ -26,11 +23,18 @@ services:
 
       MO_SUBTREE_PATH_FOR_ROOT: '["12121212-1212-1212-1212-121212121212"]'
 
-      FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker"
+      # OS2mo
       FASTRAMQPI__MO_URL: "http://mo:5000"
-      FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
       FASTRAMQPI__CLIENT_ID: "dipex"
       FASTRAMQPI__CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
+      FASTRAMQPI__AUTH_SERVER: "http://keycloak:8080/auth"
+      FASTRAMQPI__AUTH_REALM: "mo"
+      FASTRAMQPI__AMQP__URL: "amqp://guest:guest@msg-broker:5672/"
+      # Database
+      FASTRAMQPI__DATABASE__USER: "fastramqpi"
+      FASTRAMQPI__DATABASE__PASSWORD: "fastramqpi"
+      FASTRAMQPI__DATABASE__HOST: "db"
+      FASTRAMQPI__DATABASE__NAME: "fastramqpi"
 
       OBSOLETE_UNIT_ROOTS: '["cccccccc-cccc-cccc-cccc-cccccccccccc"]'
       EXTEND_PARENT_VALIDITIES: "true"
@@ -42,36 +46,47 @@ services:
       EMAIL_USER: "70e58fda8d0426"
       EMAIL_PASSWORD: "3dcafadaff221e"
       EMAIL_TO: '["to@example.com"]'
-
     ports:
       - "127.0.0.1:8000:8000"
     networks:
+      - default
       - os2mo_default
     volumes:
-      - type: bind
-        source: ./sdtoolplus
-        target: /app/sdtoolplus
+      - ./sdtoolplus/:/app/sdtoolplus/:ro
+      - ./tests/:/app/tests/:ro
     depends_on:
       sd-db-init:
         condition: service_completed_successfully
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: "fastramqpi"
+      POSTGRES_PASSWORD: "fastramqpi"
+      POSTGRES_DB: "fastramqpi"
+    networks:
+      - default
+
   wait-for-db:
     image: postgres:14
     command: ["sh", "-c", 'until pg_isready -h sd-db -p 5432; do echo "Waiting for database"; sleep 1; done;']
     networks:
-      os2mo_default:
+      - default
+
   sd-db:
-    image: postgres:11.7  # Set image in global.sls
+    image: postgres:11.7 # Set image in global.sls
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
     networks:
-      os2mo_default:
+      - default
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 3
       start_period: 30s
+
   sd-db-init:
     image: magentaaps/postgres-keycloak-init:12.7-11.7
     environment:
@@ -82,10 +97,11 @@ services:
       KEYCLOAK_DB_USER: sdtool_plus
       KEYCLOAK_DB_PASSWORD: super_secret_sd_payload_password
     networks:
-      os2mo_default:
+      - default
     depends_on:
       wait-for-db:
         condition: service_completed_successfully
+
   mo-init:
     image: magentaaps/os2mo-init:2
     environment:
@@ -95,9 +111,13 @@ services:
       AUTH_SERVER: "http://keycloak:8080/auth"
       AUTH_REALM: "mo"
     networks:
-      os2mo_default:
+      - os2mo_default
     volumes:
       - type: bind
         source: ./dev-environment/init.config.yml
         target: /config/config.yml
         read_only: true
+
+networks:
+  os2mo_default:
+    external: true

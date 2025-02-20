@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from functools import cache
 from typing import Iterator
 from uuid import UUID
 
@@ -13,12 +12,11 @@ from more_itertools import last
 from sdclient.client import SDClient
 
 from .config import SDToolPlusSettings
-from .diff_org_trees import in_obsolete_units_subtree
 from .diff_org_trees import OrgTreeDiff
+from .diff_org_trees import in_obsolete_units_subtree
 from .email import build_email_body
 from .email import send_email_notification
 from .graphql import get_graphql_client
-from .log import setup_logging
 from .mo_class import MOClass
 from .mo_class import MOOrgUnitLevelMap
 from .mo_class import MOOrgUnitTypeMap
@@ -30,7 +28,6 @@ from .sd.importer import get_sd_tree
 from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 from .tree_diff_executor import UpdateOrgUnitMutation
-
 
 logger = structlog.get_logger()
 
@@ -96,8 +93,6 @@ class App:
         self, settings: SDToolPlusSettings, current_inst_id: str | None = None
     ):
         self.settings: SDToolPlusSettings = settings
-
-        setup_logging(self.settings.log_level)
 
         self.current_inst_id = (
             current_inst_id

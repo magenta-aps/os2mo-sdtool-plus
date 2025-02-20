@@ -4,14 +4,16 @@ from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy import String
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
-class RunDB(Base):  # type: ignore
+class RunDB(Base):
     __tablename__ = "rundb"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

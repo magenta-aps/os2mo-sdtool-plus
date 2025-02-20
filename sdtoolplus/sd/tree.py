@@ -5,7 +5,7 @@ from datetime import date
 from datetime import datetime
 from uuid import UUID
 
-from anytree import find
+from anytree import find  # type: ignore
 from more_itertools import one
 from ramodels.mo import Validity
 from sdclient.client import SDClient
@@ -97,7 +97,7 @@ def _get_sd_departments_map(
     """
 
     return {
-        department.DepartmentUUIDIdentifier: department
+        department.DepartmentUUIDIdentifier: department  # type: ignore
         for department in sd_departments.Department
     }
 
@@ -121,9 +121,9 @@ def get_sd_validity(dep: Department) -> Validity:
             )
         return sd_date  # None
 
-    return Validity(
-        from_date=date_to_datetime_in_tz(dep.ActivationDate),
-        to_date=date_to_datetime_in_tz(convert_infinity_to_none(dep.DeactivationDate)),
+    return Validity(  # type: ignore
+        from_date=date_to_datetime_in_tz(dep.ActivationDate),  # type: ignore
+        to_date=date_to_datetime_in_tz(convert_infinity_to_none(dep.DeactivationDate)),  # type: ignore
     )
 
 
@@ -151,15 +151,15 @@ def _process_node(
     """
 
     dep_uuid = dep_ref.DepartmentUUIDIdentifier
-    dep_name = sd_departments_map[dep_uuid].DepartmentName
-    dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier
-    dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier
-    dep_validity: Validity = get_sd_validity(sd_departments_map[dep_uuid])
+    dep_name = sd_departments_map[dep_uuid].DepartmentName  # type: ignore
+    dep_identifier = sd_departments_map[dep_uuid].DepartmentIdentifier  # type: ignore
+    dep_level_identifier = sd_departments_map[dep_uuid].DepartmentLevelIdentifier  # type: ignore
+    dep_validity: Validity = get_sd_validity(sd_departments_map[dep_uuid])  # type: ignore
 
-    addresses = get_addresses(sd_departments_map[dep_uuid])
+    addresses = get_addresses(sd_departments_map[dep_uuid])  # type: ignore
 
     if dep_uuid in existing_nodes:
-        return existing_nodes[dep_uuid]
+        return existing_nodes[dep_uuid]  # type: ignore
 
     if len(dep_ref.DepartmentReference) > 0:
         parent_dep_ref = one(dep_ref.DepartmentReference)
@@ -173,8 +173,8 @@ def _process_node(
         )
 
         new_node = create_node(
-            dep_uuid,
-            dep_name,
+            dep_uuid,  # type: ignore
+            dep_name,  # type: ignore
             dep_identifier,
             dep_level_identifier,
             dep_validity,
@@ -186,8 +186,8 @@ def _process_node(
         return new_node
 
     new_node = create_node(
-        dep_uuid,
-        dep_name,
+        dep_uuid,  # type: ignore
+        dep_name,  # type: ignore
         dep_identifier,
         dep_level_identifier,
         dep_validity,
@@ -218,7 +218,7 @@ def _get_extra_nodes(
     """
 
     def add_unit(existing_nodes_uuids: set[OrgUnitUUID], dep_ref: DepartmentReference):
-        existing_nodes_uuids.add(dep_ref.DepartmentUUIDIdentifier)
+        existing_nodes_uuids.add(dep_ref.DepartmentUUIDIdentifier)  # type: ignore
         for d in dep_ref.DepartmentReference:
             add_unit(existing_nodes_uuids, d)
 
@@ -231,7 +231,7 @@ def _get_extra_nodes(
         dep.DepartmentUUIDIdentifier for dep in sd_departments.Department
     )
 
-    return get_departments_unit_uuids.difference(existing_nodes_uuids)
+    return get_departments_unit_uuids.difference(existing_nodes_uuids)  # type: ignore
 
 
 # TODO: This retrying mechanism makes the (integration) test suite very slow. Work out
@@ -387,7 +387,7 @@ def build_extra_tree(
             unit_uuid,
             root_node,
             sd_departments_map,
-            sd_org.InstitutionUUIDIdentifier,
+            sd_org.InstitutionUUIDIdentifier,  # type: ignore
             mo_org_unit_level_map,
             extra_node_uuids,
         )

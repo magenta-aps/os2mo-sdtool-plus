@@ -1,21 +1,25 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 FROM python:3.11
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_VERSION="1.8" \
     POETRY_HOME=/opt/poetry \
-    POETRY_VIRTUALENVS_CREATE=false \
-    POETRY_VERSION=1.3.1 \
-    ENVIRONMENT=production \
-    RUN_ALEMBIC_MIGRATIONS=true
+    VIRTUAL_ENV="/venv"
+ENV PATH="$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
-COPY pyproject.toml poetry.lock ./
+# Install poetry in an isolated environment
+RUN python -m venv $POETRY_HOME \
+    && pip install --no-cache-dir poetry==${POETRY_VERSION}
 
-RUN POETRY_NO_INTERACTION=1 /opt/poetry/bin/poetry install --no-root
+# Install project in another isolated environment
+RUN python -m venv $VIRTUAL_ENV
+COPY pyproject.toml poetry.lock* ./
+RUN poetry install --no-root
 
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
@@ -23,10 +27,9 @@ COPY docker/start.sh ./docker/start.sh
 COPY scripts ./scripts
 COPY sdtoolplus ./sdtoolplus
 
-# Useful for debugging
-RUN apt update && apt install -y jq vim less
-
-ENTRYPOINT ["./docker/start.sh"]
+ENV ENVIRONMENT=production \
+    RUN_ALEMBIC_MIGRATIONS=true
+CMD ["./docker/start.sh"]
 
 # Add build version to the environment last to avoid build cache misses
 ARG COMMIT_TAG

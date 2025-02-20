@@ -8,27 +8,28 @@ from uuid import UUID
 from uuid import uuid4
 
 import pytest
-from anytree import find_by_attr
+from anytree import find_by_attr  # type: ignore
 from fastramqpi.raclients.graph.client import PersistentGraphQLClient
 from httpx import Response
 from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..app import _get_mo_root_uuid
-from ..app import _get_mo_subtree_path_for_root
-from ..app import _get_sd_root_uuid
-from ..app import App
-from ..config import SDToolPlusSettings
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_org_unit_importer import OrgUnitNode
-from ..mo_org_unit_importer import OrgUnitUUID
-from ..sd.tree import build_tree
-from ..tree_diff_executor import AddOrgUnitMutation
-from ..tree_diff_executor import TreeDiffExecutor
-from ..tree_diff_executor import UpdateOrgUnitMutation
-from .conftest import _MockGraphQLSession
+from sdtoolplus.app import App
+from sdtoolplus.app import _get_mo_root_uuid
+from sdtoolplus.app import _get_mo_subtree_path_for_root
+from sdtoolplus.app import _get_sd_root_uuid
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.sd.tree import build_tree
+from sdtoolplus.tree_diff_executor import AddOrgUnitMutation
+from sdtoolplus.tree_diff_executor import TreeDiffExecutor
+from sdtoolplus.tree_diff_executor import UpdateOrgUnitMutation
+
 from .conftest import SharedIdentifier
+from .conftest import _MockGraphQLSession
 
 
 class TestApp:
@@ -46,9 +47,7 @@ class TestApp:
         with ExitStack() as stack:
             mock_sentry_sdk_init = self._add_mock(stack, "sentry_sdk.init")
             # Act
-            app: App = self._get_app_instance(
-                sdtoolplus_settings, sentry_dsn="sentry_dsn"
-            )
+            self._get_app_instance(sdtoolplus_settings, sentry_dsn="sentry_dsn")
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
@@ -314,7 +313,7 @@ class TestApp:
             setattr(sdtoolplus_settings, name, value)
         return App(sdtoolplus_settings, current_inst_id)
 
-    def test_get_effective_root_path(self):
+    def test_get_effective_root_path(self) -> None:
         # Arrange
         ou_uuid1 = UUID("10000000-0000-0000-0000-000000000000")
         ou_uuid2 = UUID("20000000-0000-0000-0000-000000000000")
@@ -407,7 +406,7 @@ class TestApp:
     ):
         # Arrange
         app_: App = self._get_app_instance(sdtoolplus_settings)
-        mutation = AddOrgUnitMutation(mock_graphql_session, MagicMock(), MagicMock())
+        mutation = AddOrgUnitMutation(mock_graphql_session, MagicMock(), MagicMock())  # type: ignore
 
         # Assert
         assert not app_._should_apply_ny_logic(mutation, MagicMock(), False)
@@ -445,10 +444,10 @@ class TestApp:
             sd_tree, UUID("40000000-0000-0000-0000-000000000000"), "uuid"
         )
 
-        mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4)
+        mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4)  # type: ignore
 
         # Assert
-        assert app_._should_apply_ny_logic(mutation, dep4, False) == expected
+        assert app_._should_apply_ny_logic(mutation, dep4, False) == expected  # type: ignore
 
 
 UNIT_UUID1 = OrgUnitUUID(str(uuid4()))

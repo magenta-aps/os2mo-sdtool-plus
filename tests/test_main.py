@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import re
-from unittest.mock import call
 from unittest.mock import MagicMock
+from unittest.mock import call
 from unittest.mock import patch
 from uuid import UUID
 
@@ -12,11 +12,11 @@ from httpx import Response
 from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-from ..app import App
-from ..config import SDToolPlusSettings
-from ..db.rundb import Status
-from ..main import background_run
-from ..main import create_app
+from sdtoolplus.app import App
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.db.rundb import Status
+from sdtoolplus.main import background_run
+from sdtoolplus.main import create_app
 
 
 class TestFastAPIApp:

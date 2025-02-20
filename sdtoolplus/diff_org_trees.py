@@ -7,7 +7,7 @@ from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog
-from anytree.util import commonancestors
+from anytree.util import commonancestors  # type: ignore
 from more_itertools import one
 from more_itertools import partition
 from pydantic import BaseModel

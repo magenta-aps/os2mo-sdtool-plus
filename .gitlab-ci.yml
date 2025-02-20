@@ -49,11 +49,9 @@ workflow:
 
 include:
   - project: rammearkitektur/os2mo
-    ref: f7317cec9a128d66b61e16c0315b039c35ac9e32
     file:
       - gitlab-ci-templates/integration-test-meta.v1.yml
   - project: labs/salt-automation
-    ref: master
     file:
       - /gitlab-ci-templates/common/rules.v1.yml
       - /gitlab-ci-templates/common/pre-commit.v1.yml

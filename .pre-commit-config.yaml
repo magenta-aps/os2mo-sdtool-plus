@@ -2,50 +2,46 @@
 # SPDX-License-Identifier: MPL-2.0
 
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.1.0
-    hooks:
-      - id: black
-
-  - repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.9.0
-    hooks:
-      - id: reorder-python-imports
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.0.1
-    hooks:
-      - id: mypy
-        args: [ "--ignore-missing-imports", "--config-file=pyproject.toml" ]
-        additional_dependencies:
-          - httpx
-          - pydantic
-          - strawberry-graphql
-          - anytree
-          - gql
-          - more_itertools
-          - hypothesis
-          - deepdiff
-          - pytest
-          - click
-          - ra-utils
-          - raclients
-          - types-python-dateutil
-
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v1.0.0
+    rev: v5.0.2
     hooks:
       - id: reuse
 
   - repo: https://github.com/pre-commit/pre-commit-hooks.git
-    rev: v4.3.0
+    rev: v5.0.0
     hooks:
+      - id: check-merge-conflict
+      - id: check-toml
       - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+        args: ["--fix", "lf"]
       - id: trailing-whitespace
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        language: system
+      - id: ruff-format
+        language: system
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        args: [--config-file=pyproject.toml]
+        language: system
+
+  - repo: https://github.com/fpgmaas/deptry.git
+    rev: 0.23.0
+    hooks:
+      - id: deptry
+
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.37.1
+    rev: v4.2.2
     hooks:
       - id: commitizen
       - id: commitizen-branch
-        stages: [ push ]
+        stages: [pre-push]

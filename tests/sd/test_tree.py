@@ -18,15 +18,14 @@ from sdtoolplus.mo_class import MOOrgUnitLevelMap
 from sdtoolplus.mo_org_unit_importer import Address
 from sdtoolplus.mo_org_unit_importer import AddressType
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
-from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.tree import _get_extra_nodes
 from sdtoolplus.sd.tree import _get_parent_node
 from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
-from sdtoolplus.tests.conftest import mock_get_department_parent
-from sdtoolplus.tests.conftest import SharedIdentifier
+from tests.conftest import SharedIdentifier
+from tests.conftest import mock_get_department_parent
 
 
 @patch("sdtoolplus.sd.tree._get_department_parent")
@@ -104,7 +103,7 @@ def test_build_extra_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
         validity=sd_expected_validity,
     )
-    dep3 = OrgUnitNode(
+    OrgUnitNode(
         uuid=UUID("30000000-0000-0000-0000-000000000000"),
         parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
         user_key="dep3",
@@ -113,7 +112,7 @@ def test_build_extra_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["Afdelings-niveau"].uuid,
         validity=sd_expected_validity,
     )
-    dep4 = OrgUnitNode(
+    OrgUnitNode(
         uuid=UUID("40000000-0000-0000-0000-000000000000"),
         parent_uuid=SharedIdentifier.grandchild_org_unit_uuid,
         user_key="dep4",
@@ -131,7 +130,7 @@ def test_build_extra_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
         validity=sd_expected_validity,
     )
-    dep6 = OrgUnitNode(
+    OrgUnitNode(
         uuid=UUID("60000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("50000000-0000-0000-0000-000000000000"),
         user_key="dep6",
@@ -158,7 +157,7 @@ def test_build_extra_tree(
         org_unit_level_uuid=mock_mo_org_unit_level_map["NY0-niveau"].uuid,
         validity=sd_expected_validity,
     )
-    dep97 = OrgUnitNode(
+    OrgUnitNode(
         uuid=UUID("97000000-0000-0000-0000-000000000000"),
         parent_uuid=UUID("96000000-0000-0000-0000-000000000000"),
         user_key="dep97",

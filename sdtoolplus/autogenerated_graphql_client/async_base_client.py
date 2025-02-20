@@ -3,10 +3,10 @@ import enum
 import json
 from typing import Any
 from typing import AsyncIterator
-from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import TypeVar
+from typing import cast
 from uuid import uuid4
 
 import httpx
@@ -22,7 +22,9 @@ from .exceptions import GraphQlClientInvalidResponseError
 try:
     from websockets.client import WebSocketClientProtocol
     from websockets.client import connect as ws_connect
-    from websockets.typing import Data, Origin, Subprotocol
+    from websockets.typing import Data
+    from websockets.typing import Origin
+    from websockets.typing import Subprotocol
 except ImportError:
     from contextlib import asynccontextmanager
 

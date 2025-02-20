@@ -3,23 +3,24 @@
 import uuid
 from unittest.mock import MagicMock
 
-from anytree.render import RenderTree
+from anytree.render import RenderTree  # type: ignore
 from freezegun import freeze_time
 from more_itertools import first
 from ramodels.mo import Validity
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 
-from ..config import SDToolPlusSettings
-from ..diff_org_trees import _uuid_to_nodes_map
-from ..diff_org_trees import Nodes
-from ..diff_org_trees import OrgTreeDiff
-from ..mo_class import MOOrgUnitLevelMap
-from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUnitNode
-from ..sd.tree import build_tree
-from .conftest import _MockGraphQLSession
+from sdtoolplus.config import SDToolPlusSettings
+from sdtoolplus.diff_org_trees import Nodes
+from sdtoolplus.diff_org_trees import OrgTreeDiff
+from sdtoolplus.diff_org_trees import _uuid_to_nodes_map
+from sdtoolplus.mo_class import MOOrgUnitLevelMap
+from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.sd.tree import build_tree
+
 from .conftest import SharedIdentifier
+from .conftest import _MockGraphQLSession
 
 
 class TestOrgTreeDiff:
@@ -49,7 +50,7 @@ class TestOrgTreeDiff:
             name="Department 7",
             parent=sd_tree,
         )
-        dep8 = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("80000000-0000-0000-0000-000000000000"),
             user_key="dep8",
             name="Department 8",
@@ -306,7 +307,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        A = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             parent=subtree_root,
             user_key="a",
@@ -324,7 +325,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        C = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("cccccccc-cccc-cccc-cccc-cccccccccccc"),
             parent=B,
             user_key="c",
@@ -342,7 +343,7 @@ class TestOrgTreeDiff:
             validity=sd_expected_validity,
         )
 
-        E = OrgUnitNode(
+        OrgUnitNode(
             uuid=uuid.UUID("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
             parent=D,
             user_key="e",

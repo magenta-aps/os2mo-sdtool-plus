@@ -8,8 +8,8 @@ from uuid import UUID
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from fastapi.testclient import TestClient
 from fastramqpi.pytest_util import retry
+from httpx import AsyncClient
 from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
@@ -35,7 +35,7 @@ async def test_addresses_update(
     mock_get_sd_organization: MagicMock,
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     mock_sd_get_organization_response: GetOrganizationResponse,
@@ -81,7 +81,7 @@ async def test_addresses_update(
     )
 
     # Act
-    test_client.post("/trigger/addresses")
+    await test_client.post("/trigger/addresses")
 
     # Assert
     @retry()
@@ -124,7 +124,7 @@ async def test_addresses_add(
     mock_get_sd_organization: MagicMock,
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     mock_sd_get_organization_response: GetOrganizationResponse,
@@ -152,7 +152,7 @@ async def test_addresses_add(
     )
 
     # Act
-    test_client.post("/trigger/addresses")
+    await test_client.post("/trigger/addresses")
 
     # Assert
     @retry()
@@ -201,7 +201,7 @@ async def test_addresses_add_skip_non_line_management(
     mock_get_sd_departments: MagicMock,
     mock_get_engine: MagicMock,
     mock_only_sync_line_mgmt_postal_addresses: None,
-    test_client: TestClient,
+    test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     mock_sd_get_organization_response: GetOrganizationResponse,
@@ -228,7 +228,7 @@ async def test_addresses_add_skip_non_line_management(
     )
 
     # Act
-    test_client.post("/trigger/addresses")
+    await test_client.post("/trigger/addresses")
 
     # Assert
     @retry()

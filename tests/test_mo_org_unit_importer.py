@@ -5,18 +5,18 @@ from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
-from anytree import RenderTree
 from hypothesis import given
 from hypothesis import strategies as st
 from pydantic import parse_obj_as
 
-from ..mo_org_unit_importer import Address
-from ..mo_org_unit_importer import AddressType
-from ..mo_org_unit_importer import MOOrgTreeImport
-from ..mo_org_unit_importer import OrgUnit
-from ..mo_org_unit_importer import OrgUnitNode
-from ..mo_org_unit_importer import OrgUUID
-from ..models import AddressTypeUserKey
+from sdtoolplus.mo_org_unit_importer import Address
+from sdtoolplus.mo_org_unit_importer import AddressType
+from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
+from sdtoolplus.mo_org_unit_importer import OrgUnit
+from sdtoolplus.mo_org_unit_importer import OrgUnitNode
+from sdtoolplus.mo_org_unit_importer import OrgUUID
+from sdtoolplus.models import AddressTypeUserKey
+
 from .conftest import SharedIdentifier
 
 
@@ -129,13 +129,13 @@ class TestMOOrgTreeImport:
             user_key="unit1",
             name="unit1",
         )
-        unit11 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("11000000-0000-0000-0000-000000000000"),
             user_key="unit11",
             name="unit11",
             parent=unit1,
         )
-        unit12 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("12000000-0000-0000-0000-000000000000"),
             user_key="unit12",
             name="unit12",
@@ -147,7 +147,7 @@ class TestMOOrgTreeImport:
             user_key="unit2",
             name="unit2",
         )
-        unit21 = OrgUnitNode(
+        OrgUnitNode(
             uuid=UUID("21000000-0000-0000-0000-000000000000"),
             user_key="unit21",
             name="unit21",
@@ -178,8 +178,7 @@ class TestMOOrgTreeImport:
         # Act
         actual, _ = instance.as_single_tree(
             SharedIdentifier.root_org_uuid,
-            "20000000-0000-0000-0000-000000000000/"
-            "22000000-0000-0000-0000-000000000000",
+            "20000000-0000-0000-0000-000000000000/22000000-0000-0000-0000-000000000000",
             None,
         )
 

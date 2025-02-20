@@ -8,5 +8,8 @@
 **/.pytest_cache/
 **/.mypy_cache/
 
+.venv/
+venv
+
 # IDEs
 .idea

@@ -19,12 +19,9 @@ from sdclient.client import SDClient
 from sdclient.responses import Department
 
 from sdtoolplus.addresses import DARAddressUUID
-from sdtoolplus.log import LogLevel
-from sdtoolplus.log import setup_logging
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.addresses import get_addresses
 from sdtoolplus.sd.importer import get_sd_departments
-
 
 QUERY_GET_LINE_MANAGEMENT_CLASS = gql(
     """
@@ -101,7 +98,7 @@ def _is_line_management(
     line_management_class: UUID,
 ) -> bool:
     return (
-        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)
+        mo_org_unit_hierarchy.get(sd_dep_addr[0].DepartmentUUIDIdentifier)  # type: ignore
         == line_management_class
     )
 
@@ -267,12 +264,11 @@ def main(
     csv.insert(0, csv_header)
 
     with open("/tmp/adresser.csv", "w") as fp:
-        fp.writelines([";".join(line) + "\n" for line in csv])
+        fp.writelines([";".join(line) + "\n" for line in csv])  # type: ignore
 
     with open("/tmp/errors.csv", "w") as fp:
         fp.writelines([";".join(line) + "\n" for line in errors])
 
 
 if __name__ == "__main__":
-    setup_logging(LogLevel.DEBUG)  # Shut up GraphQL
     main()

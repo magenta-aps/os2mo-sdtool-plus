@@ -8,10 +8,10 @@ from typing import Iterator
 import structlog
 from fastramqpi.raclients.graph.client import GraphQLClient
 from fastramqpi.raclients.graph.client import PersistentGraphQLClient
-from gql.dsl import dsl_gql
 from gql.dsl import DSLMutation
 from gql.dsl import DSLSchema
 from gql.dsl import DSLType
+from gql.dsl import dsl_gql
 from gql.transport.exceptions import TransportQueryError
 from graphql import DocumentNode
 from ramodels.mo import Validity
@@ -19,8 +19,8 @@ from sdclient.client import SDClient
 from sdclient.date_utils import sd_date_to_mo_date_str
 from sdclient.requests import GetDepartmentRequest
 
-from .config import SDToolPlusSettings
 from .config import TIMEZONE
+from .config import SDToolPlusSettings
 from .diff_org_trees import OrgTreeDiff
 from .filters import filter_by_uuid
 from .filters import remove_by_name

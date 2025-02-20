@@ -10,8 +10,8 @@ from typing import TypeAlias
 from uuid import UUID
 
 import structlog
+from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import only
-from os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 
 from sdtoolplus.config import SDToolPlusSettings
@@ -147,9 +147,11 @@ async def _update_or_add_pnumber_address(
 async def _get_dar_addr_uuid(
     dar_client: AsyncDARClient, addr: Address
 ) -> DARAddressUUID:
+    assert addr.name is not None
     async with dar_client:
         r = await dar_client.cleanse_single(addr.name)
         return DARAddressUUID(r["id"])
+    assert False
 
 
 async def _update_or_add_postal_address(
@@ -167,7 +169,7 @@ async def _update_or_add_postal_address(
     # Get DAR address UUID
     try:
         dar_uuid = await _get_dar_addr_uuid(dar_client, sd_addr)
-    except:
+    except Exception:
         logger.error(
             "Could not get address UUID from DAR!",
             unit_uuid=str(sd_unit.uuid),

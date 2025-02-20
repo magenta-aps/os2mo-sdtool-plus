@@ -9,6 +9,7 @@ To run:
     $ export CLIENT_SECRET=...
     $ poetry run docker/start.sh
 """
+
 from typing import Any
 from uuid import UUID
 
@@ -20,8 +21,8 @@ from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
+from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
-from os2mo_dar_client import AsyncDARClient
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
@@ -31,14 +32,13 @@ from .addresses import AddressFixer
 from .app import App
 from .config import SDToolPlusSettings
 from .db.engine import get_engine
+from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .db.rundb import Status
 from .depends import GraphQLClient
 from .mo_class import MOOrgUnitLevelMap
 from .tree_tools import tree_as_string
-
 
 logger = structlog.get_logger()
 
@@ -157,7 +157,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         try:
             status = get_status(engine)
             return 0 if status == Status.COMPLETED else 1
-        except:
+        except Exception:
             return 3
 
     @fastapi_router.post("/rundb/delete-last-run")

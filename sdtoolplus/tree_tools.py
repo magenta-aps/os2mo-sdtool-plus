@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from typing import Iterator
 
-from anytree import RenderTree
+from anytree import RenderTree  # type: ignore
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 

@@ -6,7 +6,7 @@ from typing import Self
 from typing import TypeAlias
 from uuid import UUID
 
-import anytree
+import anytree  # type: ignore
 import pydantic
 import structlog
 from gql import gql
