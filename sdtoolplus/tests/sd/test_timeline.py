@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
 
@@ -74,6 +76,14 @@ def test_get_department_timeline():
     department_timeline = get_department_timeline(mock_sd_client, "II", dep_uuid)
 
     # Assert
+    query_params = one(one(mock_sd_client.get_department.call_args_list).args)
+    assert query_params.InstitutionIdentifier == "II"
+    assert query_params.DepartmentUUIDIdentifier == dep_uuid
+    assert query_params.ActivationDate == date.min
+    assert query_params.DeactivationDate == date.max
+    assert query_params.DepartmentNameIndicator is True
+    assert query_params.UUIDIndicator is True
+
     assert department_timeline.active == Timeline[Active](
         intervals=(
             Active(
@@ -192,6 +202,17 @@ def test_get_engagement_timeline():
     )
 
     # Assert
+    query_params = one(one(mock_sd_client.get_employment_changed.call_args_list).args)
+    assert query_params.InstitutionIdentifier == "II"
+    assert query_params.PersonCivilRegistrationIdentifier == "0101011234"
+    assert query_params.EmploymentIdentifier == "12345"
+    assert query_params.ActivationDate == date.min
+    assert query_params.DeactivationDate == date.max
+    assert query_params.DepartmentIndicator is True
+    assert query_params.EmploymentStatusIndicator is True
+    assert query_params.ProfessionIndicator is True
+    assert query_params.UUIDIndicator is True
+
     assert engagement_timeline.active == Timeline[Active](
         intervals=(
             Active(
