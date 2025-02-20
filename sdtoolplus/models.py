@@ -69,7 +69,7 @@ class UnitUUID(Interval[OrgUnitUUID]):
     pass
 
 
-class Profession(Interval[str]):
+class EngName(Interval[str]):
     pass
 
 
@@ -199,6 +199,6 @@ class UnitTimeline(BaseModel):
 
 class EngagementTimeline(BaseModel):
     unit_uuid: Timeline[UnitUUID]
-    profession: Timeline[Profession]
+    eng_name: Timeline[EngName]
     active: Timeline[Active]
     # TODO: add WorkTime if required
