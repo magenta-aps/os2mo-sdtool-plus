@@ -13,6 +13,7 @@ from more_itertools import last
 from more_itertools import only
 from more_itertools import split_when
 from pydantic import BaseModel
+from pydantic import PositiveInt
 from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -70,6 +71,10 @@ class UnitUUID(Interval[OrgUnitUUID]):
 
 
 class EngName(Interval[str]):
+    pass
+
+
+class EngId(Interval[PositiveInt]):
     pass
 
 
@@ -200,5 +205,5 @@ class UnitTimeline(BaseModel):
 class EngagementTimeline(BaseModel):
     unit_uuid: Timeline[UnitUUID]
     eng_name: Timeline[EngName]
+    eng_id: Timeline[EngId]
     active: Timeline[Active]
-    # TODO: add WorkTime if required

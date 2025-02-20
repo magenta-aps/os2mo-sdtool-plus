@@ -17,6 +17,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngId
 from sdtoolplus.models import EngName
 from sdtoolplus.models import T
 from sdtoolplus.models import Timeline
@@ -110,6 +111,7 @@ def get_engagement_timeline(
         return EngagementTimeline(
             unit_uuid=Timeline[UnitUUID](intervals=tuple()),
             eng_name=Timeline[EngName](intervals=tuple()),
+            eng_id=Timeline[EngId](intervals=tuple),
             active=Timeline[Active](intervals=tuple()),
         )
 
@@ -117,6 +119,7 @@ def get_engagement_timeline(
         UnitUUID, employment.EmploymentDepartment, "DepartmentUUIDIdentifier"
     )
     name_intervals = _get_intervals(EngName, employment.Profession, "EmploymentName")
+    id_intervals = _get_intervals(EngId, employment.Profession, "JobPositionIdentifier")
     active_intervals = _get_intervals(
         Active, employment.EmploymentStatus, "EmploymentStatusCode", True
     )
@@ -124,5 +127,6 @@ def get_engagement_timeline(
     return EngagementTimeline(
         unit_uuid=Timeline[UnitUUID](intervals=unit_uuid_intervals),
         eng_name=Timeline[EngName](intervals=name_intervals),
+        eng_id=Timeline[EngId](intervals=id_intervals),
         active=Timeline[Active](intervals=active_intervals),
     )
