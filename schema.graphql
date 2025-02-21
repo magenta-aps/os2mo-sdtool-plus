@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 #
-# OS2mo GraphQL API schema definition (v21).
-# https://os2mo.eksempel.dk/graphql/v21/schema.graphql
+# OS2mo GraphQL API schema definition (v22).
+# https://os2mo.eksempel.dk/graphql/v22/schema.graphql
 
 "Address information for either an employee or organisational unit\n"
 type Address {
@@ -72,6 +72,17 @@ type Address {
     cursor: Cursor = null
   ): [Engagement!]
 
+  "Connected IT-user.\n"
+  ituser(
+    filter: UuidsBoundITUserFilter
+
+    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
+    limit: int = null
+
+    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
+    cursor: Cursor = null
+  ): [ITUser!]!
+
   "Human readable name of the address.\n\nName is *usually* equal to `value`, but may differ if `value` is not human readable.\nThis may for instance be the case for `DAR` addresses, where the value is the DAR UUID, while the name is a human readable address.\n\nThis is the value that should be shown to users in UIs.\n\nExamples:\n* `\"Vifdam 20, 1. th, 6000 Kolding\"`\n* `\"25052943\"`\n* `\"info@magenta.dk\"`\n* `\"Building 11\"`\n\nNote:\nRequesting this field may incur a performance penalty as the returned value may be dynamically resolved from the `value`-field.\n"
   name: String
   resolve: ResolvedAddress!
@@ -132,13 +143,16 @@ input AddressCreateInput {
   """UUID for the related engagement."""
   engagement: UUID = null
 
+  """UUID for the related ituser."""
+  ituser: UUID = null
+
   """Visibility for the address."""
   visibility: UUID = null
 
   """Validity range for the org-unit."""
   validity: RAValidityInput!
 
-  """Extra info or uuid."""
+  """User key of the address. If None, defaults to value"""
   user_key: String = null
 
   """The actual address value."""
@@ -191,6 +205,12 @@ input AddressFilter {
 
   "Engagement UUID filter limiting which entries are returned.\n\n| `engagements`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
   engagements: [UUID!] = null @deprecated(reason: "Replaced by the 'engagement' filter")
+
+  """ITUser filter limiting which entries are returned."""
+  ituser: ITUserFilter = null
+
+  """Visibility filter limiting which entries are returned."""
+  visibility: ClassFilter = null
 }
 
 """Address registration filter."""
@@ -222,10 +242,13 @@ type AddressResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Address
+  current(at: DateTime): Address
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Address!]!
+  objects(start: DateTime, end: DateTime): [Address!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Address!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -264,13 +287,16 @@ input AddressUpdateInput {
   """UUID for the related engagement."""
   engagement: UUID = null
 
+  """UUID for the related ituser."""
+  ituser: UUID = null
+
   """Visibility for the address."""
   visibility: UUID = null
 
   """Validity range for the org-unit."""
   validity: RAValidityInput!
 
-  """Extra info or uuid."""
+  """User key of the address. If None, defaults to value"""
   user_key: String = null
 
   """The actual address value."""
@@ -303,6 +329,17 @@ type Association {
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
   ): Class @deprecated(reason: "Will be removed in a future version of GraphQL.\nCurrently no replacement is in place, but specialized fields will probably arive in the future.\n")
+
+  "Marks associations with a trade union\n"
+  trade_union(
+    filter: UuidsBoundClassFilter
+
+    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
+    limit: int = null
+
+    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
+    cursor: Cursor = null
+  ): Class
 
   "Marks which association is primary.\n\nWhen exporting data from OS2mo to external systems, that only support a single engagement or associations, this field can be used to export the primary one.\nWhat primarity means is vaguely defined, but usually derived from workload or time-allocation.\n\nExamples  of user-keys:\n* `\"primary\"`\n* `\"non-primary\"`\n* `\"explicitly-primary\"`\n\nIt is a convention that at most one association for each employee is set as either `primary` or `explicitly-primary`.\nThis convention is in place as if more associations are primary, the entire purpose of the field breaks down.\nIn the future this convention may become an invariant.\n\nNote:\nThe calculate-primary integration can be used to automatically calculate and update primarity fields.\n"
   primary(
@@ -393,6 +430,9 @@ type Association {
   """UUID of the dynamically attached class."""
   dynamic_class_uuid: UUID @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `dynamic_class {uuid}` instead.\n")
 
+  """UUID of the attached trade union."""
+  trade_union_uuid: UUID @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `trade_union {uuid}` instead.\n")
+
   """UUID of the organisation unit related to the association."""
   org_unit_uuid: UUID! @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `org_unit {uuid}` instead.\n")
 
@@ -439,6 +479,12 @@ input AssociationCreateInput {
 
   """Employee uuid."""
   employee: UUID = null @deprecated(reason: "Use 'person' instead. Will be removed in a future version of OS2mo.")
+
+  """Substitute uuid."""
+  substitute: UUID = null
+
+  """Trade union uuid."""
+  trade_union: UUID = null
 
   """org-unit uuid."""
   org_unit: UUID!
@@ -518,10 +564,13 @@ type AssociationResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Association
+  current(at: DateTime): Association
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Association!]!
+  objects(start: DateTime, end: DateTime): [Association!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Association!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -562,6 +611,12 @@ input AssociationUpdateInput {
 
   """Employee uuid."""
   employee: UUID = null @deprecated(reason: "Use 'person' instead. Will be removed in a future version of OS2mo.")
+
+  """Substitute uuid."""
+  substitute: UUID = null
+
+  """Trade union uuid."""
+  trade_union: UUID = null
 
   """org-unit uuid."""
   org_unit: UUID = null
@@ -797,8 +852,60 @@ input ClassFilter {
   "IT-System filter limiting which entries are returned.\n"
   it_system: ITSystemFilter = null
 
+  "Owner filter limiting which entries are returned.\n"
+  owner: ClassOwnerFilter = null
+
   "Scope filter limiting which entries are returned.\n\n| `scope`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
   scope: [String!] = null
+}
+
+"""Class owner filter"""
+input ClassOwnerFilter {
+  "UUID filter limiting which entries are returned.\n\n| `uuids`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  uuids: [UUID!] = null
+
+  "User-key filter limiting which entries are returned.\n\n| `user_keys`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  user_keys: [String!] = null
+
+  """Limit the elements returned by their starting validity."""
+  from_date: DateTime
+
+  """Limit the elements returned by their ending validity."""
+  to_date: DateTime
+
+  "Registration filter limiting which entries are returned.\n"
+  registration: OrganisationUnitRegistrationFilter = null
+
+  "Free text search.\n\nDoes best effort lookup to find entities matching the query string.\nNo quarantees are given w.r.t. the entries returned.\n"
+  query: String
+
+  "Name filter finding exact matches by name.\n\n| `names`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  names: [String!]
+
+  "Select organisation units whose parent matches the given filter.\n\nSet to `None` to find root units.\n"
+  parent: OrganisationUnitFilter
+
+  "Parent UUID filter limiting which entries are returned.\n\n| `parents`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  parents: [UUID!] @deprecated(reason: "Replaced by the 'parent' filter")
+
+  "Hierarchy filter limiting which entries are returned.\n\nFilter organisation units by their organisational hierarchy labels.\n\nCan be used to extract a subset of the organisational structure.\n\nExamples of user-keys:\n* `\"Line-management\"`\n* `\"Self-owned institution\"`\n* `\"Outside organisation\"`\n* `\"Hidden\"`\n\nNote:\nThe organisation-gatekeeper integration is one option to keep hierarchy labels up-to-date.\n"
+  hierarchy: ClassFilter = null
+
+  "Filter organisation units by their organisational hierarchy labels.\n\nCan be used to extract a subset of the organisational structure.\n\nExamples of user-keys:\n* `\"Line-management\"`\n* `\"Self-owned institution\"`\n* `\"Outside organisation\"`\n* `\"Hidden\"`\n\nNote:\nThe organisation-gatekeeper integration is one option to keep hierarchy labels up-to-date.\n\n| `hierarchies`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  hierarchies: [UUID!] = null @deprecated(reason: "Replaced by the 'hierarchy' filter")
+  subtree: OrganisationUnitFilter @deprecated(reason: "Renamed to 'descendant'")
+
+  "Select organisation units which have a descendant matching the given filter.\n\nNote that every node is its own descendant as per [CLRS] 12.2-6.\n\nGiven the following tree:\n```\nA\n├── B\n│   ├── C\n│   │   └── D\n│   └── E\n└── F\n```\nthe `descendant` filter behaves according to the following table:\n\n| Filter | Returned    |\n|--------|-------------|\n|      A | A           |\n|      B | A B         |\n|      C | A B C       |\n|      D | A B C D     |\n|      E | A B E       |\n|      F | A F         |\n"
+  descendant: OrganisationUnitFilter
+
+  "Select organisation units which have an ancestor matching the given filter.\n\nNote that every node is its own ancestor as per [CLRS] 12.2-6.\n\nGiven the following tree:\n```\nA\n├── B\n│   ├── C\n│   │   └── D\n│   └── E\n└── F\n```\nthe `ancestor` filter behaves according to the following table:\n\n| Filter | Returned    |\n|--------|-------------|\n|      A | A B C D E F |\n|      B | B C D E     |\n|      C | C D         |\n|      D | D           |\n|      E | E           |\n|      F | F           |\n"
+  ancestor: OrganisationUnitFilter
+
+  "Filter organisation units to only include matches pointed to by engagements.\n\nCan be used to find organisation units for certain engagements.\n"
+  engagement: EngagementFilter = null
+
+  "Include classes with `owner=None`.\n"
+  include_none: Boolean! = false
 }
 
 """Class registration filter."""
@@ -830,10 +937,13 @@ type ClassResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Class
+  current(at: DateTime): Class
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Class!]!
+  objects(start: DateTime, end: DateTime): [Class!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Class!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -934,8 +1044,8 @@ type DARAddress implements ResolvedAddress {
   municipality_code: String!
   longitude: Float!
   latitude: Float!
-  href: String!
   name: String!
+  href: String!
   streetmap_href: String
 }
 
@@ -1005,17 +1115,6 @@ type Employee {
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
   ): [Association!]!
-
-  "Roles the employee has within the organisation.\n\nMay be an empty list if the employee does not fulfill any roles in the organisation.\n"
-  roles(
-    filter: EmployeesBoundRoleFilter
-
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): [Role!]!
 
   "IT accounts for the employee.\n\nMay be an empty list if the employee does not have any IT-access whatsoever.\n"
   itusers(
@@ -1167,10 +1266,13 @@ type EmployeeResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Employee
+  current(at: DateTime): Employee
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Employee!]!
+  objects(start: DateTime, end: DateTime): [Employee!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Employee!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -1241,6 +1343,8 @@ input EmployeesBoundAddressFilter {
   address_type_user_keys: [String!] = null
   engagement: EngagementFilter = null
   engagements: [UUID!] = null
+  ituser: ITUserFilter = null
+  visibility: ClassFilter = null
 }
 
 input EmployeesBoundAssociationFilter {
@@ -1268,6 +1372,7 @@ input EmployeesBoundEngagementFilter {
   to_date: DateTime
   registration: EngagementRegistrationFilter = null
   job_function: ClassFilter = null
+  engagement_type: ClassFilter = null
 }
 
 input EmployeesBoundITUserFilter {
@@ -1281,6 +1386,8 @@ input EmployeesBoundITUserFilter {
   registration: ITUserRegistrationFilter = null
   itsystem: ITSystemFilter = null
   itsystem_uuids: [UUID!] = null
+  engagement: EngagementFilter = null
+  external_ids: [String!] = null
 }
 
 input EmployeesBoundLeaveFilter {
@@ -1304,17 +1411,6 @@ input EmployeesBoundManagerFilter {
   to_date: DateTime
   registration: ManagerRegistrationFilter = null
   responsibility: ClassFilter = null
-}
-
-input EmployeesBoundRoleFilter {
-  org_unit: OrganisationUnitFilter = null
-  org_units: [UUID!] = null
-  employee: EmployeeFilter = null
-  uuids: [UUID!] = null
-  user_keys: [String!] = null
-  from_date: DateTime
-  to_date: DateTime
-  registration: RoleRegistrationFilter = null
 }
 
 """Employee engagement in an organisation unit"""
@@ -1554,6 +1650,9 @@ input EngagementFilter {
 
   "Job function filter limiting which entries are returned.\n"
   job_function: ClassFilter = null
+
+  "Engagement type filter limiting which entries are returned.\n"
+  engagement_type: ClassFilter = null
 }
 
 """Engagement registration filter."""
@@ -1585,10 +1684,13 @@ type EngagementResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Engagement
+  current(at: DateTime): Engagement
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Engagement!]!
+  objects(start: DateTime, end: DateTime): [Engagement!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Engagement!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -1731,6 +1833,9 @@ type Facet {
 }
 
 input FacetCreateInput {
+  """UUID to be created. Will be autogenerated if not specified."""
+  uuid: UUID = null
+
   """Facet name."""
   user_key: String!
 
@@ -1797,10 +1902,13 @@ type FacetResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Facet
+  current(at: DateTime): Facet
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Facet!]!
+  objects(start: DateTime, end: DateTime): [Facet!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Facet!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -1824,6 +1932,9 @@ input FacetTerminateInput {
 }
 
 input FacetUpdateInput {
+  """UUID of the facet to update."""
+  uuid: UUID!
+
   """Facet name."""
   user_key: String!
 
@@ -1832,9 +1943,6 @@ input FacetUpdateInput {
 
   """Validity range for the facet. Default to ['-infinity', 'infinity']"""
   validity: ValidityInput!
-
-  """UUID of the facet to update."""
-  uuid: UUID!
 }
 
 input FacetsBoundClassFilter {
@@ -1849,6 +1957,7 @@ input FacetsBoundClassFilter {
   parents: [UUID!] = null
   parent_user_keys: [String!] = null
   it_system: ITSystemFilter = null
+  owner: ClassOwnerFilter = null
   scope: [String!] = null
 }
 
@@ -2056,10 +2165,13 @@ type ITSystemResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: ITSystem
+  current(at: DateTime): ITSystem
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [ITSystem!]!
+  objects(start: DateTime, end: DateTime): [ITSystem!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [ITSystem!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -2138,6 +2250,17 @@ type ITUser {
     cursor: Cursor = null
   ): [Engagement!]
 
+  "Addresses connected with the IT-user.\n\nCommonly contain addresses such as:\n* Email\n* AD GUID\n* FK-org UUID\n"
+  addresses(
+    filter: ItuserBoundAddressFilter
+
+    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
+    limit: int = null
+
+    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
+    cursor: Cursor = null
+  ): [Address!]!
+
   "ITSystem this account is for.\n"
   itsystem(
     filter: UuidsBoundITSystemFilter
@@ -2148,6 +2271,17 @@ type ITUser {
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
   ): ITSystem!
+
+  """Rolebindings this IT User has in the connected IT system."""
+  rolebindings(
+    filter: ItuserBoundRoleBindingFilter
+
+    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
+    limit: int = null
+
+    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
+    cursor: Cursor = null
+  ): [RoleBinding!]!
 
   "Marks which IT account is primary.\n\nWhen exporting data from OS2mo to external systems, that only support a single IT account, this field can be used to export the primary one.\nWhat primarity means is vaguely defined, but usually derived from workload or time-allocation.\n\nExamples  of user-keys:\n* `\"primary\"`\n* `\"non-primary\"`\n* `\"explicitly-primary\"`\n\nIt is a convention that at most one IT account for each employee / employee+engagement is set as either `primary` or `explicitly-primary`.\nThis convention is in place as if more IT accounts are primary, the entire purpose of the field breaks down.\nIn the future this convention may become an invariant.\n"
   primary(
@@ -2165,6 +2299,9 @@ type ITUser {
 
   "Short unique key.\n\nUsually set to the key used in external systems.\n\nExamples:\n* `\"KarK\"`\n* `\"AnkS\"`\n* `\"XSIMP\"`\n* `\"04184cb6-a5de-47e6-8a08-03cae9ee4c54\"`\n"
   user_key: String!
+
+  """ID of the user account in the external system."""
+  external_id: String
 
   "The object type.\n\nAlways contains the string `it`.\n"
   type: String! @deprecated(reason: "Unintentionally exposed implementation detail.\nProvides no value whatsoever.\n")
@@ -2195,6 +2332,9 @@ input ITUserCreateInput {
   """UUID to be created. Will be autogenerated if not specified."""
   uuid: UUID = null
 
+  """ID of the user account in the external system."""
+  external_id: String = null
+
   """Primary field of the IT user object"""
   primary: UUID = null
 
@@ -2215,6 +2355,9 @@ input ITUserCreateInput {
 
   """Reference to the IT system for the IT user."""
   itsystem: UUID!
+
+  """Note associated with the creation of this IT user."""
+  note: String = null
 }
 
 """IT user filter."""
@@ -2251,6 +2394,12 @@ input ITUserFilter {
 
   "Only return IT users of ITSystem with these UUIDs filter limiting which entries are returned.\n\n| `itsystem_uuids`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
   itsystem_uuids: [UUID!] = null @deprecated(reason: "Replaced by the 'itsystem' filter")
+
+  "Engagement filter limiting which entries are returned.\n"
+  engagement: EngagementFilter = null
+
+  "Only return IT users with this `external_id` filter limiting which entries are returned.\n\n| `external_id`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  external_ids: [String!] = null
 }
 
 """ITUser registration filter."""
@@ -2282,10 +2431,13 @@ type ITUserResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: ITUser
+  current(at: DateTime): ITUser
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [ITUser!]!
+  objects(start: DateTime, end: DateTime): [ITUser!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [ITUser!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -2312,6 +2464,9 @@ input ITUserUpdateInput {
   """UUID of the IT-user you want to update."""
   uuid: UUID!
 
+  """ID of the user account in the external system."""
+  external_id: String = null
+
   """Primary field of the IT user object"""
   primary: UUID = null
 
@@ -2332,6 +2487,37 @@ input ITUserUpdateInput {
 
   """Reference to the IT system for the IT user."""
   itsystem: UUID = null
+
+  """Note associated with the update of this IT user."""
+  note: String = null
+}
+
+input ItuserBoundAddressFilter {
+  org_unit: OrganisationUnitFilter = null
+  org_units: [UUID!] = null
+  employee: EmployeeFilter = null
+  employees: [UUID!] = null
+  uuids: [UUID!] = null
+  user_keys: [String!] = null
+  from_date: DateTime
+  to_date: DateTime
+  registration: AddressRegistrationFilter = null
+  address_type: ClassFilter = null
+  address_types: [UUID!] = null
+  address_type_user_keys: [String!] = null
+  engagement: EngagementFilter = null
+  engagements: [UUID!] = null
+  visibility: ClassFilter = null
+}
+
+input ItuserBoundRoleBindingFilter {
+  org_unit: OrganisationUnitFilter = null
+  org_units: [UUID!] = null
+  uuids: [UUID!] = null
+  user_keys: [String!] = null
+  from_date: DateTime
+  to_date: DateTime
+  registration: RoleRegistrationFilter = null
 }
 
 "KLE responsibility mapping.\n\nKLE stands for \"Kommunernes Landsforenings Emnesystematik\" which is a municipality taxonomy for mapping out municipality tasks.\n\nIn OS2mo KLE responsibilities can be mapped to organisation units to signify that a given organisational unit operates within certain municipality tasks.\nAdding KLE responsibilities to organisational units can help out with regards to GDPR by identifying which organisational units operate with sensitive tasks.\n\nThe KLE numbers themselves are dot seperated structured numbers alike this:\n* `\"00.75.00\"`: General data exchanges\n* `\"21.02.05\"`: Library study cafes\n* `\"32.15.08\"`: Alimony\n\nThe first number specifies the main-group, such as:\n* `\"00\"`: Municipality operations (Kommunens styrelse)\n* `\"21\"`: Libraries\n* `\"31\"`: Monetary benefits\n\nThe second number specifies the group, such as (for libraries):\n* `\"02\"`: On-site usage\n* `\"05\"`: AV Materials\n* `\"20\"`: Online services\n\nThe third and final number specifies the topic, such as (for library on-site usage):\n* `\"00\"`: General usage\n* `\"05\"`: Study cafes\n* `\"10\"`: Study centers\n\nSome KLE ranges are pre-reserved by The National Association of Municipalities (Kommunernes Landsforenings), however outside of these pre-reserved ranges municipalies are allowed to add their own local numbers.\nSpecifically no main-groups can be added, only groups and topics, both above 79.\n\nFor more details see: https://www.kle-online.dk\n"
@@ -2464,10 +2650,13 @@ type KLEResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: KLE
+  current(at: DateTime): KLE
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [KLE!]!
+  objects(start: DateTime, end: DateTime): [KLE!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [KLE!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -2657,10 +2846,13 @@ type LeaveResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Leave
+  current(at: DateTime): Leave
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Leave!]!
+  objects(start: DateTime, end: DateTime): [Leave!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Leave!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -2887,10 +3079,13 @@ type ManagerResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Manager
+  current(at: DateTime): Manager
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Manager!]!
+  objects(start: DateTime, end: DateTime): [Manager!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Manager!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -2956,6 +3151,9 @@ type Mutation {
   """Creates an address."""
   address_create(input: AddressCreateInput!): AddressResponse!
 
+  """Creates a list of address."""
+  addresses_create(input: [AddressCreateInput!]!): [AddressResponse!]!
+
   """Updates an address."""
   address_update(input: AddressUpdateInput!): AddressResponse!
 
@@ -2974,7 +3172,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an association."""
@@ -2995,7 +3194,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates a class."""
@@ -3019,7 +3219,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an employee."""
@@ -3031,6 +3232,9 @@ type Mutation {
   """Terminates an employee."""
   employee_terminate(input: EmployeeTerminateInput!): EmployeeResponse!
 
+  "Deletes an employee.\n**Warning**:\nThis mutator does bitemporal deletion, **not** temporal termination.\nDo **not** use this mutator **unless** you **fully understand** its implications.\n\nBitemporal deletion and temporal termination are **very** different operations and should **not** be confused.\nIf you do not know which of the operations you need, you most likely need temporal termination.\n\nBitemporal deletion works on the bitemporal time-axis, and should **only** be used by clients that **fully understand** the underlying bitemporal model, including how a bitemporal delete affects the registration history.\n\nAfter this call the deleted entity will no longer show up in **any** temporal listing.\n\nNote:\nIt is currently the callers responsibility to ensure that references are dealt with before doing bitemporal deletions.\nFailure to do so **will** leave dangling references breaking temporal foreign-keys, and potentially breaking invariants in the data.\n"
+  employee_delete(uuid: UUID!): EmployeeResponse!
+
   """Refresh employees."""
   employee_refresh(
     filter: EmployeeFilter = null
@@ -3040,14 +3244,21 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an engagement."""
   engagement_create(input: EngagementCreateInput!): EngagementResponse!
 
+  """Creates a list of engagements."""
+  engagements_create(input: [EngagementCreateInput!]!): [EngagementResponse!]!
+
   """Updates an engagement."""
   engagement_update(input: EngagementUpdateInput!): EngagementResponse!
+
+  "Updates a list of engagements.\n\nNote: If any of the updates in the transaction is a noop, the whole\ntransaction will fail with the error:\n`(psycopg.errors.InFailedSqlTransaction) current transaction is aborted,\ncommands ignored until end of transaction block`\n\nhttps://redmine.magenta.dk/issues/60573\n"
+  engagements_update(input: [EngagementUpdateInput!]!): [EngagementResponse!]!
 
   """Terminates an engagement."""
   engagement_terminate(input: EngagementTerminateInput!): EngagementResponse!
@@ -3064,7 +3275,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates a facet."""
@@ -3088,7 +3300,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an IT-Association."""
@@ -3121,11 +3334,15 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an IT-User."""
   ituser_create(input: ITUserCreateInput!): ITUserResponse!
+
+  """Creates a list of itusers."""
+  itusers_create(input: [ITUserCreateInput!]!): [ITUserResponse!]!
 
   """Updates an IT-User."""
   ituser_update(input: ITUserUpdateInput!): ITUserResponse!
@@ -3145,7 +3362,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates a KLE annotation."""
@@ -3166,7 +3384,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates a leave."""
@@ -3187,11 +3406,15 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates a manager relation."""
   manager_create(input: ManagerCreateInput!): ManagerResponse!
+
+  """Creates a list of managers."""
+  managers_create(input: [ManagerCreateInput!]!): [ManagerResponse!]!
 
   """Updates a manager relation."""
   manager_update(input: ManagerUpdateInput!): ManagerResponse!
@@ -3208,7 +3431,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates the root-organisation."""
@@ -3232,7 +3456,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Creates an owner."""
@@ -3253,7 +3478,8 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   """Updates relations for an org_unit."""
@@ -3268,28 +3494,33 @@ type Mutation {
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
-  """Creates a role."""
-  role_create(input: RoleCreateInput!): RoleResponse!
+  """Create a rolebinding."""
+  rolebinding_create(input: RoleBindingCreateInput!): RoleBindingResponse!
 
-  """Updates a role."""
-  role_update(input: RoleUpdateInput!): RoleResponse!
+  """Creates a list of rolebindings."""
+  rolebindings_create(input: [RoleBindingCreateInput!]!): [RoleBindingResponse!]!
 
-  """Terminates a role."""
-  role_terminate(input: RoleTerminateInput!): RoleResponse!
+  """Update a rolebinding."""
+  rolebinding_update(input: RoleBindingUpdateInput!): RoleBindingResponse!
 
-  """Refresh roles."""
-  role_refresh(
-    filter: RoleFilter = null
+  """Terminate a rolebinding."""
+  rolebinding_terminate(input: RoleBindingTerminateInput!): RoleBindingResponse!
+
+  """Refresh rolebindings."""
+  rolebinding_refresh(
+    filter: RoleBindingFilter = null
 
     "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
     limit: int = null
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-    queue: String = null
+    queue: String = null @deprecated(reason: "Never worked properly. Use `exchange` to target a specific integration instead.")
+    exchange: String = null
   ): UUIDPaged!
 
   "Upload a file.\n\nFile upload must be done via multipart form-data.\n\nHow to do this is client-specific, but below is an example using [curl](https://curl.se/):\n```console\ncurl https://{{MO_URL}}/graphql/v7 \\\n  -H \"Authorization: Bearer {{TOKEN}}\" \\\n  -F operations=\"{\\\"query\\\": \\\"{{QUERY}}\\\", \\\n      \\\"variables\\\": {\\\"file\\\": null}}\" \\\n  -F map='{\"file\": [\"variables.file\"]}' \\\n  -F file=@myfile.txt\n```\nWhere:\n* `myfile.txt` is the file to upload.\n* `{{MO_URL}}` is the base-url for the OS2mo instance to upload the file to.\n* `{{TOKEN}}` is a valid JWT-token acquired from Keycloak.\n* `{{QUERY}}` is the upload query:\n```gql\nmutation($file: Upload!) {\n  upload_file(\n    file_store: EXPORTS,\n    file: $file\n  )\n}\n```\n\nNote:\nAs GraphiQL does not support sending multipart form-data payloads, it is unfortunately not possible to upload files from GraphiQL.\n"
@@ -3328,6 +3559,8 @@ input OrgUnitsboundaddressfilter {
   address_type_user_keys: [String!] = null
   engagement: EngagementFilter = null
   engagements: [UUID!] = null
+  ituser: ITUserFilter = null
+  visibility: ClassFilter = null
 }
 
 input OrgUnitsboundassociationfilter {
@@ -3355,6 +3588,7 @@ input OrgUnitsboundengagementfilter {
   to_date: DateTime
   registration: EngagementRegistrationFilter = null
   job_function: ClassFilter = null
+  engagement_type: ClassFilter = null
 }
 
 input OrgUnitsboundituserfilter {
@@ -3368,6 +3602,8 @@ input OrgUnitsboundituserfilter {
   registration: ITUserRegistrationFilter = null
   itsystem: ITSystemFilter = null
   itsystem_uuids: [UUID!] = null
+  engagement: EngagementFilter = null
+  external_ids: [String!] = null
 }
 
 input OrgUnitsboundklefilter {
@@ -3390,34 +3626,12 @@ input OrgUnitsboundleavefilter {
   registration: LeaveRegistrationFilter = null
 }
 
-input OrgUnitsboundownerfilter {
-  org_unit: OrganisationUnitFilter = null
-  employee: EmployeeFilter = null
-  employees: [UUID!] = null
-  uuids: [UUID!] = null
-  user_keys: [String!] = null
-  from_date: DateTime
-  to_date: DateTime
-  owner: EmployeeFilter = null
-}
-
 input OrgUnitsboundrelatedunitfilter {
   org_unit: OrganisationUnitFilter = null
   uuids: [UUID!] = null
   user_keys: [String!] = null
   from_date: DateTime
   to_date: DateTime
-}
-
-input OrgUnitsboundrolefilter {
-  org_unit: OrganisationUnitFilter = null
-  employee: EmployeeFilter = null
-  employees: [UUID!] = null
-  uuids: [UUID!] = null
-  user_keys: [String!] = null
-  from_date: DateTime
-  to_date: DateTime
-  registration: RoleRegistrationFilter = null
 }
 
 """Root organisation - one and only one of these can exist"""
@@ -3467,16 +3681,13 @@ type OrganisationUnit {
     cursor: Cursor = null
   ): [OrganisationUnit!]!
 
-  """Children count of the organisation unit."""
-  child_count(
-    filter: ParentsBoundOrganisationUnitFilter
+  """
+  Children count of the organisation unit. For performance, consider if `has_children` can answer your query instead.
+  """
+  child_count(filter: ParentsBoundOrganisationUnitFilter): Int!
 
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): Int! @deprecated(reason: "Will be removed in a future version of GraphQL.\nCount the elements returned by `children {{uuid}}` instead.\n")
+  """Returns whether the organisation unit has children."""
+  has_children(filter: ParentsBoundOrganisationUnitFilter): Boolean!
 
   "Organisation unit hierarchy.\n\nCan be used to label an organisational structure to belong to a certain subset of the organisation tree.\n\nExamples of user-keys:\n* `\"Line-management\"`\n* `\"Self-owned institution\"`\n* `\"Outside organisation\"`\n* `\"Hidden\"`\n\nNote:\nThe organisation-gatekeeper integration is one option to keep hierarchy labels up-to-date.\n"
   org_unit_hierarchy_model(
@@ -3533,17 +3744,6 @@ type OrganisationUnit {
     cursor: Cursor = null
   ): [Engagement!]!
 
-  "\nOwners of the organisation unit.\n"
-  owners(
-    filter: OrgUnitsboundownerfilter
-
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): [Owner!]!
-
   "Addresses for the organisation unit.\n\nCommonly contain addresses such as, their:\n* Location\n* Contact phone number\n* Contact email\n"
   addresses(
     filter: OrgUnitsboundaddressfilter
@@ -3576,17 +3776,6 @@ type OrganisationUnit {
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
   ): [Association!]!
-
-  "Roles being fulfilled within the organisational unit.\n\nMay be an empty list if the organistion unit is purely hierarchical.\nThis situation may occur especially in the middle or the organisation tree.\n"
-  roles(
-    filter: OrgUnitsboundrolefilter
-
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): [Role!]!
 
   "IT (service) accounts.\n\nMay be an empty list if the organistion unit does not have any IT (service) accounts whatsoever.\nThis situation may occur especially in the middle or the organisation tree.\n"
   itusers(
@@ -3644,6 +3833,14 @@ type OrganisationUnit {
     inherit: Boolean! = false
   ): [Manager!]!
 
+  "Owner roles for the organisation unit.\n\nMay be empty in which case owners are usually inherited from parents.\nSee the `inherit`-flag for details.\n"
+  owners(
+    filter: OwnerFilter = null
+
+    "Whether to inherit owner roles or not.\n\nIf owner roles exist directly on this organisaion unit, the flag does nothing and these owner roles are returned.\nHowever if no owner roles exist directly, and this flag is:\n* Not set: An empty list is returned.\n* Is set: The result from calling `owners` with `inherit=True` on the parent of this organistion unit is returned.\n\nCalling with `inherit=True` can help ensure that an owner is always found.\n"
+    inherit: Boolean! = false
+  ): [Owner!]!
+
   """UUID of the parent organisation unit."""
   org_unit_hierarchy: UUID @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `org_unit_hierarchy_model {uuid}` instead.\n")
 
@@ -3676,32 +3873,15 @@ type OrganisationUnit {
 }
 
 input OrganisationUnitCreateInput {
-  """UUID to be created. Will be autogenerated if not specified."""
-  uuid: UUID = null
-
-  """Org-unit name."""
-  name: String!
-
-  """Extra info or uuid."""
-  user_key: String = null
-
-  """UUID of the related parent."""
-  parent: UUID = null
-
-  """UUID of the type."""
-  org_unit_type: UUID!
-
-  """UUID of time planning."""
-  time_planning: UUID = null
-
-  """UUID of unit level."""
-  org_unit_level: UUID = null
-
-  """UUID of the unit hierarchy."""
-  org_unit_hierarchy: UUID = null
-
-  """Validity range for the org-unit."""
+  uuid: UUID
   validity: RAValidityInput!
+  name: String!
+  user_key: String
+  parent: UUID
+  org_unit_type: UUID!
+  time_planning: UUID
+  org_unit_level: UUID
+  org_unit_hierarchy: UUID
 }
 
 """Organisation unit filter."""
@@ -3724,7 +3904,10 @@ input OrganisationUnitFilter {
   "Free text search.\n\nDoes best effort lookup to find entities matching the query string.\nNo quarantees are given w.r.t. the entries returned.\n"
   query: String
 
-  "Parent filter limiting which entries are returned.\n\nSet to `None` to find root units.\n"
+  "Name filter finding exact matches by name.\n\n| `names`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  names: [String!]
+
+  "Select organisation units whose parent matches the given filter.\n\nSet to `None` to find root units.\n"
   parent: OrganisationUnitFilter
 
   "Parent UUID filter limiting which entries are returned.\n\n| `parents`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
@@ -3735,6 +3918,16 @@ input OrganisationUnitFilter {
 
   "Filter organisation units by their organisational hierarchy labels.\n\nCan be used to extract a subset of the organisational structure.\n\nExamples of user-keys:\n* `\"Line-management\"`\n* `\"Self-owned institution\"`\n* `\"Outside organisation\"`\n* `\"Hidden\"`\n\nNote:\nThe organisation-gatekeeper integration is one option to keep hierarchy labels up-to-date.\n\n| `hierarchies`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
   hierarchies: [UUID!] = null @deprecated(reason: "Replaced by the 'hierarchy' filter")
+  subtree: OrganisationUnitFilter @deprecated(reason: "Renamed to 'descendant'")
+
+  "Select organisation units which have a descendant matching the given filter.\n\nNote that every node is its own descendant as per [CLRS] 12.2-6.\n\nGiven the following tree:\n```\nA\n├── B\n│   ├── C\n│   │   └── D\n│   └── E\n└── F\n```\nthe `descendant` filter behaves according to the following table:\n\n| Filter | Returned    |\n|--------|-------------|\n|      A | A           |\n|      B | A B         |\n|      C | A B C       |\n|      D | A B C D     |\n|      E | A B E       |\n|      F | A F         |\n"
+  descendant: OrganisationUnitFilter
+
+  "Select organisation units which have an ancestor matching the given filter.\n\nNote that every node is its own ancestor as per [CLRS] 12.2-6.\n\nGiven the following tree:\n```\nA\n├── B\n│   ├── C\n│   │   └── D\n│   └── E\n└── F\n```\nthe `ancestor` filter behaves according to the following table:\n\n| Filter | Returned    |\n|--------|-------------|\n|      A | A B C D E F |\n|      B | B C D E     |\n|      C | C D         |\n|      D | D           |\n|      E | E           |\n|      F | F           |\n"
+  ancestor: OrganisationUnitFilter
+
+  "Filter organisation units to only include matches pointed to by engagements.\n\nCan be used to find organisation units for certain engagements.\n"
+  engagement: EngagementFilter = null
 }
 
 """OrganisationUnit registration filter."""
@@ -3766,10 +3959,13 @@ type OrganisationUnitResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: OrganisationUnit
+  current(at: DateTime): OrganisationUnit
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [OrganisationUnit!]!
+  objects(start: DateTime, end: DateTime): [OrganisationUnit!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [OrganisationUnit!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -3793,32 +3989,15 @@ input OrganisationUnitTerminateInput {
 }
 
 input OrganisationUnitUpdateInput {
-  """UUID of the organisation unit to be updated."""
   uuid: UUID!
-
-  """Validity range for the organisation unit to be updated."""
   validity: RAValidityInput!
-
-  """Name of the organisation unit to be updated."""
-  name: String = null
-
-  """Extra info or uuid."""
-  user_key: String = null
-
-  """UUID of the organisation units related parent to be updated."""
-  parent: UUID = null
-
-  """UUID of the organisation units type to be updated."""
-  org_unit_type: UUID = null
-
-  """UUID of the organisation units level to be updated."""
-  org_unit_level: UUID = null
-
-  """UUID of organisation units hierarchy to be updated."""
-  org_unit_hierarchy: UUID = null
-
-  """UUID of organisation units time planning to be updated."""
-  time_planning: UUID = null
+  name: String
+  user_key: String
+  parent: UUID
+  org_unit_type: UUID
+  org_unit_level: UUID
+  org_unit_hierarchy: UUID
+  time_planning: UUID
 }
 
 "\nOwner of organisation units/employees and their connected identities.\n"
@@ -3964,10 +4143,13 @@ type OwnerResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Owner
+  current(at: DateTime): Owner
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Owner!]!
+  objects(start: DateTime, end: DateTime): [Owner!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [Owner!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -4033,6 +4215,7 @@ input ParentsBoundClassFilter {
   parent: ClassFilter = null
   parent_user_keys: [String!] = null
   it_system: ITSystemFilter = null
+  owner: ClassOwnerFilter = null
   scope: [String!] = null
 }
 
@@ -4053,9 +4236,14 @@ input ParentsBoundOrganisationUnitFilter {
   to_date: DateTime
   registration: OrganisationUnitRegistrationFilter = null
   query: String
+  names: [String!]
   parent: OrganisationUnitFilter
   hierarchy: ClassFilter = null
   hierarchies: [UUID!] = null
+  subtree: OrganisationUnitFilter
+  descendant: OrganisationUnitFilter
+  ancestor: OrganisationUnitFilter
+  engagement: EngagementFilter = null
 }
 
 """Entrypoint for all read-operations"""
@@ -4215,15 +4403,15 @@ type Query {
   ): RelatedUnitResponsePaged!
 
   """Get role-mappings."""
-  roles(
-    filter: RoleFilter = null
+  rolebindings(
+    filter: RoleBindingFilter = null
 
     "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
     limit: int = null
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-  ): RoleResponsePaged!
+  ): RoleBindingResponsePaged!
 
   """Query healthcheck status."""
   healths(
@@ -4322,6 +4510,9 @@ type Registration {
 
   "UUID of the modified entity.\n"
   uuid: UUID!
+
+  """Note associated with the registration."""
+  note: String
 }
 
 """Registration filter."""
@@ -4418,10 +4609,13 @@ type RelatedUnitResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: RelatedUnit
+  current(at: DateTime): RelatedUnit
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [RelatedUnit!]!
+  objects(start: DateTime, end: DateTime): [RelatedUnit!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [RelatedUnit!]!
 }
 
 """Result page in cursor-based pagination."""
@@ -4452,39 +4646,17 @@ interface ResolvedAddress {
 }
 
 """The role a person has within an organisation unit"""
-type Role {
-  "The role that is being fulfilled.\n\nExamples of user-keys:\n* `\"Staff representative\"`\n* `\"Coordinator\"`\n* `\"Security personnel\"`\n"
-  role_type(
-    filter: UuidsBoundClassFilter
+type RoleBinding {
+  "The IT-user that should be granted this role\n\n**Warning**:\nThis field will probably become an optional entity instead of a list in the future.\n"
+  ituser(
+    filter: UuidsBoundITUserFilter
 
     "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
     limit: int = null
 
     "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
     cursor: Cursor = null
-  ): Class!
-
-  "The person fulfilling the role.\n\n**Warning**:\nThis field will probably become an optional entity instead of a list in the future.\n"
-  employee(
-    filter: UuidsBoundEmployeeFilter
-
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): [Employee!]! @deprecated(reason: "Use 'person' instead. Will be removed in a future version of OS2mo.")
-
-  "The person fulfilling the role.\n\n**Warning**:\nThis field will probably become an optional entity instead of a list in the future.\n"
-  person(
-    filter: UuidsBoundEmployeeFilter
-
-    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
-    limit: int = null
-
-    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
-    cursor: Cursor = null
-  ): [Employee!]!
+  ): [ITUser!]!
 
   "The organisational unit in which the role is being fulfilled.\n\n**Warning**:\nThis field will probably become an optional entity instead of a list in the future.\n"
   org_unit(
@@ -4500,26 +4672,25 @@ type Role {
   """UUID of the entity"""
   uuid: UUID!
 
-  "The object type.\n\nAlways contains the string `role`.\n"
-  type: String! @deprecated(reason: "Unintentionally exposed implementation detail.\nProvides no value whatsoever.\n")
-
-  """UUID of the role type class."""
-  role_type_uuid: UUID! @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `role_type {uuid}` instead.\n")
-
-  """UUID of the employee related to the role."""
-  employee_uuid: UUID! @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `employee {uuid}` instead.\n")
-
-  """UUID of the organisation unit related to the association."""
-  org_unit_uuid: UUID! @deprecated(reason: "Will be removed in a future version of GraphQL.\nUse `org_unit {uuid}` instead.\n")
-
   """Short, unique key. Defaults to object UUID."""
   user_key: String!
 
   """Validity of the role object."""
   validity: Validity!
+
+  "The role that is being fulfilled.\n\nExamples of user-keys:\n* `\"AD Read\"`\n* `\"AD Write\"`\n* `\"SAP Admin\"`\n\n**Warning**:\nThis field will probably become an optional entity instead of a list in the future.\n"
+  role(
+    filter: UuidsBoundClassFilter
+
+    "\nLimit the maximum number of elements to fetch.\n\n| `limit`      | \\# elements fetched |\n|--------------|---------------------|\n| not provided | All                 |\n| `null`       | All                 |\n| `0`          | `0` (`*`)           |\n| `x`          | Between `0` and `x` |\n\n`*`: This behavior is equivalent to SQL's `LIMIT 0` behavior.\n\nNote:\n\nSometimes the caller may receieve a shorter list (or even an empty list) of results compared to the expected per the limit argument.\n\nThis may seem confusing, but it is the expected behavior given the way that limiting is implemented in the bitemporal database layer, combined with how filtering and object change consolidation is handled.\n\nNot to worry; all the expected elements will eventually be returned, as long as the iteration is continued until the `next_cursor` is `null`.\n"
+    limit: int = null
+
+    "Cursor defining the next elements to fetch.\n\n| `cursor`       | Next element is    |\n|----------------|--------------------|\n| not provided   | First              |\n| `null`         | First              |\n| `\"MA==\"` (`*`) | First after Cursor |\n\n`*`: Placeholder for the cursor returned by the previous iteration.\n"
+    cursor: Cursor = null
+  ): [Class!]!
 }
 
-input RoleCreateInput {
+input RoleBindingCreateInput {
   """UUID to be created. Will be autogenerated if not specified."""
   uuid: UUID = null
 
@@ -4527,20 +4698,20 @@ input RoleCreateInput {
   user_key: String = null
 
   """UUID of the org_unit"""
-  org_unit: UUID!
+  org_unit: UUID = null
 
-  """UUID of the person"""
-  person: UUID!
+  """UUID of the ituser"""
+  ituser: UUID!
 
   """UUID of the role type"""
-  role_type: UUID!
+  role: UUID!
 
   """Validity range for the role."""
   validity: RAValidityInput!
 }
 
-"""Role filter."""
-input RoleFilter {
+"""Rolebinding filter."""
+input RoleBindingFilter {
   "UUID filter limiting which entries are returned.\n\n| `uuids`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
   uuids: [UUID!] = null
 
@@ -4553,12 +4724,6 @@ input RoleFilter {
   """Limit the elements returned by their ending validity."""
   to_date: DateTime
 
-  "Employee filter limiting which entries are returned.\n"
-  employee: EmployeeFilter = null
-
-  "Employee UUID filter limiting which entries are returned.\n\n| `employees`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
-  employees: [UUID!] = null @deprecated(reason: "Replaced by the 'employee' filter")
-
   "Organisation Unit filter limiting which entries are returned.\n"
   org_unit: OrganisationUnitFilter = null
 
@@ -4567,22 +4732,13 @@ input RoleFilter {
 
   "Registration filter limiting which entries are returned.\n"
   registration: RoleRegistrationFilter = null
-}
 
-"""Role registration filter."""
-input RoleRegistrationFilter {
-  "Filter registrations by their changing actor.\n\nCan be used to select all changes made by a particular user or integration.\n\n| `actors`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
-  actors: [UUID!] = null
-
-  """Limit the elements returned by their starting validity."""
-  start: DateTime = null
-
-  """Limit the elements returned by their ending validity."""
-  end: DateTime = null
+  "ITUser filter limiting which entries are returned.\n"
+  ituser: ITUserFilter = null
 }
 
 "Top-level container for (bi)-temporal and actual state data access.\n\nContains a UUID uniquely denoting the bitemporal object.\n\nContains three different object temporality axis:\n\n| entrypoint      | temporal axis | validity time | assertion time |\n|-----------------|---------------|---------------|----------------|\n| `current`       | actual state  | current       | current        |\n| `objects`       | temporal      | varying       | current        |\n| `registrations` | bitemporal    | varying       | varying        |\n\nThe argument for having three different entrypoints into the data is limiting complexity according to use-case.\n\nThat is, if a certain integration or UI only needs, say, actual state data, the complexities of the bitemporal data modelling is unwanted complexity, and as such, better left out.\n"
-type RoleResponse {
+type RoleBindingResponse {
   """UUID of the bitemporal object"""
   uuid: UUID!
 
@@ -4598,22 +4754,25 @@ type RoleResponse {
   ): [Registration!]!
 
   "Actual / current state entrypoint.\n\nReturns the state of the object at current validity and current assertion time.\n\nA single object is returned as only one validity can be active at a given assertion time.\n\nNote:\nThis the entrypoint is appropriate to use for actual-state integrations and UIs.\n"
-  current: Role
+  current(at: DateTime): RoleBinding
 
   "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
-  objects: [Role!]!
+  objects(start: DateTime, end: DateTime): [RoleBinding!]! @deprecated(reason: "\nWill be removed in a future version of GraphQL.\nUse validities instead.\n")
+
+  "Temporal state entrypoint.\n\nReturns the state of the object at varying validities and current assertion time.\n\nA list of objects are returned as only many different validity intervals can be active at a given assertion time.\n\nNote:\nThis the entrypoint should be used for temporal integrations and UIs.\nFor actual-state integrations, please consider using `current` instead.\n"
+  validities(start: DateTime, end: DateTime): [RoleBinding!]!
 }
 
 """Result page in cursor-based pagination."""
-type RoleResponsePaged {
+type RoleBindingResponsePaged {
   "List of results.\n\nThe number of elements is defined by the `limit` argument.\n"
-  objects: [RoleResponse!]!
+  objects: [RoleBindingResponse!]!
 
   "Container for page information.\n\nContains the cursors necessary to fetch other pages.\nContains information on when to stop iteration.\n"
   page_info: PageInfo!
 }
 
-input RoleTerminateInput {
+input RoleBindingTerminateInput {
   """Start date of the validity."""
   from: DateTime = null
 
@@ -4624,7 +4783,7 @@ input RoleTerminateInput {
   uuid: UUID!
 }
 
-input RoleUpdateInput {
+input RoleBindingUpdateInput {
   """UUID of the role to be updated."""
   uuid: UUID!
 
@@ -4634,11 +4793,26 @@ input RoleUpdateInput {
   """UUID of the role's organisation unit to be updated."""
   org_unit: UUID = null
 
+  """UUID of the ituser"""
+  ituser: UUID!
+
   """UUID of the role type"""
-  role_type: UUID = null
+  role: UUID = null
 
   """Validity range for the role to be updated."""
   validity: RAValidityInput!
+}
+
+"""Role registration filter."""
+input RoleRegistrationFilter {
+  "Filter registrations by their changing actor.\n\nCan be used to select all changes made by a particular user or integration.\n\n| `actors`      | Elements returned                            |\n|--------------|----------------------------------------------|\n| not provided | All                                          |\n| `null`       | All                                          |\n| `[]`         | None                                         |\n| `\"x\"`        | `[\"x\"]` or `[]` (`*`)                        |\n| `[\"x\", \"y\"]` | `[\"x\", \"y\"]`, `[\"x\"]`, `[\"y\"]` or `[]` (`*`) |\n\n`*`: Elements returned depends on which elements were found.\n"
+  actors: [UUID!] = null
+
+  """Limit the elements returned by their starting validity."""
+  start: DateTime = null
+
+  """Limit the elements returned by their ending validity."""
+  end: DateTime = null
 }
 
 scalar UUID
@@ -4666,6 +4840,7 @@ input UuidsBoundClassFilter {
   parents: [UUID!] = null
   parent_user_keys: [String!] = null
   it_system: ITSystemFilter = null
+  owner: ClassOwnerFilter = null
   scope: [String!] = null
 }
 
@@ -4688,6 +4863,7 @@ input UuidsBoundEngagementFilter {
   to_date: DateTime
   registration: EngagementRegistrationFilter = null
   job_function: ClassFilter = null
+  engagement_type: ClassFilter = null
 }
 
 input UuidsBoundFacetFilter {
@@ -4718,6 +4894,8 @@ input UuidsBoundITUserFilter {
   registration: ITUserRegistrationFilter = null
   itsystem: ITSystemFilter = null
   itsystem_uuids: [UUID!] = null
+  engagement: EngagementFilter = null
+  external_ids: [String!] = null
 }
 
 input UuidsBoundLeaveFilter {
@@ -4737,10 +4915,15 @@ input UuidsBoundOrganisationUnitFilter {
   to_date: DateTime
   registration: OrganisationUnitRegistrationFilter = null
   query: String
+  names: [String!]
   parent: OrganisationUnitFilter
   parents: [UUID!]
   hierarchy: ClassFilter = null
   hierarchies: [UUID!] = null
+  subtree: OrganisationUnitFilter
+  descendant: OrganisationUnitFilter
+  ancestor: OrganisationUnitFilter
+  engagement: EngagementFilter = null
 }
 
 """Validity of objects with required from date"""
