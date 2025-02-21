@@ -37,7 +37,11 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import GraphQLClient
+from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
+from .mo_org_unit_importer import OrgUnitUUID
+from .sd.timeline import get_department_timeline
+from .timeline import update_ou
 from .tree_tools import tree_as_string
 
 logger = structlog.get_logger()
@@ -275,6 +279,40 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Run completed!")
 
         return results
+
+    @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
+    async def timeline_sync_ou(
+        gql_client: GraphQLClient,
+        org_unit: OrgUnitUUID,
+        inst_id: str,
+        dry_run: bool = False,
+    ) -> dict:
+        """
+        Sync the entire org unit timeline for the given unit.
+
+        Args:
+            gql_client: The GraphQL client
+            org_unit: The UUID of the org unit to sync.
+            inst_id: The SD institution
+            dry_run: If true, nothing will be written to MO.
+
+        Returns:
+            Dictionary with status
+        """
+
+        sd_client = SDClient(
+            settings.sd_username,
+            settings.sd_password.get_secret_value(),
+        )
+        sd_unit_timeline = get_department_timeline(sd_client, inst_id, org_unit)
+
+        mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
+
+        await update_ou(
+            gql_client, org_unit, sd_unit_timeline, mo_unit_timeline, dry_run
+        )
+
+        return {"msg": "success"}
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
