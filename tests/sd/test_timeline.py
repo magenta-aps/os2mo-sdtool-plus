@@ -65,7 +65,9 @@ def test_get_department_timeline():
     )
 
     # Act
-    department_timeline = get_department_timeline(mock_sd_client, "II", dep_uuid)
+    department_timeline = get_department_timeline(
+        sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
+    )
 
     # Assert
     assert department_timeline.active == Timeline[Active](

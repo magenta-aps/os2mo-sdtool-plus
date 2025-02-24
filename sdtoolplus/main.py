@@ -304,7 +304,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             settings.sd_username,
             settings.sd_password.get_secret_value(),
         )
-        sd_unit_timeline = get_department_timeline(sd_client, inst_id, org_unit)
+        sd_unit_timeline = get_department_timeline(
+            sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
+        )
 
         mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
