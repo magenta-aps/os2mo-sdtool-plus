@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from datetime import timedelta
 
 import structlog
 from more_itertools import first
@@ -39,7 +40,7 @@ async def get_ou_timeline(
     activity_intervals = tuple(
         Active(
             start=obj.validity.from_,
-            end=obj.validity.to
+            end=obj.validity.to + timedelta(days=1)  # Add one day due to MO
             if obj.validity.to is not None
             else datetime.max.replace(tzinfo=tz),
             value=True,
