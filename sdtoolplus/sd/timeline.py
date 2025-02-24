@@ -29,7 +29,7 @@ def _sd_end_datetime(d: date) -> datetime:
     # 1999-12-31 states that the effective end datetime is 1999-12-31T23:59:59.999999,
     # which (due to the continuous timeline) translates into the end datetime
     # t_end = 2000-01-01T00:00:00.000000 in the half-open interval [t_start, t_end)
-    return datetime.combine(d + timedelta(days=1), time.min, ASSUMED_SD_TIMEZONE)
+    return datetime.combine(d, time.min, ASSUMED_SD_TIMEZONE) + timedelta(days=1)
 
 
 def get_department_timeline(
