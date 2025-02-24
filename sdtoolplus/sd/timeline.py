@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
+import structlog
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 
@@ -15,6 +16,8 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
+
+logger = structlog.get_logger()
 
 
 def _sd_start_datetime(d: date) -> datetime:
@@ -37,6 +40,8 @@ def get_department_timeline(
     inst_id: str,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
+    logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
+
     department = sd_client.get_department(
         GetDepartmentRequest(
             InstitutionIdentifier=inst_id,
@@ -68,7 +73,10 @@ def get_department_timeline(
     )
     name_intervals = combine_intervals(name_intervals)
 
-    return UnitTimeline(
+    timeline = UnitTimeline(
         active=Timeline[Active](intervals=active_intervals),
         name=Timeline[UnitName](intervals=name_intervals),
     )
+    logger.debug("SD OU timeline", timeline=timeline)
+
+    return timeline

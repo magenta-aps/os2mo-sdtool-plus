@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 
+import structlog
 from more_itertools import first
 from more_itertools import one
 
@@ -13,11 +14,15 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
+logger = structlog.get_logger()
+
 
 async def get_ou_timeline(
     gql_client: GraphQLClient,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
+    logger.info("Get MO org unit timeline", unit_uuid=str(unit_uuid))
+
     gql_timelime = await gql_client.get_org_unit_timeline(unit_uuid)
     objects = gql_timelime.objects
 
@@ -55,7 +60,10 @@ async def get_ou_timeline(
     )
     name_intervals = combine_intervals(name_intervals)
 
-    return UnitTimeline(
+    timeline = UnitTimeline(
         active=Timeline[Active](intervals=activity_intervals),
         name=Timeline[UnitName](intervals=name_intervals),
     )
+    logger.debug("MO OU timeline", timeline=timeline)
+
+    return timeline
