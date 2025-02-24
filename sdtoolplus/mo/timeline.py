@@ -18,7 +18,7 @@ async def get_ou_timeline(
     gql_client: GraphQLClient,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
-    gql_timelime = await gql_client.get_org_unit_timeline([unit_uuid])
+    gql_timelime = await gql_client.get_org_unit_timeline(unit_uuid)
     objects = gql_timelime.objects
 
     if not objects:
