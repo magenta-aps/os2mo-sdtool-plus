@@ -37,7 +37,16 @@ async def update_ou_name(
     org_unit: OrgUnitUUID,
     diff_timeline: Timeline[UnitName],
 ) -> None:
-    for unit_name in diff_timeline.intervals:
+    logger.info("Update OU name in MO")
+
+    update_intervals = tuple(
+        unit_name
+        for unit_name in diff_timeline.intervals
+        if unit_name.value is not None
+    )
+
+    for unit_name in update_intervals:
+        logger.debug("OU name update", unit_name=unit_name)
         await gql_client.update_org_unit(
             OrganisationUnitUpdateInput(
                 uuid=org_unit,
@@ -61,14 +70,20 @@ async def terminate_ou(
 
     for active in termination_intervals:
         mo_validity = _get_mo_validity(active)
-        await gql_client.terminate_org_unit(
-            # TODO: check this for off-by-one errors
-            OrganisationUnitTerminateInput(
+
+        if mo_validity.to is not None:
+            payload = OrganisationUnitTerminateInput(
                 uuid=org_unit,
                 from_=mo_validity.from_,
                 to=mo_validity.to,
             )
-        )
+        else:
+            payload = OrganisationUnitTerminateInput(
+                uuid=org_unit,
+                to=mo_validity.from_ - timedelta(days=1),
+            )
+
+        await gql_client.terminate_org_unit(payload)
 
 
 async def update_ou(
