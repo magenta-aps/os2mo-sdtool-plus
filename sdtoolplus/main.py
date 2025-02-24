@@ -300,6 +300,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             Dictionary with status
         """
 
+        logger.info(
+            "Sync OU timeline", inst_id=inst_id, org_uuid=str(org_unit), dry_run=dry_run
+        )
+
         sd_client = SDClient(
             settings.sd_username,
             settings.sd_password.get_secret_value(),
