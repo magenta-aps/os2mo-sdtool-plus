@@ -13,6 +13,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 
+# TODO: move MO specific functions to mo.py
 
 
 def _get_mo_validity(interval: Interval) -> RAValidityInput:
