@@ -7,7 +7,7 @@ services:
     environment:
       ENVIRONMENT: "development"
 
-      FASTRAMQPI__LOG_LEVEL: "INFO"
+      FASTRAMQPI__LOG_LEVEL: "DEBUG"
       FASTRAMQPI__JSON_LOGS: False
 
       MORA_BASE: "http://mo:5000"
