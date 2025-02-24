@@ -51,6 +51,9 @@ class Interval(GenericModel, Generic[V]):
             raise ValueError("Timezones are not identical")
         return values
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(start={self.start.isoformat()}, end={self.end.isoformat()}, value={str(self.value)}"
+
     class Config:
         frozen = True
 
