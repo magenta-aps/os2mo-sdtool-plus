@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from datetime import timedelta
 
 import structlog
 
@@ -26,6 +27,8 @@ def _get_mo_validity(interval: Interval) -> RAValidityInput:
     assert mo_end is not None
     if mo_end.replace(tzinfo=None) == datetime.max:
         mo_end = None
+    else:
+        mo_end = mo_end - timedelta(days=1)  # Subtract one day due to MO
     return RAValidityInput(from_=interval.start, to=mo_end)
 
 
