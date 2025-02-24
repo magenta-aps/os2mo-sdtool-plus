@@ -86,7 +86,7 @@ def combine_intervals(intervals: tuple[T, ...]) -> tuple[T, ...]:
 
 
 class Timeline(GenericModel, Generic[T]):
-    intervals: tuple[T, ...]
+    intervals: tuple[T, ...] = tuple()
 
     @validator("intervals")
     def entities_must_be_same_type(cls, v):

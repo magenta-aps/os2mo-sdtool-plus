@@ -228,13 +228,13 @@ def test_timeline_diff0():
     """
 
     # Arrange
-    timeline = Timeline[Active](intervals=tuple())
+    timeline = Timeline[Active]()
 
     # Act
     diff = timeline.diff(timeline)
 
     # Assert
-    assert diff == Timeline[Active](intervals=tuple())
+    assert diff == Timeline[Active]()
 
 
 def test_timeline_diff1():
@@ -254,7 +254,7 @@ def test_timeline_diff1():
     diff = timeline.diff(timeline)
 
     # Assert
-    assert diff == Timeline[Active](intervals=tuple())
+    assert diff == Timeline[Active]()
 
 
 def test_timeline_diff2():

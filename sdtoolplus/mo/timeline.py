@@ -23,8 +23,8 @@ async def get_ou_timeline(
 
     if not objects:
         return UnitTimeline(
-            active=Timeline[Active](intervals=tuple()),
-            name=Timeline[UnitName](intervals=tuple()),
+            active=Timeline[Active](),
+            name=Timeline[UnitName](),
         )
 
     validities = one(objects).validities
