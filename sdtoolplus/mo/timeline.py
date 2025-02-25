@@ -40,7 +40,9 @@ async def get_ou_timeline(
     activity_intervals = tuple(
         Active(
             start=obj.validity.from_,
-            end=obj.validity.to + timedelta(days=1)  # Add one day due to MO
+            # TODO (#61435): MOs GraphQL subtracts one day from the validity end dates
+            # when reading, compared to what was written.
+            end=obj.validity.to + timedelta(days=1)
             if obj.validity.to is not None
             else datetime.max.replace(tzinfo=tz),
             value=True,
