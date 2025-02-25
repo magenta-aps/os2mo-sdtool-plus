@@ -31,7 +31,7 @@ from .mo_org_unit_importer import OrgUnitUUID
 
 V_DATE_OUTSIDE_ORG_UNIT_RANGE = "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 class Mutation(abc.ABC):

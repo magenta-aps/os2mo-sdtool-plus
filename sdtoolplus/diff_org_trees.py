@@ -19,7 +19,7 @@ from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 class Nodes(BaseModel):

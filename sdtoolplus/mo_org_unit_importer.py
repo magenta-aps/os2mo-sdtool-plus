@@ -22,7 +22,7 @@ OrgUnitLevelUUID: TypeAlias = UUID
 OrgUnitTypeUUID: TypeAlias = UUID
 OrgUnitHierarchyUUID = NewType("OrgUnitHierarchyUUID", UUID)
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 class AddressType(pydantic.BaseModel):

@@ -17,7 +17,7 @@ from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 def _sd_start_datetime(d: date) -> datetime:

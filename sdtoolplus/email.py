@@ -13,7 +13,7 @@ from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 def build_email_body(

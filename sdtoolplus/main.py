@@ -44,7 +44,7 @@ from .sd.timeline import get_department_timeline
 from .timeline import update_ou
 from .tree_tools import tree_as_string
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 def run_db_start_operations(

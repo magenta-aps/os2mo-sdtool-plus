@@ -15,7 +15,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 async def get_ou_timeline(

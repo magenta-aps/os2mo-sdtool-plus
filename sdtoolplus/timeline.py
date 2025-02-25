@@ -15,9 +15,8 @@ from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
-from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 # TODO: move MO specific functions to mo.py
 

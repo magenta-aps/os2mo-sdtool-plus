@@ -29,7 +29,7 @@ from .tree_diff_executor import AnyMutation
 from .tree_diff_executor import TreeDiffExecutor
 from .tree_diff_executor import UpdateOrgUnitMutation
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 def _get_mo_subtree_path_for_root(
