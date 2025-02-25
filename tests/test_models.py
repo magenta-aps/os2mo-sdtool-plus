@@ -3,7 +3,6 @@
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
-from datetime import timezone
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -14,13 +13,14 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import combine_intervals
 
-TODAY_START = datetime.combine(datetime.now(), time.min, tzinfo=timezone.utc)
+TZ = ZoneInfo("Europe/London")
+TODAY_START = datetime.combine(datetime.now(), time.min, tzinfo=TZ)
 YESTERDAY_START = TODAY_START - timedelta(days=1)
 TOMORROW_START = TODAY_START + timedelta(days=1)
 DAY_AFTER_TOMORROW_START = TODAY_START + timedelta(days=2)
 
-MINUS_INFINITY = datetime.min.replace(tzinfo=timezone.utc)
-INFINITY = datetime.max.replace(tzinfo=timezone.utc)
+MINUS_INFINITY = datetime.min.replace(tzinfo=TZ)
+INFINITY = datetime.max.replace(tzinfo=TZ)
 
 
 def test_entity_eq():
@@ -60,7 +60,7 @@ def test_timeline_eq():
 
 def test_interval_must_have_identical_timezones():
     # Arrange
-    datetime_with_timezone = datetime.now(tz=timezone.utc)
+    datetime_with_timezone = datetime.now(tz=TZ)
     datetime_with_another_timezone = datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
     datetime_without_timezone = datetime.now()
 
@@ -82,12 +82,12 @@ def test_combine_intervals():
     Output:       |----v1----|          |-----------v1-----------|---v2-----
     """
     # Arrange
-    t1 = datetime(2001, 1, 1, tzinfo=timezone.utc)
-    t2 = datetime(2002, 1, 1, tzinfo=timezone.utc)
-    t3 = datetime(2003, 1, 1, tzinfo=timezone.utc)
-    t4 = datetime(2004, 1, 1, tzinfo=timezone.utc)
-    t5 = datetime(2005, 1, 1, tzinfo=timezone.utc)
-    t6 = datetime(2006, 1, 1, tzinfo=timezone.utc)
+    t1 = datetime(2001, 1, 1, tzinfo=TZ)
+    t2 = datetime(2002, 1, 1, tzinfo=TZ)
+    t3 = datetime(2003, 1, 1, tzinfo=TZ)
+    t4 = datetime(2004, 1, 1, tzinfo=TZ)
+    t5 = datetime(2005, 1, 1, tzinfo=TZ)
+    t6 = datetime(2006, 1, 1, tzinfo=TZ)
 
     # Arrange
     intervals = (
@@ -363,12 +363,12 @@ def test_timeline_diff6():
     Diff:         |--- v1 ---|         |---- None ----|                    |-- None --
     """
     # Arrange
-    t1 = datetime(2001, 1, 1, tzinfo=timezone.utc)
-    t2 = datetime(2002, 1, 1, tzinfo=timezone.utc)
-    t3 = datetime(2003, 1, 1, tzinfo=timezone.utc)
-    t4 = datetime(2004, 1, 1, tzinfo=timezone.utc)
-    t5 = datetime(2005, 1, 1, tzinfo=timezone.utc)
-    t6 = datetime(2006, 1, 1, tzinfo=timezone.utc)
+    t1 = datetime(2001, 1, 1, tzinfo=TZ)
+    t2 = datetime(2002, 1, 1, tzinfo=TZ)
+    t3 = datetime(2003, 1, 1, tzinfo=TZ)
+    t4 = datetime(2004, 1, 1, tzinfo=TZ)
+    t5 = datetime(2005, 1, 1, tzinfo=TZ)
+    t6 = datetime(2006, 1, 1, tzinfo=TZ)
 
     us = Timeline[Active](
         intervals=(

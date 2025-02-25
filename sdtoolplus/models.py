@@ -7,6 +7,7 @@ from itertools import pairwise
 from typing import Any
 from typing import Generic
 from typing import TypeVar
+from zoneinfo import ZoneInfo
 
 from more_itertools import first
 from more_itertools import last
@@ -42,7 +43,9 @@ class Interval(GenericModel, Generic[V]):
     def ensure_timezones(cls, values: dict[str, Any]) -> dict[str, Any]:
         start = values["start"]
         end = values["end"]
-        if start.tzinfo is None or end.tzinfo is None:
+        if not (
+            isinstance(start.tzinfo, ZoneInfo) and isinstance(end.tzinfo, ZoneInfo)
+        ):
             raise ValueError("Timezone must be provided")
         if not start.tzinfo == end.tzinfo:
             raise ValueError("Timezones are not identical")
