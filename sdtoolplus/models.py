@@ -71,6 +71,14 @@ class Active(Interval[bool]):
     pass
 
 
+class UnitId(Interval[str]):
+    pass
+
+
+class UnitLevel(Interval[str]):
+    pass
+
+
 class UnitName(Interval[str]):
     pass
 
@@ -197,3 +205,5 @@ class Timeline(GenericModel, Generic[T]):
 class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]
+    unit_id: Timeline[UnitId]
+    unit_level: Timeline[UnitLevel]
