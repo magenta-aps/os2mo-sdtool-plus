@@ -79,6 +79,7 @@ async def terminate_ou(
         else:
             payload = OrganisationUnitTerminateInput(
                 uuid=org_unit,
+                # Converting from "from" to "to" due to the wierd way terminations in MO work
                 to=mo_validity.from_ - timedelta(days=1),
             )
 
