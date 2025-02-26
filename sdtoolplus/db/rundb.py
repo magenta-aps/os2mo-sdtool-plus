@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from sdtoolplus.db.models import RunDB
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 class Status(Enum):

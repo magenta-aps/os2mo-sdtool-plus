@@ -44,7 +44,7 @@ from .sd.timeline import get_department_timeline
 from .timeline import update_ou
 from .tree_tools import tree_as_string
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 def run_db_start_operations(
@@ -299,6 +299,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         Returns:
             Dictionary with status
         """
+
+        logger.info(
+            "Sync OU timeline", inst_id=inst_id, org_uuid=str(org_unit), dry_run=dry_run
+        )
 
         sd_client = SDClient(
             settings.sd_username,

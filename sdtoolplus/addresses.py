@@ -34,7 +34,7 @@ from sdtoolplus.sd.importer import get_sd_units
 
 DARAddressUUID: TypeAlias = UUID
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 class AddressOperation(Enum):

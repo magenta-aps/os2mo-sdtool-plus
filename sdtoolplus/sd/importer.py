@@ -22,7 +22,7 @@ from sdtoolplus.sd.tree import build_extra_tree
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.sd.tree import get_sd_validity
 
-logger = structlog.get_logger()
+logger = structlog.stdlib.get_logger()
 
 
 @retry(

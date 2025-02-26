@@ -18,6 +18,7 @@ from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f (%Z)"
 V = TypeVar("V")
 
 
@@ -50,6 +51,14 @@ class Interval(GenericModel, Generic[V]):
         if not start.tzinfo == end.tzinfo:
             raise ValueError("Timezones are not identical")
         return values
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}("
+            f"start={self.start.strftime(DATETIME_FORMAT)}, "
+            f"end={self.end.strftime(DATETIME_FORMAT)}, "
+            f"value={str(self.value)})"
+        )
 
     class Config:
         frozen = True
