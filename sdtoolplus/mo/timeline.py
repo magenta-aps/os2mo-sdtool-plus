@@ -12,6 +12,8 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
@@ -36,6 +38,8 @@ async def get_ou_timeline(
         return UnitTimeline(
             active=Timeline[Active](),
             name=Timeline[UnitName](),
+            unit_id=Timeline[UnitId](),
+            unit_level=Timeline[UnitLevel](),
         )
 
     validities = one(objects).validities
@@ -53,6 +57,24 @@ async def get_ou_timeline(
         for obj in validities
     )
 
+    id_intervals = tuple(
+        UnitId(
+            start=obj.validity.from_,
+            end=_mo_end_datetime(obj.validity.to, tz),
+            value=obj.user_key,
+        )
+        for obj in validities
+    )
+
+    level_intervals = tuple(
+        UnitLevel(
+            start=obj.validity.from_,
+            end=_mo_end_datetime(obj.validity.to, tz),
+            value=obj.org_unit_level.name if obj.org_unit_level is not None else "",
+        )
+        for obj in validities
+    )
+
     name_intervals = tuple(
         UnitName(
             start=obj.validity.from_,
@@ -65,6 +87,8 @@ async def get_ou_timeline(
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
+        unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
+        unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
     )
     logger.debug("MO OU timeline", timeline=timeline)
 
