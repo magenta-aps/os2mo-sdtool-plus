@@ -12,6 +12,8 @@ from sdclient.requests import GetDepartmentRequest
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
@@ -62,6 +64,24 @@ def get_department_timeline(
         for dep in department.Department
     )
 
+    id_intervals = tuple(
+        UnitId(
+            start=_sd_start_datetime(dep.ActivationDate),
+            end=_sd_end_datetime(dep.DeactivationDate),
+            value=dep.DepartmentIdentifier,
+        )
+        for dep in department.Department
+    )
+
+    level_intervals = tuple(
+        UnitLevel(
+            start=_sd_start_datetime(dep.ActivationDate),
+            end=_sd_end_datetime(dep.DeactivationDate),
+            value=dep.DepartmentLevelIdentifier,
+        )
+        for dep in department.Department
+    )
+
     name_intervals = tuple(
         UnitName(
             start=_sd_start_datetime(dep.ActivationDate),
@@ -73,6 +93,8 @@ def get_department_timeline(
 
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+        unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
+        unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline)

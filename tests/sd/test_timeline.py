@@ -1,13 +1,17 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
@@ -70,6 +74,14 @@ def test_get_department_timeline():
     )
 
     # Assert
+    query_params = one(one(mock_sd_client.get_department.call_args_list).args)
+    assert query_params.InstitutionIdentifier == "II"
+    assert query_params.DepartmentUUIDIdentifier == dep_uuid
+    assert query_params.ActivationDate == date.min
+    assert query_params.DeactivationDate == date.max
+    assert query_params.DepartmentNameIndicator is True
+    assert query_params.UUIDIndicator is True
+
     assert department_timeline.active == Timeline[Active](
         intervals=(
             Active(
@@ -81,6 +93,41 @@ def test_get_department_timeline():
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
                 value=True,
+            ),
+        )
+    )
+
+    assert department_timeline.unit_id == Timeline[UnitId](
+        intervals=(
+            UnitId(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP1",
+            ),
+            UnitId(
+                start=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP2",
+            ),
+            UnitId(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value="DEP1",
+            ),
+        )
+    )
+
+    assert department_timeline.unit_level == Timeline[UnitLevel](
+        intervals=(
+            UnitLevel(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="NY0-niveau",
+            ),
+            UnitLevel(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value="NY0-niveau",
             ),
         )
     )

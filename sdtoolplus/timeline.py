@@ -13,6 +13,8 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 
@@ -97,6 +99,9 @@ async def update_ou(
 
     diff = UnitTimeline(
         active=sd_unit_timeline.active.diff(mo_unit_timeline.active),
+        # TODO: set proper timelines
+        unit_id=Timeline[UnitId](),
+        unit_level=Timeline[UnitLevel](),
         name=sd_unit_timeline.name.diff(mo_unit_timeline.name),
     )
     logger.debug("UnitTimeline diff", diff=diff)
