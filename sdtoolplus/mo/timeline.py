@@ -49,7 +49,6 @@ async def get_ou_timeline(
         )
         for obj in validities
     )
-    activity_intervals = combine_intervals(activity_intervals)
 
     name_intervals = tuple(
         UnitName(
@@ -61,11 +60,10 @@ async def get_ou_timeline(
         )
         for obj in validities
     )
-    name_intervals = combine_intervals(name_intervals)
 
     timeline = UnitTimeline(
-        active=Timeline[Active](intervals=activity_intervals),
-        name=Timeline[UnitName](intervals=name_intervals),
+        active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
+        name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
     )
     logger.debug("MO OU timeline", timeline=timeline)
 

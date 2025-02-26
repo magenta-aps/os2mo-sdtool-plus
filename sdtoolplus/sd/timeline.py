@@ -61,7 +61,6 @@ def get_department_timeline(
         )
         for dep in department.Department
     )
-    active_intervals = combine_intervals(active_intervals)
 
     name_intervals = tuple(
         UnitName(
@@ -71,11 +70,10 @@ def get_department_timeline(
         )
         for dep in department.Department
     )
-    name_intervals = combine_intervals(name_intervals)
 
     timeline = UnitTimeline(
-        active=Timeline[Active](intervals=active_intervals),
-        name=Timeline[UnitName](intervals=name_intervals),
+        active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+        name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline)
 
