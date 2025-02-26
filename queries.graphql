@@ -81,7 +81,11 @@ query GetOrgUnitTimeline($unit_uuid: UUID!) {
           to
         }
         uuid
+        user_key
         name
+        org_unit_level {
+          name
+        }
         parent {
           uuid
         }
