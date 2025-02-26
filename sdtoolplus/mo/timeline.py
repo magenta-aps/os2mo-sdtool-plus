@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from datetime import timedelta
+from datetime import tzinfo
 
 import structlog
 from more_itertools import first
@@ -16,6 +17,10 @@ from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
 logger = structlog.stdlib.get_logger()
+
+
+def _mo_end_datetime(d: datetime | None, tz: tzinfo) -> datetime:
+    return d + timedelta(days=1) if d is not None else datetime.max.replace(tzinfo=tz)
 
 
 async def get_ou_timeline(
@@ -42,9 +47,7 @@ async def get_ou_timeline(
             start=obj.validity.from_,
             # TODO (#61435): MOs GraphQL subtracts one day from the validity end dates
             # when reading, compared to what was written.
-            end=obj.validity.to + timedelta(days=1)
-            if obj.validity.to is not None
-            else datetime.max.replace(tzinfo=tz),
+            end=_mo_end_datetime(obj.validity.to, tz),
             value=True,
         )
         for obj in validities
@@ -53,9 +56,7 @@ async def get_ou_timeline(
     name_intervals = tuple(
         UnitName(
             start=obj.validity.from_,
-            end=obj.validity.to
-            if obj.validity.to is not None
-            else datetime.max.replace(tzinfo=tz),
+            end=_mo_end_datetime(obj.validity.to, tz),
             value=obj.name,
         )
         for obj in validities
