@@ -198,6 +198,11 @@ class Timeline(GenericModel, Generic[T]):
 
         return self.__class__(intervals=intervals)
 
+    def remove_none_intervals(self) -> "Timeline[T]":
+        return self.__class__(
+            intervals=tuple(i for i in self.intervals if i.value is not None)
+        )
+
     class Config:
         frozen = True
 

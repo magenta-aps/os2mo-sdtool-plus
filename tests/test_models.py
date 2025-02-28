@@ -394,3 +394,34 @@ def test_timeline_diff6():
             Active(start=t6, end=INFINITY, value=None),
         )
     )
+
+
+@pytest.mark.parametrize(
+    "intervals, expected",
+    [
+        (tuple(), Timeline[UnitName]()),
+        (
+            (
+                UnitName(start=YESTERDAY_START, end=TODAY_START, value=True),
+                UnitName(start=TODAY_START, end=TOMORROW_START, value=None),
+                UnitName(start=DAY_AFTER_TOMORROW_START, end=INFINITY, value=None),
+            ),
+            Timeline[UnitName](
+                intervals=(
+                    UnitName(start=YESTERDAY_START, end=TODAY_START, value=True),
+                )
+            ),
+        ),
+    ],
+)
+def test_remove_none_intervals(
+    intervals: tuple[UnitName, ...], expected: Timeline[UnitName]
+):
+    # Arrange
+    timeline = Timeline[UnitName](intervals=intervals)
+
+    # Act
+    timeline_without_nones = timeline.remove_none_intervals()
+
+    # Assert
+    assert timeline_without_nones == expected
