@@ -207,6 +207,12 @@ class Timeline(GenericModel, Generic[T]):
         frozen = True
 
 
+class TimelineAllowSuccessive(Timeline, GenericModel, Generic[T]):
+    @validator("intervals")
+    def successively_repeated_interval_values_not_allowed(cls, v):
+        return v
+
+
 class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]

@@ -10,6 +10,7 @@ import pytest
 from sdtoolplus.models import Active
 from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import TimelineAllowSuccessive
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import combine_intervals
 
@@ -190,6 +191,15 @@ def test_timeline_successively_repeated_interval_allowed_when_holes_in_timeline(
 
     # Act + Assert
     assert Timeline[Active](intervals=(active1, active2))
+
+
+def test_timeline_allow_successive():
+    # Arrange
+    active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
+    active2 = Active(start=TODAY_START, end=TOMORROW_START, value=True)
+
+    # Act + Assert
+    assert TimelineAllowSuccessive[Active](intervals=tuple([active1, active2]))
 
 
 @pytest.mark.parametrize(
