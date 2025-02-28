@@ -162,6 +162,7 @@ class Timeline(GenericModel, Generic[T]):
              our timeline and their timeline.
         """
 
+        # TODO: refactor to use common function here and in timelime._multi_difftimeline
         endpoints: list[datetime] = list(
             set(
                 chain(
