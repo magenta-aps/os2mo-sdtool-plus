@@ -18,7 +18,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
 
 @pytest.mark.integration_test
-async def test_ou_timeline_http_triggered_sync(
+async def test_ou_timeline_name_http_triggered_sync(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,  # Maybe switch
     org_unit_type: OrgUnitUUID,
@@ -35,8 +35,8 @@ async def test_ou_timeline_http_triggered_sync(
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
 
-    t1 = datetime(1990, 1, 1, tzinfo=tz)
-    t2 = datetime(1999, 1, 1, tzinfo=tz)
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
     t3 = datetime(2003, 1, 1, tzinfo=tz)
     t4 = datetime(2004, 1, 1, tzinfo=tz)
     t5 = datetime(2005, 1, 1, tzinfo=tz)
@@ -83,7 +83,7 @@ async def test_ou_timeline_http_triggered_sync(
           <InstitutionIdentifier>II</InstitutionIdentifier>
           <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
           <Department>
-            <ActivationDate>1990-01-01</ActivationDate>
+            <ActivationDate>2001-01-01</ActivationDate>
             <DeactivationDate>2002-12-31</DeactivationDate>
             <DepartmentIdentifier>ABCD</DepartmentIdentifier>
             <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
@@ -124,7 +124,7 @@ async def test_ou_timeline_http_triggered_sync(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid)
+    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 3
