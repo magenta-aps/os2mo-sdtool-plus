@@ -163,3 +163,29 @@ class UnitTimeline(BaseModel):
     name: Timeline[UnitName]
     unit_id: Timeline[UnitId]
     unit_level: Timeline[UnitLevel]
+
+    def has_value(self, timestamp: datetime) -> bool:
+        # TODO: unit test
+        try:
+            self.active.entity_at(timestamp)
+            self.name.entity_at(timestamp)
+            self.unit_id.entity_at(timestamp)
+            self.unit_level.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: "UnitTimeline") -> bool:
+        # TODO: unit test
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return (
+                self.active.entity_at(timestamp) == other.active.entity_at(timestamp)
+                and self.name.entity_at(timestamp) == other.name.entity_at(timestamp)
+                and self.unit_id.entity_at(timestamp)
+                == other.unit_id.entity_at(timestamp)
+                and self.unit_level.entity_at(timestamp)
+                == other.unit_level.entity_at(timestamp)
+            )
+        return False
