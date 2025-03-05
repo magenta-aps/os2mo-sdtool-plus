@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from enum import Enum
-from itertools import chain
 from itertools import pairwise
 from typing import Any
 from typing import Generic
@@ -145,58 +144,8 @@ class Timeline(GenericModel, Generic[T]):
             raise ValueError("Successively repeated interval values are not allowed")
         return v
 
-    def entity_at(self, timestamp: datetime) -> T | None:
-        return only(e for e in self.intervals if e.start <= timestamp < e.end)
-
-    def diff(self, other: "Timeline[T]") -> "Timeline[T]":
-        """
-        The method will return a timeline containing intervals where the 'other'
-        timeline differs from this one. See ASCII examples drawings in the unittests
-        for this method.
-
-        Args:
-            other: The timeline to compare to ours.
-
-        Returns:
-             A (typically non-continuous) timeline representing the difference between
-             our timeline and their timeline.
-        """
-
-        endpoints: list[datetime] = list(
-            set(
-                chain(
-                    (i.start for i in self.intervals),
-                    (i.end for i in self.intervals),
-                    (i.start for i in other.intervals),
-                    (i.end for i in other.intervals),
-                )
             )
-        )
-        endpoints.sort()
-
-        interval_list = []
-        for endpoint1, endpoint2 in pairwise(endpoints):
-            our_entity = self.entity_at(endpoint1)
-            their_entity = other.entity_at(endpoint1)
-
-            our_value = our_entity.value if our_entity is not None else None
-            their_value = their_entity.value if their_entity is not None else None
-
-            if not our_value == their_value:
-                template_entity = our_entity if our_value is not None else their_entity
-                interval_list.append(
-                    template_entity.copy(  # type: ignore
-                        update={
-                            "start": endpoint1,
-                            "end": endpoint2,
-                            "value": our_value,
-                        }
-                    )
-                )
-
-        intervals = combine_intervals(tuple(interval_list))
-
-        return self.__class__(intervals=intervals)
+        return entity
 
     class Config:
         frozen = True
