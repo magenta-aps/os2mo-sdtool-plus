@@ -72,8 +72,8 @@ query GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
   }
 }
 
-query GetOrgUnitTimeline($unit_uuid: UUID!) {
-  org_units(filter: { uuids: [$unit_uuid], from_date: null, to_date: null }) {
+query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: DateTime) {
+  org_units(filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }) {
     objects {
       validities {
         validity {
@@ -81,12 +81,31 @@ query GetOrgUnitTimeline($unit_uuid: UUID!) {
           to
         }
         uuid
+        user_key
         name
+        org_unit_level {
+          name
+        }
+        unit_type {
+          uuid
+        }
+        org_unit_hierarchy_model {
+          uuid
+        }
+        time_planning {
+          uuid
+        }
         parent {
           uuid
         }
       }
     }
+  }
+}
+
+mutation CreateOrgUnit($input: OrganisationUnitCreateInput!) {
+  org_unit_create(input: $input) {
+    uuid
   }
 }
 
