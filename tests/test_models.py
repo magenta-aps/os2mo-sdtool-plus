@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.models import Active
 from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
@@ -203,10 +204,9 @@ def test_timeline_successively_repeated_interval_allowed_when_holes_in_timeline(
             TODAY_START + timedelta(hours=12),
             Active(start=TODAY_START, end=TOMORROW_START, value=False),
         ),
-        (YESTERDAY_START - timedelta(hours=12), None),
     ],
 )
-def test_timeline_entity_at(timestamp: datetime, expected: Active | None):
+def test_timeline_entity_at(timestamp: datetime, expected: Active):
     # Arrange
     active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
     active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
@@ -220,8 +220,13 @@ def test_timeline_entity_at(timestamp: datetime, expected: Active | None):
     assert actual == expected
 
 
+def test_timeline_entity_at_no_value():
     # Arrange
     active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
     active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
 
+    timeline = Timeline[Active](intervals=(active1, active2))
 
+    # Act + Assert
+    with pytest.raises(NoValueError):
+        timeline.entity_at(YESTERDAY_START - timedelta(hours=12))

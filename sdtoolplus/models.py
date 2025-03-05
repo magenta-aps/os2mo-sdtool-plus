@@ -17,6 +17,8 @@ from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
+from sdtoolplus.exceptions import NoValueError
+
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f (%Z)"
 V = TypeVar("V")
 
@@ -37,7 +39,7 @@ class Interval(GenericModel, Generic[V]):
 
     start: datetime
     end: datetime
-    value: V | None
+    value: V
 
     @root_validator
     def ensure_timezones(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -144,6 +146,11 @@ class Timeline(GenericModel, Generic[T]):
             raise ValueError("Successively repeated interval values are not allowed")
         return v
 
+    def entity_at(self, timestamp: datetime) -> T:
+        entity = only(e for e in self.intervals if e.start <= timestamp < e.end)
+        if entity is None:
+            raise NoValueError(
+                f"No value found at {timestamp.strftime(DATETIME_FORMAT)}"
             )
         return entity
 
