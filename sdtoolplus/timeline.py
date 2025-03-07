@@ -13,6 +13,7 @@ from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import terminate_ou
 from sdtoolplus.mo.timeline import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import UnitTimeline
 
@@ -30,6 +31,22 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
                     cast(tuple[Interval, ...], ou_timeline.unit_id.intervals),
                     cast(tuple[Interval, ...], ou_timeline.unit_level.intervals),
                     cast(tuple[Interval, ...], ou_timeline.parent.intervals),
+                )
+            )
+        )
+    )
+
+
+def _get_eng_interval_endpoints(eng_timeline: EngagementTimeline) -> set[datetime]:
+    return set(
+        collapse(
+            set(
+                (i.start, i.end)
+                for i in chain(
+                    cast(tuple[Interval, ...], eng_timeline.eng_active.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_key.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_name.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_unit.intervals),
                 )
             )
         )
