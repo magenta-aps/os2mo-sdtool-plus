@@ -14,6 +14,7 @@ from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetEmploymentChangedRequest
 
+from sdtoolplus.log import anonymize_cpr
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
@@ -140,7 +141,12 @@ def get_engagement_timeline(
     cpr: str,
     emp_id: str,
 ) -> EngagementTimeline:
-    logger.info("Get SD employment timeline", inst_id=inst_id, emp_id=emp_id)
+    logger.info(
+        "Get SD employment timeline",
+        inst_id=inst_id,
+        cpr=anonymize_cpr(cpr),
+        emp_id=emp_id,
+    )
 
     r_employment = sd_client.get_employment_changed(
         GetEmploymentChangedRequest(
