@@ -11,10 +11,15 @@ from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.responses import DepartmentParentHistoryObj
 from sdclient.responses import GetDepartmentResponse
+from sdclient.responses import GetEmploymentChangedResponse
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import EngagementKey
+from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -22,6 +27,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import get_department_timeline
+from sdtoolplus.sd.timeline import get_engagement_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
@@ -259,4 +265,192 @@ async def test_get_department_timeline_parent_not_found():
         unit_id=Timeline[UnitId](),
         unit_level=Timeline[UnitLevel](),
         parent=Timeline[UnitParent](),
+    )
+
+
+def test_get_engagement_timeline():
+    # Arrange
+    dep_uuid = uuid4()
+    sd_emp_resp_dict = {
+        "Person": [
+            {
+                "PersonCivilRegistrationIdentifier": "0101011234",
+                "Employment": [
+                    {
+                        "EmploymentIdentifier": "12345",
+                        "EmploymentDate": "2000-01-01",
+                        "AnniversaryDate": "2000-01-01",
+                        "EmploymentDepartment": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "DepartmentIdentifier": "ABCD",
+                                "DepartmentUUIDIdentifier": str(dep_uuid),
+                            }
+                        ],
+                        "Profession": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2021-12-31",
+                                "JobPositionIdentifier": "2",
+                                "EmploymentName": "Ninja",
+                                "AppointmentCode": "0",
+                            },
+                            {
+                                "ActivationDate": "2022-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "JobPositionIdentifier": "4",
+                                "EmploymentName": "Kung Fu Master",
+                                "AppointmentCode": "0",
+                            },
+                        ],
+                        "EmploymentStatus": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2000-12-31",
+                                "EmploymentStatusCode": "0",
+                            },
+                            {
+                                "ActivationDate": "2001-01-01",
+                                "DeactivationDate": "2001-12-31",
+                                "EmploymentStatusCode": "1",
+                            },
+                            {
+                                "ActivationDate": "2002-01-01",
+                                "DeactivationDate": "2002-12-31",
+                                "EmploymentStatusCode": "3",
+                            },
+                            {
+                                "ActivationDate": "2003-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "EmploymentStatusCode": "8",
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_employment_changed.return_value = (
+        GetEmploymentChangedResponse.parse_obj(sd_emp_resp_dict)
+    )
+
+    # Act
+    engagement_timeline = get_engagement_timeline(
+        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+    )
+
+    # Assert
+    query_params = one(one(mock_sd_client.get_employment_changed.call_args_list).args)
+    assert query_params.InstitutionIdentifier == "II"
+    assert query_params.PersonCivilRegistrationIdentifier == "0101011234"
+    assert query_params.EmploymentIdentifier == "12345"
+    assert query_params.ActivationDate == date.min
+    assert query_params.DeactivationDate == date.max
+    assert query_params.DepartmentIndicator is True
+    assert query_params.EmploymentStatusIndicator is True
+    assert query_params.ProfessionIndicator is True
+    assert query_params.UUIDIndicator is True
+
+    assert engagement_timeline.eng_active == Timeline[Active](
+        intervals=(
+            Active(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value=True,
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_key == Timeline[EngagementKey](
+        intervals=(
+            EngagementKey(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value=2,
+            ),
+            EngagementKey(
+                start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value=4,
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_name == Timeline[EngagementName](
+        intervals=(
+            EngagementName(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="Ninja",
+            ),
+            EngagementName(
+                start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value="Kung Fu Master",
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_unit == Timeline[EngagementUnit](
+        intervals=(
+            EngagementUnit(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                value=dep_uuid,
+            ),
+        )
+    )
+
+
+def test_get_engagement_timeline_no_person_found():
+    # Arrange
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_employment_changed.return_value = (
+        GetEmploymentChangedResponse.parse_obj({"Person": []})
+    )
+
+    # Act
+    engagement_timeline = get_engagement_timeline(
+        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+    )
+
+    # Assert
+    assert engagement_timeline == EngagementTimeline(
+        eng_active=Timeline[Active](),
+        eng_key=Timeline[EngagementKey](),
+        eng_name=Timeline[EngagementName](),
+        eng_unit=Timeline[EngagementUnit](),
+    )
+
+
+def test_get_engagement_timeline_no_employment_found():
+    # Arrange
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_employment_changed.return_value = (
+        GetEmploymentChangedResponse.parse_obj(
+            {
+                "Person": [
+                    {
+                        "PersonCivilRegistrationIdentifier": "0101011234",
+                        "Employment": [],
+                    }
+                ]
+            }
+        )
+    )
+
+    # Act
+    engagement_timeline = get_engagement_timeline(
+        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+    )
+
+    # Assert
+    assert engagement_timeline == EngagementTimeline(
+        eng_active=Timeline[Active](),
+        eng_key=Timeline[EngagementKey](),
+        eng_name=Timeline[EngagementName](),
+        eng_unit=Timeline[EngagementUnit](),
     )

@@ -258,6 +258,33 @@ async def job_function(graphql_client: GraphQLClient) -> UUID:
 
 
 @pytest.fixture
+async def job_function_1234(graphql_client: GraphQLClient) -> UUID:
+    return one(
+        (
+            await graphql_client.get_facet_class("engagement_job_function", "1234")
+        ).objects  # type: ignore
+    ).current.uuid
+
+
+@pytest.fixture
+async def job_function_5678(graphql_client: GraphQLClient) -> UUID:
+    return one(
+        (
+            await graphql_client.get_facet_class("engagement_job_function", "5678")
+        ).objects  # type: ignore
+    ).current.uuid
+
+
+@pytest.fixture
+async def job_function_9000(graphql_client: GraphQLClient) -> UUID:
+    return one(
+        (
+            await graphql_client.get_facet_class("engagement_job_function", "9000")
+        ).objects  # type: ignore
+    ).current.uuid
+
+
+@pytest.fixture
 async def engagement_type(graphql_client: GraphQLClient) -> UUID:
     return one(
         (await graphql_client.get_facet_class("engagement_type", "TestAnsat")).objects  # type: ignore
