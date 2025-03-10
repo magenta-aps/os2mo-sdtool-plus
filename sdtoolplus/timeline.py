@@ -51,19 +51,17 @@ async def sync_ou(
     endpoints.sort()
     logger.debug("List of endpoints", endpoints=endpoints)
 
-    for endpoint1, endpoint2 in pairwise(endpoints):
-        logger.debug(
-            "Processing endpoint pair", endpoint1=endpoint1, endpoint2=endpoint2
-        )
-        if sd_unit_timeline.equal_at(endpoint1, mo_unit_timeline):
+    for start, end in pairwise(endpoints):
+        logger.debug("Processing endpoint pair", start=start, end=end)
+        if sd_unit_timeline.equal_at(start, mo_unit_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif sd_unit_timeline.has_value(endpoint1):
+        elif sd_unit_timeline.has_value(start):
             await create_or_update_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
-                start=endpoint1,
-                end=endpoint2,
+                start=start,
+                end=end,
                 sd_unit_timeline=sd_unit_timeline,
                 org_unit_type_user_key=org_unit_type_user_key,
             )
@@ -71,6 +69,6 @@ async def sync_ou(
             await terminate_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
-                start=endpoint1,
-                end=endpoint2,
+                start=start,
+                end=end,
             )
