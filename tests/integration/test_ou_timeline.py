@@ -125,7 +125,9 @@ async def test_ou_timeline_name_http_triggered_sync(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        unit_uuid=unit_uuid, from_date=None, to_date=None
+    )
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 3

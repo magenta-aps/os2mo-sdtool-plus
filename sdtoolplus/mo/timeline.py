@@ -73,7 +73,9 @@ async def get_ou_timeline(
 ) -> UnitTimeline:
     logger.info("Get MO org unit timeline", unit_uuid=str(unit_uuid))
 
-    gql_timelime = await gql_client.get_org_unit_timeline(unit_uuid, None, None)
+    gql_timelime = await gql_client.get_org_unit_timeline(
+        unit_uuid=unit_uuid, from_date=None, to_date=None
+    )
     objects = gql_timelime.objects
 
     if not objects:
