@@ -31,6 +31,16 @@ def _mo_end_datetime(d: datetime | None, tz: tzinfo) -> datetime:
     return d + timedelta(days=1) if d is not None else datetime.max.replace(tzinfo=tz)
 
 
+def _get_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
+    mo_end: datetime | None = end
+    assert mo_end is not None
+    if mo_end.replace(tzinfo=None) == datetime.max:
+        mo_end = None
+    else:
+        mo_end = mo_end - timedelta(days=1)  # Subtract one day due to MO
+    return RAValidityInput(from_=start, to=mo_end)
+
+
 async def _get_ou_type(
     gql_client: GraphQLClient,
     org_unit_type_user_key: str,
@@ -55,16 +65,6 @@ async def _get_ou_level(
     current = one(ou_level_classes.objects).current
     assert current is not None
     return current.uuid
-
-
-def _get_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
-    mo_end: datetime | None = end
-    assert mo_end is not None
-    if mo_end.replace(tzinfo=None) == datetime.max:
-        mo_end = None
-    else:
-        mo_end = mo_end - timedelta(days=1)  # Subtract one day due to MO
-    return RAValidityInput(from_=start, to=mo_end)
 
 
 async def get_ou_timeline(
