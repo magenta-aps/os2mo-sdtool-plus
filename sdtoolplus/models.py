@@ -19,7 +19,11 @@ from pydantic.generics import GenericModel
 
 from sdtoolplus.exceptions import NoValueError
 
+NEGATIVE_INFINITY = datetime.min.replace(tzinfo=ZoneInfo("UTC"))
+POSITIVE_INFINITY = datetime.max.replace(tzinfo=ZoneInfo("UTC"))
+
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f (%Z)"
+
 V = TypeVar("V")
 
 
