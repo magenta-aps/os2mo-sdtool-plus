@@ -53,8 +53,6 @@ class Interval(GenericModel, Generic[V]):
             isinstance(start.tzinfo, ZoneInfo) and isinstance(end.tzinfo, ZoneInfo)
         ):
             raise ValueError("Timezone must be provided")
-        if not start.tzinfo == end.tzinfo:
-            raise ValueError("Timezones are not identical")
         return values
 
     def __repr__(self):

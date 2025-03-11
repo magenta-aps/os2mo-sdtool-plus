@@ -9,7 +9,6 @@ import pytest
 
 from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.models import Active
-from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import combine_intervals
@@ -57,23 +56,6 @@ def test_timeline_eq():
     assert timeline1 != "Wrong object"
     assert timeline1 != timeline2
     assert timeline2 == timeline3
-
-
-def test_interval_must_have_identical_timezones():
-    # Arrange
-    datetime_with_timezone = datetime.now(tz=TZ)
-    datetime_with_another_timezone = datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
-    datetime_without_timezone = datetime.now()
-
-    # Act + Assert
-    with pytest.raises(ValueError):
-        Interval(start=datetime_without_timezone, end=datetime_with_timezone)
-
-    with pytest.raises(ValueError):
-        Interval(start=datetime_with_timezone, end=datetime_without_timezone)
-
-    with pytest.raises(ValueError):
-        Interval(start=datetime_with_timezone, end=datetime_with_another_timezone)
 
 
 def test_combine_intervals():
