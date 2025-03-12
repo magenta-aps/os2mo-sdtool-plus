@@ -5,11 +5,13 @@ from uuid import UUID
 
 import structlog
 from sdclient.client import SDClient
+from sdclient.exceptions import SDCallError
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetOrganizationRequest
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from tenacity import retry
+from tenacity import retry_if_exception_type
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
@@ -26,6 +28,7 @@ logger = structlog.stdlib.get_logger()
 
 
 @retry(
+    retry=retry_if_exception_type(SDCallError),
     wait=wait_fixed(SD_RETRY_WAIT_TIME),
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
@@ -48,6 +51,7 @@ def get_sd_organization(
 
 
 @retry(
+    retry=retry_if_exception_type(SDCallError),
     wait=wait_fixed(SD_RETRY_WAIT_TIME),
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
