@@ -111,7 +111,7 @@ async def get_ou_timeline(
         UnitLevel(
             start=obj.validity.from_,
             end=_mo_end_datetime(obj.validity.to),
-            value=obj.org_unit_level.name if obj.org_unit_level is not None else "",
+            value=obj.org_unit_level.name if obj.org_unit_level is not None else None,
         )
         for obj in validities
     )

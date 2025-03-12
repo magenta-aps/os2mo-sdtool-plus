@@ -5,6 +5,7 @@ from enum import Enum
 from itertools import pairwise
 from typing import Any
 from typing import Generic
+from typing import Optional
 from typing import TypeVar
 from zoneinfo import ZoneInfo
 
@@ -78,7 +79,7 @@ class UnitId(Interval[str]):
     pass
 
 
-class UnitLevel(Interval[str]):
+class UnitLevel(Interval[Optional[str]]):
     pass
 
 
