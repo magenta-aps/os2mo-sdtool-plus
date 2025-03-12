@@ -237,35 +237,6 @@ async def update_ou(
     )
 
 
-async def create_or_update_ou(
-    gql_client: GraphQLClient,
-    org_unit: OrgUnitUUID,
-    start: datetime,
-    end: datetime,
-    sd_unit_timeline: UnitTimeline,
-    org_unit_type_user_key: str,
-) -> None:
-    ou = await gql_client.get_org_unit_timeline(org_unit, None, None)
-    if ou.objects:
-        await update_ou(
-            gql_client=gql_client,
-            org_unit=org_unit,
-            start=start,
-            end=end,
-            sd_unit_timeline=sd_unit_timeline,
-            org_unit_type_user_key=org_unit_type_user_key,
-        )
-        return
-    await create_ou(
-        gql_client=gql_client,
-        org_unit=org_unit,
-        start=start,
-        end=end,
-        sd_unit_timeline=sd_unit_timeline,
-        org_unit_type_user_key=org_unit_type_user_key,
-    )
-
-
 async def terminate_ou(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,

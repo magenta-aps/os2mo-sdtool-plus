@@ -9,8 +9,9 @@ import structlog
 from more_itertools import collapse
 
 from sdtoolplus.depends import GraphQLClient
-from sdtoolplus.mo.timeline import create_or_update_ou
+from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import terminate_ou
+from sdtoolplus.mo.timeline import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Interval
 from sdtoolplus.models import UnitTimeline
@@ -57,7 +58,20 @@ async def sync_ou(
             logger.debug("SD and MO equal")
             continue
         elif sd_unit_timeline.has_value(start):
-            await create_or_update_ou(
+            ou = await gql_client.get_org_unit_timeline(
+                unit_uuid=org_unit, from_date=None, to_date=None
+            )
+            if ou.objects:
+                await update_ou(
+                    gql_client=gql_client,
+                    org_unit=org_unit,
+                    start=start,
+                    end=end,
+                    sd_unit_timeline=sd_unit_timeline,
+                    org_unit_type_user_key=org_unit_type_user_key,
+                )
+                continue
+            await create_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
                 start=start,
