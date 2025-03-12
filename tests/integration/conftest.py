@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import json
 from datetime import date
 from uuid import UUID
 from uuid import uuid4
@@ -323,3 +324,21 @@ def get_department_response_for_date_range_error(
     "</GetDepartment20111201>"
 
     return response
+
+
+@pytest.fixture
+def sd_parent_history_resp() -> str:
+    return json.dumps(
+        [
+            {
+                "startDate": "2001-01-01",
+                "endDate": "2002-12-31",
+                "parentUuid": "30000000-0000-0000-0000-000000000000",
+            },
+            {
+                "startDate": "2003-01-01",
+                "endDate": "2006-12-31",
+                "parentUuid": "40000000-0000-0000-0000-000000000000",
+            },
+        ]
+    )

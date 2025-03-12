@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import json
 from datetime import datetime
 from uuid import UUID
 from zoneinfo import ZoneInfo
@@ -25,6 +24,7 @@ async def test_ou_timeline_name_http_triggered_sync(
     graphql_client: GraphQLClient,  # Maybe switch
     org_unit_type: OrgUnitUUID,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: str,
     respx_mock: MockRouter,
 ):
     """
@@ -118,6 +118,13 @@ async def test_ou_timeline_name_http_triggered_sync(
         content=sd_resp,
     )
 
+    respx_mock.get(
+        f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        content_type="application/json",
+        content=sd_parent_history_resp,
+    )
+
     # Act
     r = await test_client.post(
         "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
@@ -153,6 +160,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: str,
     respx_mock: MockRouter,
 ):
     """
@@ -310,6 +318,13 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
         content=sd_resp,
     )
 
+    respx_mock.get(
+        f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        content_type="application/json",
+        content=sd_parent_history_resp,
+    )
+
     # Act
     r = await test_client.post(
         "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
@@ -363,6 +378,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: str,
     respx_mock: MockRouter,
 ):
     """
@@ -533,19 +549,6 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         </GetDepartment20111201>
     """
 
-    sd_parent_history_resp = [
-        {
-            "startDate": "2001-01-01",
-            "endDate": "2002-12-31",
-            "parentUuid": "30000000-0000-0000-0000-000000000000",
-        },
-        {
-            "startDate": "2003-01-01",
-            "endDate": "2006-12-31",
-            "parentUuid": "40000000-0000-0000-0000-000000000000",
-        },
-    ]
-
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.1&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
     ).respond(
@@ -557,7 +560,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
         content_type="application/json",
-        content=json.dumps(sd_parent_history_resp),
+        content=sd_parent_history_resp,
     )
 
     # Act

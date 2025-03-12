@@ -10,8 +10,8 @@ from pydantic import parse_obj_as
 from sdclient.responses import DepartmentParentHistoryObj
 from sdclient.responses import GetDepartmentResponse
 
-from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -184,7 +184,7 @@ def test_get_department_timeline():
             ),
             UnitParent(
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value=OrgUnitUUID("d567f959-ab77-4849-9cd0-c14e9120433c"),
             ),
         )
