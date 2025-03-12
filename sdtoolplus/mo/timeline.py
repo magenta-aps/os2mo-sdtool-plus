@@ -169,12 +169,10 @@ async def create_ou(
     await gql_client.create_org_unit(
         OrganisationUnitCreateInput(
             uuid=org_unit,
-            # TODO: move _get_mo_validity to this module
             validity=_get_mo_validity(start, end),
             name=sd_unit_timeline.name.entity_at(start).value,
             user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            # TODO: remove hard-coded value
-            parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+            parent=sd_unit_timeline.parent.entity_at(start).value,
             org_unit_type=ou_type_uuid,
             org_unit_level=ou_level_uuid,
         )
@@ -225,8 +223,7 @@ async def update_ou(
                     validity=_get_mo_validity(start, end),
                     name=sd_unit_timeline.name.entity_at(start).value,
                     user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-                    # TODO: remove hard-coded value
-                    parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+                    parent=sd_unit_timeline.parent.entity_at(start).value,
                     org_unit_type=ou_type_uuid,
                     org_unit_level=ou_level_uuid,
                     org_unit_hierarchy=org_unit_hierarchy,
@@ -241,8 +238,7 @@ async def update_ou(
             validity=_get_mo_validity(start, end),
             name=sd_unit_timeline.name.entity_at(start).value,
             user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            # TODO: remove hard-coded value
-            parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+            parent=sd_unit_timeline.parent.entity_at(start).value,
             org_unit_type=ou_type_uuid,
             org_unit_level=ou_level_uuid,
         )
