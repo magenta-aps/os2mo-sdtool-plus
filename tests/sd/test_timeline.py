@@ -8,6 +8,7 @@ from uuid import uuid4
 from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 
+from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -91,7 +92,7 @@ def test_get_department_timeline():
             ),
             Active(
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value=True,
             ),
         )
@@ -111,7 +112,7 @@ def test_get_department_timeline():
             ),
             UnitId(
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value="DEP1",
             ),
         )
@@ -126,7 +127,7 @@ def test_get_department_timeline():
             ),
             UnitLevel(
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value="NY0-niveau",
             ),
         )
@@ -146,7 +147,7 @@ def test_get_department_timeline():
             ),
             UnitName(
                 start=datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value="name4",
             ),
         )
