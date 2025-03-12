@@ -135,7 +135,7 @@ async def get_department_timeline(
     return timeline
 
 
-def get_engagement_timeline(
+def get_employment_timeline(
     sd_client: SDClient,
     inst_id: str,
     cpr: str,

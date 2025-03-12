@@ -27,7 +27,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import get_department_timeline
-from sdtoolplus.sd.timeline import get_engagement_timeline
+from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
@@ -338,7 +338,7 @@ def test_get_engagement_timeline():
     )
 
     # Act
-    engagement_timeline = get_engagement_timeline(
+    engagement_timeline = get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
@@ -413,7 +413,7 @@ def test_get_engagement_timeline_no_person_found():
     )
 
     # Act
-    engagement_timeline = get_engagement_timeline(
+    engagement_timeline = get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
@@ -443,7 +443,7 @@ def test_get_engagement_timeline_no_employment_found():
     )
 
     # Act
-    engagement_timeline = get_engagement_timeline(
+    engagement_timeline = get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
