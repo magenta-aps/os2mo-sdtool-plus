@@ -47,32 +47,32 @@ from .tree_tools import tree_as_string
 logger = structlog.stdlib.get_logger()
 
 
-def run_db_start_operations(
+async def run_db_start_operations(
     engine: Engine, dry_run: bool, response: Response
 ) -> dict | None:
     if dry_run:
         return None
 
     logger.info("Checking RunDB status...")
-    status_last_run = get_status(engine)
+    status_last_run = await get_status(engine)
     if not status_last_run == Status.COMPLETED:
         logger.warn("Previous run did not complete successfully!")
         response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
         return {"msg": "Previous run did not complete successfully!"}
     logger.info("Previous run completed successfully")
 
-    persist_status(engine, Status.RUNNING)
+    await persist_status(engine, Status.RUNNING)
 
     return None
 
 
-def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
+async def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
     if not dry_run:
-        persist_status(engine, Status.COMPLETED)
+        await persist_status(engine, Status.COMPLETED)
     dipex_last_success_timestamp.set_to_current_time()
 
 
-def background_run(
+async def background_run(
     settings: SDToolPlusSettings,
     engine: Engine,
     inst_ids: list[str],
@@ -109,7 +109,7 @@ def background_run(
         if settings.email_notifications_enabled and not dry_run:
             sdtoolplus.send_email_notification()
 
-    run_db_end_operations(engine, dry_run)
+    await run_db_end_operations(engine, dry_run)
     logger.info("Run completed!")
 
 
@@ -149,7 +149,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         return tree_as_string(sd_tree)
 
     @fastapi_router.get("/rundb/status")
-    def rundb_get_status() -> int:
+    async def rundb_get_status() -> int:
         """
         Get the RunDB status and return a job-runner.sh (curl) friendly integer
         status.
@@ -159,14 +159,14 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             an error.
         """
         try:
-            status = get_status(engine)
+            status = await get_status(engine)
             return 0 if status == Status.COMPLETED else 1
         except Exception:
             return 3
 
     @fastapi_router.post("/rundb/delete-last-run")
-    def rundb_delete_last_run():
-        delete_last_run(engine)
+    async def rundb_delete_last_run():
+        await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
@@ -178,7 +178,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> list[dict] | dict:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
-        run_db_start_operations_resp = run_db_start_operations(
+        run_db_start_operations_resp = await run_db_start_operations(
             engine, dry_run, response
         )
         if run_db_start_operations_resp is not None:
@@ -202,7 +202,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         if settings.email_notifications_enabled and not dry_run:
             sdtoolplus.send_email_notification()
 
-        run_db_end_operations(engine, dry_run)
+        await run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results
@@ -217,7 +217,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> dict[str, str]:
         logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
 
-        run_db_start_operations_resp = run_db_start_operations(
+        run_db_start_operations_resp = await run_db_start_operations(
             engine, dry_run, response
         )
         if run_db_start_operations_resp is not None:
@@ -245,7 +245,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     ) -> list[dict] | dict:
         logger.info("Starting address run", org_unit=str(org_unit), dry_run=dry_run)
 
-        run_db_start_operations_resp = run_db_start_operations(
+        run_db_start_operations_resp = await run_db_start_operations(
             engine, dry_run, response
         )
         if run_db_start_operations_resp is not None:
@@ -275,7 +275,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         ]
         logger.info("Finished adding or updating org unit objects")
 
-        run_db_end_operations(engine, dry_run)
+        await run_db_end_operations(engine, dry_run)
         logger.info("Run completed!")
 
         return results

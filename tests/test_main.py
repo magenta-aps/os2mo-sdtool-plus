@@ -304,7 +304,7 @@ class TestFastAPIApp:
     ],
 )
 @patch("sdtoolplus.main.persist_status")
-def test_background_run(
+async def test_background_run(
     mock_persist_status: MagicMock,
     sdtoolplus_settings: SDToolPlusSettings,
     org_unit: UUID | None,
@@ -316,7 +316,7 @@ def test_background_run(
 
     with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app) as m_app:
         # Act
-        background_run(
+        await background_run(
             sdtoolplus_settings, mock_engine, ["AB", "CD"], org_unit, dry_run
         )
 
