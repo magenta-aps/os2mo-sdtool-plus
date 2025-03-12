@@ -159,7 +159,7 @@ def _is_line_management(
     envvar="MORA_BASE",
     help="Base URL for calling MO",
 )
-def main(
+async def main(
     username: str,
     password: str,
     institution_identifier: str,
@@ -183,7 +183,7 @@ def main(
     )
 
     print("Get SD departments and their addresses")
-    sd_departments = get_sd_departments(
+    sd_departments = await get_sd_departments(
         sd_client=sd_client,
         institution_identifier=institution_identifier,
         activation_date=datetime.now().date(),

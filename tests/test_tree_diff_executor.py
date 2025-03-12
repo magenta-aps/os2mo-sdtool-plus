@@ -101,7 +101,7 @@ class TestAddOrgUnitMutation:
 
 
 class TestTreeDiffExecutor:
-    def test_execute(
+    async def test_execute(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -115,7 +115,7 @@ class TestTreeDiffExecutor:
             mock_org_tree_diff,
             mock_mo_org_unit_type,
         )
-        for org_unit_node, mutation, result in tree_diff_executor.execute():
+        async for org_unit_node, mutation, result in tree_diff_executor.execute():
             assert org_unit_node is not None
             assert mutation is not None
             assert result is not None
@@ -130,7 +130,7 @@ class TestTreeDiffExecutor:
                 assert result == org_unit_node.uuid
 
     @freeze_time("2023-11-15")
-    def test_execute_for_move_afd_from_ny_to_ny(
+    async def test_execute_for_move_afd_from_ny_to_ny(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff_move_afd_from_ny_to_ny: OrgTreeDiff,
@@ -156,7 +156,9 @@ class TestTreeDiffExecutor:
         )
 
         # Act
-        org_unit_node, mutation, result = one(tree_diff_executor.execute())
+        org_unit_node, mutation, result = one(
+            [x async for x in tree_diff_executor.execute()]
+        )
 
         # Assert
         assert isinstance(org_unit_node, OrgUnitNode)
@@ -176,7 +178,7 @@ class TestTreeDiffExecutor:
 
         assert result == uuid.UUID("40000000-0000-0000-0000-000000000000")
 
-    def test_execute_dry(
+    async def test_execute_dry(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -191,7 +193,7 @@ class TestTreeDiffExecutor:
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
             )
-            for org_unit_node, mutation, result in tree_diff_executor.execute(
+            async for org_unit_node, mutation, result in tree_diff_executor.execute(
                 dry_run=True
             ):
                 assert org_unit_node is not None
@@ -199,7 +201,7 @@ class TestTreeDiffExecutor:
                 assert result is not None
                 mock_session_execute.assert_not_called()  # type: ignore
 
-    def test_execute_filter_by_uuid(
+    async def test_execute_filter_by_uuid(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -217,15 +219,18 @@ class TestTreeDiffExecutor:
 
         # Act
         org_unit_node, mutation, result = one(
-            tree_diff_executor.execute(
-                org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
-            )
+            [
+                x
+                async for x in tree_diff_executor.execute(
+                    org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
+                )
+            ]
         )
 
         # Assert
         assert org_unit_node.uuid == uuid.UUID("60000000-0000-0000-0000-000000000000")
 
-    def test_execute_remove_by_name(
+    async def test_execute_remove_by_name(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -244,14 +249,14 @@ class TestTreeDiffExecutor:
         )
 
         # Act
-        units_to_mutate: list[tuple] = list(tree_diff_executor.execute())
+        units_to_mutate: list[tuple] = [x async for x in tree_diff_executor.execute()]
 
         # Assert
         unit_names = [tup[0].name for tup in units_to_mutate]
         assert "Department 5" not in unit_names
         assert "Department 6" not in unit_names
 
-    def test_execute_remove_by_name_no_update_name_filter(
+    async def test_execute_remove_by_name_no_update_name_filter(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -271,13 +276,13 @@ class TestTreeDiffExecutor:
         )
 
         # Act
-        units_to_mutate: list[tuple] = list(tree_diff_executor.execute())
+        units_to_mutate: list[tuple] = [x async for x in tree_diff_executor.execute()]
 
         # Assert
         unit_names = [tup[0].name for tup in units_to_mutate]
         assert "Department 1" in unit_names
 
-    def test_start_date_truncation(
+    async def test_start_date_truncation(
         self,
         mock_graphql_session: _MockGraphQLSession,
         mock_org_tree_diff: OrgTreeDiff,
@@ -297,11 +302,14 @@ class TestTreeDiffExecutor:
 
         # Act
         org_unit_node, mutation, result = one(
-            tree_diff_executor.execute(
-                # Run the TreeDiffExecutor on a random (new) unit having
-                # a validity before the MIN_MO_DATETIME
-                org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
-            )
+            [
+                x
+                async for x in tree_diff_executor.execute(
+                    # Run the TreeDiffExecutor on a random (new) unit having
+                    # a validity before the MIN_MO_DATETIME
+                    org_unit=uuid.UUID("60000000-0000-0000-0000-000000000000")
+                )
+            ]
         )
 
         # Assert

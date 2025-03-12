@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
 from datetime import date
 from uuid import UUID
 
@@ -33,7 +34,7 @@ logger = structlog.stdlib.get_logger()
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
-def get_sd_organization(
+async def get_sd_organization(
     sd_client: SDClient,
     institution_identifier: str,
     activation_date: date,
@@ -46,8 +47,7 @@ def get_sd_organization(
         DeactivationDate=deactivation_date,
         UUIDIndicator=True,
     )
-
-    return sd_client.get_organization(req)
+    return await asyncio.to_thread(sd_client.get_organization, req)
 
 
 @retry(
@@ -56,7 +56,7 @@ def get_sd_organization(
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
-def get_sd_departments(
+async def get_sd_departments(
     sd_client: SDClient,
     institution_identifier: str,
     activation_date: date,
@@ -74,11 +74,10 @@ def get_sd_departments(
         ProductionUnitIndicator=fetch_pnumber,
         UUIDIndicator=True,
     )
+    return await asyncio.to_thread(sd_client.get_department, req)
 
-    return sd_client.get_department(req)
 
-
-def get_sd_tree(
+async def get_sd_tree(
     sd_client: SDClient,
     institution_identifier: str,
     mo_org_unit_level_map: MOOrgUnitLevelMap,
@@ -89,11 +88,13 @@ def get_sd_tree(
     today = date.today()
 
     logger.debug("Get SD organization...")
-    sd_org = get_sd_organization(sd_client, institution_identifier, today, today)
+    sd_org = await get_sd_organization(sd_client, institution_identifier, today, today)
     # print(sd_org)
 
     logger.debug("Get SD departments...")
-    sd_departments = get_sd_departments(sd_client, institution_identifier, today, today)
+    sd_departments = await get_sd_departments(
+        sd_client, institution_identifier, today, today
+    )
     # print(sd_departments)
 
     logger.debug("Build SD tree...")
@@ -102,7 +103,7 @@ def get_sd_tree(
     if build_full_tree:
         # Add "extra" units i.e. the units from GetDepartment which
         # are not found in GetOrganization
-        build_extra_tree(
+        await build_extra_tree(
             sd_client,
             root_node,
             sd_org,
@@ -113,14 +114,14 @@ def get_sd_tree(
     return root_node
 
 
-def get_sd_units(
+async def get_sd_units(
     sd_client: SDClient,
     institution_identifier: str,
 ) -> list[OrgUnitNode]:
     # TODO: add docstring
     today = date.today()
 
-    sd_departments = get_sd_departments(
+    sd_departments = await get_sd_departments(
         sd_client, institution_identifier, today, today, True, True
     )
 

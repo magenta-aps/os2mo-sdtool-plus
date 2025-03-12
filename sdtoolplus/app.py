@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from typing import Iterator
+from typing import AsyncIterator
 from uuid import UUID
 
 import httpx
@@ -125,7 +125,9 @@ class App:
             self.settings, self.current_inst_id
         )
 
-    def get_sd_tree(self, mo_org_unit_level_map: MOOrgUnitLevelMap) -> OrgUnitNode:
+    async def get_sd_tree(
+        self, mo_org_unit_level_map: MOOrgUnitLevelMap
+    ) -> OrgUnitNode:
         sd_client = SDClient(
             self.settings.sd_username,
             self.settings.sd_password.get_secret_value(),
@@ -139,7 +141,7 @@ class App:
             self.current_inst_id,
         )
 
-        return get_sd_tree(
+        return await get_sd_tree(
             sd_client,
             self.current_inst_id,
             mo_org_unit_level_map,
@@ -173,7 +175,7 @@ class App:
         logger.info("Clearing MO tree cache")
         self.mo_org_tree_import.get_org_units.cache_clear()
 
-    def get_tree_diff_executor(self) -> TreeDiffExecutor:
+    async def get_tree_diff_executor(self) -> TreeDiffExecutor:
         logger.debug("Getting TreeDiffExecutor")
 
         # Get relevant MO facet/class data
@@ -184,7 +186,7 @@ class App:
 
         # Get the SD tree
         logger.info(event="Fetching SD org tree ...")
-        sd_org_tree = self.get_sd_tree(mo_org_unit_level_map)
+        sd_org_tree = await self.get_sd_tree(mo_org_unit_level_map)
         logger.debug(
             "SD tree",
             sd_org_tree=repr(sd_org_tree),
@@ -217,9 +219,9 @@ class App:
             mo_org_unit_type,
         )
 
-    def execute(
+    async def execute(
         self, org_unit: UUID | None = None, dry_run: bool = False
-    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, UUID]]:
+    ) -> AsyncIterator[tuple[OrgUnitNode, AnyMutation, UUID]]:
         """Call `TreeDiffExecutor.execute`, and call the SDLøn 'fix_departments' API
         for each 'add' and 'update' operation.
 
@@ -230,11 +232,11 @@ class App:
         Returns:
             Iterator which iterates over the processed units
         """
-        executor: TreeDiffExecutor = self.get_tree_diff_executor()
+        executor: TreeDiffExecutor = await self.get_tree_diff_executor()
         org_unit_node: OrgUnitNode
         mutation: AnyMutation
         result: UUID
-        for org_unit_node, mutation, result in executor.execute(
+        async for org_unit_node, mutation, result in executor.execute(
             org_unit=org_unit, dry_run=dry_run
         ):
             logger.info("Successfully executed mutation", org_unit=str(org_unit))

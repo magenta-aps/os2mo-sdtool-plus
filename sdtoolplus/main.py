@@ -94,7 +94,7 @@ async def background_run(
     for ii in inst_ids:
         logger.info("Starting background run", inst_id=ii)
         sdtoolplus.set_inst_id(ii)
-        for org_unit_node, mutation, result in sdtoolplus.execute(
+        async for org_unit_node, mutation, result in sdtoolplus.execute(
             org_unit=org_unit, dry_run=dry_run
         ):
             logger.info(
@@ -145,7 +145,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         """
         sdtoolplus: App = App(settings)
         mo_org_unit_level_map = MOOrgUnitLevelMap(sdtoolplus.session)
-        sd_tree = sdtoolplus.get_sd_tree(mo_org_unit_level_map)
+        sd_tree = await sdtoolplus.get_sd_tree(mo_org_unit_level_map)
         return tree_as_string(sd_tree)
 
     @fastapi_router.get("/rundb/status")
@@ -192,7 +192,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 "unit": repr(org_unit_node),
                 "mutation_result": str(result),
             }
-            for org_unit_node, mutation, result in sdtoolplus.execute(
+            async for org_unit_node, mutation, result in sdtoolplus.execute(
                 org_unit=org_unit, dry_run=dry_run
             )
         ]
@@ -308,7 +308,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             settings.sd_username,
             settings.sd_password.get_secret_value(),
         )
-        sd_unit_timeline = get_department_timeline(
+        sd_unit_timeline = await get_department_timeline(
             sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
         )
 

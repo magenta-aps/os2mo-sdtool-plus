@@ -29,7 +29,7 @@ from tests.conftest import mock_get_department_parent
 
 
 @patch("sdtoolplus.sd.tree._get_department_parent")
-def test_build_extra_tree(
+async def test_build_extra_tree(
     mock__get_department_parent: MagicMock,
     mock_sd_get_organization_response: GetOrganizationResponse,
     mock_sd_get_department_response_extra_units: GetDepartmentResponse,
@@ -197,7 +197,7 @@ def test_build_extra_tree(
         mock_mo_org_unit_level_map,
     )
 
-    actual_tree = build_extra_tree(
+    actual_tree = await build_extra_tree(
         MagicMock(),
         root_node,
         mock_sd_get_organization_response,
@@ -300,7 +300,7 @@ def test_get_extra_nodes_with_no_extra(
 
 
 @patch("sdtoolplus.sd.tree._get_department_parent", return_value=None)
-def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
+async def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
     mock__get_department_parent: MagicMock,
 ):
     # Arrange
@@ -308,7 +308,7 @@ def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
     ou_uuid = uuid4()
 
     # Act
-    parent_node = _get_parent_node(
+    parent_node = await _get_parent_node(
         sd_client, ou_uuid, MagicMock(), dict(), uuid4(), MagicMock(), set()
     )
 
@@ -318,7 +318,7 @@ def test__get_parent_node_returns_none_when_get_dep_parent_returns_none(
 
 
 @patch("sdtoolplus.sd.tree._get_department_parent")
-def test__get_parent_node_returns_none_when_unit_is_its_own_parent(
+async def test__get_parent_node_returns_none_when_unit_is_its_own_parent(
     mock__get_department_parent: MagicMock,
 ):
     # Arrange
@@ -330,7 +330,7 @@ def test__get_parent_node_returns_none_when_unit_is_its_own_parent(
     )
 
     # Act
-    parent_node = _get_parent_node(
+    parent_node = await _get_parent_node(
         sd_client, ou_uuid, MagicMock(), dict(), uuid4(), MagicMock(), set()
     )
 

@@ -240,7 +240,7 @@ class AddressFixer:
 
         # Get the SD units
         logger.info("Getting SD units...")
-        sd_units = get_sd_units(self.sd_client, self.current_inst_id)
+        sd_units = await get_sd_units(self.sd_client, self.current_inst_id)
 
         # Get the MO units
         logger.info("Getting MO units...")
