@@ -7,8 +7,8 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.models import Active
-from sdtoolplus.models import Interval
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import combine_intervals
@@ -56,23 +56,6 @@ def test_timeline_eq():
     assert timeline1 != "Wrong object"
     assert timeline1 != timeline2
     assert timeline2 == timeline3
-
-
-def test_interval_must_have_identical_timezones():
-    # Arrange
-    datetime_with_timezone = datetime.now(tz=TZ)
-    datetime_with_another_timezone = datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
-    datetime_without_timezone = datetime.now()
-
-    # Act + Assert
-    with pytest.raises(ValueError):
-        Interval(start=datetime_without_timezone, end=datetime_with_timezone)
-
-    with pytest.raises(ValueError):
-        Interval(start=datetime_with_timezone, end=datetime_without_timezone)
-
-    with pytest.raises(ValueError):
-        Interval(start=datetime_with_timezone, end=datetime_with_another_timezone)
 
 
 def test_combine_intervals():
@@ -203,10 +186,9 @@ def test_timeline_successively_repeated_interval_allowed_when_holes_in_timeline(
             TODAY_START + timedelta(hours=12),
             Active(start=TODAY_START, end=TOMORROW_START, value=False),
         ),
-        (YESTERDAY_START - timedelta(hours=12), None),
     ],
 )
-def test_timeline_entity_at(timestamp: datetime, expected: Active | None):
+def test_timeline_entity_at(timestamp: datetime, expected: Active):
     # Arrange
     active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
     active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
@@ -220,177 +202,13 @@ def test_timeline_entity_at(timestamp: datetime, expected: Active | None):
     assert actual == expected
 
 
-def test_timeline_diff0():
-    """
-    Us:          (empty)
-    Them:        (empty)
-    Diff:        (empty)
-    """
-
-    # Arrange
-    timeline = Timeline[Active]()
-
-    # Act
-    diff = timeline.diff(timeline)
-
-    # Assert
-    assert diff == Timeline[Active]()
-
-
-def test_timeline_diff1():
-    """
-    Us:          |---------- v ------------|
-    Them:        |---------- v ------------|
-    Diff:                 (empty)
-    """
+def test_timeline_entity_at_no_value():
     # Arrange
     active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
     active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
-    active3 = Active(start=TOMORROW_START, end=DAY_AFTER_TOMORROW_START, value=True)
 
-    timeline = Timeline[Active](intervals=(active1, active2, active3))
+    timeline = Timeline[Active](intervals=(active1, active2))
 
-    # Act
-    diff = timeline.diff(timeline)
-
-    # Assert
-    assert diff == Timeline[Active]()
-
-
-def test_timeline_diff2():
-    """
-    Us:          ------------------ v ------------|
-    Them:               |---------- v ------------|
-    Diff:        -- v --|
-    """
-
-    # Arrange
-    active_us = Active(start=MINUS_INFINITY, end=DAY_AFTER_TOMORROW_START, value=True)
-    active_them = Active(start=TODAY_START, end=DAY_AFTER_TOMORROW_START, value=True)
-
-    us = Timeline[Active](intervals=(active_us,))
-    them = Timeline[Active](intervals=(active_them,))
-
-    # Act
-    diff = us.diff(them)
-
-    # Assert
-    assert diff == Timeline[Active](
-        intervals=(Active(start=MINUS_INFINITY, end=TODAY_START, value=True),)
-    )
-
-
-def test_timeline_diff3():
-    """
-    Us:                    |---------- v ------------|
-    Them:        --------------------- v ------------|
-    Diff:        -- None --|
-    """
-
-    # Arrange
-    active_us = Active(start=TODAY_START, end=DAY_AFTER_TOMORROW_START, value=True)
-    active_them = Active(start=MINUS_INFINITY, end=DAY_AFTER_TOMORROW_START, value=True)
-
-    us = Timeline[Active](intervals=(active_us,))
-    them = Timeline[Active](intervals=(active_them,))
-
-    # Act
-    diff = us.diff(them)
-
-    # Assert
-    assert diff == Timeline[Active](
-        intervals=(Active(start=MINUS_INFINITY, end=TODAY_START, value=None),)
-    )
-
-
-def test_timeline_diff4():
-    """
-    Us:                          |------- v -------|
-    Them:             |------- v --------|
-    Diff:             |-- None --|       |--- v ---|
-    """
-
-    # Arrange
-    active_us = Active(start=TODAY_START, end=DAY_AFTER_TOMORROW_START, value=True)
-    active_them = Active(start=YESTERDAY_START, end=TOMORROW_START, value=True)
-
-    us = Timeline[Active](intervals=(active_us,))
-    them = Timeline[Active](intervals=(active_them,))
-
-    # Act
-    diff = us.diff(them)
-
-    # Assert
-    assert diff == Timeline[Active](
-        intervals=(
-            Active(start=YESTERDAY_START, end=TODAY_START, value=None),
-            Active(start=TOMORROW_START, end=DAY_AFTER_TOMORROW_START, value=True),
-        )
-    )
-
-
-def test_timeline_diff5():
-    """
-    Us:                                       |------- v -------|
-    Them:             |------- v --------|
-    Diff:             |------ None ------|    |------- v -------|
-    """
-
-    # Arrange
-    active_us = Active(start=TOMORROW_START, end=DAY_AFTER_TOMORROW_START, value=True)
-    active_them = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
-
-    us = Timeline[Active](intervals=(active_us,))
-    them = Timeline[Active](intervals=(active_them,))
-
-    # Act
-    diff = us.diff(them)
-
-    # Assert
-    assert diff == Timeline[Active](
-        intervals=(
-            Active(start=YESTERDAY_START, end=TODAY_START, value=None),
-            Active(start=TOMORROW_START, end=DAY_AFTER_TOMORROW_START, value=True),
-        )
-    )
-
-
-def test_timeline_diff6():
-    """
-    --------------t1--------t2---------t3------t4-----t5-------------------t6---------
-    Us:           |-------- v1 --------|              |-------- v2 --------|
-    Them:                    |------- v1 ------|--------------- v2 -------------------
-    Diff:         |--- v1 ---|         |---- None ----|                    |-- None --
-    """
-    # Arrange
-    t1 = datetime(2001, 1, 1, tzinfo=TZ)
-    t2 = datetime(2002, 1, 1, tzinfo=TZ)
-    t3 = datetime(2003, 1, 1, tzinfo=TZ)
-    t4 = datetime(2004, 1, 1, tzinfo=TZ)
-    t5 = datetime(2005, 1, 1, tzinfo=TZ)
-    t6 = datetime(2006, 1, 1, tzinfo=TZ)
-
-    us = Timeline[Active](
-        intervals=(
-            Active(start=t1, end=t3, value=True),
-            Active(start=t5, end=t6, value=False),
-        )
-    )
-    them = Timeline[Active](
-        intervals=(
-            Active(start=t2, end=t4, value=True),
-            Active(start=t4, end=INFINITY, value=False),
-        )
-    )
-
-    # Act
-    diff = us.diff(them)
-
-    # Assert
-    assert diff == Timeline[Active](
-        intervals=(
-            Active(start=t1, end=t2, value=True),
-            Active(start=t3, end=t5, value=None),
-            Active(start=t6, end=INFINITY, value=None),
-        )
-    )
+    # Act + Assert
+    with pytest.raises(NoValueError):
+        timeline.entity_at(YESTERDAY_START - timedelta(hours=12))

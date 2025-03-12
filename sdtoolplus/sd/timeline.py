@@ -10,8 +10,11 @@ from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
@@ -26,7 +29,7 @@ def _sd_start_datetime(d: date) -> datetime:
 
 def _sd_end_datetime(d: date) -> datetime:
     if d == date.max:
-        return datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE)
+        return POSITIVE_INFINITY
     # We have to add one day to the SD end date when converting to a timeline end
     # datetime, since we are working with a continuous timeline. E.g. the SD end date
     # 1999-12-31 states that the effective end datetime is 1999-12-31T23:59:59.999999,
@@ -61,7 +64,24 @@ def get_department_timeline(
         )
         for dep in department.Department
     )
-    active_intervals = combine_intervals(active_intervals)
+
+    id_intervals = tuple(
+        UnitId(
+            start=_sd_start_datetime(dep.ActivationDate),
+            end=_sd_end_datetime(dep.DeactivationDate),
+            value=dep.DepartmentIdentifier,
+        )
+        for dep in department.Department
+    )
+
+    level_intervals = tuple(
+        UnitLevel(
+            start=_sd_start_datetime(dep.ActivationDate),
+            end=_sd_end_datetime(dep.DeactivationDate),
+            value=dep.DepartmentLevelIdentifier,
+        )
+        for dep in department.Department
+    )
 
     name_intervals = tuple(
         UnitName(
@@ -71,11 +91,12 @@ def get_department_timeline(
         )
         for dep in department.Department
     )
-    name_intervals = combine_intervals(name_intervals)
 
     timeline = UnitTimeline(
-        active=Timeline[Active](intervals=active_intervals),
-        name=Timeline[UnitName](intervals=name_intervals),
+        active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+        unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
+        unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
+        name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline)
 

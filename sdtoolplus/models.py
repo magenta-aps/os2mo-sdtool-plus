@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from enum import Enum
-from itertools import chain
 from itertools import pairwise
 from typing import Any
 from typing import Generic
+from typing import Optional
 from typing import TypeVar
 from zoneinfo import ZoneInfo
 
@@ -18,7 +18,13 @@ from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
 
+from sdtoolplus.exceptions import NoValueError
+
+NEGATIVE_INFINITY = datetime.min.replace(tzinfo=ZoneInfo("UTC"))
+POSITIVE_INFINITY = datetime.max.replace(tzinfo=ZoneInfo("UTC"))
+
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f (%Z)"
+
 V = TypeVar("V")
 
 
@@ -38,7 +44,7 @@ class Interval(GenericModel, Generic[V]):
 
     start: datetime
     end: datetime
-    value: V | None
+    value: V
 
     @root_validator
     def ensure_timezones(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -48,8 +54,6 @@ class Interval(GenericModel, Generic[V]):
             isinstance(start.tzinfo, ZoneInfo) and isinstance(end.tzinfo, ZoneInfo)
         ):
             raise ValueError("Timezone must be provided")
-        if not start.tzinfo == end.tzinfo:
-            raise ValueError("Timezones are not identical")
         return values
 
     def __repr__(self):
@@ -68,6 +72,14 @@ T = TypeVar("T", bound=Interval)
 
 
 class Active(Interval[bool]):
+    pass
+
+
+class UnitId(Interval[str]):
+    pass
+
+
+class UnitLevel(Interval[Optional[str]]):
     pass
 
 
@@ -137,58 +149,13 @@ class Timeline(GenericModel, Generic[T]):
             raise ValueError("Successively repeated interval values are not allowed")
         return v
 
-    def entity_at(self, timestamp: datetime) -> T | None:
-        return only(e for e in self.intervals if e.start <= timestamp < e.end)
-
-    def diff(self, other: "Timeline[T]") -> "Timeline[T]":
-        """
-        The method will return a timeline containing intervals where the 'other'
-        timeline differs from this one. See ASCII examples drawings in the unittests
-        for this method.
-
-        Args:
-            other: The timeline to compare to ours.
-
-        Returns:
-             A (typically non-continuous) timeline representing the difference between
-             our timeline and their timeline.
-        """
-
-        endpoints: list[datetime] = list(
-            set(
-                chain(
-                    (i.start for i in self.intervals),
-                    (i.end for i in self.intervals),
-                    (i.start for i in other.intervals),
-                    (i.end for i in other.intervals),
-                )
+    def entity_at(self, timestamp: datetime) -> T:
+        entity = only(e for e in self.intervals if e.start <= timestamp < e.end)
+        if entity is None:
+            raise NoValueError(
+                f"No value found at {timestamp.strftime(DATETIME_FORMAT)}"
             )
-        )
-        endpoints.sort()
-
-        interval_list = []
-        for endpoint1, endpoint2 in pairwise(endpoints):
-            our_entity = self.entity_at(endpoint1)
-            their_entity = other.entity_at(endpoint1)
-
-            our_value = our_entity.value if our_entity is not None else None
-            their_value = their_entity.value if their_entity is not None else None
-
-            if not our_value == their_value:
-                template_entity = our_entity if our_value is not None else their_entity
-                interval_list.append(
-                    template_entity.copy(  # type: ignore
-                        update={
-                            "start": endpoint1,
-                            "end": endpoint2,
-                            "value": our_value,
-                        }
-                    )
-                )
-
-        intervals = combine_intervals(tuple(interval_list))
-
-        return self.__class__(intervals=intervals)
+        return entity
 
     class Config:
         frozen = True
@@ -197,3 +164,31 @@ class Timeline(GenericModel, Generic[T]):
 class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]
+    unit_id: Timeline[UnitId]
+    unit_level: Timeline[UnitLevel]
+
+    def has_value(self, timestamp: datetime) -> bool:
+        # TODO: unit test
+        try:
+            self.active.entity_at(timestamp)
+            self.name.entity_at(timestamp)
+            self.unit_id.entity_at(timestamp)
+            self.unit_level.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: "UnitTimeline") -> bool:
+        # TODO: unit test
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return (
+                self.active.entity_at(timestamp) == other.active.entity_at(timestamp)
+                and self.name.entity_at(timestamp) == other.name.entity_at(timestamp)
+                and self.unit_id.entity_at(timestamp)
+                == other.unit_id.entity_at(timestamp)
+                and self.unit_level.entity_at(timestamp)
+                == other.unit_level.entity_at(timestamp)
+            )
+        return False

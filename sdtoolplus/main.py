@@ -41,7 +41,7 @@ from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
 from .sd.timeline import get_department_timeline
-from .timeline import update_ou
+from .timeline import sync_ou
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -314,8 +314,13 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
-        await update_ou(
-            gql_client, org_unit, sd_unit_timeline, mo_unit_timeline, dry_run
+        await sync_ou(
+            gql_client=gql_client,
+            org_unit=org_unit,
+            sd_unit_timeline=sd_unit_timeline,
+            mo_unit_timeline=mo_unit_timeline,
+            org_unit_type_user_key=settings.org_unit_type,
+            dry_run=dry_run,
         )
 
         return {"msg": "success"}
