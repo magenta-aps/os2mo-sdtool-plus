@@ -33,7 +33,7 @@ def _mo_end_datetime(d: datetime | None) -> datetime:
 def _get_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
     mo_end: datetime | None = end
     assert mo_end is not None
-    if mo_end.replace(tzinfo=None) == datetime.max:
+    if mo_end == POSITIVE_INFINITY:
         mo_end = None
     else:
         mo_end = mo_end - timedelta(days=1)  # Subtract one day due to MO
