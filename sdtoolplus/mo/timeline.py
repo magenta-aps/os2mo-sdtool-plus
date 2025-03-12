@@ -20,6 +20,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
@@ -83,6 +84,7 @@ async def get_ou_timeline(
             name=Timeline[UnitName](),
             unit_id=Timeline[UnitId](),
             unit_level=Timeline[UnitLevel](),
+            parent=Timeline[UnitParent](),
         )
 
     validities = one(objects).validities
@@ -125,11 +127,21 @@ async def get_ou_timeline(
         for obj in validities
     )
 
+    parent_intervals = tuple(
+        UnitParent(
+            start=obj.validity.from_,
+            end=_mo_end_datetime(obj.validity.to),
+            value=obj.parent.uuid if obj.parent is not None else None,
+        )
+        for obj in validities
+    )
+
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
         unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
+        parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("MO OU timeline", timeline=timeline)
 
