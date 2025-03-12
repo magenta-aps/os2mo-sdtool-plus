@@ -133,15 +133,15 @@ async def test_ou_timeline_name_http_triggered_sync(
     assert len(validities) == 3
 
     assert validities[0].validity.from_ == t1
-    assert _mo_end_datetime(validities[0].validity.to, tz) == t3
+    assert _mo_end_datetime(validities[0].validity.to) == t3
     assert validities[0].name == "name1"
 
     assert validities[1].validity.from_ == t3
-    assert _mo_end_datetime(validities[1].validity.to, tz) == t5
+    assert _mo_end_datetime(validities[1].validity.to) == t5
     assert validities[1].name == "name2"
 
     assert validities[2].validity.from_ == t5
-    assert _mo_end_datetime(validities[2].validity.to, tz) == t6
+    assert _mo_end_datetime(validities[2].validity.to) == t6
     assert validities[2].name == "name3"
 
 
@@ -326,7 +326,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
 
     validity = validities[0]
     assert validity.validity.from_ == t1
-    assert _mo_end_datetime(validity.validity.to, tz) == t2
+    assert _mo_end_datetime(validity.validity.to) == t2
     assert validity.name == "name1"
     assert validity.user_key == "ABCD"
     assert validity.org_unit_level is not None
@@ -334,7 +334,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
 
     validity = validities[1]
     assert validity.validity.from_ == t2
-    assert _mo_end_datetime(validity.validity.to, tz) == t3
+    assert _mo_end_datetime(validity.validity.to) == t3
     assert validity.name == "name1"
     assert validity.user_key == "ABCD"
     assert validity.org_unit_level is not None
@@ -342,7 +342,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
 
     validity = validities[2]
     assert validity.validity.from_ == t3
-    assert _mo_end_datetime(validity.validity.to, tz) == t5
+    assert _mo_end_datetime(validity.validity.to) == t5
     assert validity.name == "name2"
     assert validity.user_key == "ABCD"
     assert validity.org_unit_level is not None
@@ -350,7 +350,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
 
     validity = validities[3]
     assert validity.validity.from_ == t5
-    assert _mo_end_datetime(validity.validity.to, tz) == t7
+    assert _mo_end_datetime(validity.validity.to) == t7
     assert validity.name == "name3"
     assert validity.user_key == "EFGH"
     assert validity.org_unit_level is not None
