@@ -9,6 +9,7 @@ from anytree import find  # type: ignore
 from more_itertools import one
 from ramodels.mo import Validity
 from sdclient.client import SDClient
+from sdclient.exceptions import SDCallError
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import Department
@@ -18,6 +19,7 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
 from structlog import get_logger
 from tenacity import retry
+from tenacity import retry_if_exception_type
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 
@@ -234,9 +236,8 @@ def _get_extra_nodes(
     return get_departments_unit_uuids.difference(existing_nodes_uuids)  # type: ignore
 
 
-# TODO: This retrying mechanism makes the (integration) test suite very slow. Work out
-# a solution to this problem later
 @retry(
+    retry=retry_if_exception_type(SDCallError),
     wait=wait_fixed(SD_RETRY_WAIT_TIME),
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
