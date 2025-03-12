@@ -4,9 +4,8 @@ services:
   sdtool-plus:
     build:
       context: .
+    command: [ "uvicorn", "--factory", "sdtoolplus.main:create_app", "--host", "0.0.0.0", "--reload" ]
     environment:
-      ENVIRONMENT: "development"
-
       FASTRAMQPI__LOG_LEVEL: "DEBUG"
       FASTRAMQPI__JSON_LOGS: False
 
