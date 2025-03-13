@@ -8,6 +8,8 @@ from datetime import timedelta
 
 import structlog
 from sdclient.client import SDClient
+from sdclient.exceptions import SDParentNotFound
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -47,18 +49,27 @@ async def get_department_timeline(
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
 
-    department = await asyncio.to_thread(
-        sd_client.get_department,
-        GetDepartmentRequest(
-            InstitutionIdentifier=inst_id,
-            DepartmentUUIDIdentifier=unit_uuid,
-            ActivationDate=date.min,
-            DeactivationDate=date.max,
-            DepartmentNameIndicator=True,
-            UUIDIndicator=True,
-        ),
-    )
-    parents = sd_client.get_department_parent_history(unit_uuid)
+    try:
+        department = await asyncio.to_thread(
+            sd_client.get_department,
+            GetDepartmentRequest(
+                InstitutionIdentifier=inst_id,
+                DepartmentUUIDIdentifier=unit_uuid,
+                ActivationDate=date.min,
+                DeactivationDate=date.max,
+                DepartmentNameIndicator=True,
+                UUIDIndicator=True,
+            ),
+        )
+        parents = sd_client.get_department_parent_history(unit_uuid)
+    except (SDRootElementNotFound, SDParentNotFound):
+        return UnitTimeline(
+            active=Timeline[Active](),
+            name=Timeline[UnitName](),
+            unit_id=Timeline[UnitId](),
+            unit_level=Timeline[UnitLevel](),
+            parent=Timeline[UnitParent](),
+        )
 
     active_intervals = tuple(
         Active(

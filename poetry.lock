@@ -179,13 +179,13 @@ tz = ["tzdata"]
 
 [[package]]
 name = "another-sd-client"
-version = "1.15.1"
+version = "1.15.2"
 description = "Client for communicating with SD Løn"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "another_sd_client-1.15.1-py3-none-any.whl", hash = "sha256:5cd68ca05ef26d2fa58361b17dd29d36d9708a28c642b41bdf8cc59dad95590f"},
-    {file = "another_sd_client-1.15.1.tar.gz", hash = "sha256:79522e1ea2b0ec438aa5d01c09acce18747c415bf953892c1dbafaa79061a1ec"},
+    {file = "another_sd_client-1.15.2-py3-none-any.whl", hash = "sha256:69f0015f63a204082b26e577b720d2b838c3f3bbd107e8c387c197e1916720bf"},
+    {file = "another_sd_client-1.15.2.tar.gz", hash = "sha256:297a10912a3346197c0e8110727d62b3734e51b8f0173038896ddd306e52da8f"},
 ]
 
 [package.dependencies]
@@ -271,13 +271,13 @@ sniffio = "*"
 
 [[package]]
 name = "attrs"
-version = "25.2.0"
+version = "25.3.0"
 description = "Classes Without Boilerplate"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "attrs-25.2.0-py3-none-any.whl", hash = "sha256:611344ff0a5fed735d86d7784610c84f8126b95e549bcad9ff61b4242f2d386b"},
-    {file = "attrs-25.2.0.tar.gz", hash = "sha256:18a06db706db43ac232cce80443fcd9f2500702059ecf53489e3c5a3f417acaf"},
+    {file = "attrs-25.3.0-py3-none-any.whl", hash = "sha256:427318ce031701fea540783410126f03899a97ffc6f61596ad581ac2e40e3bc3"},
+    {file = "attrs-25.3.0.tar.gz", hash = "sha256:75d7cefc7fb576747b2c81b4442d4d4a1ce0900973527c011d1030fd3bf4af1b"},
 ]
 
 [package.extras]
@@ -878,13 +878,13 @@ standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "htt
 
 [[package]]
 name = "fastramqpi"
-version = "10.1.7"
+version = "10.2.0"
 description = "Rammearkitektur integrations framework"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "fastramqpi-10.1.7-py3-none-any.whl", hash = "sha256:36a3688e64bfaf9d742b3b17477bdbcf3dbfd9e13becdaa50a08af438bd7c4af"},
-    {file = "fastramqpi-10.1.7.tar.gz", hash = "sha256:b4c78a03c0d8063f8081c1616ea008e7dd47d6eac4dc2bebd0e8d1f5aaa6a624"},
+    {file = "fastramqpi-10.2.0-py3-none-any.whl", hash = "sha256:8e46cf0d3b2161bcbf7f30816ecc811c0878fc176926b9b9625e612e8c8d6b4d"},
+    {file = "fastramqpi-10.2.0.tar.gz", hash = "sha256:7d91e0bae1726e647499926f2952b8a1185536e699f967766acd515ead1fc586"},
 ]
 
 [package.dependencies]
@@ -2148,13 +2148,13 @@ files = [
 
 [[package]]
 name = "psycopg"
-version = "3.2.5"
+version = "3.2.6"
 description = "PostgreSQL database adapter for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "psycopg-3.2.5-py3-none-any.whl", hash = "sha256:b782130983e5b3de30b4c529623d3687033b4dafa05bb661fc6bf45837ca5879"},
-    {file = "psycopg-3.2.5.tar.gz", hash = "sha256:f5f750611c67cb200e85b408882f29265c66d1de7f813add4f8125978bfd70e8"},
+    {file = "psycopg-3.2.6-py3-none-any.whl", hash = "sha256:f3ff5488525890abb0566c429146add66b329e20d6d4835662b920cbbf90ac58"},
+    {file = "psycopg-3.2.6.tar.gz", hash = "sha256:16fa094efa2698f260f2af74f3710f781e4a6f226efe9d1fd0c37f384639ed8a"},
 ]
 
 [package.dependencies]
@@ -2162,8 +2162,8 @@ typing-extensions = {version = ">=4.6", markers = "python_version < \"3.13\""}
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
-binary = ["psycopg-binary (==3.2.5)"]
-c = ["psycopg-c (==3.2.5)"]
+binary = ["psycopg-binary (==3.2.6)"]
+c = ["psycopg-c (==3.2.6)"]
 dev = ["ast-comments (>=1.1.2)", "black (>=24.1.0)", "codespell (>=2.2)", "dnspython (>=2.1)", "flake8 (>=4.0)", "isort-psycopg", "isort[colors] (>=6.0)", "mypy (>=1.14)", "pre-commit (>=4.0.1)", "types-setuptools (>=57.4)", "wheel (>=0.37)"]
 docs = ["Sphinx (>=5.0)", "furo (==2022.6.21)", "sphinx-autobuild (>=2021.3.14)", "sphinx-autodoc-typehints (>=1.12)"]
 pool = ["psycopg-pool"]
@@ -2826,13 +2826,13 @@ telegram = ["requests"]
 
 [[package]]
 name = "types-setuptools"
-version = "75.8.2.20250305"
+version = "76.0.0.20250313"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "types_setuptools-75.8.2.20250305-py3-none-any.whl", hash = "sha256:ba80953fd1f5f49e552285c024f75b5223096a38a5138a54d18ddd3fa8f6a2d4"},
-    {file = "types_setuptools-75.8.2.20250305.tar.gz", hash = "sha256:a987269b49488f21961a1d99aa8d281b611625883def6392a93855b31544e405"},
+    {file = "types_setuptools-76.0.0.20250313-py3-none-any.whl", hash = "sha256:bf454b2a49b8cfd7ebcf5844d4dd5fe4c8666782df1e3663c5866fd51a47460e"},
+    {file = "types_setuptools-76.0.0.20250313.tar.gz", hash = "sha256:b2be66f550f95f3cad2a7d46177b273c7e9c80df7d257fa57addbbcfc8126a9e"},
 ]
 
 [package.dependencies]

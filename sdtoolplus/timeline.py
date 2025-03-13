@@ -29,6 +29,7 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
                     cast(tuple[Interval, ...], ou_timeline.name.intervals),
                     cast(tuple[Interval, ...], ou_timeline.unit_id.intervals),
                     cast(tuple[Interval, ...], ou_timeline.unit_level.intervals),
+                    cast(tuple[Interval, ...], ou_timeline.parent.intervals),
                 )
             )
         )
