@@ -217,7 +217,7 @@ class TestOrgUnitNode:
             validity=sd_expected_validity,
         )
 
-    def test_from_org_unit_for_addresses(self):
+    def test_from_org_unit_for_addresses(self) -> None:
         # Arrange
         org_unit_dict: dict = {
             "uuid": "10000000-0000-0000-0000-000000000000",

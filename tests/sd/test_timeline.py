@@ -22,7 +22,7 @@ from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
-def test_get_department_timeline():
+async def test_get_department_timeline():
     # Arrange
     dep_uuid = uuid4()
 
@@ -90,7 +90,7 @@ def test_get_department_timeline():
     )
 
     # Act
-    department_timeline = get_department_timeline(
+    department_timeline = await get_department_timeline(
         sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
     )
 

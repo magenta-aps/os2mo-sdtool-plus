@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import abc
+import asyncio
 import datetime
 from typing import Any
-from typing import Iterator
+from typing import AsyncIterator
 
 import structlog
 from fastramqpi.raclients.graph.client import GraphQLClient
@@ -141,7 +142,7 @@ class AddOrgUnitMutation(Mutation):
 AnyMutation = AddOrgUnitMutation | UpdateOrgUnitMutation
 
 
-def _fix_parent_unit_validity(
+async def _fix_parent_unit_validity(
     mo_client: PersistentGraphQLClient,
     sd_client: SDClient,
     settings: SDToolPlusSettings,
@@ -158,7 +159,8 @@ def _fix_parent_unit_validity(
         parent=str(org_unit_node.parent.uuid),
     )
 
-    r_get_department = sd_client.get_department(
+    r_get_department = await asyncio.to_thread(
+        sd_client.get_department,
         GetDepartmentRequest(
             InstitutionIdentifier=current_inst_id,
             DepartmentUUIDIdentifier=org_unit_node.parent.uuid,
@@ -166,7 +168,7 @@ def _fix_parent_unit_validity(
             DeactivationDate=datetime.datetime.now(tz=TIMEZONE).date(),
             DepartmentNameIndicator=True,
             UUIDIndicator=True,
-        )
+        ),
     )
 
     # Get earliest SD start date for the department
@@ -220,7 +222,7 @@ def _fix_parent_unit_validity(
         #   we will current not run into any issues - other than inconsistent
         #   data in MO requiring fixing by custom scripts :-)
         if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
-            _fix_parent_unit_validity(
+            await _fix_parent_unit_validity(
                 mo_client, sd_client, settings, current_inst_id, org_unit_node.parent
             )
         else:
@@ -270,7 +272,9 @@ class TreeDiffExecutor:
             regexs=self.settings.regex_unit_names_to_remove,
         )
 
-    def _add_unit(self, add_mutation: AnyMutation, unit: OrgUnitNode) -> OrgUnitUUID:
+    async def _add_unit(
+        self, add_mutation: AnyMutation, unit: OrgUnitNode
+    ) -> OrgUnitUUID:
         try:
             result = add_mutation.execute()
         except TransportQueryError as error:
@@ -280,7 +284,7 @@ class TreeDiffExecutor:
                 parent_uuid=str(unit.parent.uuid),
             )
             if V_DATE_OUTSIDE_ORG_UNIT_RANGE in str(error):
-                _fix_parent_unit_validity(
+                await _fix_parent_unit_validity(
                     self._session,
                     self.sd_client,
                     self.settings,
@@ -292,9 +296,9 @@ class TreeDiffExecutor:
             result = add_mutation.execute()
         return result
 
-    def execute(
+    async def execute(
         self, org_unit: OrgUnitUUID | None = None, dry_run: bool = False
-    ) -> Iterator[tuple[OrgUnitNode, AnyMutation, OrgUnitUUID]]:
+    ) -> AsyncIterator[tuple[OrgUnitNode, AnyMutation, OrgUnitUUID]]:
         # Add new units first
         units_to_add = filter_by_uuid(org_unit, self._tree_diff.get_units_to_add())
         units_to_add = remove_by_name(
@@ -320,7 +324,7 @@ class TreeDiffExecutor:
                 #  .test_build_tree_date_range_errors
                 #  is passing (awaiting #60582)
                 if self.settings.extend_parent_validities:
-                    result = self._add_unit(add_mutation, unit)
+                    result = await self._add_unit(add_mutation, unit)
                 else:
                     result = add_mutation.execute()
             else:

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
 from datetime import date
 from datetime import datetime
 from datetime import time
@@ -39,14 +40,15 @@ def _sd_end_datetime(d: date) -> datetime:
     return datetime.combine(d, time.min, ASSUMED_SD_TIMEZONE) + timedelta(days=1)
 
 
-def get_department_timeline(
+async def get_department_timeline(
     sd_client: SDClient,
     inst_id: str,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
 
-    department = sd_client.get_department(
+    department = await asyncio.to_thread(
+        sd_client.get_department,
         GetDepartmentRequest(
             InstitutionIdentifier=inst_id,
             DepartmentUUIDIdentifier=unit_uuid,
@@ -54,7 +56,7 @@ def get_department_timeline(
             DeactivationDate=date.max,
             DepartmentNameIndicator=True,
             UUIDIndicator=True,
-        )
+        ),
     )
     parents = sd_client.get_department_parent_history(unit_uuid)
 

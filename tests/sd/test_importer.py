@@ -21,7 +21,7 @@ from sdtoolplus.sd.importer import get_sd_organization
         (True, True),
     ],
 )
-def test_get_sd_departments_calls_client_with_correct_params(
+async def test_get_sd_departments_calls_client_with_correct_params(
     fetch_postal_addr: bool,
     fetch_pnumber: bool,
 ) -> None:
@@ -31,7 +31,7 @@ def test_get_sd_departments_calls_client_with_correct_params(
     deactivation_date = date(2001, 1, 1)
 
     # Act
-    get_sd_departments(
+    await get_sd_departments(
         mock_sd_client,
         "II",
         activation_date,
@@ -54,7 +54,7 @@ def test_get_sd_departments_calls_client_with_correct_params(
     )
 
 
-def test_get_sd_organization_retry_mechanism(
+async def test_get_sd_organization_retry_mechanism(
     mock_sd_get_organization_response: GetOrganizationResponse,
 ) -> None:
     # Arrange
@@ -67,13 +67,13 @@ def test_get_sd_organization_retry_mechanism(
     )
 
     # Act
-    get_sd_organization(mock_sd_client, "II", date.today(), date.today())
+    await get_sd_organization(mock_sd_client, "II", date.today(), date.today())
 
     # Assert
     assert mock_sd_client.get_organization.call_count == 2
 
 
-def test_get_sd_departments_retry_mechanism(
+async def test_get_sd_departments_retry_mechanism(
     mock_sd_get_department_response: GetDepartmentResponse,
 ) -> None:
     # Arrange
@@ -86,7 +86,7 @@ def test_get_sd_departments_retry_mechanism(
     )
 
     # Act
-    get_sd_departments(mock_sd_client, "II", date.today(), date.today())
+    await get_sd_departments(mock_sd_client, "II", date.today(), date.today())
 
     # Assert
     assert mock_sd_client.get_department.call_count == 2

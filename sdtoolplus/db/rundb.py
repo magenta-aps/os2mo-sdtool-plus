@@ -21,7 +21,7 @@ class Status(Enum):
     RUNNING = "running"
 
 
-def get_status(engine: Engine) -> Status:
+async def get_status(engine: Engine) -> Status:
     with Session(engine) as session:
         statement = select(RunDB.status).order_by(desc(RunDB.id)).limit(1)
         status = session.execute(statement).scalar_one_or_none()
@@ -32,7 +32,7 @@ def get_status(engine: Engine) -> Status:
         return Status(status) if status is not None else Status.COMPLETED
 
 
-def persist_status(engine: Engine, status: Status) -> None:
+async def persist_status(engine: Engine, status: Status) -> None:
     with Session(engine) as session:
         run = RunDB(
             timestamp=datetime.now(tz=ZoneInfo("Europe/Copenhagen")),
@@ -42,7 +42,7 @@ def persist_status(engine: Engine, status: Status) -> None:
         session.commit()
 
 
-def delete_last_run(engine: Engine) -> None:
+async def delete_last_run(engine: Engine) -> None:
     with Session(engine) as session:
         last_run = select(RunDB.id).order_by(desc(RunDB.id)).limit(1)
         statement = delete(RunDB).where(RunDB.id == last_run)

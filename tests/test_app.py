@@ -51,7 +51,7 @@ class TestApp:
             # Assert
             mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
 
-    def test_as_single_tree_called_with_correct_path(
+    async def test_as_single_tree_called_with_correct_path(
         self,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
@@ -77,7 +77,7 @@ class TestApp:
             )
 
             # Act
-            app.get_tree_diff_executor()
+            await app.get_tree_diff_executor()
 
             # Assert
             mock_as_single_tree.assert_called_once_with(
@@ -86,7 +86,7 @@ class TestApp:
                 None,
             )
 
-    def test_as_single_tree_called_with_correct_path_for_multiple_inst_ids(
+    async def test_as_single_tree_called_with_correct_path_for_multiple_inst_ids(
         self,
         mock_mo_org_unit_type_map,
         mock_mo_org_unit_level_map,
@@ -115,7 +115,7 @@ class TestApp:
             )
 
             # Act
-            app.get_tree_diff_executor()
+            await app.get_tree_diff_executor()
 
             # Assert
             mock_as_single_tree.assert_called_once_with(
@@ -125,7 +125,7 @@ class TestApp:
             )
 
     @patch("sdtoolplus.app.get_graphql_client")
-    def test_get_tree_diff_executor_for_mo_subtree_case(
+    async def test_get_tree_diff_executor_for_mo_subtree_case(
         self,
         mock_get_graphql_client: MagicMock,
         mock_graphql_session,
@@ -161,12 +161,12 @@ class TestApp:
             )
 
             # Act
-            actual_iter = app.get_tree_diff_executor().execute()
+            actual = [x async for x in (await app.get_tree_diff_executor()).execute()]
 
             # Assert
-            assert list(actual_iter) == []
+            assert actual == []
 
-    def test_execute(
+    async def test_execute(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
         expected_units_to_add: list[OrgUnitNode],
@@ -191,7 +191,7 @@ class TestApp:
                 stack, app.client, "post", apply_ny_logic_response
             )
             # Act
-            result: list[tuple] = list(app.execute())
+            result: list[tuple] = [x async for x in app.execute()]
             # Assert: check that we see the expected operations
             self._assert_expected_operations(
                 result, expected_units_to_add + expected_units_to_update
@@ -209,7 +209,7 @@ class TestApp:
             assert mock_graphql_execute.call_count == num_add_or_update_ops
             assert mock_client_post.call_count == 2  # No of update operations
 
-    def test_execute_filter(
+    async def test_execute_filter(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
         sdtoolplus_settings: SDToolPlusSettings,
@@ -225,9 +225,12 @@ class TestApp:
             self._add_obj_mock(stack, app.client, "post", apply_ny_logic_response)
 
             # Act
-            result: list[tuple] = list(
-                app.execute(org_unit=UUID("60000000-0000-0000-0000-000000000000"))
-            )
+            result: list[tuple] = [
+                x
+                async for x in app.execute(
+                    org_unit=UUID("60000000-0000-0000-0000-000000000000")
+                )
+            ]
 
             # Assert
             expected_unit_to_process = one(result)[0]
@@ -235,7 +238,7 @@ class TestApp:
                 "60000000-0000-0000-0000-000000000000"
             )
 
-    def test_execute_dry(
+    async def test_execute_dry(
         self,
         mock_tree_diff_executor: TreeDiffExecutor,
         expected_units_to_add: list[OrgUnitNode],
@@ -253,7 +256,7 @@ class TestApp:
             )
             mock_client_post = self._add_obj_mock(stack, app.client, "post")
             # Act
-            result: list[tuple] = list(app.execute(dry_run=True))
+            result: list[tuple] = [x async for x in app.execute(dry_run=True)]
             # Assert: check that we see the expected operations
             self._assert_expected_operations(
                 result, expected_units_to_add + expected_units_to_update
@@ -334,7 +337,7 @@ class TestApp:
 
     @patch("sdtoolplus.app.get_graphql_client")
     @patch("sdtoolplus.app.get_sd_tree")
-    def test_get_sd_tree_override_sd_root_uuid(
+    async def test_get_sd_tree_override_sd_root_uuid(
         self,
         mock_get_sd_tree: MagicMock,
         mock_get_graphql_client: MagicMock,
@@ -357,7 +360,7 @@ class TestApp:
             )
 
             # Act
-            app_.get_sd_tree(MagicMock())
+            await app_.get_sd_tree(MagicMock())
 
             # Assert
             assert mock_get_sd_tree.call_args.args[3] == mo_org_uuid

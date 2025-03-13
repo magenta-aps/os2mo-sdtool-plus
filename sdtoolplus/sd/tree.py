@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
 import zoneinfo
 from datetime import date
 from datetime import datetime
@@ -242,21 +243,22 @@ def _get_extra_nodes(
     stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
     reraise=True,
 )
-def _get_department_parent(
+async def _get_department_parent(
     sd_client: SDClient, unit_uuid: OrgUnitUUID
 ) -> GetDepartmentParentResponse | None:
     try:
-        return sd_client.get_department_parent(
+        return await asyncio.to_thread(
+            sd_client.get_department_parent,
             GetDepartmentParentRequest(
                 EffectiveDate=datetime.now().date(),
                 DepartmentUUIDIdentifier=unit_uuid,
-            )
+            ),
         )
     except SDRootElementNotFound:
         return None
 
 
-def _get_parent_node(
+async def _get_parent_node(
     sd_client: SDClient,
     unit_uuid: OrgUnitUUID,
     root_node: OrgUnitNode,
@@ -266,7 +268,7 @@ def _get_parent_node(
     extra_node_uuids: set[OrgUnitUUID],
 ) -> OrgUnitNode | None:
     try:
-        parent_dep = _get_department_parent(sd_client, unit_uuid)
+        parent_dep = await _get_department_parent(sd_client, unit_uuid)
         if parent_dep is None:
             return None
         parent_uuid = parent_dep.DepartmentParent.DepartmentUUIDIdentifier
@@ -286,7 +288,7 @@ def _get_parent_node(
 
     # Cannot find parent in root_node tree, so we have to create it, but first
     # we must find the parents parent
-    parents_parent = _get_parent_node(
+    parents_parent = await _get_parent_node(
         sd_client,
         parent_uuid,
         root_node,
@@ -359,7 +361,7 @@ def build_tree(
     return root_node
 
 
-def build_extra_tree(
+async def build_extra_tree(
     sd_client: SDClient,
     root_node: OrgUnitNode,
     sd_org: GetOrganizationResponse,
@@ -383,7 +385,7 @@ def build_extra_tree(
     while extra_node_uuids:
         unit_uuid = extra_node_uuids.pop()
 
-        parent_node = _get_parent_node(
+        parent_node = await _get_parent_node(
             sd_client,
             unit_uuid,
             root_node,
