@@ -16,6 +16,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
@@ -55,6 +56,7 @@ def get_department_timeline(
             UUIDIndicator=True,
         )
     )
+    parents = sd_client.get_department_parent_history(unit_uuid)
 
     active_intervals = tuple(
         Active(
@@ -92,11 +94,21 @@ def get_department_timeline(
         for dep in department.Department
     )
 
+    parent_intervals = tuple(
+        UnitParent(
+            start=_sd_start_datetime(parent.startDate),
+            end=_sd_end_datetime(parent.endDate),
+            value=parent.parentUuid,
+        )
+        for parent in parents
+    )
+
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(active_intervals)),
         unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
+        parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline)
 

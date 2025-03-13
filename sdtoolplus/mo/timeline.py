@@ -20,6 +20,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
@@ -33,10 +34,10 @@ def _mo_end_datetime(d: datetime | None) -> datetime:
 def _get_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
     mo_end: datetime | None = end
     assert mo_end is not None
-    if mo_end == POSITIVE_INFINITY:
-        mo_end = None
-    else:
-        mo_end = mo_end - timedelta(days=1)  # Subtract one day due to MO
+    mo_end = (
+        # Subtract one day due to MO
+        None if mo_end == POSITIVE_INFINITY else mo_end - timedelta(days=1)
+    )
     return RAValidityInput(from_=start, to=mo_end)
 
 
@@ -83,6 +84,7 @@ async def get_ou_timeline(
             name=Timeline[UnitName](),
             unit_id=Timeline[UnitId](),
             unit_level=Timeline[UnitLevel](),
+            parent=Timeline[UnitParent](),
         )
 
     validities = one(objects).validities
@@ -125,11 +127,21 @@ async def get_ou_timeline(
         for obj in validities
     )
 
+    parent_intervals = tuple(
+        UnitParent(
+            start=obj.validity.from_,
+            end=_mo_end_datetime(obj.validity.to),
+            value=obj.parent.uuid if obj.parent is not None else None,
+        )
+        for obj in validities
+    )
+
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
         unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
+        parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("MO OU timeline", timeline=timeline)
 
@@ -157,12 +169,10 @@ async def create_ou(
     await gql_client.create_org_unit(
         OrganisationUnitCreateInput(
             uuid=org_unit,
-            # TODO: move _get_mo_validity to this module
             validity=_get_mo_validity(start, end),
             name=sd_unit_timeline.name.entity_at(start).value,
             user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            # TODO: remove hard-coded value
-            parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+            parent=sd_unit_timeline.parent.entity_at(start).value,
             org_unit_type=ou_type_uuid,
             org_unit_level=ou_level_uuid,
         )
@@ -213,8 +223,7 @@ async def update_ou(
                     validity=_get_mo_validity(start, end),
                     name=sd_unit_timeline.name.entity_at(start).value,
                     user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-                    # TODO: remove hard-coded value
-                    parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+                    parent=sd_unit_timeline.parent.entity_at(start).value,
                     org_unit_type=ou_type_uuid,
                     org_unit_level=ou_level_uuid,
                     org_unit_hierarchy=org_unit_hierarchy,
@@ -229,8 +238,7 @@ async def update_ou(
             validity=_get_mo_validity(start, end),
             name=sd_unit_timeline.name.entity_at(start).value,
             user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            # TODO: remove hard-coded value
-            parent=OrgUnitUUID("12121212-1212-1212-1212-121212121212"),
+            parent=sd_unit_timeline.parent.entity_at(start).value,
             org_unit_type=ou_type_uuid,
             org_unit_level=ou_level_uuid,
         )

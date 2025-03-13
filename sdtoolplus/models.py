@@ -19,6 +19,7 @@ from pydantic import validator
 from pydantic.generics import GenericModel
 
 from sdtoolplus.exceptions import NoValueError
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
 NEGATIVE_INFINITY = datetime.min.replace(tzinfo=ZoneInfo("UTC"))
 POSITIVE_INFINITY = datetime.max.replace(tzinfo=ZoneInfo("UTC"))
@@ -84,6 +85,10 @@ class UnitLevel(Interval[Optional[str]]):
 
 
 class UnitName(Interval[str]):
+    pass
+
+
+class UnitParent(Interval[Optional[OrgUnitUUID]]):
     pass
 
 
@@ -166,6 +171,7 @@ class UnitTimeline(BaseModel):
     name: Timeline[UnitName]
     unit_id: Timeline[UnitId]
     unit_level: Timeline[UnitLevel]
+    parent: Timeline[UnitParent]
 
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
@@ -174,6 +180,7 @@ class UnitTimeline(BaseModel):
             self.name.entity_at(timestamp)
             self.unit_id.entity_at(timestamp)
             self.unit_level.entity_at(timestamp)
+            self.parent.entity_at(timestamp)
             return True
         except NoValueError:
             return False
@@ -190,5 +197,7 @@ class UnitTimeline(BaseModel):
                 == other.unit_id.entity_at(timestamp)
                 and self.unit_level.entity_at(timestamp)
                 == other.unit_level.entity_at(timestamp)
+                and self.parent.entity_at(timestamp)
+                == other.parent.entity_at(timestamp)
             )
         return False
