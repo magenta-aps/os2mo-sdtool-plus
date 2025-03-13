@@ -24,7 +24,7 @@ async def test_ou_timeline_name_http_triggered_sync(
     graphql_client: GraphQLClient,  # Maybe switch
     org_unit_type: OrgUnitUUID,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
-    sd_parent_history_resp: str,
+    sd_parent_history_resp: list[dict[str, str]],
     respx_mock: MockRouter,
 ):
     """
@@ -120,10 +120,7 @@ async def test_ou_timeline_name_http_triggered_sync(
 
     respx_mock.get(
         f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
-    ).respond(
-        content_type="application/json",
-        content=sd_parent_history_resp,
-    )
+    ).respond(json=sd_parent_history_resp)
 
     # Act
     r = await test_client.post(
@@ -160,7 +157,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
-    sd_parent_history_resp: str,
+    sd_parent_history_resp: list[dict[str, str]],
     respx_mock: MockRouter,
 ):
     """
@@ -321,8 +318,7 @@ async def test_ou_timeline_name_and_id_and_level_http_triggered_sync(
     respx_mock.get(
         f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
-        content_type="application/json",
-        content=sd_parent_history_resp,
+        json=sd_parent_history_resp,
     )
 
     # Act
@@ -378,7 +374,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
-    sd_parent_history_resp: str,
+    sd_parent_history_resp: list[dict[str, str]],
     respx_mock: MockRouter,
 ):
     """
@@ -559,8 +555,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     respx_mock.get(
         f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
-        content_type="application/json",
-        content=sd_parent_history_resp,
+        json=sd_parent_history_resp,
     )
 
     # Act
