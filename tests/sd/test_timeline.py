@@ -194,7 +194,7 @@ async def test_get_department_timeline():
     )
 
 
-def test_get_department_timeline_department_not_found():
+async def test_get_department_timeline_department_not_found():
     # Arrange
     dep_uuid = uuid4()
 
@@ -204,7 +204,7 @@ def test_get_department_timeline_department_not_found():
     )
 
     # Act
-    department_timeline = get_department_timeline(
+    department_timeline = await get_department_timeline(
         sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
     )
 
@@ -218,7 +218,7 @@ def test_get_department_timeline_department_not_found():
     )
 
 
-def test_get_department_timeline_parent_not_found():
+async def test_get_department_timeline_parent_not_found():
     # Arrange
     dep_uuid = uuid4()
 
@@ -248,7 +248,7 @@ def test_get_department_timeline_parent_not_found():
     )
 
     # Act
-    department_timeline = get_department_timeline(
+    department_timeline = await get_department_timeline(
         sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
     )
 
