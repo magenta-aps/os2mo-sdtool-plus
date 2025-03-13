@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from sdtoolplus.models import Active
@@ -8,6 +9,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.timeline import _get_ou_interval_endpoints
 
@@ -47,6 +49,12 @@ def test__get_ou_interval_endpoints():
             intervals=(
                 UnitLevel(start=t5, end=t6, value="level1"),
                 UnitLevel(start=t6, end=t7, value="level2"),
+            )
+        ),
+        parent=Timeline[UnitParent](
+            intervals=(
+                UnitParent(start=t5, end=t6, value=uuid4()),
+                UnitParent(start=t6, end=t7, value=uuid4()),
             )
         ),
     )
