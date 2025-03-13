@@ -612,4 +612,114 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
 
+@pytest.mark.integration_test
+async def test_ou_timeline_create_new_unit(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,  # Maybe switch
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: list[dict[str, str]],
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  --------t1-------------------t3----------------------------------t7------>
+
+    MO (unit does not exist)
+
+    SD (name)     |-------------------------name1--------------------------|
+    SD (id)       |-------------------------ABCD---------------------------|
+    SD (level)    |-------------------------NY0----------------------------|
+    SD (parent)   |--------dep3--------|-------------dep4------------------|
+
+    "Assert"      |---------1----------|--------------2--------------------|
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t7 = datetime(2007, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>false</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.1&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=sd_parent_history_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    validities = one(updated_unit.objects).validities
+
+    assert len(validities) == 2
+
+    validity = validities[0]
+    assert validity.validity.from_ == t1
+    assert _mo_end_datetime(validity.validity.to) == t3
+    assert validity.name == "name1"
+    assert validity.user_key == "ABCD"
+    assert validity.org_unit_level is not None
+    assert validity.org_unit_level.name == "NY0-niveau"
+    assert validity.parent is not None
+    assert validity.parent.uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
+
+    validity = validities[1]
+    assert validity.validity.from_ == t3
+    assert _mo_end_datetime(validity.validity.to) == t7
+    assert validity.name == "name1"
+    assert validity.user_key == "ABCD"
+    assert validity.org_unit_level is not None
+    assert validity.org_unit_level.name == "NY0-niveau"
+    assert validity.parent is not None
+    assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
+
+
 # TODO: add test with two successive intervals to be termination intervals
