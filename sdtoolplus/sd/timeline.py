@@ -8,6 +8,7 @@ from datetime import timedelta
 
 import structlog
 from sdclient.client import SDClient
+from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 
@@ -60,7 +61,8 @@ async def get_department_timeline(
                 UUIDIndicator=True,
             ),
         )
-    except SDRootElementNotFound:
+        parents = sd_client.get_department_parent_history(unit_uuid)
+    except (SDRootElementNotFound, SDParentNotFound):
         return UnitTimeline(
             active=Timeline[Active](),
             name=Timeline[UnitName](),
@@ -68,7 +70,6 @@ async def get_department_timeline(
             unit_level=Timeline[UnitLevel](),
             parent=Timeline[UnitParent](),
         )
-    parents = sd_client.get_department_parent_history(unit_uuid)
 
     active_intervals = tuple(
         Active(

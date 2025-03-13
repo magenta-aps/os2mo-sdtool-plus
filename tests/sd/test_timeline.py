@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from more_itertools import one
 from pydantic import parse_obj_as
+from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.responses import DepartmentParentHistoryObj
 from sdclient.responses import GetDepartmentResponse
@@ -200,6 +201,50 @@ def test_get_department_timeline_department_not_found():
     mock_sd_client = MagicMock()
     mock_sd_client.get_department.side_effect = SDRootElementNotFound(
         "Could not find XML root element"
+    )
+
+    # Act
+    department_timeline = get_department_timeline(
+        sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
+    )
+
+    # Assert
+    assert department_timeline == UnitTimeline(
+        active=Timeline[Active](),
+        name=Timeline[UnitName](),
+        unit_id=Timeline[UnitId](),
+        unit_level=Timeline[UnitLevel](),
+        parent=Timeline[UnitParent](),
+    )
+
+
+def test_get_department_timeline_parent_not_found():
+    # Arrange
+    dep_uuid = uuid4()
+
+    sd_dep_resp_dict = {
+        "RegionIdentifier": "RI",
+        "RegionUUIDIdentifier": uuid4(),
+        "InstitutionIdentifier": "II",
+        "InstitutionUUIDIdentifier": uuid4(),
+        "Department": [
+            {
+                "ActivationDate": "2001-01-01",
+                "DeactivationDate": "2001-12-31",
+                "DepartmentIdentifier": "DEP1",
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentName": "name1",
+                "DepartmentUUIDIdentifier": dep_uuid,
+            },
+        ],
+    }
+
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_department.return_value = GetDepartmentResponse.parse_obj(
+        sd_dep_resp_dict
+    )
+    mock_sd_client.get_department_parent_history.side_effect = SDParentNotFound(
+        "Parent history not found!"
     )
 
     # Act
