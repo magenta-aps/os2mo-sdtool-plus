@@ -268,7 +268,7 @@ async def test_get_department_timeline_parent_not_found():
     )
 
 
-def test_get_engagement_timeline():
+async def test_get_engagement_timeline():
     # Arrange
     dep_uuid = uuid4()
     sd_emp_resp_dict = {
@@ -338,7 +338,7 @@ def test_get_engagement_timeline():
     )
 
     # Act
-    engagement_timeline = get_employment_timeline(
+    engagement_timeline = await get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
@@ -373,7 +373,7 @@ def test_get_engagement_timeline():
             ),
             EngagementKey(
                 start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value=4,
             ),
         )
@@ -388,7 +388,7 @@ def test_get_engagement_timeline():
             ),
             EngagementName(
                 start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value="Kung Fu Master",
             ),
         )
@@ -398,14 +398,14 @@ def test_get_engagement_timeline():
         intervals=(
             EngagementUnit(
                 start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
-                end=datetime.max.replace(tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
                 value=dep_uuid,
             ),
         )
     )
 
 
-def test_get_engagement_timeline_no_person_found():
+async def test_get_engagement_timeline_no_person_found():
     # Arrange
     mock_sd_client = MagicMock()
     mock_sd_client.get_employment_changed.return_value = (
@@ -413,7 +413,7 @@ def test_get_engagement_timeline_no_person_found():
     )
 
     # Act
-    engagement_timeline = get_employment_timeline(
+    engagement_timeline = await get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
@@ -426,7 +426,7 @@ def test_get_engagement_timeline_no_person_found():
     )
 
 
-def test_get_engagement_timeline_no_employment_found():
+async def test_get_engagement_timeline_no_employment_found():
     # Arrange
     mock_sd_client = MagicMock()
     mock_sd_client.get_employment_changed.return_value = (
@@ -443,7 +443,7 @@ def test_get_engagement_timeline_no_employment_found():
     )
 
     # Act
-    engagement_timeline = get_employment_timeline(
+    engagement_timeline = await get_employment_timeline(
         sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
     )
 
