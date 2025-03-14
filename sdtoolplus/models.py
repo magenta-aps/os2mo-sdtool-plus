@@ -198,7 +198,6 @@ class Timeline(GenericModel, Generic[T]):
         frozen = True
 
 
-# TODO: Maybe use GenericModel to fix mypy issues
 class UnitTimeline(BaseModel):
     active: Timeline[Active]
     name: Timeline[UnitName]
