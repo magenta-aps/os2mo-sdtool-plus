@@ -360,20 +360,12 @@ async def create_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
+    eng_type: UUID,
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
     logger.debug(
         "Creating engagement", start=start, end=end, sd_unit_timeline=sd_eng_timeline
     )
-
-    # Get the engagement type
-    # TODO: we need to find out how (if possible) to get the engagement type from SD
-    r_eng_type = await gql_client.get_facet_class(
-        "engagement_type", "SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b"
-    )
-    current_eng_type = one(r_eng_type.objects).current
-    assert current_eng_type is not None
-    eng_type_uuid = current_eng_type.uuid
 
     # Get the job_function
     r_job_function = await gql_client.get_facet_class(
@@ -393,7 +385,7 @@ async def create_engagement(
             person=person,
             # TODO: introduce org_unit strategy
             org_unit=sd_eng_timeline.eng_unit.entity_at(start),
-            engagement_type=eng_type_uuid,
+            engagement_type=eng_type,
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
         )
@@ -407,6 +399,7 @@ async def update_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
+    eng_type: UUID,
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -421,15 +414,6 @@ async def update_engagement(
     current_job_function = one(r_job_function.objects).current
     assert current_job_function is not None
     job_function_uuid = current_job_function.uuid
-
-    # Get the engagement type
-    # TODO: we need to find out how (if possible) to get the engagement type from SD
-    r_eng_type = await gql_client.get_facet_class(
-        "engagement_type", "SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b"
-    )
-    current_eng_type = one(r_eng_type.objects).current
-    assert current_eng_type is not None
-    eng_type_uuid = current_eng_type.uuid
 
     mo_validity = _get_mo_validity(start, end)
 
@@ -483,7 +467,7 @@ async def update_engagement(
             person=person,
             org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
             # TODO: we need to find out how (if possible) to get the engagement type from SD
-            engagement_type=eng_type_uuid,
+            engagement_type=eng_type,
             job_function=job_function_uuid,
         )
     )

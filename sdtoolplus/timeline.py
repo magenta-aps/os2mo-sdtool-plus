@@ -8,6 +8,7 @@ from uuid import UUID
 
 import structlog
 from more_itertools import collapse
+from more_itertools import one
 
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo.timeline import create_engagement
@@ -85,6 +86,15 @@ async def sync_eng(
         user_key=user_key,
     )
 
+    # Get the engagement type
+    # TODO: we need to find out how (if possible) to get the engagement type from SD
+    r_eng_type = await gql_client.get_facet_class(
+        "engagement_type", "SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b"
+    )
+    current_eng_type = one(r_eng_type.objects).current
+    assert current_eng_type is not None
+    eng_type_uuid = current_eng_type.uuid
+
     sd_interval_endpoints = _get_eng_interval_endpoints(sd_eng_timeline)
     mo_interval_endpoints = _get_eng_interval_endpoints(mo_eng_timeline)
 
@@ -110,6 +120,7 @@ async def sync_eng(
                     start=start,
                     end=end,
                     sd_eng_timeline=sd_eng_timeline,
+                    eng_type=eng_type_uuid,
                 )
             else:
                 await create_engagement(
@@ -119,6 +130,7 @@ async def sync_eng(
                     start=start,
                     end=end,
                     sd_eng_timeline=sd_eng_timeline,
+                    eng_type=eng_type_uuid,
                 )
         else:
             await terminate_engagement(
