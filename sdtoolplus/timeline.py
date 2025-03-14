@@ -10,7 +10,6 @@ import structlog
 from more_itertools import collapse
 
 from sdtoolplus.depends import GraphQLClient
-from sdtoolplus.log import anonymize_cpr
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import terminate_engagement
@@ -79,11 +78,10 @@ async def sync_eng(
     user_key = prefix_user_key_with_inst_id(
         payload.employment_identifier, payload.institution_identifier
     )
-    cpr = payload.cpr
 
     logger.info(
         "Create, update or terminate engagement in MO",
-        cpr=anonymize_cpr(payload.cpr),
+        person=str(person),
         user_key=user_key,
     )
 
@@ -108,7 +106,6 @@ async def sync_eng(
                 await update_engagement(
                     gql_client=gql_client,
                     person=person,
-                    cpr=cpr,
                     user_key=user_key,
                     start=start,
                     end=end,
