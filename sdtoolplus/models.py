@@ -15,7 +15,6 @@ from more_itertools import last
 from more_itertools import only
 from more_itertools import split_when
 from pydantic import BaseModel
-from pydantic import PositiveInt
 from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -103,7 +102,7 @@ class UnitParent(Interval[Optional[OrgUnitUUID]]):
     pass
 
 
-class EngagementKey(Interval[PositiveInt]):
+class EngagementKey(Interval[str]):
     """
     The SD JobPositionIdentifier corresponding to MOs job_function user_key
     """
@@ -114,6 +113,8 @@ class EngagementKey(Interval[PositiveInt]):
 class EngagementName(Interval[str]):
     """
     The SD (free text) EmploymentName corresponding to MOs extension_1 on the engagement
+    or the engagement_job_function class name (depending on the application
+    configuration).
     """
 
     pass
