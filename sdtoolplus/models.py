@@ -7,6 +7,7 @@ from itertools import pairwise
 from typing import Any
 from typing import Generic
 from typing import Optional
+from typing import Self
 from typing import TypeVar
 from zoneinfo import ZoneInfo
 
@@ -217,20 +218,23 @@ class UnitTimeline(BaseModel):
         except NoValueError:
             return False
 
-    def equal_at(self, timestamp: datetime, other: "UnitTimeline") -> bool:
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
             return (
-                self.active.entity_at(timestamp) == other.active.entity_at(timestamp)
-                and self.name.entity_at(timestamp) == other.name.entity_at(timestamp)
-                and self.unit_id.entity_at(timestamp)
-                == other.unit_id.entity_at(timestamp)
-                and self.unit_level.entity_at(timestamp)
-                == other.unit_level.entity_at(timestamp)
-                and self.parent.entity_at(timestamp)
-                == other.parent.entity_at(timestamp)
+                self.active.entity_at(timestamp),
+                self.name.entity_at(timestamp),
+                self.unit_id.entity_at(timestamp),
+                self.unit_level.entity_at(timestamp),
+                self.parent.entity_at(timestamp),
+            ) == (
+                other.active.entity_at(timestamp),
+                other.name.entity_at(timestamp),
+                other.unit_id.entity_at(timestamp),
+                other.unit_level.entity_at(timestamp),
+                other.parent.entity_at(timestamp),
             )
         return False
 
@@ -252,19 +256,20 @@ class EngagementTimeline(BaseModel):
         except NoValueError:
             return False
 
-    def equal_at(self, timestamp: datetime, other: "EngagementTimeline") -> bool:
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
             return (
-                self.eng_active.entity_at(timestamp)
-                == other.eng_active.entity_at(timestamp)
-                and self.eng_key.entity_at(timestamp)
-                == other.eng_key.entity_at(timestamp)
-                and self.eng_name.entity_at(timestamp)
-                == other.eng_name.entity_at(timestamp)
-                and self.eng_unit.entity_at(timestamp)
-                == other.eng_unit.entity_at(timestamp)
+                self.eng_active.entity_at(timestamp),
+                self.eng_key.entity_at(timestamp),
+                self.eng_name.entity_at(timestamp),
+                self.eng_unit.entity_at(timestamp),
+            ) == (
+                other.eng_active.entity_at(timestamp),
+                other.eng_key.entity_at(timestamp),
+                other.eng_name.entity_at(timestamp),
+                other.eng_unit.entity_at(timestamp),
             )
         return False
