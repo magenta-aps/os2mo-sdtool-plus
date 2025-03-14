@@ -140,14 +140,14 @@ mutation CreateEngagement($input: EngagementCreateInput!) {
 }
 
 query GetEngagementTimeline(
-  $cpr: CPR!,
+  $person: UUID!,
   $user_key: String!,
   $from_date: DateTime,
   $to_date: DateTime
 ) {
   engagements(
     filter: {
-      employee: { cpr_numbers: [$cpr] },
+      employee: { uuids: [$person] },
       user_keys: [$user_key],
       from_date: $from_date,
       to_date: $to_date
