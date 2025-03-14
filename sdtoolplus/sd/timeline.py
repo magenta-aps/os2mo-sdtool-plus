@@ -135,7 +135,7 @@ async def get_department_timeline(
     return timeline
 
 
-def get_employment_timeline(
+async def get_employment_timeline(
     sd_client: SDClient,
     inst_id: str,
     cpr: str,
@@ -148,7 +148,8 @@ def get_employment_timeline(
         emp_id=emp_id,
     )
 
-    r_employment = sd_client.get_employment_changed(
+    r_employment = await asyncio.to_thread(
+        sd_client.get_employment_changed,
         GetEmploymentChangedRequest(
             InstitutionIdentifier=inst_id,
             PersonCivilRegistrationIdentifier=cpr,
@@ -159,7 +160,7 @@ def get_employment_timeline(
             EmploymentStatusIndicator=True,
             ProfessionIndicator=True,
             UUIDIndicator=True,
-        )
+        ),
     )
 
     person = only(r_employment.Person)
