@@ -20,6 +20,7 @@ from sdtoolplus.models import UnitTimeline
 logger = structlog.stdlib.get_logger()
 
 
+# TODO: move function to UnitTimeline class
 def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     return set(
         collapse(
@@ -37,6 +38,7 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     )
 
 
+# TODO: move function to EngagementTimeline class
 def _get_eng_interval_endpoints(eng_timeline: EngagementTimeline) -> set[datetime]:
     return set(
         collapse(
@@ -88,15 +90,15 @@ async def sync_ou(
                     sd_unit_timeline=sd_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
                 )
-                continue
-            await create_ou(
-                gql_client=gql_client,
-                org_unit=org_unit,
-                start=start,
-                end=end,
-                sd_unit_timeline=sd_unit_timeline,
-                org_unit_type_user_key=org_unit_type_user_key,
-            )
+            else:
+                await create_ou(
+                    gql_client=gql_client,
+                    org_unit=org_unit,
+                    start=start,
+                    end=end,
+                    sd_unit_timeline=sd_unit_timeline,
+                    org_unit_type_user_key=org_unit_type_user_key,
+                )
         else:
             await terminate_ou(
                 gql_client=gql_client,
