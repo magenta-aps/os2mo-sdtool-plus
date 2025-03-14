@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from enum import Enum
 from itertools import pairwise
@@ -33,6 +34,15 @@ V = TypeVar("V")
 class AddressTypeUserKey(Enum):
     POSTAL_ADDR = "AddressMailUnit"
     PNUMBER_ADDR = "Pnummer"
+
+
+class EngagementSyncPayload(BaseModel):
+    institution_identifier: str
+    cpr: str
+    employment_identifier: str
+    org_unit_uuid: OrgUnitUUID
+    start: date
+    end: date
 
 
 class Interval(GenericModel, Generic[V]):
