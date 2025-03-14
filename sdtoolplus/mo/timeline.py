@@ -284,13 +284,13 @@ async def terminate_ou(
 
 async def get_engagement_timeline(
     gql_client: GraphQLClient,
-    cpr: str,
+    person: UUID,
     user_key: str,
 ) -> EngagementTimeline:
-    logger.info("Get MO engagement timeline", cpr=anonymize_cpr(cpr), emp_id=user_key)
+    logger.info("Get MO engagement timeline", person=str(person), emp_id=user_key)
 
     gql_timeline = await gql_client.get_engagement_timeline(
-        cpr=cpr, user_key=user_key, from_date=None, to_date=None
+        person=person, user_key=user_key, from_date=None, to_date=None
     )
     objects = gql_timeline.objects
 
@@ -435,7 +435,9 @@ async def update_engagement(
 
     mo_validity = _get_mo_validity(start, end)
 
-    eng = await gql_client.get_engagement_timeline(cpr, user_key, start, end)
+    eng = await gql_client.get_engagement_timeline(
+        person=person, user_key=user_key, from_date=start, to_date=end
+    )
 
     if eng.objects:
         # The engagement already exists in this validity period
@@ -471,7 +473,7 @@ async def update_engagement(
 
     # The engagement does not already exist in this validity period
     eng = await gql_client.get_engagement_timeline(
-        cpr=cpr, user_key=user_key, from_date=None, to_date=None
+        person=person, user_key=user_key, from_date=None, to_date=None
     )
     await gql_client.update_engagement(
         EngagementUpdateInput(
@@ -491,14 +493,14 @@ async def update_engagement(
 
 async def terminate_engagement(
     gql_client: GraphQLClient,
-    cpr: str,
+    person: UUID,
     user_key: str,
     start: datetime,
     end: datetime,
 ) -> None:
     logger.info(
         "(Re-)terminate engagement",
-        cpr=anonymize_cpr(cpr),
+        person=str(person),
         user_key=user_key,
         start=start,
         end=end,
@@ -507,7 +509,7 @@ async def terminate_engagement(
     mo_validity = _get_mo_validity(start, end)
 
     eng = await gql_client.get_engagement_timeline(
-        cpr=cpr, user_key=user_key, from_date=None, to_date=None
+        person=person, user_key=user_key, from_date=None, to_date=None
     )
     eng_uuid = first(one(eng.objects).validities).uuid
 

@@ -23,6 +23,7 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import only
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
@@ -37,6 +38,7 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import GraphQLClient
+from .exceptions import PersonNotFoundError
 from .log import anonymize_cpr
 from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_ou_timeline
@@ -327,9 +329,17 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         # TODO: introduce OU strategy
 
+        # Get the person
+        r_person = await gql_client.get_person(payload.cpr)
+        person = only(r_person.objects)
+        if person is None:
+            # TODO: Return proper HTTP 5xx error message if this happens
+            raise PersonNotFoundError("Could not find person in MO")
+        person_uuid = first(person.validities).uuid
+
         mo_unit_timeline = await get_engagement_timeline(
             gql_client=gql_client,
-            cpr=payload.cpr,
+            person=person_uuid,
             user_key=prefix_user_key_with_inst_id(
                 payload.employment_identifier, payload.institution_identifier
             ),
@@ -337,6 +347,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         await sync_eng(
             gql_client=gql_client,
+            person=person_uuid,
             payload=payload,
             sd_eng_timeline=sd_eng_timeline,
             mo_eng_timeline=mo_unit_timeline,

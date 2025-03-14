@@ -4,14 +4,12 @@ from datetime import datetime
 from itertools import chain
 from itertools import pairwise
 from typing import cast
+from uuid import UUID
 
 import structlog
 from more_itertools import collapse
-from more_itertools import first
-from more_itertools import only
 
 from sdtoolplus.depends import GraphQLClient
-from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.log import anonymize_cpr
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_ou
@@ -70,6 +68,7 @@ def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
 
 async def sync_eng(
     gql_client: GraphQLClient,
+    person: UUID,
     # TODO: we need to change the arguments to this function later in order to
     #       to handle other triggering mechanisms
     payload: EngagementSyncPayload,
@@ -81,14 +80,6 @@ async def sync_eng(
         payload.employment_identifier, payload.institution_identifier
     )
     cpr = payload.cpr
-
-    # Get the person
-    r_person = await gql_client.get_person(cpr)
-    person = only(r_person.objects)
-    if person is None:
-        # TODO: Return proper HTTP 5xx error message if this happens
-        raise PersonNotFoundError("Could not find person in MO")
-    person_uuid = first(person.validities).uuid
 
     logger.info(
         "Create, update or terminate engagement in MO",
@@ -111,12 +102,12 @@ async def sync_eng(
         elif sd_eng_timeline.has_value(start):
             logger.debug("SD value available")
             mo_eng = await gql_client.get_engagement_timeline(
-                cpr=cpr, user_key=user_key, from_date=None, to_date=None
+                person=person, user_key=user_key, from_date=None, to_date=None
             )
             if mo_eng.objects:
                 await update_engagement(
                     gql_client=gql_client,
-                    person=person_uuid,
+                    person=person,
                     cpr=cpr,
                     user_key=user_key,
                     start=start,
@@ -126,7 +117,7 @@ async def sync_eng(
             else:
                 await create_engagement(
                     gql_client=gql_client,
-                    person=person_uuid,
+                    person=person,
                     user_key=user_key,
                     start=start,
                     end=end,
@@ -135,7 +126,7 @@ async def sync_eng(
         else:
             await terminate_engagement(
                 gql_client=gql_client,
-                cpr=cpr,
+                person=person,
                 user_key=user_key,
                 start=start,
                 end=end,

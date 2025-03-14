@@ -270,7 +270,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert r.status_code == 200
 
     updated_eng = await graphql_client.get_engagement_timeline(
-        cpr=cpr, user_key=f"II-{emp_id}", from_date=None, to_date=None
+        person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
     )
     validities = one(updated_eng.objects).validities
 
