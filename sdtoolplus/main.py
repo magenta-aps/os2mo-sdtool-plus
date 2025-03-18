@@ -334,11 +334,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         if person is None:
             # TODO: Return proper HTTP 5xx error message if this happens
             raise PersonNotFoundError("Could not find person in MO")
-        person_uuid = first(person.validities).uuid
 
         mo_unit_timeline = await get_engagement_timeline(
             gql_client=gql_client,
-            person=person_uuid,
+            person=person.uuid,
             user_key=prefix_user_key_with_inst_id(
                 payload.employment_identifier, payload.institution_identifier
             ),
@@ -346,7 +345,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         await sync_eng(
             gql_client=gql_client,
-            person=person_uuid,
+            person=person.uuid,
             payload=payload,
             sd_eng_timeline=sd_eng_timeline,
             mo_eng_timeline=mo_unit_timeline,
