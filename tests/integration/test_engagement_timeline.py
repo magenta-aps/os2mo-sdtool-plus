@@ -67,10 +67,10 @@ async def test_eng_timeline_http_triggered_sync(
     t7 = datetime(2007, 1, 1, tzinfo=tz)
 
     # Units
-    dep1_uuid = "10000000-0000-0000-0000-000000000000"
-    dep2_uuid = "20000000-0000-0000-0000-000000000000"
-    dep3_uuid = "30000000-0000-0000-0000-000000000000"
-    dep4_uuid = "40000000-0000-0000-0000-000000000000"
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+    dep2_uuid = UUID("20000000-0000-0000-0000-000000000000")
+    dep3_uuid = UUID("30000000-0000-0000-0000-000000000000")
+    dep4_uuid = UUID("40000000-0000-0000-0000-000000000000")
 
     # Create person
     person_uuid = uuid4()
@@ -95,7 +95,7 @@ async def test_eng_timeline_http_triggered_sync(
                 extension_1="name4",
                 extension_7="v1",
                 person=person_uuid,
-                org_unit=UUID(dep3_uuid),
+                org_unit=dep3_uuid,
                 engagement_type=engagement_type,
                 job_function=job_function_1234,
             )
@@ -111,7 +111,7 @@ async def test_eng_timeline_http_triggered_sync(
             extension_1="name4",
             extension_7="v2",
             person=person_uuid,
-            org_unit=UUID(dep4_uuid),
+            org_unit=dep4_uuid,
             engagement_type=engagement_type,
             job_function=job_function_1234,
         )
@@ -126,7 +126,7 @@ async def test_eng_timeline_http_triggered_sync(
             extension_1="name5",
             extension_7="v3",
             person=person_uuid,
-            org_unit=UUID(dep4_uuid),
+            org_unit=dep4_uuid,
             engagement_type=engagement_type,
             job_function=job_function_1234,
         )
@@ -141,7 +141,7 @@ async def test_eng_timeline_http_triggered_sync(
             extension_1="name5",
             extension_7="v4",
             person=person_uuid,
-            org_unit=UUID(dep4_uuid),
+            org_unit=dep4_uuid,
             engagement_type=engagement_type,
             job_function=job_function_1234,
         )
@@ -156,7 +156,7 @@ async def test_eng_timeline_http_triggered_sync(
             extension_1="name5",
             extension_7="v5",
             person=person_uuid,
-            org_unit=UUID(dep4_uuid),
+            org_unit=dep4_uuid,
             engagement_type=engagement_type,
             job_function=job_function_5678,
         )
@@ -187,13 +187,13 @@ async def test_eng_timeline_http_triggered_sync(
                 <ActivationDate>2001-01-01</ActivationDate>
                 <DeactivationDate>2001-12-31</DeactivationDate>
                 <DepartmentIdentifier>dep1</DepartmentIdentifier>
-                <DepartmentUUIDIdentifier>{dep1_uuid}</DepartmentUUIDIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
               </EmploymentDepartment>
               <EmploymentDepartment>
                 <ActivationDate>2002-01-01</ActivationDate>
                 <DeactivationDate>9999-12-31</DeactivationDate>
                 <DepartmentIdentifier>dep2</DepartmentIdentifier>
-                <DepartmentUUIDIdentifier>{dep2_uuid}</DepartmentUUIDIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep2_uuid)}</DepartmentUUIDIdentifier>
               </EmploymentDepartment>
               <Profession>
                 <ActivationDate>2001-01-01</ActivationDate>
@@ -283,7 +283,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_1.user_key == f"II-{emp_id}"
     assert interval_1.job_function.uuid == job_function_9000
     assert interval_1.extension_7 is None
-    assert one(interval_1.org_unit).uuid == UUID(dep1_uuid)
+    assert one(interval_1.org_unit).uuid == dep1_uuid
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -291,7 +291,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_2.extension_1 == "name1"
     assert interval_2.user_key == f"II-{emp_id}"
     assert interval_2.job_function.uuid == job_function_9000
-    assert one(interval_2.org_unit).uuid == UUID(dep2_uuid)
+    assert one(interval_2.org_unit).uuid == dep2_uuid
     assert interval_2.extension_7 == "v1"
 
     interval_3 = validities[2]
@@ -300,7 +300,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_3.extension_1 == "name2"
     assert interval_3.user_key == f"II-{emp_id}"
     assert interval_3.job_function.uuid == job_function_9000
-    assert one(interval_3.org_unit).uuid == UUID(dep2_uuid)
+    assert one(interval_3.org_unit).uuid == dep2_uuid
     assert interval_3.extension_7 == "v2"
 
     interval_4 = validities[3]
@@ -309,7 +309,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_4.extension_1 == "name2"
     assert interval_4.user_key == f"II-{emp_id}"
     assert interval_4.job_function.uuid == job_function_9000
-    assert one(interval_4.org_unit).uuid == UUID(dep2_uuid)
+    assert one(interval_4.org_unit).uuid == dep2_uuid
     assert interval_4.extension_7 == "v3"
 
     interval_5 = validities[4]
@@ -318,5 +318,5 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_5.extension_1 == "name3"
     assert interval_5.user_key == f"II-{emp_id}"
     assert interval_5.job_function.uuid == job_function_9000
-    assert one(interval_5.org_unit).uuid == UUID(dep2_uuid)
+    assert one(interval_5.org_unit).uuid == dep2_uuid
     assert interval_5.extension_7 == "v5"
