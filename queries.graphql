@@ -126,9 +126,7 @@ query GetPerson($cpr: CPR!) {
     filter: { cpr_numbers: [$cpr], from_date: null, to_date: null }
   ) {
     objects {
-      validities {
-        uuid
-      }
+      uuid
     }
   }
 }
@@ -154,8 +152,8 @@ query GetEngagementTimeline(
     }
   ) {
     objects {
+      uuid
       validities {
-        uuid
         user_key
         primary {
           uuid
