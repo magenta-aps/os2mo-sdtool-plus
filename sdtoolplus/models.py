@@ -112,12 +112,6 @@ class EngagementKey(Interval[str]):
 
 
 class EngagementName(Interval[str]):
-    """
-    The SD (free text) EmploymentName corresponding to MOs extension_1 on the engagement
-    or the engagement_job_function class name (depending on the application
-    configuration).
-    """
-
     pass
 
 
