@@ -7,14 +7,20 @@ from datetime import time
 from datetime import timedelta
 
 import structlog
+from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.requests import GetEmploymentChangedRequest
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import EngagementKey
+from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -22,6 +28,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
+from sdtoolplus.sd.employment import EmploymentStatusCode
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 logger = structlog.stdlib.get_logger()
@@ -63,13 +70,7 @@ async def get_department_timeline(
         )
         parents = sd_client.get_department_parent_history(unit_uuid)
     except (SDRootElementNotFound, SDParentNotFound):
-        return UnitTimeline(
-            active=Timeline[Active](),
-            name=Timeline[UnitName](),
-            unit_id=Timeline[UnitId](),
-            unit_level=Timeline[UnitLevel](),
-            parent=Timeline[UnitParent](),
-        )
+        return UnitTimeline()
 
     active_intervals = tuple(
         Active(
@@ -124,5 +125,108 @@ async def get_department_timeline(
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline)
+
+    return timeline
+
+
+async def get_employment_timeline(
+    sd_client: SDClient,
+    inst_id: str,
+    cpr: str,
+    emp_id: str,
+) -> EngagementTimeline:
+    logger.info(
+        "Get SD employment timeline",
+        inst_id=inst_id,
+        cpr=cpr,
+        emp_id=emp_id,
+    )
+
+    r_employment = await asyncio.to_thread(
+        sd_client.get_employment_changed,
+        GetEmploymentChangedRequest(
+            InstitutionIdentifier=inst_id,
+            PersonCivilRegistrationIdentifier=cpr,
+            EmploymentIdentifier=emp_id,
+            ActivationDate=date.min,
+            DeactivationDate=date.max,
+            DepartmentIndicator=True,
+            EmploymentStatusIndicator=True,
+            ProfessionIndicator=True,
+            UUIDIndicator=True,
+        ),
+    )
+
+    person = only(r_employment.Person)
+    if not person:
+        return EngagementTimeline()
+    employment = only(person.Employment)
+    if not employment:
+        return EngagementTimeline()
+
+    active_intervals = (
+        tuple(
+            Active(
+                start=_sd_start_datetime(status.ActivationDate),
+                end=_sd_end_datetime(status.DeactivationDate),
+                value=True,
+            )
+            for status in employment.EmploymentStatus
+            if EmploymentStatusCode(status.EmploymentStatusCode).is_active()
+        )
+        if employment.EmploymentStatus
+        else tuple()
+    )
+
+    eng_key_intervals = (
+        tuple(
+            EngagementKey(
+                start=_sd_start_datetime(prof.ActivationDate),
+                end=_sd_end_datetime(prof.DeactivationDate),
+                value=prof.JobPositionIdentifier,
+            )
+            for prof in employment.Profession
+        )
+        if employment.Profession
+        else tuple()
+    )
+
+    eng_name_intervals = (
+        tuple(
+            EngagementName(
+                start=_sd_start_datetime(prof.ActivationDate),
+                end=_sd_end_datetime(prof.DeactivationDate),
+                value=prof.EmploymentName,
+            )
+            for prof in employment.Profession
+        )
+        if employment.Profession
+        else tuple()
+    )
+
+    eng_unit_intervals = (
+        tuple(
+            EngagementUnit(
+                start=_sd_start_datetime(dep.ActivationDate),
+                end=_sd_end_datetime(dep.DeactivationDate),
+                value=dep.DepartmentUUIDIdentifier,
+            )
+            for dep in employment.EmploymentDepartment
+        )
+        if employment.EmploymentDepartment
+        else tuple()
+    )
+
+    timeline = EngagementTimeline(
+        eng_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+        eng_key=Timeline[EngagementKey](intervals=combine_intervals(eng_key_intervals)),
+        eng_name=Timeline[EngagementName](
+            intervals=combine_intervals(eng_name_intervals)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=combine_intervals(eng_unit_intervals)
+        ),
+    )
+    logger.debug("SD engagement timeline", timeline=timeline)
 
     return timeline

@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from enum import Enum
 from itertools import pairwise
 from typing import Any
 from typing import Generic
 from typing import Optional
+from typing import Self
 from typing import TypeVar
 from zoneinfo import ZoneInfo
 
@@ -32,6 +34,15 @@ V = TypeVar("V")
 class AddressTypeUserKey(Enum):
     POSTAL_ADDR = "AddressMailUnit"
     PNUMBER_ADDR = "Pnummer"
+
+
+class EngagementSyncPayload(BaseModel):
+    institution_identifier: str
+    cpr: str
+    employment_identifier: str
+    org_unit_uuid: OrgUnitUUID
+    start: date
+    end: date
 
 
 class Interval(GenericModel, Generic[V]):
@@ -89,6 +100,22 @@ class UnitName(Interval[str]):
 
 
 class UnitParent(Interval[Optional[OrgUnitUUID]]):
+    pass
+
+
+class EngagementKey(Interval[str]):
+    """
+    The SD JobPositionIdentifier corresponding to MOs job_function user_key
+    """
+
+    pass
+
+
+class EngagementName(Interval[str]):
+    pass
+
+
+class EngagementUnit(Interval[OrgUnitUUID]):
     pass
 
 
@@ -167,11 +194,11 @@ class Timeline(GenericModel, Generic[T]):
 
 
 class UnitTimeline(BaseModel):
-    active: Timeline[Active]
-    name: Timeline[UnitName]
-    unit_id: Timeline[UnitId]
-    unit_level: Timeline[UnitLevel]
-    parent: Timeline[UnitParent]
+    active: Timeline[Active] = Timeline[Active]()
+    name: Timeline[UnitName] = Timeline[UnitName]()
+    unit_id: Timeline[UnitId] = Timeline[UnitId]()
+    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
+    parent: Timeline[UnitParent] = Timeline[UnitParent]()
 
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
@@ -185,19 +212,58 @@ class UnitTimeline(BaseModel):
         except NoValueError:
             return False
 
-    def equal_at(self, timestamp: datetime, other: "UnitTimeline") -> bool:
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
             return (
-                self.active.entity_at(timestamp) == other.active.entity_at(timestamp)
-                and self.name.entity_at(timestamp) == other.name.entity_at(timestamp)
-                and self.unit_id.entity_at(timestamp)
-                == other.unit_id.entity_at(timestamp)
-                and self.unit_level.entity_at(timestamp)
-                == other.unit_level.entity_at(timestamp)
-                and self.parent.entity_at(timestamp)
-                == other.parent.entity_at(timestamp)
+                self.active.entity_at(timestamp),
+                self.name.entity_at(timestamp),
+                self.unit_id.entity_at(timestamp),
+                self.unit_level.entity_at(timestamp),
+                self.parent.entity_at(timestamp),
+            ) == (
+                other.active.entity_at(timestamp),
+                other.name.entity_at(timestamp),
+                other.unit_id.entity_at(timestamp),
+                other.unit_level.entity_at(timestamp),
+                other.parent.entity_at(timestamp),
+            )
+        return False
+
+
+class EngagementTimeline(BaseModel):
+    eng_active: Timeline[Active] = Timeline[Active]()
+    eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
+    eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
+    eng_unit: Timeline[EngagementUnit] = Timeline[EngagementUnit]()
+
+    def has_value(self, timestamp: datetime) -> bool:
+        # TODO: unit test
+        try:
+            self.eng_active.entity_at(timestamp)
+            self.eng_key.entity_at(timestamp)
+            self.eng_name.entity_at(timestamp)
+            self.eng_unit.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
+        # TODO: unit test
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return (
+                self.eng_active.entity_at(timestamp),
+                self.eng_key.entity_at(timestamp),
+                self.eng_name.entity_at(timestamp),
+                self.eng_unit.entity_at(timestamp),
+            ) == (
+                other.eng_active.entity_at(timestamp),
+                other.eng_key.entity_at(timestamp),
+                other.eng_name.entity_at(timestamp),
+                other.eng_unit.entity_at(timestamp),
             )
         return False

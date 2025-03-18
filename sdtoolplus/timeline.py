@@ -4,21 +4,29 @@ from datetime import datetime
 from itertools import chain
 from itertools import pairwise
 from typing import cast
+from uuid import UUID
 
 import structlog
 from more_itertools import collapse
+from more_itertools import one
 
 from sdtoolplus.depends import GraphQLClient
+from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_ou
+from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_ou
+from sdtoolplus.mo.timeline import update_engagement
 from sdtoolplus.mo.timeline import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import EngagementSyncPayload
+from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
 
 
+# TODO: move function to UnitTimeline class
 def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     return set(
         collapse(
@@ -34,6 +42,104 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
             )
         )
     )
+
+
+# TODO: move function to EngagementTimeline class
+def _get_eng_interval_endpoints(eng_timeline: EngagementTimeline) -> set[datetime]:
+    return set(
+        collapse(
+            set(
+                (i.start, i.end)
+                for i in chain(
+                    cast(tuple[Interval, ...], eng_timeline.eng_active.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_key.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_name.intervals),
+                    cast(tuple[Interval, ...], eng_timeline.eng_unit.intervals),
+                )
+            )
+        )
+    )
+
+
+# TODO: replace this function with a proper strategy pattern when needed
+def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
+    return f"{inst_id}-{user_key}"
+
+
+async def sync_eng(
+    gql_client: GraphQLClient,
+    person: UUID,
+    # TODO: we need to change the arguments to this function later in order to
+    #       to handle other triggering mechanisms
+    payload: EngagementSyncPayload,
+    sd_eng_timeline: EngagementTimeline,
+    mo_eng_timeline: EngagementTimeline,
+    dry_run: bool,
+) -> None:
+    user_key = prefix_user_key_with_inst_id(
+        payload.employment_identifier, payload.institution_identifier
+    )
+
+    logger.info(
+        "Create, update or terminate engagement in MO",
+        person=str(person),
+        user_key=user_key,
+    )
+
+    # Get the engagement type
+    # TODO: we need to find out how (if possible) to get the engagement type from SD
+    r_eng_type = await gql_client.get_facet_class(
+        "engagement_type", "SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b"
+    )
+    current_eng_type = one(r_eng_type.objects).current
+    assert current_eng_type is not None
+    eng_type_uuid = current_eng_type.uuid
+
+    sd_interval_endpoints = _get_eng_interval_endpoints(sd_eng_timeline)
+    mo_interval_endpoints = _get_eng_interval_endpoints(mo_eng_timeline)
+
+    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
+    endpoints.sort()
+    logger.debug("List of endpoints", endpoints=endpoints)
+
+    for start, end in pairwise(endpoints):
+        logger.debug("Processing endpoint pair", start=start, end=end)
+        if sd_eng_timeline.equal_at(start, mo_eng_timeline):
+            logger.debug("SD and MO equal")
+            continue
+        elif sd_eng_timeline.has_value(start):
+            logger.debug("SD value available")
+            mo_eng = await gql_client.get_engagement_timeline(
+                person=person, user_key=user_key, from_date=None, to_date=None
+            )
+            if mo_eng.objects:
+                await update_engagement(
+                    gql_client=gql_client,
+                    person=person,
+                    user_key=user_key,
+                    start=start,
+                    end=end,
+                    sd_eng_timeline=sd_eng_timeline,
+                    eng_type=eng_type_uuid,
+                )
+            else:
+                await create_engagement(
+                    gql_client=gql_client,
+                    person=person,
+                    user_key=user_key,
+                    start=start,
+                    end=end,
+                    sd_eng_timeline=sd_eng_timeline,
+                    eng_type=eng_type_uuid,
+                )
+        else:
+            await terminate_engagement(
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                start=start,
+                end=end,
+            )
 
 
 async def sync_ou(
@@ -71,15 +177,15 @@ async def sync_ou(
                     sd_unit_timeline=sd_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
                 )
-                continue
-            await create_ou(
-                gql_client=gql_client,
-                org_unit=org_unit,
-                start=start,
-                end=end,
-                sd_unit_timeline=sd_unit_timeline,
-                org_unit_type_user_key=org_unit_type_user_key,
-            )
+            else:
+                await create_ou(
+                    gql_client=gql_client,
+                    org_unit=org_unit,
+                    start=start,
+                    end=end,
+                    sd_unit_timeline=sd_unit_timeline,
+                    org_unit_type_user_key=org_unit_type_user_key,
+                )
         else:
             await terminate_ou(
                 gql_client=gql_client,

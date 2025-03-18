@@ -4,3 +4,7 @@
 
 class NoValueError(Exception):
     pass
+
+
+class PersonNotFoundError(Exception):
+    pass

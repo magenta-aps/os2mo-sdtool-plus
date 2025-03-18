@@ -45,7 +45,19 @@ facets:
     TestAnsat:
       title: "TestAnsat"
       scope: "TEXT"
+    SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b:
+      title: "Månedslønnet, fuldtid"
+      scope: "TEXT"
   engagement_job_function:
     Ninja:
       title: "Ninja"
+      scope: "TEXT"
+    1234:
+      title: "Kung Fu Master"
+      scope: "TEXT"
+    5678:
+      title: "Shogun"
+      scope: "TEXT"
+    9000:
+      title: "Karate Coach"
       scope: "TEXT"

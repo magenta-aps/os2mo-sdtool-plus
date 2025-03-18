@@ -23,6 +23,7 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import only
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
@@ -37,10 +38,16 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import GraphQLClient
+from .exceptions import PersonNotFoundError
+from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
+from .models import EngagementSyncPayload
 from .sd.timeline import get_department_timeline
+from .sd.timeline import get_employment_timeline
+from .timeline import prefix_user_key_with_inst_id
+from .timeline import sync_eng
 from .timeline import sync_ou
 from .tree_tools import tree_as_string
 
@@ -279,6 +286,73 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Run completed!")
 
         return results
+
+    @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
+    async def timeline_sync_engagement(
+        gql_client: GraphQLClient,
+        payload: EngagementSyncPayload,
+        dry_run: bool = False,
+    ) -> dict:
+        """
+        Sync the entire engagement timeline for the given CPR and
+        SD EmploymentIdentifier (corresponding to the MO engagement user_key).
+
+        Args:
+            gql_client: The GraphQL client
+
+            inst_id: The SD institution
+            dry_run: If true, nothing will be written to MO.
+
+        Returns:
+            Dictionary with status
+        """
+
+        logger.info(
+            "Sync engagement timeline",
+            inst_id=payload.institution_identifier,
+            cpr=payload.cpr,
+            emp_id=payload.employment_identifier,
+            # dry_run=dry_run,
+        )
+
+        sd_client = SDClient(
+            settings.sd_username,
+            settings.sd_password.get_secret_value(),
+        )
+        sd_eng_timeline = await get_employment_timeline(
+            sd_client=sd_client,
+            inst_id=payload.institution_identifier,
+            cpr=payload.cpr,
+            emp_id=payload.employment_identifier,
+        )
+
+        # TODO: introduce OU strategy
+
+        # Get the person
+        r_person = await gql_client.get_person(payload.cpr)
+        person = only(r_person.objects)
+        if person is None:
+            # TODO: Return proper HTTP 5xx error message if this happens
+            raise PersonNotFoundError("Could not find person in MO")
+
+        mo_unit_timeline = await get_engagement_timeline(
+            gql_client=gql_client,
+            person=person.uuid,
+            user_key=prefix_user_key_with_inst_id(
+                payload.employment_identifier, payload.institution_identifier
+            ),
+        )
+
+        await sync_eng(
+            gql_client=gql_client,
+            person=person.uuid,
+            payload=payload,
+            sd_eng_timeline=sd_eng_timeline,
+            mo_eng_timeline=mo_unit_timeline,
+            dry_run=dry_run,
+        )
+
+        return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
