@@ -28,6 +28,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
+from sdtoolplus.sd.employment import EmploymentStatusCode
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 logger = structlog.stdlib.get_logger()
@@ -170,11 +171,7 @@ async def get_employment_timeline(
                 value=True,
             )
             for status in employment.EmploymentStatus
-            # Only include the periods where the employment is active in SD
-            # 0 = hired, but not in pay
-            # 1 = hired, in pay
-            # 3 = leave
-            if status.EmploymentStatusCode in ("0", "1", "3")
+            if EmploymentStatusCode(status.EmploymentStatusCode).is_active()
         )
         if employment.EmploymentStatus
         else tuple()
