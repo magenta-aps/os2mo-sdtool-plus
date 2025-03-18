@@ -39,7 +39,6 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import GraphQLClient
 from .exceptions import PersonNotFoundError
-from .log import anonymize_cpr
 from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
@@ -311,7 +310,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info(
             "Sync engagement timeline",
             inst_id=payload.institution_identifier,
-            cpr=anonymize_cpr(payload.cpr),
+            cpr=payload.cpr,
             emp_id=payload.employment_identifier,
             # dry_run=dry_run,
         )
