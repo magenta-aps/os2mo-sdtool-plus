@@ -158,8 +158,9 @@ async def get_employment_timeline(
     )
 
     person = only(r_employment.Person)
-    employment = only(person.Employment) if person is not None else None
-
+    if not person:
+        return EngagementTimeline()
+    employment = only(person.Employment)
     if not employment:
         return EngagementTimeline()
 
