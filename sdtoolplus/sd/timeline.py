@@ -70,13 +70,7 @@ async def get_department_timeline(
         )
         parents = sd_client.get_department_parent_history(unit_uuid)
     except (SDRootElementNotFound, SDParentNotFound):
-        return UnitTimeline(
-            active=Timeline[Active](),
-            name=Timeline[UnitName](),
-            unit_id=Timeline[UnitId](),
-            unit_level=Timeline[UnitLevel](),
-            parent=Timeline[UnitParent](),
-        )
+        return UnitTimeline()
 
     active_intervals = tuple(
         Active(
@@ -167,12 +161,7 @@ async def get_employment_timeline(
     employment = only(person.Employment) if person is not None else None
 
     if not employment:
-        return EngagementTimeline(
-            eng_active=Timeline[Active](),
-            eng_key=Timeline[EngagementKey](),
-            eng_name=Timeline[EngagementName](),
-            eng_unit=Timeline[EngagementUnit](),
-        )
+        return EngagementTimeline()
 
     active_intervals = (
         tuple(
