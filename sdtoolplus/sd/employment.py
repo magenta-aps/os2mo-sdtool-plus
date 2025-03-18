@@ -4,6 +4,8 @@ from enum import Enum
 
 
 class EmploymentStatusCode(Enum):
+    # See docs at
+    # https://www.silkeborgdata.dk/start/support/vejledning/9392-getemployment20111201
     EMPLOYED_NO_PAY = "0"
     EMPLOYED_WITH_PAY = "1"
     LEAVE = "3"
