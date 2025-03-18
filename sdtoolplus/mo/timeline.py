@@ -36,7 +36,10 @@ from sdtoolplus.models import combine_intervals
 logger = structlog.stdlib.get_logger()
 
 
-def _mo_end_datetime(d: datetime | None) -> datetime:
+def _from_mo_end_datetime(d: datetime | None) -> datetime:
+    """
+    Convert a MO end datetime to the end date required by our timeline objects.
+    """
     return d + timedelta(days=1) if d is not None else POSITIVE_INFINITY
 
 
@@ -103,7 +106,7 @@ async def get_ou_timeline(
             start=obj.validity.from_,
             # TODO (#61435): MOs GraphQL subtracts one day from the validity end dates
             # when reading, compared to what was written.
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=True,
         )
         for obj in validities
@@ -112,7 +115,7 @@ async def get_ou_timeline(
     id_intervals = tuple(
         UnitId(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=obj.user_key,
         )
         for obj in validities
@@ -121,7 +124,7 @@ async def get_ou_timeline(
     level_intervals = tuple(
         UnitLevel(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=obj.org_unit_level.name if obj.org_unit_level is not None else None,
         )
         for obj in validities
@@ -130,7 +133,7 @@ async def get_ou_timeline(
     name_intervals = tuple(
         UnitName(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=obj.name,
         )
         for obj in validities
@@ -139,7 +142,7 @@ async def get_ou_timeline(
     parent_intervals = tuple(
         UnitParent(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=obj.parent.uuid if obj.parent is not None else None,
         )
         for obj in validities
@@ -308,7 +311,7 @@ async def get_engagement_timeline(
             start=obj.validity.from_,
             # TODO (#61435): MOs GraphQL subtracts one day from the validity end dates
             # when reading, compared to what was written.
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=True,
         )
         for obj in validities
@@ -317,7 +320,7 @@ async def get_engagement_timeline(
     key_intervals = tuple(
         EngagementKey(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=obj.job_function.user_key,
         )
         for obj in validities
@@ -326,7 +329,7 @@ async def get_engagement_timeline(
     name_intervals = tuple(
         EngagementName(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             # TODO: introduce name strategy here
             value=obj.extension_1,
         )
@@ -336,7 +339,7 @@ async def get_engagement_timeline(
     unit_intervals = tuple(
         EngagementUnit(
             start=obj.validity.from_,
-            end=_mo_end_datetime(obj.validity.to),
+            end=_from_mo_end_datetime(obj.validity.to),
             value=one(obj.org_unit).uuid,
         )
         for obj in validities
