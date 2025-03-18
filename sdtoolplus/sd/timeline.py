@@ -171,6 +171,10 @@ async def get_employment_timeline(
                 value=True,
             )
             for status in employment.EmploymentStatus
+            # Only include the periods where the employment is active in SD
+            # 0 = hired, but not in pay
+            # 1 = hired, in pay
+            # 3 = leave
             if status.EmploymentStatusCode in ("0", "1", "3")
         )
         if employment.EmploymentStatus
