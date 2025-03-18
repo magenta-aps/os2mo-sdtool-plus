@@ -200,11 +200,11 @@ class Timeline(GenericModel, Generic[T]):
 
 
 class UnitTimeline(BaseModel):
-    active: Timeline[Active]
-    name: Timeline[UnitName]
-    unit_id: Timeline[UnitId]
-    unit_level: Timeline[UnitLevel]
-    parent: Timeline[UnitParent]
+    active: Timeline[Active] = Timeline[Active]()
+    name: Timeline[UnitName] = Timeline[UnitName]()
+    unit_id: Timeline[UnitId] = Timeline[UnitId]()
+    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
+    parent: Timeline[UnitParent] = Timeline[UnitParent]()
 
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
@@ -240,10 +240,10 @@ class UnitTimeline(BaseModel):
 
 
 class EngagementTimeline(BaseModel):
-    eng_active: Timeline[Active]
-    eng_key: Timeline[EngagementKey]
-    eng_name: Timeline[EngagementName]
-    eng_unit: Timeline[EngagementUnit]
+    eng_active: Timeline[Active] = Timeline[Active]()
+    eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
+    eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
+    eng_unit: Timeline[EngagementUnit] = Timeline[EngagementUnit]()
 
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test

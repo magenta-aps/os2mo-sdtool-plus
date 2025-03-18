@@ -9,8 +9,16 @@ import pytest
 
 from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.models import Active
+from sdtoolplus.models import EngagementKey
+from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
+from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
+from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
 TZ = ZoneInfo("Europe/London")
@@ -212,3 +220,22 @@ def test_timeline_entity_at_no_value():
     # Act + Assert
     with pytest.raises(NoValueError):
         timeline.entity_at(YESTERDAY_START - timedelta(hours=12))
+
+
+def test_unit_timeline_can_be_instantiated_with_empty_values():
+    assert UnitTimeline() == UnitTimeline(
+        active=Timeline[Active](),
+        name=Timeline[UnitName](),
+        unit_id=Timeline[UnitId](),
+        unit_level=Timeline[UnitLevel](),
+        parent=Timeline[UnitParent](),
+    )
+
+
+def test_engagement_timeline_can_be_instantiated_with_empty_values():
+    assert EngagementTimeline() == EngagementTimeline(
+        eng_active=Timeline[Active](),
+        eng_key=Timeline[EngagementKey](),
+        eng_name=Timeline[EngagementName](),
+        eng_unit=Timeline[EngagementUnit](),
+    )
