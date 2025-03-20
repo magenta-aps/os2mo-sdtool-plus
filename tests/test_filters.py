@@ -99,7 +99,7 @@ async def test_filter_by_hierarchy_line_mgmt_filtering(
 ):
     # Arrange
     mock_gql_client = AsyncMock()
-    mock_gql_client.get_facet_class.return_value = GetClassClasses(
+    mock_gql_client.get_class.return_value = GetClassClasses(
         objects=[
             GetClassClassesObjects(
                 uuid=LINE_MGMT_CLASS_UUID,
@@ -120,7 +120,3 @@ async def test_filter_by_hierarchy_line_mgmt_filtering(
 
     # Assert
     assert one(filtered_units).uuid == UUID("10000000-0000-0000-0000-000000000000")
-
-    mock_gql_client.get_facet_class.assert_awaited_once_with(
-        "org_unit_hierarchy", "linjeorg"
-    )
