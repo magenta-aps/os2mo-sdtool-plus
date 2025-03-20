@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock
 from uuid import uuid4
 
+import pytest
 from more_itertools import one
 from pydantic import parse_obj_as
 from sdclient.exceptions import SDParentNotFound
@@ -12,6 +14,7 @@ from sdclient.exceptions import SDRootElementNotFound
 from sdclient.responses import DepartmentParentHistoryObj
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
+from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
@@ -20,12 +23,14 @@ from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
+from sdtoolplus.sd.timeline import _sd_employment_type
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
@@ -454,3 +459,34 @@ async def test_get_engagement_timeline_no_employment_found():
         eng_name=Timeline[EngagementName](),
         eng_unit=Timeline[EngagementUnit](),
     )
+
+
+@pytest.mark.parametrize(
+    "salaried_indicator, full_time_indicator, expected_eng_type",
+    [
+        (False, None, EngType.HOURLY),
+        (True, None, EngType.MONTHLY_PART_TIME),
+        (True, False, EngType.MONTHLY_PART_TIME),
+        (True, True, EngType.MONTHLY_FULL_TIME),
+    ],
+)
+def test__sd_employment_type(
+    salaried_indicator: bool,
+    full_time_indicator: bool | None,
+    expected_eng_type: EngType,
+):
+    # Arrange
+    worktime = WorkingTime(
+        ActivationDate=date.today(),
+        DeactivationDate=date.today(),
+        OccupationRate=Decimal("1.0000"),
+        SalaryRate=Decimal("1.0000"),
+        SalariedIndicator=salaried_indicator,
+        FullTimeIndicator=full_time_indicator,
+    )
+
+    # Act
+    eng_type = _sd_employment_type(worktime)
+
+    # Assert
+    assert eng_type == expected_eng_type
