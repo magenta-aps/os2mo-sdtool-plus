@@ -59,14 +59,19 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
   }
 }
 
-query GetFacetClass($facet_user_key: String!, $class_user_key: String!) {
-  classes(filter: {user_keys: [$class_user_key], facet: {user_keys: [$facet_user_key]}}) {
+query GetClass($class_filter: ClassFilter!) {
+  classes(filter: $class_filter) {
     objects {
+      uuid
       current {
         uuid
         user_key
         name
         scope
+        parent {
+          uuid
+          user_key
+        }
       }
     }
   }
