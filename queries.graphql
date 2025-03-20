@@ -185,6 +185,8 @@ query GetEngagementTimeline(
         }
         engagement_type {
           uuid
+          user_key
+          name
         }
         job_function {
           uuid
