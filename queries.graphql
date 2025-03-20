@@ -59,6 +59,13 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
   }
 }
 
+query GetFacetUuid($user_key: String!) {
+  facets(filter: {user_keys: [$user_key]}) {
+    objects {
+      uuid
+    }
+  }
+}
 query GetClass($class_filter: ClassFilter!) {
   classes(filter: $class_filter) {
     objects {
@@ -76,6 +83,19 @@ query GetClass($class_filter: ClassFilter!) {
     }
   }
 }
+
+mutation CreateClass($input: ClassCreateInput!) {
+  class_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdateClass($input: ClassUpdateInput!) {
+  class_update(input: $input) {
+    uuid
+  }
+}
+
 
 query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: DateTime) {
   org_units(filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }) {

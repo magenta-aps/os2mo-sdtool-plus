@@ -107,6 +107,7 @@ async def test_filter_by_hierarchy_line_mgmt_filtering(
                     uuid=LINE_MGMT_CLASS_UUID,
                     user_key="linjeorg",
                     name="Linjeorganisation",
+                    scope=None,
                     parent=None,
                 ),
             )
