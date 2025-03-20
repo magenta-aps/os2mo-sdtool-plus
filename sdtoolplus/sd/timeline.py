@@ -21,6 +21,7 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
@@ -163,6 +164,7 @@ async def get_employment_timeline(
             DepartmentIndicator=True,
             EmploymentStatusIndicator=True,
             ProfessionIndicator=True,
+            WorkingTimeIndicator=True,
             UUIDIndicator=True,
         ),
     )
@@ -227,6 +229,19 @@ async def get_employment_timeline(
         else tuple()
     )
 
+    eng_type_intervals = (
+        tuple(
+            EngagementType(
+                start=_sd_start_datetime(working_time.ActivationDate),
+                end=_sd_end_datetime(working_time.DeactivationDate),
+                value=_sd_employment_type(working_time),
+            )
+            for working_time in employment.WorkingTime
+        )
+        if employment.WorkingTime
+        else tuple()
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(eng_key_intervals)),
@@ -235,6 +250,9 @@ async def get_employment_timeline(
         ),
         eng_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=combine_intervals(eng_type_intervals)
         ),
     )
     logger.debug("SD engagement timeline", timeline=timeline)

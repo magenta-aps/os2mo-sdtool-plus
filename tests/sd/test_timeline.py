@@ -22,6 +22,7 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
@@ -331,6 +332,24 @@ async def test_get_engagement_timeline():
                                 "EmploymentStatusCode": "8",
                             },
                         ],
+                        "WorkingTime": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2021-12-31",
+                                "OccupationRate": "1.0000",
+                                "SalaryRate": "1.0000",
+                                "SalariedIndicator": False,
+                                "FullTimeIndicator": True,
+                            },
+                            {
+                                "ActivationDate": "2022-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "OccupationRate": "1.0000",
+                                "SalaryRate": "1.0000",
+                                "SalariedIndicator": True,
+                                "FullTimeIndicator": True,
+                            },
+                        ],
                     }
                 ],
             }
@@ -357,6 +376,7 @@ async def test_get_engagement_timeline():
     assert query_params.DepartmentIndicator is True
     assert query_params.EmploymentStatusIndicator is True
     assert query_params.ProfessionIndicator is True
+    assert query_params.WorkingTimeIndicator is True
     assert query_params.UUIDIndicator is True
 
     assert engagement_timeline.eng_active == Timeline[Active](
@@ -405,6 +425,21 @@ async def test_get_engagement_timeline():
                 start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
                 value=dep_uuid,
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_type == Timeline[EngagementType](
+        intervals=(
+            EngagementType(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value=EngType.HOURLY,
+            ),
+            EngagementType(
+                start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
+                value=EngType.MONTHLY_FULL_TIME,
             ),
         )
     )
