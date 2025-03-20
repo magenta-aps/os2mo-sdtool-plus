@@ -409,7 +409,7 @@ async def create_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
-    eng_type: UUID,
+    eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -436,7 +436,7 @@ async def create_engagement(
             person=person,
             # TODO: introduce org_unit strategy
             org_unit=sd_eng_timeline.eng_unit.entity_at(start),
-            engagement_type=eng_type,
+            engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
         )
@@ -450,7 +450,7 @@ async def update_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
-    eng_type: UUID,
+    eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -500,8 +500,9 @@ async def update_engagement(
                     extension_10=validity.extension_10,
                     person=person,
                     org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-                    # TODO: we need to find out how (if possible) to get the engagement type from SD
-                    engagement_type=validity.engagement_type.uuid,
+                    engagement_type=eng_types[
+                        sd_eng_timeline.eng_type.entity_at(start).value  # type: ignore
+                    ],
                     job_function=job_function_uuid,
                 )
             )
@@ -520,8 +521,7 @@ async def update_engagement(
             extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
             person=person,
             org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-            # TODO: we need to find out how (if possible) to get the engagement type from SD
-            engagement_type=eng_type,
+            engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             job_function=job_function_uuid,
         )
     )
