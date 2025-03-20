@@ -36,6 +36,12 @@ class AddressTypeUserKey(Enum):
     PNUMBER_ADDR = "Pnummer"
 
 
+class EngType(Enum):
+    MONTHLY_FULL_TIME = "Månedslønnet, fuldtid"
+    MONTHLY_PART_TIME = "Månedslønnet, deltid"
+    HOURLY = "Timelønnet"
+
+
 class EngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
@@ -116,6 +122,10 @@ class EngagementName(Interval[str]):
 
 
 class EngagementUnit(Interval[OrgUnitUUID]):
+    pass
+
+
+class EngagementType(Interval[EngType]):
     pass
 
 
@@ -238,6 +248,7 @@ class EngagementTimeline(BaseModel):
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
     eng_unit: Timeline[EngagementUnit] = Timeline[EngagementUnit]()
+    eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
@@ -246,6 +257,7 @@ class EngagementTimeline(BaseModel):
             self.eng_key.entity_at(timestamp)
             self.eng_name.entity_at(timestamp)
             self.eng_unit.entity_at(timestamp)
+            self.eng_type.entity_at(timestamp)
             return True
         except NoValueError:
             return False
@@ -260,10 +272,12 @@ class EngagementTimeline(BaseModel):
                 self.eng_key.entity_at(timestamp),
                 self.eng_name.entity_at(timestamp),
                 self.eng_unit.entity_at(timestamp),
+                self.eng_type.entity_at(timestamp),
             ) == (
                 other.eng_active.entity_at(timestamp),
                 other.eng_key.entity_at(timestamp),
                 other.eng_name.entity_at(timestamp),
                 other.eng_unit.entity_at(timestamp),
+                other.eng_type.entity_at(timestamp),
             )
         return False
