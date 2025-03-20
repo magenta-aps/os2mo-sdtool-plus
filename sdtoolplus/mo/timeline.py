@@ -89,6 +89,24 @@ async def _get_ou_level(
     return current.uuid
 
 
+async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]:
+    """
+    Get map from engagement type (Enum) to MO engagement type class UUID
+    """
+    r_eng_types = await gql_client.get_class(
+        ClassFilter(facet=FacetFilter(user_key="engagement_type"))
+    )
+
+    relevant_classes = (
+        obj.current
+        for obj in r_eng_types.objects
+        if obj.current is not None
+        and obj.current.name in (eng_type.value for eng_type in EngType)
+    )
+
+    return {EngType(clazz.name): clazz.uuid for clazz in relevant_classes}
+
+
 async def get_ou_timeline(
     gql_client: GraphQLClient,
     unit_uuid: OrgUnitUUID,
