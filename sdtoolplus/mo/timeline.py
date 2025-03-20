@@ -26,7 +26,9 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -361,11 +363,21 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
+    type_intervals = tuple(
+        EngagementType(
+            start=obj.validity.from_,
+            end=_from_mo_end_datetime(obj.validity.to),
+            value=EngType(obj.engagement_type.name),
+        )
+        for obj in validities
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
+        eng_type=Timeline[EngagementType](intervals=combine_intervals(type_intervals)),
     )
     logger.debug("MO engagement timeline", timeline=timeline)
 
