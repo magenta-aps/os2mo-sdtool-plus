@@ -175,6 +175,7 @@ async def create_ou(
     end: datetime,
     sd_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
+    dry_run: bool = False,
 ) -> None:
     logger.info("Creating OU", uuid=str(org_unit))
     logger.debug("Creating OU", start=start, end=end, sd_unit_timeline=sd_unit_timeline)
@@ -186,17 +187,18 @@ async def create_ou(
     unit_level = sd_unit_timeline.unit_level.entity_at(start)
     ou_level_uuid = await _get_ou_level(gql_client, unit_level.value)  # type: ignore
 
-    await gql_client.create_org_unit(
-        OrganisationUnitCreateInput(
-            uuid=org_unit,
-            validity=_get_mo_validity(start, end),
-            name=sd_unit_timeline.name.entity_at(start).value,
-            user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            parent=sd_unit_timeline.parent.entity_at(start).value,
-            org_unit_type=ou_type_uuid,
-            org_unit_level=ou_level_uuid,
-        )
+    payload = OrganisationUnitCreateInput(
+        uuid=org_unit,
+        validity=_get_mo_validity(start, end),
+        name=sd_unit_timeline.name.entity_at(start).value,
+        user_key=sd_unit_timeline.unit_id.entity_at(start).value,
+        parent=sd_unit_timeline.parent.entity_at(start).value,
+        org_unit_type=ou_type_uuid,
+        org_unit_level=ou_level_uuid,
     )
+    logger.debug("OU create payload", payload=payload)
+    if not dry_run:
+        await gql_client.create_org_unit(payload)
 
 
 async def update_ou(
@@ -206,6 +208,7 @@ async def update_ou(
     end: datetime,
     sd_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
+    dry_run: bool = False,
 ) -> None:
     logger.info("Updating OU", uuid=str(org_unit))
     logger.debug("Updating OU", start=start, end=end, sd_unit_timeline=sd_unit_timeline)
@@ -238,32 +241,34 @@ async def update_ou(
                 else None
             )
 
-            await gql_client.update_org_unit(
-                OrganisationUnitUpdateInput(
-                    uuid=org_unit,
-                    validity=_get_mo_validity(start, end),
-                    name=sd_unit_timeline.name.entity_at(start).value,
-                    user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-                    parent=sd_unit_timeline.parent.entity_at(start).value,
-                    org_unit_type=ou_type_uuid,
-                    org_unit_level=ou_level_uuid,
-                    org_unit_hierarchy=org_unit_hierarchy,
-                    time_planning=time_planning,
-                )
+            payload = OrganisationUnitUpdateInput(
+                uuid=org_unit,
+                validity=_get_mo_validity(start, end),
+                name=sd_unit_timeline.name.entity_at(start).value,
+                user_key=sd_unit_timeline.unit_id.entity_at(start).value,
+                parent=sd_unit_timeline.parent.entity_at(start).value,
+                org_unit_type=ou_type_uuid,
+                org_unit_level=ou_level_uuid,
+                org_unit_hierarchy=org_unit_hierarchy,
+                time_planning=time_planning,
             )
+            logger.debug("OU update payload", payload=payload)
+            if not dry_run:
+                await gql_client.update_org_unit(payload)
         return
 
-    await gql_client.update_org_unit(
-        OrganisationUnitUpdateInput(
-            uuid=org_unit,
-            validity=_get_mo_validity(start, end),
-            name=sd_unit_timeline.name.entity_at(start).value,
-            user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-            parent=sd_unit_timeline.parent.entity_at(start).value,
-            org_unit_type=ou_type_uuid,
-            org_unit_level=ou_level_uuid,
-        )
+    payload = OrganisationUnitUpdateInput(
+        uuid=org_unit,
+        validity=_get_mo_validity(start, end),
+        name=sd_unit_timeline.name.entity_at(start).value,
+        user_key=sd_unit_timeline.unit_id.entity_at(start).value,
+        parent=sd_unit_timeline.parent.entity_at(start).value,
+        org_unit_type=ou_type_uuid,
+        org_unit_level=ou_level_uuid,
     )
+    logger.debug("OU update payload", payload=payload)
+    if not dry_run:
+        await gql_client.update_org_unit(payload)
 
 
 async def terminate_ou(
@@ -271,6 +276,7 @@ async def terminate_ou(
     org_unit: OrgUnitUUID,
     start: datetime,
     end: datetime,
+    dry_run: bool = False,
 ) -> None:
     logger.info("(Re-)terminate OU", org_unit=str(org_unit))
 
@@ -289,7 +295,9 @@ async def terminate_ou(
             to=mo_validity.from_ - timedelta(days=1),
         )
 
-    await gql_client.terminate_org_unit(payload)
+    logger.debug("OU terminate payload", payload=payload)
+    if not dry_run:
+        await gql_client.terminate_org_unit(payload)
 
 
 async def get_engagement_timeline(
