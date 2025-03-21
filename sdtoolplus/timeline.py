@@ -181,6 +181,7 @@ async def sync_ou(
                     end=end,
                     sd_unit_timeline=sd_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
+                    dry_run=dry_run,
                 )
             else:
                 await create_ou(
@@ -190,6 +191,7 @@ async def sync_ou(
                     end=end,
                     sd_unit_timeline=sd_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
+                    dry_run=dry_run,
                 )
         else:
             await terminate_ou(
@@ -197,4 +199,5 @@ async def sync_ou(
                 org_unit=org_unit,
                 start=start,
                 end=end,
+                dry_run=dry_run,
             )
