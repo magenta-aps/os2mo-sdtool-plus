@@ -24,6 +24,7 @@ from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -425,6 +426,16 @@ async def test_get_engagement_timeline():
                 start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
                 value=dep_uuid,
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_unit_id == Timeline[EngagementUnitId](
+        intervals=(
+            EngagementUnitId(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
+                value="ABCD",
             ),
         )
     )

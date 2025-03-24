@@ -28,6 +28,7 @@ from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -381,6 +382,15 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
+    unit_id_intervals = tuple(
+        EngagementUnitId(
+            start=obj.validity.from_,
+            end=_from_mo_end_datetime(obj.validity.to),
+            value=obj.extension_2,
+        )
+        for obj in validities
+    )
+
     type_intervals = tuple(
         EngagementType(
             start=obj.validity.from_,
@@ -395,6 +405,9 @@ async def get_engagement_timeline(
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=combine_intervals(unit_id_intervals)
+        ),
         eng_type=Timeline[EngagementType](intervals=combine_intervals(type_intervals)),
     )
     logger.debug("MO engagement timeline", timeline=timeline)
@@ -432,10 +445,11 @@ async def create_engagement(
             user_key=user_key,
             validity=_get_mo_validity(start, end),
             # TODO: introduce extension_1 strategy
-            extension_1=sd_eng_timeline.eng_name.entity_at(start),
+            extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
+            extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             # TODO: introduce org_unit strategy
-            org_unit=sd_eng_timeline.eng_unit.entity_at(start),
+            org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
             engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
@@ -489,7 +503,7 @@ async def update_engagement(
                     validity=mo_validity,
                     # TODO: introduce extention_1 strategy
                     extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
-                    extension_2=validity.extension_2,
+                    extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
                     extension_3=validity.extension_3,
                     extension_4=validity.extension_4,
                     extension_5=validity.extension_5,
@@ -519,6 +533,7 @@ async def update_engagement(
             validity=mo_validity,
             # TODO: introduce extention_1 strategy
             extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
+            extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
             engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore

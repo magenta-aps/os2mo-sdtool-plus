@@ -23,6 +23,7 @@ from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -229,6 +230,19 @@ async def get_employment_timeline(
         else tuple()
     )
 
+    eng_unit_id_intervals = (
+        tuple(
+            EngagementUnitId(
+                start=_sd_start_datetime(dep.ActivationDate),
+                end=_sd_end_datetime(dep.DeactivationDate),
+                value=dep.DepartmentIdentifier,
+            )
+            for dep in employment.EmploymentDepartment
+        )
+        if employment.EmploymentDepartment
+        else tuple()
+    )
+
     eng_type_intervals = (
         tuple(
             EngagementType(
@@ -250,6 +264,9 @@ async def get_employment_timeline(
         ),
         eng_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=combine_intervals(eng_unit_id_intervals)
         ),
         eng_type=Timeline[EngagementType](
             intervals=combine_intervals(eng_type_intervals)
