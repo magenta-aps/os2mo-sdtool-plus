@@ -446,6 +446,7 @@ async def create_engagement(
             validity=_get_mo_validity(start, end),
             # TODO: introduce extension_1 strategy
             extension_1=sd_eng_timeline.eng_name.entity_at(start),
+            extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             # TODO: introduce org_unit strategy
             org_unit=sd_eng_timeline.eng_unit.entity_at(start),
@@ -502,7 +503,7 @@ async def update_engagement(
                     validity=mo_validity,
                     # TODO: introduce extention_1 strategy
                     extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
-                    extension_2=validity.extension_2,
+                    extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
                     extension_3=validity.extension_3,
                     extension_4=validity.extension_4,
                     extension_5=validity.extension_5,
@@ -532,6 +533,7 @@ async def update_engagement(
             validity=mo_validity,
             # TODO: introduce extention_1 strategy
             extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
+            extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
             engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
