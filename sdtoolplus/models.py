@@ -125,6 +125,10 @@ class EngagementUnit(Interval[OrgUnitUUID]):
     pass
 
 
+class EngagementUnitId(Interval[str]):
+    pass
+
+
 class EngagementType(Interval[EngType]):
     pass
 
@@ -248,6 +252,7 @@ class EngagementTimeline(BaseModel):
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
     eng_unit: Timeline[EngagementUnit] = Timeline[EngagementUnit]()
+    eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
     def has_value(self, timestamp: datetime) -> bool:
@@ -257,6 +262,7 @@ class EngagementTimeline(BaseModel):
             self.eng_key.entity_at(timestamp)
             self.eng_name.entity_at(timestamp)
             self.eng_unit.entity_at(timestamp)
+            self.eng_unit_id.entity_at(timestamp)
             self.eng_type.entity_at(timestamp)
             return True
         except NoValueError:
@@ -272,12 +278,14 @@ class EngagementTimeline(BaseModel):
                 self.eng_key.entity_at(timestamp),
                 self.eng_name.entity_at(timestamp),
                 self.eng_unit.entity_at(timestamp),
+                self.eng_unit_id.entity_at(timestamp),
                 self.eng_type.entity_at(timestamp),
             ) == (
                 other.eng_active.entity_at(timestamp),
                 other.eng_key.entity_at(timestamp),
                 other.eng_name.entity_at(timestamp),
                 other.eng_unit.entity_at(timestamp),
+                other.eng_unit_id.entity_at(timestamp),
                 other.eng_type.entity_at(timestamp),
             )
         return False
