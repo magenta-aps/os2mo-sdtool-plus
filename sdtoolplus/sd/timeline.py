@@ -13,6 +13,7 @@ from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetEmploymentChangedRequest
+from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
@@ -20,7 +21,9 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -47,6 +50,14 @@ def _sd_end_datetime(d: date) -> datetime:
     # which (due to the continuous timeline) translates into the end datetime
     # t_end = 2000-01-01T00:00:00.000000 in the half-open interval [t_start, t_end)
     return datetime.combine(d, time.min, ASSUMED_SD_TIMEZONE) + timedelta(days=1)
+
+
+def _sd_employment_type(worktime: WorkingTime) -> EngType:
+    if not worktime.SalariedIndicator:
+        return EngType.HOURLY
+    if worktime.FullTimeIndicator:
+        return EngType.MONTHLY_FULL_TIME
+    return EngType.MONTHLY_PART_TIME
 
 
 async def get_department_timeline(
@@ -153,6 +164,7 @@ async def get_employment_timeline(
             DepartmentIndicator=True,
             EmploymentStatusIndicator=True,
             ProfessionIndicator=True,
+            WorkingTimeIndicator=True,
             UUIDIndicator=True,
         ),
     )
@@ -217,6 +229,19 @@ async def get_employment_timeline(
         else tuple()
     )
 
+    eng_type_intervals = (
+        tuple(
+            EngagementType(
+                start=_sd_start_datetime(working_time.ActivationDate),
+                end=_sd_end_datetime(working_time.DeactivationDate),
+                value=_sd_employment_type(working_time),
+            )
+            for working_time in employment.WorkingTime
+        )
+        if employment.WorkingTime
+        else tuple()
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(eng_key_intervals)),
@@ -225,6 +250,9 @@ async def get_employment_timeline(
         ),
         eng_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=combine_intervals(eng_type_intervals)
         ),
     )
     logger.debug("SD engagement timeline", timeline=timeline)

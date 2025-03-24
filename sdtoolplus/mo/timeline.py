@@ -26,7 +26,9 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -85,6 +87,24 @@ async def _get_ou_level(
     current = one(ou_level_classes.objects).current
     assert current is not None
     return current.uuid
+
+
+async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]:
+    """
+    Get map from engagement type (Enum) to MO engagement type class UUID
+    """
+    r_eng_types = await gql_client.get_class(
+        ClassFilter(facet=FacetFilter(user_key="engagement_type"))
+    )
+
+    relevant_classes = (
+        obj.current
+        for obj in r_eng_types.objects
+        if obj.current is not None
+        and obj.current.name in (eng_type.value for eng_type in EngType)
+    )
+
+    return {EngType(clazz.name): clazz.uuid for clazz in relevant_classes}
 
 
 async def get_ou_timeline(
@@ -361,11 +381,21 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
+    type_intervals = tuple(
+        EngagementType(
+            start=obj.validity.from_,
+            end=_from_mo_end_datetime(obj.validity.to),
+            value=EngType(obj.engagement_type.name),
+        )
+        for obj in validities
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
+        eng_type=Timeline[EngagementType](intervals=combine_intervals(type_intervals)),
     )
     logger.debug("MO engagement timeline", timeline=timeline)
 
@@ -379,7 +409,7 @@ async def create_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
-    eng_type: UUID,
+    eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -406,7 +436,7 @@ async def create_engagement(
             person=person,
             # TODO: introduce org_unit strategy
             org_unit=sd_eng_timeline.eng_unit.entity_at(start),
-            engagement_type=eng_type,
+            engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
         )
@@ -420,7 +450,7 @@ async def update_engagement(
     start: datetime,
     end: datetime,
     sd_eng_timeline: EngagementTimeline,
-    eng_type: UUID,
+    eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -470,8 +500,9 @@ async def update_engagement(
                     extension_10=validity.extension_10,
                     person=person,
                     org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-                    # TODO: we need to find out how (if possible) to get the engagement type from SD
-                    engagement_type=validity.engagement_type.uuid,
+                    engagement_type=eng_types[
+                        sd_eng_timeline.eng_type.entity_at(start).value  # type: ignore
+                    ],
                     job_function=job_function_uuid,
                 )
             )
@@ -490,8 +521,7 @@ async def update_engagement(
             extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
             person=person,
             org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-            # TODO: we need to find out how (if possible) to get the engagement type from SD
-            engagement_type=eng_type,
+            engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             job_function=job_function_uuid,
         )
     )
