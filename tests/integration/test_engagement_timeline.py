@@ -39,6 +39,7 @@ async def test_eng_timeline_http_triggered_sync(
     MO (name)               |------name4-------|---------------name5-----------------
     MO (key)                |------------- 1234 -------------|-------- 5678 ---------
     MO (unit)               |---dep3---|-------------------dep4----------------------
+    MO (unit ID)            |---dep3---|-------------------dep4----------------------
     MO (ext_7)              |----v1----|--v2--|--v3--|--v4--|--------v5--------------
     MO (active)             |--------------------------------------------------------
     MO (eng_type)           |---full---|-----------------part------------------------
@@ -48,6 +49,7 @@ async def test_eng_timeline_http_triggered_sync(
     SD (name)     |-------name1--------|----name2-----|-------name3------------------
     SD (key)      |------------------------ 9000 ------------------------------------
     SD (unit)     |---dep1--|-------------------dep2---------------------------------
+    SD (unit ID)  |---dep1--|-------------------dep2---------------------------------
     SD (active)   |---------1----------|-------3------|---8--|-------1-----|----8----
     SD (eng_type) |--------part--------|-------------------full----------------------
 
@@ -98,6 +100,7 @@ async def test_eng_timeline_http_triggered_sync(
                 user_key=f"II-{emp_id}",
                 validity=RAValidityInput(from_=t2, to=None),
                 extension_1="name4",
+                extension_2="dep3",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep3_uuid,
@@ -114,6 +117,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t3, to=t4),
             extension_1="name4",
+            extension_2="dep4",
             extension_7="v2",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -129,6 +133,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t4, to=t5),
             extension_1="name5",
+            extension_2="dep4",
             extension_7="v3",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -144,6 +149,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t5, to=t6),
             extension_1="name5",
+            extension_2="dep4",
             extension_7="v4",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -159,6 +165,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t6, to=None),
             extension_1="name5",
+            extension_2="dep4",
             extension_7="v5",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -301,6 +308,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_1.validity.from_ == t1
     assert _from_mo_end_datetime(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name1"
+    assert interval_1.extension_2 == "dep1"
     assert interval_1.user_key == f"II-{emp_id}"
     assert interval_1.job_function.uuid == job_function_9000
     assert interval_1.extension_7 is None
@@ -311,6 +319,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_2.validity.from_ == t2
     assert _from_mo_end_datetime(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name1"
+    assert interval_2.extension_2 == "dep2"
     assert interval_2.user_key == f"II-{emp_id}"
     assert interval_2.job_function.uuid == job_function_9000
     assert one(interval_2.org_unit).uuid == dep2_uuid
@@ -321,6 +330,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_3.validity.from_ == t3
     assert _from_mo_end_datetime(interval_3.validity.to) == t4
     assert interval_3.extension_1 == "name2"
+    assert interval_3.extension_2 == "dep2"
     assert interval_3.user_key == f"II-{emp_id}"
     assert interval_3.job_function.uuid == job_function_9000
     assert one(interval_3.org_unit).uuid == dep2_uuid
@@ -331,6 +341,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_4.validity.from_ == t4
     assert _from_mo_end_datetime(interval_4.validity.to) == t5
     assert interval_4.extension_1 == "name2"
+    assert interval_4.extension_2 == "dep2"
     assert interval_4.user_key == f"II-{emp_id}"
     assert interval_4.job_function.uuid == job_function_9000
     assert one(interval_4.org_unit).uuid == dep2_uuid
@@ -341,6 +352,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_5.validity.from_ == t6
     assert _from_mo_end_datetime(interval_5.validity.to) == t7
     assert interval_5.extension_1 == "name3"
+    assert interval_5.extension_2 == "dep2"
     assert interval_5.user_key == f"II-{emp_id}"
     assert interval_5.job_function.uuid == job_function_9000
     assert one(interval_5.org_unit).uuid == dep2_uuid
