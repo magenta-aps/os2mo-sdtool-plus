@@ -229,6 +229,48 @@ mutation TerminateEngagement($input: EngagementTerminateInput!) {
   }
 }
 
+query GetLeave($filter: LeaveFilter!) {
+  leaves(filter: $filter) {
+    objects {
+      uuid
+      validities {
+        user_key
+        person {
+          uuid
+        }
+        engagement {
+          uuid
+        }
+        leave_type {
+          uuid
+        }
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
+mutation CreateLeave($input: LeaveCreateInput!) {
+  leave_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdateLeave($input: LeaveUpdateInput!) {
+  leave_update(input: $input) {
+    uuid
+  }
+}
+
+mutation TerminateLeave($input: LeaveTerminateInput!) {
+  leave_terminate(input: $input) {
+    uuid
+  }
+}
+
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
   $given_name: String!,
