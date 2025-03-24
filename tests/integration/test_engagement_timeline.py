@@ -346,3 +346,6 @@ async def test_eng_timeline_http_triggered_sync(
     assert one(interval_5.org_unit).uuid == dep2_uuid
     assert interval_5.extension_7 == "v5"
     assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+
+
+# TODO: test case where engagement does not exist in MO

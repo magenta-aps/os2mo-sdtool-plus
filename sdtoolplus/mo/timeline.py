@@ -445,11 +445,11 @@ async def create_engagement(
             user_key=user_key,
             validity=_get_mo_validity(start, end),
             # TODO: introduce extension_1 strategy
-            extension_1=sd_eng_timeline.eng_name.entity_at(start),
+            extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
             extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             # TODO: introduce org_unit strategy
-            org_unit=sd_eng_timeline.eng_unit.entity_at(start),
+            org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
             engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
