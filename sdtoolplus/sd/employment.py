@@ -8,7 +8,9 @@ class EmploymentStatusCode(Enum):
     # https://www.silkeborgdata.dk/start/support/vejledning/9392-getemployment20111201
     EMPLOYED_NO_PAY = "0"
     EMPLOYED_WITH_PAY = "1"
+    # For unknown reasons there are two leave statuses in SD
     LEAVE = "3"
+    LEAVE_ = "4"
     MIGRATED_OR_DEAD = "7"
     RESIGNED = "8"
     RETIRED = "9"
@@ -19,4 +21,8 @@ class EmploymentStatusCode(Enum):
             EmploymentStatusCode.EMPLOYED_NO_PAY,
             EmploymentStatusCode.EMPLOYED_WITH_PAY,
             EmploymentStatusCode.LEAVE,
+            EmploymentStatusCode.LEAVE_,
         )
+
+    def is_leave(self) -> bool:
+        return self in (EmploymentStatusCode.LEAVE, EmploymentStatusCode.LEAVE_)

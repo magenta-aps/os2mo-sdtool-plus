@@ -274,8 +274,7 @@ async def get_leave_timeline(
                 value=True,
             )
             for status in employment.EmploymentStatus
-            if EmploymentStatusCode(status.EmploymentStatusCode)
-            == EmploymentStatusCode.LEAVE
+            if EmploymentStatusCode(status.EmploymentStatusCode).is_leave()
         )
         if employment.EmploymentStatus
         else tuple()
