@@ -44,23 +44,6 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     )
 
 
-# TODO: move function to EngagementTimeline class
-def _get_eng_interval_endpoints(eng_timeline: EngagementTimeline) -> set[datetime]:
-    return set(
-        collapse(
-            set(
-                (i.start, i.end)
-                for i in chain(
-                    cast(tuple[Interval, ...], eng_timeline.eng_active.intervals),
-                    cast(tuple[Interval, ...], eng_timeline.eng_key.intervals),
-                    cast(tuple[Interval, ...], eng_timeline.eng_name.intervals),
-                    cast(tuple[Interval, ...], eng_timeline.eng_unit.intervals),
-                )
-            )
-        )
-    )
-
-
 # TODO: replace this function with a proper strategy pattern when needed
 def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
     return f"{inst_id}-{user_key}"
@@ -89,8 +72,8 @@ async def sync_eng(
     # Get the engagement types
     eng_types = await get_engagement_types(gql_client)
 
-    sd_interval_endpoints = _get_eng_interval_endpoints(sd_eng_timeline)
-    mo_interval_endpoints = _get_eng_interval_endpoints(mo_eng_timeline)
+    sd_interval_endpoints = sd_eng_timeline.get_interval_endpoints()
+    mo_interval_endpoints = mo_eng_timeline.get_interval_endpoints()
 
     endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
     endpoints.sort()
