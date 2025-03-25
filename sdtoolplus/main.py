@@ -133,7 +133,12 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     )
     fastramqpi.add_context(settings=settings)
 
+    # TODO: make into dependencies
     engine = get_engine(settings)
+    sd_client = SDClient(
+        settings.sd_username,
+        settings.sd_password.get_secret_value(),
+    )
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
@@ -317,10 +322,6 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             # dry_run=dry_run,
         )
 
-        sd_client = SDClient(
-            settings.sd_username,
-            settings.sd_password.get_secret_value(),
-        )
         sd_eng_timeline = await get_employment_timeline(
             sd_client=sd_client,
             inst_id=payload.institution_identifier,
@@ -380,10 +381,6 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             "Sync OU timeline", inst_id=inst_id, org_uuid=str(org_unit), dry_run=dry_run
         )
 
-        sd_client = SDClient(
-            settings.sd_username,
-            settings.sd_password.get_secret_value(),
-        )
         sd_unit_timeline = await get_department_timeline(
             sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
         )
