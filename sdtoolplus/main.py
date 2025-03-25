@@ -30,6 +30,8 @@ from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
+from sdtoolplus.job_positions import sync_professions
+
 from . import depends
 from .addresses import AddressFixer
 from .app import App
@@ -183,6 +185,13 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     async def rundb_delete_last_run():
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
+
+    @fastapi_router.post("/job-functions/sync")
+    async def sync_job_functions(
+        graphql_client: depends.GraphQLClient,
+        institution_identifier: str,
+    ) -> None:
+        await sync_professions(sd_client, graphql_client, institution_identifier)
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
