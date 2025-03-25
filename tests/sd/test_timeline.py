@@ -4,6 +4,7 @@ from datetime import date
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
+from uuid import UUID
 from uuid import uuid4
 
 import pytest
@@ -277,7 +278,6 @@ async def test_get_department_timeline_parent_not_found():
 
 async def test_get_engagement_timeline():
     # Arrange
-    dep_uuid = uuid4()
     sd_emp_resp_dict = {
         "Person": [
             {
@@ -292,7 +292,7 @@ async def test_get_engagement_timeline():
                                 "ActivationDate": "2000-01-01",
                                 "DeactivationDate": "9999-12-31",
                                 "DepartmentIdentifier": "ABCD",
-                                "DepartmentUUIDIdentifier": str(dep_uuid),
+                                "DepartmentUUIDIdentifier": "fa4a3454-54e6-43b8-92c4-9979bf41a386",
                             }
                         ],
                         "Profession": [
@@ -408,7 +408,7 @@ async def test_get_engagement_timeline():
             EngagementUnit(
                 start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
-                value=dep_uuid,
+                value=UUID("fa4a3454-54e6-43b8-92c4-9979bf41a386"),
             ),
         )
     )
