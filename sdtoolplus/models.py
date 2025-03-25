@@ -312,6 +312,9 @@ class EngagementTimeline(BaseModel):
 class LeaveTimeline(BaseModel):
     leave_active: Timeline[Active] = Timeline[Active]()
 
+    def get_interval_endpoints(self) -> set[datetime]:
+        return set(collapse((i.start, i.end) for i in self.leave_active.intervals))
+
     def has_value(self, timestamp: datetime) -> bool:
         try:
             self.leave_active.entity_at(timestamp)
