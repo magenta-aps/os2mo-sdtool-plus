@@ -36,6 +36,7 @@ from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
+from sdtoolplus.sd.timeline import get_leave_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
@@ -396,6 +397,24 @@ async def test_get_engagement_timeline_no_employment_found():
         eng_key=Timeline[EngagementKey](),
         eng_name=Timeline[EngagementName](),
         eng_unit=Timeline[EngagementUnit](),
+    )
+
+
+async def test_get_leave_timeline(mock_sd_emp_resp_dict):
+    # Act
+    engagement_timeline = await get_leave_timeline(
+        GetEmploymentChangedResponse.parse_obj(mock_sd_emp_resp_dict)
+    )
+
+    # Assert
+    assert engagement_timeline.leave_active == Timeline[Active](
+        intervals=(
+            Active(
+                start=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value=True,
+            ),
+        )
     )
 
 

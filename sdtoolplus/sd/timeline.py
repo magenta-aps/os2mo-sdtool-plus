@@ -25,6 +25,7 @@ from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
+from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -249,5 +250,40 @@ async def get_employment_timeline(
         ),
     )
     logger.debug("SD engagement timeline", timeline=timeline)
+
+    return timeline
+
+
+async def get_leave_timeline(
+    sd_get_employment_changed_resp: GetEmploymentChangedResponse,
+) -> LeaveTimeline:
+    logger.info("Get SD leave timeline")
+
+    person = only(sd_get_employment_changed_resp.Person)
+    if not person:
+        return LeaveTimeline()
+    employment = only(person.Employment)
+    if not employment:
+        return LeaveTimeline()
+
+    active_intervals = (
+        tuple(
+            Active(
+                start=_sd_start_datetime(status.ActivationDate),
+                end=_sd_end_datetime(status.DeactivationDate),
+                value=True,
+            )
+            for status in employment.EmploymentStatus
+            if EmploymentStatusCode(status.EmploymentStatusCode)
+            == EmploymentStatusCode.LEAVE
+        )
+        if employment.EmploymentStatus
+        else tuple()
+    )
+
+    timeline = LeaveTimeline(
+        leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+    )
+    logger.debug("SD leave timeline", timeline=timeline)
 
     return timeline
