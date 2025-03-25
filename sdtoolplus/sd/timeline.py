@@ -12,7 +12,7 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
-from sdclient.requests import GetEmploymentChangedRequest
+from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -142,35 +142,11 @@ async def get_department_timeline(
 
 
 async def get_employment_timeline(
-    sd_client: SDClient,
-    inst_id: str,
-    cpr: str,
-    emp_id: str,
+    sd_get_employment_changed_resp: GetEmploymentChangedResponse,
 ) -> EngagementTimeline:
-    logger.info(
-        "Get SD employment timeline",
-        inst_id=inst_id,
-        cpr=cpr,
-        emp_id=emp_id,
-    )
+    logger.info("Get SD employment timeline")
 
-    r_employment = await asyncio.to_thread(
-        sd_client.get_employment_changed,
-        GetEmploymentChangedRequest(
-            InstitutionIdentifier=inst_id,
-            PersonCivilRegistrationIdentifier=cpr,
-            EmploymentIdentifier=emp_id,
-            ActivationDate=date.min,
-            DeactivationDate=date.max,
-            DepartmentIndicator=True,
-            EmploymentStatusIndicator=True,
-            ProfessionIndicator=True,
-            WorkingTimeIndicator=True,
-            UUIDIndicator=True,
-        ),
-    )
-
-    person = only(r_employment.Person)
+    person = only(sd_get_employment_changed_resp.Person)
     if not person:
         return EngagementTimeline()
     employment = only(person.Employment)

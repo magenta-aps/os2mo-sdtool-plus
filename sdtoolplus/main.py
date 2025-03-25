@@ -10,6 +10,8 @@ To run:
     $ poetry run docker/start.sh
 """
 
+import asyncio
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -26,6 +28,7 @@ from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
 from more_itertools import only
 from sdclient.client import SDClient
+from sdclient.requests import GetEmploymentChangedRequest
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
@@ -329,15 +332,26 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             inst_id=payload.institution_identifier,
             cpr=payload.cpr,
             emp_id=payload.employment_identifier,
-            # dry_run=dry_run,
+            dry_run=dry_run,
         )
 
-        sd_eng_timeline = await get_employment_timeline(
-            sd_client=sd_client,
-            inst_id=payload.institution_identifier,
-            cpr=payload.cpr,
-            emp_id=payload.employment_identifier,
+        r_employment = await asyncio.to_thread(
+            sd_client.get_employment_changed,
+            GetEmploymentChangedRequest(
+                InstitutionIdentifier=payload.institution_identifier,
+                PersonCivilRegistrationIdentifier=payload.cpr,
+                EmploymentIdentifier=payload.employment_identifier,
+                ActivationDate=date.min,
+                DeactivationDate=date.max,
+                DepartmentIndicator=True,
+                EmploymentStatusIndicator=True,
+                ProfessionIndicator=True,
+                WorkingTimeIndicator=True,
+                UUIDIndicator=True,
+            ),
         )
+
+        sd_eng_timeline = await get_employment_timeline(r_employment)
 
         # TODO: introduce OU strategy
 
@@ -348,7 +362,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             # TODO: Return proper HTTP 5xx error message if this happens
             raise PersonNotFoundError("Could not find person in MO")
 
-        mo_unit_timeline = await get_engagement_timeline(
+        mo_eng_timeline = await get_engagement_timeline(
             gql_client=gql_client,
             person=person.uuid,
             user_key=prefix_user_key_with_inst_id(
@@ -361,7 +375,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             person=person.uuid,
             payload=payload,
             sd_eng_timeline=sd_eng_timeline,
-            mo_eng_timeline=mo_unit_timeline,
+            mo_eng_timeline=mo_eng_timeline,
             dry_run=dry_run,
         )
 

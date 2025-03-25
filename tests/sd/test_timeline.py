@@ -357,29 +357,12 @@ async def test_get_engagement_timeline():
         ]
     }
 
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
+    # Act
+    engagement_timeline = await get_employment_timeline(
         GetEmploymentChangedResponse.parse_obj(sd_emp_resp_dict)
     )
 
-    # Act
-    engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
-    )
-
     # Assert
-    query_params = one(one(mock_sd_client.get_employment_changed.call_args_list).args)
-    assert query_params.InstitutionIdentifier == "II"
-    assert query_params.PersonCivilRegistrationIdentifier == "0101011234"
-    assert query_params.EmploymentIdentifier == "12345"
-    assert query_params.ActivationDate == date.min
-    assert query_params.DeactivationDate == date.max
-    assert query_params.DepartmentIndicator is True
-    assert query_params.EmploymentStatusIndicator is True
-    assert query_params.ProfessionIndicator is True
-    assert query_params.WorkingTimeIndicator is True
-    assert query_params.UUIDIndicator is True
-
     assert engagement_timeline.eng_active == Timeline[Active](
         intervals=(
             Active(
@@ -457,15 +440,9 @@ async def test_get_engagement_timeline():
 
 
 async def test_get_engagement_timeline_no_person_found():
-    # Arrange
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
-        GetEmploymentChangedResponse.parse_obj({"Person": []})
-    )
-
     # Act
     engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+        GetEmploymentChangedResponse.parse_obj({"Person": []})
     )
 
     # Assert
@@ -479,24 +456,19 @@ async def test_get_engagement_timeline_no_person_found():
 
 async def test_get_engagement_timeline_no_employment_found():
     # Arrange
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
-        GetEmploymentChangedResponse.parse_obj(
-            {
-                "Person": [
-                    {
-                        "PersonCivilRegistrationIdentifier": "0101011234",
-                        "Employment": [],
-                    }
-                ]
-            }
-        )
+    sd_resp = GetEmploymentChangedResponse.parse_obj(
+        {
+            "Person": [
+                {
+                    "PersonCivilRegistrationIdentifier": "0101011234",
+                    "Employment": [],
+                }
+            ]
+        }
     )
 
     # Act
-    engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
-    )
+    engagement_timeline = await get_employment_timeline(sd_resp)
 
     # Assert
     assert engagement_timeline == EngagementTimeline(
