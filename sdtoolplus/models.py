@@ -289,3 +289,23 @@ class EngagementTimeline(BaseModel):
                 other.eng_type.entity_at(timestamp),
             )
         return False
+
+
+class LeaveTimeline(BaseModel):
+    leave_active: Timeline[Active] = Timeline[Active]()
+
+    def has_value(self, timestamp: datetime) -> bool:
+        try:
+            self.leave_active.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return self.leave_active.entity_at(
+                timestamp
+            ) == other.leave_active.entity_at(timestamp)
+        return False
