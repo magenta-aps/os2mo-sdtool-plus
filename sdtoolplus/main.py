@@ -48,14 +48,17 @@ from .db.rundb import persist_status
 from .depends import request_id
 from .exceptions import PersonNotFoundError
 from .mo.timeline import get_engagement_timeline
+from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
 from .models import EngagementSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
+from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 from .timeline import prefix_user_key_with_inst_id
 from .timeline import sync_eng
+from .timeline import sync_leave
 from .timeline import sync_ou
 from .tree_tools import tree_as_string
 
@@ -314,7 +317,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         dry_run: bool = False,
     ) -> dict:
         """
-        Sync the entire engagement timeline for the given CPR and
+        Sync the entire engagement and leave timelines for the given CPR and
         SD EmploymentIdentifier (corresponding to the MO engagement user_key).
 
         Args:
@@ -376,6 +379,24 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             payload=payload,
             sd_eng_timeline=sd_eng_timeline,
             mo_eng_timeline=mo_eng_timeline,
+            dry_run=dry_run,
+        )
+
+        sd_leave_timeline = await get_sd_leave_timeline(r_employment)
+        mo_leave_timeline = await get_mo_leave_timeline(
+            gql_client=gql_client,
+            person=person.uuid,
+            user_key=prefix_user_key_with_inst_id(
+                payload.employment_identifier, payload.institution_identifier
+            ),
+        )
+
+        await sync_leave(
+            gql_client=gql_client,
+            person=person.uuid,
+            payload=payload,
+            sd_leave_timeline=sd_leave_timeline,
+            mo_leave_timeline=mo_leave_timeline,
             dry_run=dry_run,
         )
 
