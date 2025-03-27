@@ -289,9 +289,6 @@ async def test_eng_timeline_http_triggered_sync(
             "institution_identifier": "II",
             "cpr": cpr,
             "employment_identifier": emp_id,
-            "org_unit_uuid": str(uuid4()),
-            "start": "2001-01-01",
-            "end": "9999-12-31",
         },
     )
 
@@ -530,9 +527,6 @@ async def test_eng_timeline_create_new_engagement(
             "institution_identifier": "II",
             "cpr": cpr,
             "employment_identifier": emp_id,
-            "org_unit_uuid": str(uuid4()),
-            "start": "2001-01-01",
-            "end": "9999-12-31",
         },
     )
 
