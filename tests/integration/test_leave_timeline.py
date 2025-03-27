@@ -191,9 +191,6 @@ async def test_leave_timeline(
             "institution_identifier": "II",
             "cpr": cpr,
             "employment_identifier": emp_id,
-            "org_unit_uuid": str(uuid4()),
-            "start": "2001-01-01",
-            "end": "9999-12-31",
         },
     )
 
