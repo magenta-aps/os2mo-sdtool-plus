@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from enum import Enum
 from itertools import chain
@@ -53,6 +54,12 @@ class EngagementSyncPayload(BaseModel):
     class Config:
         extra = Extra.forbid
         frozen = True
+
+
+class EngagementMovePayload(EngagementSyncPayload):
+    org_unit_uuid: OrgUnitUUID
+    start: date
+    end: date
 
 
 class Interval(GenericModel, Generic[V]):
