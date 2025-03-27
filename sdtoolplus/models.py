@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from datetime import date
 from datetime import datetime
 from enum import Enum
 from itertools import chain
@@ -19,6 +18,7 @@ from more_itertools import last
 from more_itertools import only
 from more_itertools import split_when
 from pydantic import BaseModel
+from pydantic import Extra
 from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -49,9 +49,10 @@ class EngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
     employment_identifier: str
-    org_unit_uuid: OrgUnitUUID
-    start: date
-    end: date
+
+    class Config:
+        extra = Extra.forbid
+        frozen = True
 
 
 class Interval(GenericModel, Generic[V]):
