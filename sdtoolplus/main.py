@@ -47,11 +47,13 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .exceptions import PersonNotFoundError
+from .mo.engagement import move_engagement
 from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
+from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
@@ -441,6 +443,15 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             dry_run=dry_run,
         )
 
+        return {"msg": "success"}
+
+    @fastapi_router.post("/engagement/move", status_code=HTTP_200_OK)
+    async def engagement_move(
+        gql_client: depends.GraphQLClient,
+        payload: EngagementMovePayload,
+        dry_run: bool = False,
+    ) -> dict:
+        await move_engagement(gql_client, payload, dry_run)
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
