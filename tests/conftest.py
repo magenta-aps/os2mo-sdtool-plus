@@ -536,6 +536,88 @@ def mock_sd_get_department_response_date_range_errors() -> GetDepartmentResponse
     return sd_departments
 
 
+@pytest.fixture
+def mock_sd_employment_response_dict() -> dict[str, Any]:
+    return {
+        "Person": [
+            {
+                "PersonCivilRegistrationIdentifier": "0101011234",
+                "Employment": [
+                    {
+                        "EmploymentIdentifier": "12345",
+                        "EmploymentDate": "2000-01-01",
+                        "AnniversaryDate": "2000-01-01",
+                        "EmploymentDepartment": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "DepartmentIdentifier": "ABCD",
+                                "DepartmentUUIDIdentifier": "fa4a3454-54e6-43b8-92c4-9979bf41a386",
+                            }
+                        ],
+                        "Profession": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2021-12-31",
+                                "JobPositionIdentifier": "2",
+                                "EmploymentName": "Ninja",
+                                "AppointmentCode": "0",
+                            },
+                            {
+                                "ActivationDate": "2022-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "JobPositionIdentifier": "4",
+                                "EmploymentName": "Kung Fu Master",
+                                "AppointmentCode": "0",
+                            },
+                        ],
+                        "EmploymentStatus": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2000-12-31",
+                                "EmploymentStatusCode": "0",
+                            },
+                            {
+                                "ActivationDate": "2001-01-01",
+                                "DeactivationDate": "2001-12-31",
+                                "EmploymentStatusCode": "1",
+                            },
+                            {
+                                "ActivationDate": "2002-01-01",
+                                "DeactivationDate": "2002-12-31",
+                                "EmploymentStatusCode": "3",
+                            },
+                            {
+                                "ActivationDate": "2003-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "EmploymentStatusCode": "8",
+                            },
+                        ],
+                        "WorkingTime": [
+                            {
+                                "ActivationDate": "2000-01-01",
+                                "DeactivationDate": "2021-12-31",
+                                "OccupationRate": "1.0000",
+                                "SalaryRate": "1.0000",
+                                "SalariedIndicator": False,
+                                "FullTimeIndicator": True,
+                            },
+                            {
+                                "ActivationDate": "2022-01-01",
+                                "DeactivationDate": "9999-12-31",
+                                "OccupationRate": "1.0000",
+                                "SalaryRate": "1.0000",
+                                "SalariedIndicator": True,
+                                "FullTimeIndicator": True,
+                            },
+                        ],
+                    }
+                ],
+            }
+        ]
+    }
+
+
 def mock_get_department_parent(
     query_params: GetDepartmentParentRequest,
 ) -> GetDepartmentParentResponse:

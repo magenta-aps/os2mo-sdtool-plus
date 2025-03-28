@@ -12,7 +12,7 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
-from sdclient.requests import GetEmploymentChangedRequest
+from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -25,6 +25,7 @@ from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
+from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -142,35 +143,11 @@ async def get_department_timeline(
 
 
 async def get_employment_timeline(
-    sd_client: SDClient,
-    inst_id: str,
-    cpr: str,
-    emp_id: str,
+    sd_get_employment_changed_resp: GetEmploymentChangedResponse,
 ) -> EngagementTimeline:
-    logger.info(
-        "Get SD employment timeline",
-        inst_id=inst_id,
-        cpr=cpr,
-        emp_id=emp_id,
-    )
+    logger.info("Get SD employment timeline")
 
-    r_employment = await asyncio.to_thread(
-        sd_client.get_employment_changed,
-        GetEmploymentChangedRequest(
-            InstitutionIdentifier=inst_id,
-            PersonCivilRegistrationIdentifier=cpr,
-            EmploymentIdentifier=emp_id,
-            ActivationDate=date.min,
-            DeactivationDate=date.max,
-            DepartmentIndicator=True,
-            EmploymentStatusIndicator=True,
-            ProfessionIndicator=True,
-            WorkingTimeIndicator=True,
-            UUIDIndicator=True,
-        ),
-    )
-
-    person = only(r_employment.Person)
+    person = only(sd_get_employment_changed_resp.Person)
     if not person:
         return EngagementTimeline()
     employment = only(person.Employment)
@@ -273,5 +250,39 @@ async def get_employment_timeline(
         ),
     )
     logger.debug("SD engagement timeline", timeline=timeline)
+
+    return timeline
+
+
+async def get_leave_timeline(
+    sd_get_employment_changed_resp: GetEmploymentChangedResponse,
+) -> LeaveTimeline:
+    logger.info("Get SD leave timeline")
+
+    person = only(sd_get_employment_changed_resp.Person)
+    if not person:
+        return LeaveTimeline()
+    employment = only(person.Employment)
+    if not employment:
+        return LeaveTimeline()
+
+    active_intervals = (
+        tuple(
+            Active(
+                start=_sd_start_datetime(status.ActivationDate),
+                end=_sd_end_datetime(status.DeactivationDate),
+                value=True,
+            )
+            for status in employment.EmploymentStatus
+            if EmploymentStatusCode(status.EmploymentStatusCode).is_leave()
+        )
+        if employment.EmploymentStatus
+        else tuple()
+    )
+
+    timeline = LeaveTimeline(
+        leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+    )
+    logger.debug("SD leave timeline", timeline=timeline)
 
     return timeline

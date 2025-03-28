@@ -67,3 +67,7 @@ facets:
     9000:
       title: "Karate Coach"
       scope: "TEXT"
+  leave_type:
+    Orlov:
+      title: "Orlov"
+      scope: "TEXT"

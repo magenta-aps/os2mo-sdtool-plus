@@ -4,6 +4,7 @@ from datetime import date
 from datetime import datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
+from uuid import UUID
 from uuid import uuid4
 
 import pytest
@@ -35,6 +36,7 @@ from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
+from sdtoolplus.sd.timeline import get_leave_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
@@ -275,111 +277,13 @@ async def test_get_department_timeline_parent_not_found():
     )
 
 
-async def test_get_engagement_timeline():
-    # Arrange
-    dep_uuid = uuid4()
-    sd_emp_resp_dict = {
-        "Person": [
-            {
-                "PersonCivilRegistrationIdentifier": "0101011234",
-                "Employment": [
-                    {
-                        "EmploymentIdentifier": "12345",
-                        "EmploymentDate": "2000-01-01",
-                        "AnniversaryDate": "2000-01-01",
-                        "EmploymentDepartment": [
-                            {
-                                "ActivationDate": "2000-01-01",
-                                "DeactivationDate": "9999-12-31",
-                                "DepartmentIdentifier": "ABCD",
-                                "DepartmentUUIDIdentifier": str(dep_uuid),
-                            }
-                        ],
-                        "Profession": [
-                            {
-                                "ActivationDate": "2000-01-01",
-                                "DeactivationDate": "2021-12-31",
-                                "JobPositionIdentifier": "2",
-                                "EmploymentName": "Ninja",
-                                "AppointmentCode": "0",
-                            },
-                            {
-                                "ActivationDate": "2022-01-01",
-                                "DeactivationDate": "9999-12-31",
-                                "JobPositionIdentifier": "4",
-                                "EmploymentName": "Kung Fu Master",
-                                "AppointmentCode": "0",
-                            },
-                        ],
-                        "EmploymentStatus": [
-                            {
-                                "ActivationDate": "2000-01-01",
-                                "DeactivationDate": "2000-12-31",
-                                "EmploymentStatusCode": "0",
-                            },
-                            {
-                                "ActivationDate": "2001-01-01",
-                                "DeactivationDate": "2001-12-31",
-                                "EmploymentStatusCode": "1",
-                            },
-                            {
-                                "ActivationDate": "2002-01-01",
-                                "DeactivationDate": "2002-12-31",
-                                "EmploymentStatusCode": "3",
-                            },
-                            {
-                                "ActivationDate": "2003-01-01",
-                                "DeactivationDate": "9999-12-31",
-                                "EmploymentStatusCode": "8",
-                            },
-                        ],
-                        "WorkingTime": [
-                            {
-                                "ActivationDate": "2000-01-01",
-                                "DeactivationDate": "2021-12-31",
-                                "OccupationRate": "1.0000",
-                                "SalaryRate": "1.0000",
-                                "SalariedIndicator": False,
-                                "FullTimeIndicator": True,
-                            },
-                            {
-                                "ActivationDate": "2022-01-01",
-                                "DeactivationDate": "9999-12-31",
-                                "OccupationRate": "1.0000",
-                                "SalaryRate": "1.0000",
-                                "SalariedIndicator": True,
-                                "FullTimeIndicator": True,
-                            },
-                        ],
-                    }
-                ],
-            }
-        ]
-    }
-
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
-        GetEmploymentChangedResponse.parse_obj(sd_emp_resp_dict)
-    )
-
+async def test_get_engagement_timeline(mock_sd_employment_response_dict):
     # Act
     engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+        GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
     )
 
     # Assert
-    query_params = one(one(mock_sd_client.get_employment_changed.call_args_list).args)
-    assert query_params.InstitutionIdentifier == "II"
-    assert query_params.PersonCivilRegistrationIdentifier == "0101011234"
-    assert query_params.EmploymentIdentifier == "12345"
-    assert query_params.ActivationDate == date.min
-    assert query_params.DeactivationDate == date.max
-    assert query_params.DepartmentIndicator is True
-    assert query_params.EmploymentStatusIndicator is True
-    assert query_params.ProfessionIndicator is True
-    assert query_params.WorkingTimeIndicator is True
-    assert query_params.UUIDIndicator is True
-
     assert engagement_timeline.eng_active == Timeline[Active](
         intervals=(
             Active(
@@ -425,7 +329,7 @@ async def test_get_engagement_timeline():
             EngagementUnit(
                 start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
-                value=dep_uuid,
+                value=UUID("fa4a3454-54e6-43b8-92c4-9979bf41a386"),
             ),
         )
     )
@@ -457,15 +361,9 @@ async def test_get_engagement_timeline():
 
 
 async def test_get_engagement_timeline_no_person_found():
-    # Arrange
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
-        GetEmploymentChangedResponse.parse_obj({"Person": []})
-    )
-
     # Act
     engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
+        GetEmploymentChangedResponse.parse_obj({"Person": []})
     )
 
     # Assert
@@ -479,24 +377,19 @@ async def test_get_engagement_timeline_no_person_found():
 
 async def test_get_engagement_timeline_no_employment_found():
     # Arrange
-    mock_sd_client = MagicMock()
-    mock_sd_client.get_employment_changed.return_value = (
-        GetEmploymentChangedResponse.parse_obj(
-            {
-                "Person": [
-                    {
-                        "PersonCivilRegistrationIdentifier": "0101011234",
-                        "Employment": [],
-                    }
-                ]
-            }
-        )
+    sd_resp = GetEmploymentChangedResponse.parse_obj(
+        {
+            "Person": [
+                {
+                    "PersonCivilRegistrationIdentifier": "0101011234",
+                    "Employment": [],
+                }
+            ]
+        }
     )
 
     # Act
-    engagement_timeline = await get_employment_timeline(
-        sd_client=mock_sd_client, inst_id="II", cpr="0101011234", emp_id="12345"
-    )
+    engagement_timeline = await get_employment_timeline(sd_resp)
 
     # Assert
     assert engagement_timeline == EngagementTimeline(
@@ -504,6 +397,24 @@ async def test_get_engagement_timeline_no_employment_found():
         eng_key=Timeline[EngagementKey](),
         eng_name=Timeline[EngagementName](),
         eng_unit=Timeline[EngagementUnit](),
+    )
+
+
+async def test_get_leave_timeline(mock_sd_employment_response_dict):
+    # Act
+    engagement_timeline = await get_leave_timeline(
+        GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
+    )
+
+    # Assert
+    assert engagement_timeline.leave_active == Timeline[Active](
+        intervals=(
+            Active(
+                start=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value=True,
+            ),
+        )
     )
 
 

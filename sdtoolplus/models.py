@@ -3,14 +3,17 @@
 from datetime import date
 from datetime import datetime
 from enum import Enum
+from itertools import chain
 from itertools import pairwise
 from typing import Any
 from typing import Generic
 from typing import Optional
 from typing import Self
 from typing import TypeVar
+from typing import cast
 from zoneinfo import ZoneInfo
 
+from more_itertools import collapse
 from more_itertools import first
 from more_itertools import last
 from more_itertools import only
@@ -255,6 +258,21 @@ class EngagementTimeline(BaseModel):
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
+    def get_interval_endpoints(self) -> set[datetime]:
+        return set(
+            collapse(
+                set(
+                    (i.start, i.end)
+                    for i in chain(
+                        cast(tuple[Interval, ...], self.eng_active.intervals),
+                        cast(tuple[Interval, ...], self.eng_key.intervals),
+                        cast(tuple[Interval, ...], self.eng_name.intervals),
+                        cast(tuple[Interval, ...], self.eng_unit.intervals),
+                    )
+                )
+            )
+        )
+
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
         try:
@@ -288,4 +306,36 @@ class EngagementTimeline(BaseModel):
                 other.eng_unit_id.entity_at(timestamp),
                 other.eng_type.entity_at(timestamp),
             )
+        return False
+
+
+class LeaveTimeline(BaseModel):
+    leave_active: Timeline[Active] = Timeline[Active]()
+
+    def get_interval_endpoints(self) -> set[datetime]:
+        return set(
+            collapse(
+                set(
+                    (i.start, i.end)
+                    for i in chain(
+                        cast(tuple[Interval, ...], self.leave_active.intervals)
+                    )
+                )
+            )
+        )
+
+    def has_value(self, timestamp: datetime) -> bool:
+        try:
+            self.leave_active.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return self.leave_active.entity_at(
+                timestamp
+            ) == other.leave_active.entity_at(timestamp)
         return False

@@ -13,6 +13,7 @@ from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -239,3 +240,19 @@ def test_engagement_timeline_can_be_instantiated_with_empty_values():
         eng_name=Timeline[EngagementName](),
         eng_unit=Timeline[EngagementUnit](),
     )
+
+
+def test_leave_timeline_get_interval_endpoints():
+    # Arrange
+    active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
+    active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
+
+    leave_timeline = LeaveTimeline(
+        leave_active=Timeline[Active](intervals=(active1, active2))
+    )
+
+    # Act
+    endpoints = leave_timeline.get_interval_endpoints()
+
+    # Assert
+    assert endpoints == {YESTERDAY_START, TODAY_START, TOMORROW_START}
