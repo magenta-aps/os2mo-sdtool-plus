@@ -39,12 +39,12 @@ async def test_leave_timeline(
     Time  --------t1--------t2---------t3-------------t5-----t6--------------------->
 
     MO (leave)                         |--------leave--------|
-    SD (status)   |----3----|-------------1-----------|--3---|-----------1-----------
+    SD (status)   |----3----|-------------1-----------|--4---|-----------1-----------
 
     "Assert"      |----1----|                         |--2---|
     intervals
 
-    In SD: status 1 is working (with pay), status 3 is leave
+    In SD: status 1 is working (with pay), status 3 and 4 is leave
     """
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
@@ -159,7 +159,7 @@ async def test_leave_timeline(
               <EmploymentStatus>
                 <ActivationDate>2005-01-01</ActivationDate>
                 <DeactivationDate>2005-12-31</DeactivationDate>
-                <EmploymentStatusCode>3</EmploymentStatusCode>
+                <EmploymentStatusCode>4</EmploymentStatusCode>
               </EmploymentStatus>
               <EmploymentStatus>
                 <ActivationDate>2006-01-01</ActivationDate>
