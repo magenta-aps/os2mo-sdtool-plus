@@ -277,10 +277,10 @@ async def test_get_department_timeline_parent_not_found():
     )
 
 
-async def test_get_engagement_timeline(mock_sd_emp_resp_dict):
+async def test_get_engagement_timeline(mock_sd_employment_response_dict):
     # Act
     engagement_timeline = await get_employment_timeline(
-        GetEmploymentChangedResponse.parse_obj(mock_sd_emp_resp_dict)
+        GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
     )
 
     # Assert
@@ -400,10 +400,10 @@ async def test_get_engagement_timeline_no_employment_found():
     )
 
 
-async def test_get_leave_timeline(mock_sd_emp_resp_dict):
+async def test_get_leave_timeline(mock_sd_employment_response_dict):
     # Act
     engagement_timeline = await get_leave_timeline(
-        GetEmploymentChangedResponse.parse_obj(mock_sd_emp_resp_dict)
+        GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
     )
 
     # Assert

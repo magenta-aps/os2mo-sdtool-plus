@@ -537,7 +537,7 @@ def mock_sd_get_department_response_date_range_errors() -> GetDepartmentResponse
 
 
 @pytest.fixture
-def mock_sd_emp_resp_dict() -> dict[str, Any]:
+def mock_sd_employment_response_dict() -> dict[str, Any]:
     return {
         "Person": [
             {
