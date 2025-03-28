@@ -313,7 +313,16 @@ class LeaveTimeline(BaseModel):
     leave_active: Timeline[Active] = Timeline[Active]()
 
     def get_interval_endpoints(self) -> set[datetime]:
-        return set(collapse((i.start, i.end) for i in self.leave_active.intervals))
+        return set(
+            collapse(
+                set(
+                    (i.start, i.end)
+                    for i in chain(
+                        cast(tuple[Interval, ...], self.leave_active.intervals)
+                    )
+                )
+            )
+        )
 
     def has_value(self, timestamp: datetime) -> bool:
         try:
