@@ -69,6 +69,25 @@ def _codegen_validity_to_mo_validity(codegen_validity: BaseModel) -> RAValidityI
     return RAValidityInput.parse_obj(codegen_validity.dict())
 
 
+def _get_update_validity(
+    codegen_validity: BaseModel, mo_validity: RAValidityInput
+) -> RAValidityInput:
+    patch_validity = _codegen_validity_to_mo_validity(codegen_validity)
+
+    patch_validity_to = (
+        patch_validity.to if patch_validity.to is not None else POSITIVE_INFINITY
+    )
+    mo_validity_to = mo_validity.to if mo_validity.to is not None else POSITIVE_INFINITY
+
+    update_validity_from = max(patch_validity.from_, mo_validity.from_)
+    update_validity_to = min(patch_validity_to, mo_validity_to)
+
+    return RAValidityInput(
+        from_=update_validity_from,
+        to=None if update_validity_to is POSITIVE_INFINITY else update_validity_to,
+    )
+
+
 async def _get_ou_type(
     gql_client: GraphQLClient,
     org_unit_type_user_key: str,
