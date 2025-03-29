@@ -298,7 +298,7 @@ async def update_ou(
 
             payload = OrganisationUnitUpdateInput(
                 uuid=org_unit,
-                validity=_codegen_validity_to_mo_validity(validity.validity),
+                validity=_get_update_validity(validity.validity, mo_validity),
                 name=sd_unit_timeline.name.entity_at(start).value,
                 user_key=sd_unit_timeline.unit_id.entity_at(start).value,
                 parent=sd_unit_timeline.parent.entity_at(start).value,
@@ -315,7 +315,7 @@ async def update_ou(
     # The OU does not already exist in this validity period
     payload = OrganisationUnitUpdateInput(
         uuid=org_unit,
-        validity=_get_mo_validity(start, end),
+        validity=mo_validity,
         name=sd_unit_timeline.name.entity_at(start).value,
         user_key=sd_unit_timeline.unit_id.entity_at(start).value,
         parent=sd_unit_timeline.parent.entity_at(start).value,
@@ -604,7 +604,7 @@ async def update_engagement(
                 uuid=obj.uuid,
                 user_key=user_key,
                 primary=validity.primary.uuid if validity.primary is not None else None,
-                validity=_codegen_validity_to_mo_validity(validity.validity),
+                validity=_get_update_validity(validity.validity, mo_validity),
                 # TODO: introduce extention_1 strategy
                 extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
                 extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
@@ -691,7 +691,7 @@ async def update_leave(
                 person=person,
                 engagement=eng_uuid,
                 leave_type=leave_type,
-                validity=_codegen_validity_to_mo_validity(validity.validity),
+                validity=_get_update_validity(validity.validity, mo_validity),
             )
             logger.debug("Update leave", payload=payload.dict())
             if not dry_run:
