@@ -249,7 +249,7 @@ async def get_employment_timeline(
             intervals=combine_intervals(eng_type_intervals)
         ),
     )
-    logger.debug("SD engagement timeline", timeline=timeline)
+    logger.debug("SD engagement timeline", timeline=timeline.dict())
 
     return timeline
 
