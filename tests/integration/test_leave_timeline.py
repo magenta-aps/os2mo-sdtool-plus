@@ -29,8 +29,6 @@ async def test_leave_timeline(
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
     job_function_1234: UUID,
-    job_function_5678: UUID,
-    job_function_9000: UUID,
     respx_mock: MockRouter,
 ):
     """
