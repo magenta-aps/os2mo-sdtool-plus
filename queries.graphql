@@ -271,6 +271,24 @@ mutation TerminateLeave($input: LeaveTerminateInput!) {
   }
 }
 
+query GetOrgUnitEngagements(
+  $ou_filter: OrganisationUnitFilter,
+  $eng_filter: EngagementFilter
+) {
+  org_units(filter: $ou_filter) {
+    objects {
+      validities {
+        engagements(filter: $eng_filter) {
+          user_key
+          person {
+            cpr_number
+          }
+        }
+      }
+    }
+  }
+}
+
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
   $given_name: String!,
