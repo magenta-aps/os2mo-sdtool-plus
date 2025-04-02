@@ -9,8 +9,10 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDCallError
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetOrganizationRequest
+from sdclient.requests import GetPersonRequest
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
+from sdclient.responses import GetPersonResponse
 from tenacity import retry
 from tenacity import retry_if_exception_type
 from tenacity import stop_after_attempt
@@ -75,6 +77,41 @@ async def get_sd_departments(
         UUIDIndicator=True,
     )
     return await asyncio.to_thread(sd_client.get_department, req)
+
+
+@retry(
+    retry=retry_if_exception_type(SDCallError),
+    wait=wait_fixed(SD_RETRY_WAIT_TIME),
+    stop=stop_after_attempt(SD_RETRY_ATTEMPTS),
+    reraise=True,
+)
+async def get_sd_person(
+    sd_client: SDClient,
+    institution_identifier: str,
+    effective_date: date,
+    person_civil_registration_identifier: str | None = None,
+    employment_identifier: str | None = None,
+    department_identifier: str | None = None,
+    department_level_identifier: str | None = None,
+    status_active_indicator: bool = True,
+    status_passive_indicator: bool = False,
+    contact_information_indicator: bool = False,
+    postal_address_indicator: bool = False,
+) -> GetPersonResponse:
+    # TODO: add docstring
+    req = GetPersonRequest(
+        InstitutionIdentifier=institution_identifier,
+        EffectiveDate=effective_date,
+        PersonCivilRegistrationIdentifier=person_civil_registration_identifier,
+        EmploymentIdentifier=employment_identifier,
+        DepartmentIdentifier=department_identifier,
+        DepartmentLevelIdentifier=department_level_identifier,
+        StatusActiveIndicator=status_active_indicator,
+        StatusPassiveIndicator=status_passive_indicator,
+        ContactInformationIndicator=contact_information_indicator,
+        PostalAddressIndicator=postal_address_indicator,
+    )
+    return await asyncio.to_thread(sd_client.get_person, req)
 
 
 async def get_sd_tree(
