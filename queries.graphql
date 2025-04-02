@@ -156,6 +156,27 @@ query GetPerson($cpr: CPR!) {
   }
 }
 
+query GetPersonTimeline($cpr_numbers: CPR!) {
+  employees(
+    filter: { cpr_numbers: [$cpr_numbers], to_date: null, from_date: null }
+  ) {
+    objects {
+      validities(end: null, start: null) {
+        addresses {
+          address_type {
+            user_key
+            scope
+          }
+          name
+        }
+        cpr_number
+        given_name
+        surname
+      }
+    }
+  }
+}
+
 mutation CreateEngagement($input: EngagementCreateInput!) {
   engagement_create(input: $input) {
     uuid
@@ -369,8 +390,76 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
   }
 }
 
-mutation _Testing_CreatePerson($input: EmployeeCreateInput!) {
+mutation CreatePerson($input: EmployeeCreateInput!) {
   employee_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdatePerson(
+  $uuid: UUID!
+  $cpr_number: CPR!
+  $given_name: String!
+  $surname: String!
+  $from: DateTime!
+  $to: DateTime = null
+) {
+  employee_update(
+    input: {
+      validity: { from: $from, to: $to }
+      cpr_number: $cpr_number
+      given_name: $given_name
+      surname: $surname
+      uuid: $uuid
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation CreatePersonAddress(
+  $person: UUID!
+  $value: String!
+  $address_type: UUID!
+  $visibility: UUID!$from: DateTime!
+  $to: DateTime = Null
+) {
+  address_create(
+    input: {
+      validity: { from: $from, to: $to }
+      value: $value
+      address_type: $address_type
+      visibility: $visibility
+      person: $person
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation UpdatePersonAddress(
+  $uuid: UUID!
+  $value: String!
+  $address_type: UUID!
+  $visibility: UUID!
+  $from: DateTime!
+  $to: DateTime = Null
+) {
+  address_update(
+    input: {
+      uuid: $uuid
+      validity: { from: $from, to: $to }
+      address_type: $address_type
+      value: $value
+      visibility: $visibility
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation TerminatePersonAddress($uuid: UUID!, $to: DateTime!) {
+  address_terminate(input: { to: $to, uuid: $uuid }) {
     uuid
   }
 }
