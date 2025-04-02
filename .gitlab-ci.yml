@@ -11,6 +11,8 @@ stages:
 
 
 variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
   OS2MO_INIT_CONFIG: "/builds/$CI_PROJECT_PATH/dev-environment/init.config.yml"
   IMAGE_SHA: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 

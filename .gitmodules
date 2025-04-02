@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
+# SPDX-License-Identifier: MPL-2.0
+[submodule "another-sd-client"]
+	path = another-sd-client
+	url = git@git.magenta.dk:rammearkitektur/another-sd-client.git
+	branch = master

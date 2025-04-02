@@ -19,7 +19,7 @@ gql = "^3"
 anytree = "^2"
 pydantic = {version = "^1", extras=["email"]}
 more-itertools = "^9"
-another-sd-client = "^1"
+another-sd-client = {path = "another-sd-client", develop = true}
 uvicorn = "^0.23"
 sentry-sdk = "^1"
 structlog = "^24"
@@ -76,6 +76,7 @@ type = "uuid.UUID"
 
 [tool.pytest.ini_options]
 asyncio_mode="auto"
+testpaths = ["tests"]
 
 [build-system]
 requires = ["poetry-core"]
@@ -105,4 +106,11 @@ DEP002 = [
   "uvicorn",
   # psycopg2 is used as a string in the postgres connector
   "psycopg2",
+  "another-sd-client"
 ]
+
+[tool.deptry]
+extend_exclude = ["another-sd-client"]
+
+[tool.deptry.package_module_name_map]
+another-sd-client = "sdclient"
