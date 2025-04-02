@@ -26,9 +26,11 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.requests import GetEmploymentChangedRequest
+from sdclient.requests import GetPersonRequest
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
@@ -53,6 +55,8 @@ from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
 from .models import EngagementSyncPayload
+from .models import Person
+from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
@@ -60,6 +64,7 @@ from .timeline import prefix_user_key_with_inst_id
 from .timeline import sync_eng
 from .timeline import sync_leave
 from .timeline import sync_ou
+from .timeline import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -309,6 +314,70 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         logger.info("Run completed!")
 
         return results
+
+    @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
+    async def timeline_sync_person(
+        gql_client: depends.GraphQLClient,
+        payload: PersonSyncPayload,
+        dry_run: bool = False,
+    ) -> dict:
+        """
+        Sync the person with the given CPR from the given institution identifier
+
+        Args:
+            gql_client: The GraphQL client
+
+            payload:
+                inst_id: The SD institution
+                cpr_number: CPR number of the person
+
+            dry_run: If true, nothing will be written to MO.
+
+        Returns:
+            Dictionary with status
+        """
+
+        logger.info(
+            "Sync person",
+            inst_id=payload.institution_identifier,
+            cpr=payload.cpr,
+            dry_run=dry_run,
+        )
+
+        sd_response = await asyncio.to_thread(
+            sd_client.get_person,
+            GetPersonRequest(
+                InstitutionIdentifier=payload.institution_identifier,
+                PersonCivilRegistrationIdentifier=payload.cpr,
+                EffectiveDate=date.today(),
+                ContactInformationIndicator=True,
+                PostalAddressIndicator=True,
+            ),
+        )
+
+        sd_response_person = one(sd_response.Person)
+
+        sd_person = Person(
+            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
+            given_name=sd_response_person.PersonGivenName,
+            surname=sd_response_person.PersonSurnameName,
+            emails=[],
+            phone_numbers=[],
+            addresses=[],
+        )
+
+        # Get the person
+        mo_person = await gql_client.get_person(payload.cpr)
+        person = only(mo_person.objects)
+
+        await sync_person(
+            gql_client=gql_client,
+            mo_person=person.uuid if person else None,
+            sd_person=sd_person,
+            dry_run=dry_run,
+        )
+
+        return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(

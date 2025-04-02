@@ -45,6 +45,20 @@ class EngType(Enum):
     HOURLY = "Timelønnet"
 
 
+class PersonSyncPayload(BaseModel):
+    institution_identifier: str
+    cpr: str
+
+
+class Person(BaseModel):
+    cpr: str
+    given_name: str
+    surname: str
+    emails: list[str]
+    phone_numbers: list[str]
+    addresses: list[str]
+
+
 class EngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str

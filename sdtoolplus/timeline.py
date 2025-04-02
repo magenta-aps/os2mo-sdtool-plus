@@ -17,6 +17,7 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_leave
 from sdtoolplus.mo.timeline import create_ou
+from sdtoolplus.mo.timeline import create_person
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
@@ -24,11 +25,13 @@ from sdtoolplus.mo.timeline import terminate_ou
 from sdtoolplus.mo.timeline import update_engagement
 from sdtoolplus.mo.timeline import update_leave
 from sdtoolplus.mo.timeline import update_ou
+from sdtoolplus.mo.timeline import update_person
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import Person
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
@@ -55,6 +58,41 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
 # TODO: replace this function with a proper strategy pattern when needed
 def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
     return f"{inst_id}-{user_key}"
+
+
+async def sync_person(
+    gql_client: GraphQLClient,
+    mo_person: UUID | None,
+    sd_person: Person,
+    dry_run: bool,
+) -> None:
+    if mo_person is None:
+        return await create_person(
+            gql_client=gql_client,
+            cpr=sd_person.cpr,
+            givenname=sd_person.given_name,
+            lastname=sd_person.surname,
+            dry_run=dry_run,
+        )
+
+    gql_timeline = await gql_client.get_person_timeline(
+        filter=EmployeeFilter(
+            uuids=[mo_person], from_date=datetime.today(), to_date=None
+        )
+    )
+    mo_validities = one(gql_timeline.objects).validities if gql_timeline.objects else []
+    if (
+        len(mo_validities) > 1
+        or one(mo_validities).given_name
+        or one(mo_validities).surname != sd_person.surname
+    ):
+        await update_person(
+            gql_client=gql_client,
+            uuid=mo_person,
+            start=datetime.today(),
+            dry_run=dry_run,
+            person=sd_person,
+        )
 
 
 async def sync_eng(
