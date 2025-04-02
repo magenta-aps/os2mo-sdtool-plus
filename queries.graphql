@@ -156,6 +156,35 @@ query GetPerson($cpr: CPR!) {
   }
 }
 
+query GetPersonValidities($filter: EmployeeFilter) {
+  employees(filter: $filter) {
+    objects {
+      uuid
+      validities {
+        cpr_number
+        given_name
+        surname
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
+mutation CreatePerson($input: EmployeeCreateInput!) {
+  employee_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdatePerson($input: EmployeeUpdateInput!) {
+  employee_update(input: $input) {
+    uuid
+  }
+}
+
 mutation CreateEngagement($input: EngagementCreateInput!) {
   engagement_create(input: $input) {
     uuid
@@ -366,11 +395,5 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
         }
       }
     }
-  }
-}
-
-mutation _Testing_CreatePerson($input: EmployeeCreateInput!) {
-  employee_create(input: $input) {
-    uuid
   }
 }
