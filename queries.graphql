@@ -156,6 +156,35 @@ query GetPerson($cpr: CPR!) {
   }
 }
 
+query GetPersonTimeline(
+  $uuid: UUID!
+  $to_date: DateTime = null
+  $from_date: DateTime = null
+) {
+  employees(
+    filter: { uuids: [$uuid], to_date: $to_date, from_date: $from_date }
+  ) {
+    objects {
+      validities(end: $to_date, start: $from_date) {
+        addresses {
+          address_type {
+            user_key
+            scope
+          }
+          name
+        }
+        cpr_number
+        given_name
+        surname
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 mutation CreateEngagement($input: EngagementCreateInput!) {
   engagement_create(input: $input) {
     uuid
@@ -369,8 +398,62 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
   }
 }
 
-mutation _Testing_CreatePerson($input: EmployeeCreateInput!) {
+mutation CreatePerson($input: EmployeeCreateInput!) {
   employee_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdatePerson($input: EmployeeUpdateInput!) {
+  employee_update(input: $input) {
+    uuid
+  }
+}
+
+
+mutation CreatePersonAddress(
+  $person: UUID!
+  $value: String!
+  $address_type: UUID!
+  $visibility: UUID!$from: DateTime!
+  $to: DateTime = Null
+) {
+  address_create(
+    input: {
+      validity: { from: $from, to: $to }
+      value: $value
+      address_type: $address_type
+      visibility: $visibility
+      person: $person
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation UpdatePersonAddress(
+  $uuid: UUID!
+  $value: String!
+  $address_type: UUID!
+  $visibility: UUID!
+  $from: DateTime!
+  $to: DateTime = Null
+) {
+  address_update(
+    input: {
+      uuid: $uuid
+      validity: { from: $from, to: $to }
+      address_type: $address_type
+      value: $value
+      visibility: $visibility
+    }
+  ) {
+    uuid
+  }
+}
+
+mutation TerminatePersonAddress($uuid: UUID!, $to: DateTime!) {
+  address_terminate(input: { to: $to, uuid: $uuid }) {
     uuid
   }
 }
