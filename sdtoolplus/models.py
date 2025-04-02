@@ -45,6 +45,11 @@ class EngType(Enum):
     HOURLY = "Timelønnet"
 
 
+class PersonSyncPayload(BaseModel):
+    institution_identifier: str
+    cpr: str
+
+
 class EngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
@@ -248,6 +253,10 @@ class UnitTimeline(BaseModel):
                 other.parent.entity_at(timestamp),
             )
         return False
+
+
+class PersonTimeline(BaseModel):
+    Name: Timeline[Active] = Timeline[Active]()
 
 
 class EngagementTimeline(BaseModel):

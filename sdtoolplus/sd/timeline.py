@@ -13,6 +13,7 @@ from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import GetEmploymentChangedResponse
+from sdclient.responses import GetPersonResponse
 from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -26,6 +27,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import PersonTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -140,6 +142,15 @@ async def get_department_timeline(
     logger.debug("SD OU timeline", timeline=timeline)
 
     return timeline
+
+
+async def get_person_timeline(sd_get_person_resp: GetPersonResponse) -> PersonTimeline:
+    logger.info("Get SD Person")
+
+    person = only(sd_get_person_resp.Person, default=None)
+    if person is None:
+        return PersonTimeline()
+    return PersonTimeline()
 
 
 async def get_employment_timeline(
