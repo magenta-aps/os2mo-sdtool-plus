@@ -69,7 +69,7 @@ async def test_leave_timeline(
     emp_id = "12345"
     user_key = f"II-{emp_id}"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,

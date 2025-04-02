@@ -85,7 +85,7 @@ async def test_eng_timeline_http_triggered_sync(
     cpr = "0101011234"
     emp_id = "12345"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
@@ -423,7 +423,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     emp_id = "12345"
     user_key = f"II-{emp_id}"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
@@ -673,7 +673,7 @@ async def test_eng_timeline_create_new_engagement(
     cpr = "0101011234"
     emp_id = "12345"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
