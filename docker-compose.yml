@@ -52,6 +52,7 @@ services:
       - default
       - os2mo_default
     volumes:
+      - ./another-sd-client/:/app/another-sd-client/:ro
       - ./sdtoolplus/:/app/sdtoolplus/:ro
       - ./tests/:/app/tests/:ro
     depends_on:

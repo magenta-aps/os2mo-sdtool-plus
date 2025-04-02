@@ -1,0 +1,3 @@
+[submodule "another-sd-client"]
+	path = another-sd-client
+	url = git@git.magenta.dk:rammearkitektur/another-sd-client.git

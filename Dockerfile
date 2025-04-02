@@ -18,6 +18,7 @@ RUN python -m venv $POETRY_HOME \
 
 # Install project in another isolated environment
 RUN python -m venv $VIRTUAL_ENV
+COPY another-sd-client another-sd-client
 COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
