@@ -8,3 +8,7 @@ class NoValueError(Exception):
 
 class PersonNotFoundError(Exception):
     pass
+
+
+class EngagementNotFoundError(Exception):
+    pass
