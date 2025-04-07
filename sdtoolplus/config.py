@@ -51,6 +51,10 @@ class SDToolPlusSettings(BaseSettings):
     sd_institution_identifier: str
     sd_password: SecretStr
 
+    # When true, do not prefix user_keys with the SD InstitutionIdentifier
+    # (and other stuff to come)
+    municipality_mode: bool = True
+
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
     org_unit_type: str = "Enhed"
