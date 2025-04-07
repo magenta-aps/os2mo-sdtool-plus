@@ -39,11 +39,11 @@ from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 logger = structlog.stdlib.get_logger()
 
 
-def _sd_start_datetime(d: date) -> datetime:
+def sd_start_to_timeline_start(d: date) -> datetime:
     return datetime.combine(d, time.min, ASSUMED_SD_TIMEZONE)
 
 
-def _sd_end_datetime(d: date) -> datetime:
+def sd_end_to_timeline_end(d: date) -> datetime:
     if d == date.max:
         return POSITIVE_INFINITY
     # We have to add one day to the SD end date when converting to a timeline end
@@ -87,8 +87,8 @@ async def get_department_timeline(
 
     active_intervals = tuple(
         Active(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
             value=True,
         )
         for dep in department.Department
@@ -96,8 +96,8 @@ async def get_department_timeline(
 
     id_intervals = tuple(
         UnitId(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
             value=dep.DepartmentIdentifier,
         )
         for dep in department.Department
@@ -105,8 +105,8 @@ async def get_department_timeline(
 
     level_intervals = tuple(
         UnitLevel(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
             value=dep.DepartmentLevelIdentifier,
         )
         for dep in department.Department
@@ -114,8 +114,8 @@ async def get_department_timeline(
 
     name_intervals = tuple(
         UnitName(
-            start=_sd_start_datetime(dep.ActivationDate),
-            end=_sd_end_datetime(dep.DeactivationDate),
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
             value=dep.DepartmentName,
         )
         for dep in department.Department
@@ -123,8 +123,8 @@ async def get_department_timeline(
 
     parent_intervals = tuple(
         UnitParent(
-            start=_sd_start_datetime(parent.startDate),
-            end=_sd_end_datetime(parent.endDate),
+            start=sd_start_to_timeline_start(parent.startDate),
+            end=sd_end_to_timeline_end(parent.endDate),
             value=parent.parentUuid,
         )
         for parent in parents
@@ -157,8 +157,8 @@ async def get_employment_timeline(
     active_intervals = (
         tuple(
             Active(
-                start=_sd_start_datetime(status.ActivationDate),
-                end=_sd_end_datetime(status.DeactivationDate),
+                start=sd_start_to_timeline_start(status.ActivationDate),
+                end=sd_end_to_timeline_end(status.DeactivationDate),
                 value=True,
             )
             for status in employment.EmploymentStatus
@@ -171,8 +171,8 @@ async def get_employment_timeline(
     eng_key_intervals = (
         tuple(
             EngagementKey(
-                start=_sd_start_datetime(prof.ActivationDate),
-                end=_sd_end_datetime(prof.DeactivationDate),
+                start=sd_start_to_timeline_start(prof.ActivationDate),
+                end=sd_end_to_timeline_end(prof.DeactivationDate),
                 value=prof.JobPositionIdentifier,
             )
             for prof in employment.Profession
@@ -184,8 +184,8 @@ async def get_employment_timeline(
     eng_name_intervals = (
         tuple(
             EngagementName(
-                start=_sd_start_datetime(prof.ActivationDate),
-                end=_sd_end_datetime(prof.DeactivationDate),
+                start=sd_start_to_timeline_start(prof.ActivationDate),
+                end=sd_end_to_timeline_end(prof.DeactivationDate),
                 value=prof.EmploymentName,
             )
             for prof in employment.Profession
@@ -197,8 +197,8 @@ async def get_employment_timeline(
     eng_unit_intervals = (
         tuple(
             EngagementUnit(
-                start=_sd_start_datetime(dep.ActivationDate),
-                end=_sd_end_datetime(dep.DeactivationDate),
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
                 value=dep.DepartmentUUIDIdentifier,
             )
             for dep in employment.EmploymentDepartment
@@ -210,8 +210,8 @@ async def get_employment_timeline(
     eng_unit_id_intervals = (
         tuple(
             EngagementUnitId(
-                start=_sd_start_datetime(dep.ActivationDate),
-                end=_sd_end_datetime(dep.DeactivationDate),
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
                 value=dep.DepartmentIdentifier,
             )
             for dep in employment.EmploymentDepartment
@@ -223,8 +223,8 @@ async def get_employment_timeline(
     eng_type_intervals = (
         tuple(
             EngagementType(
-                start=_sd_start_datetime(working_time.ActivationDate),
-                end=_sd_end_datetime(working_time.DeactivationDate),
+                start=sd_start_to_timeline_start(working_time.ActivationDate),
+                end=sd_end_to_timeline_end(working_time.DeactivationDate),
                 value=_sd_employment_type(working_time),
             )
             for working_time in employment.WorkingTime
@@ -269,8 +269,8 @@ async def get_leave_timeline(
     active_intervals = (
         tuple(
             Active(
-                start=_sd_start_datetime(status.ActivationDate),
-                end=_sd_end_datetime(status.DeactivationDate),
+                start=sd_start_to_timeline_start(status.ActivationDate),
+                end=sd_end_to_timeline_end(status.DeactivationDate),
                 value=True,
             )
             for status in employment.EmploymentStatus
