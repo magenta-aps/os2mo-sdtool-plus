@@ -70,13 +70,10 @@ def _from_mo_end_datetime(d: datetime | None) -> datetime:
     return d + timedelta(days=1) if d is not None else POSITIVE_INFINITY
 
 
-def _get_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
-    mo_end: datetime | None = end
-    assert mo_end is not None
-    mo_end = (
-        # Subtract one day due to MO
-        None if mo_end == POSITIVE_INFINITY else mo_end - timedelta(days=1)
-    )
+def timeline_interval_to_mo_validity(start: datetime, end: datetime) -> RAValidityInput:
+    mo_end = datetime_to_mo_end(end)
+    # Subtract one day due to MO
+    mo_end = mo_end - timedelta(days=1) if mo_end is not None else None
     return RAValidityInput(from_=start, to=mo_end)
 
 
@@ -256,7 +253,7 @@ async def create_ou(
 
     payload = OrganisationUnitCreateInput(
         uuid=org_unit,
-        validity=_get_mo_validity(start, end),
+        validity=timeline_interval_to_mo_validity(start, end),
         name=sd_unit_timeline.name.entity_at(start).value,
         user_key=sd_unit_timeline.unit_id.entity_at(start).value,
         parent=sd_unit_timeline.parent.entity_at(start).value,
@@ -282,7 +279,7 @@ async def update_ou(
         "Updating OU", start=start, end=end, sd_unit_timeline=sd_unit_timeline.dict()
     )
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
     # TODO: refactor get_org_unit_timeline to take a RAValidityInput object instead of
     # start and end dates
     ou = await gql_client.get_org_unit_timeline(
@@ -352,7 +349,7 @@ async def terminate_ou(
 ) -> None:
     logger.info("(Re-)terminate OU", org_unit=str(org_unit))
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
 
     if mo_validity.to is not None:
         payload = OrganisationUnitTerminateInput(
@@ -535,7 +532,7 @@ async def create_engagement(
     await gql_client.create_engagement(
         EngagementCreateInput(
             user_key=user_key,
-            validity=_get_mo_validity(start, end),
+            validity=timeline_interval_to_mo_validity(start, end),
             # TODO: introduce extension_1 strategy
             extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
             extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
@@ -570,7 +567,7 @@ async def create_leave(
         person=person,
         engagement=eng_uuid,
         leave_type=leave_type,
-        validity=_get_mo_validity(start, end),
+        validity=timeline_interval_to_mo_validity(start, end),
     )
     logger.debug("Create leave payload", payload=payload.dict())
 
@@ -606,7 +603,7 @@ async def update_engagement(
     assert current_job_function is not None
     job_function_uuid = current_job_function.uuid
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
 
     eng = await gql_client.get_engagement_timeline(
         person=person, user_key=user_key, from_date=start, to_date=end
@@ -687,7 +684,7 @@ async def update_leave(
         "Update leave", start=start, end=end, sd_leave_timeline=sd_leave_timeline.dict()
     )
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
 
     leave = await gql_client.get_leave(
         LeaveFilter(
@@ -756,7 +753,7 @@ async def terminate_engagement(
         end=end,
     )
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
 
     eng = await gql_client.get_engagement_timeline(
         person=person, user_key=user_key, from_date=None, to_date=None
@@ -794,7 +791,7 @@ async def terminate_leave(
         end=end,
     )
 
-    mo_validity = _get_mo_validity(start, end)
+    mo_validity = timeline_interval_to_mo_validity(start, end)
 
     leave = await gql_client.get_leave(
         LeaveFilter(
