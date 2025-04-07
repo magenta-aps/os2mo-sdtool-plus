@@ -71,8 +71,7 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     )
 
 
-# TODO: replace this function with a proper strategy pattern when needed
-def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
+def _prefix_eng_user_key(user_key: str, inst_id: str) -> str:
     return f"{inst_id}-{user_key}"
 
 
@@ -142,7 +141,7 @@ async def _sync_eng_intervals(
     mo_eng_timeline: EngagementTimeline,
     dry_run: bool,
 ) -> None:
-    user_key = prefix_user_key_with_inst_id(
+    user_key = _prefix_eng_user_key(
         payload.employment_identifier, payload.institution_identifier
     )
 
@@ -212,7 +211,7 @@ async def _sync_leave_intervals(
     mo_leave_timeline: LeaveTimeline,
     dry_run: bool,
 ) -> None:
-    user_key = prefix_user_key_with_inst_id(
+    user_key = _prefix_eng_user_key(
         payload.employment_identifier, payload.institution_identifier
     )
 
@@ -399,7 +398,7 @@ async def sync_engagement(
     mo_eng_timeline = await get_engagement_timeline(
         gql_client=gql_client,
         person=person.uuid,
-        user_key=prefix_user_key_with_inst_id(
+        user_key=_prefix_eng_user_key(
             payload.employment_identifier, payload.institution_identifier
         ),
     )
@@ -417,7 +416,7 @@ async def sync_engagement(
     mo_leave_timeline = await get_mo_leave_timeline(
         gql_client=gql_client,
         person=person.uuid,
-        user_key=prefix_user_key_with_inst_id(
+        user_key=_prefix_eng_user_key(
             payload.employment_identifier, payload.institution_identifier
         ),
     )
