@@ -306,7 +306,11 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         dry_run: bool = False,
     ) -> dict:
         await sync_engagement(
-            sd_client=sd_client, gql_client=gql_client, payload=payload, dry_run=dry_run
+            sd_client=sd_client,
+            gql_client=gql_client,
+            payload=payload,
+            settings=settings,
+            dry_run=dry_run,
         )
         return {"msg": "success"}
 

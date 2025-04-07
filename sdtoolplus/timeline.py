@@ -39,6 +39,7 @@ from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
+from .config import SDToolPlusSettings
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 
@@ -63,7 +64,11 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     )
 
 
-def _prefix_eng_user_key(user_key: str, inst_id: str) -> str:
+def _prefix_eng_user_key(
+    settings: SDToolPlusSettings, user_key: str, inst_id: str
+) -> str:
+    if settings.municipality_mode:
+        return user_key
     return f"{inst_id}-{user_key}"
 
 
@@ -75,10 +80,11 @@ async def _sync_eng_intervals(
     payload: EngagementSyncPayload,
     sd_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
+    settings: SDToolPlusSettings,
     dry_run: bool,
 ) -> None:
     user_key = _prefix_eng_user_key(
-        payload.employment_identifier, payload.institution_identifier
+        settings, payload.employment_identifier, payload.institution_identifier
     )
 
     logger.info(
@@ -145,10 +151,11 @@ async def _sync_leave_intervals(
     payload: EngagementSyncPayload,
     sd_leave_timeline: LeaveTimeline,
     mo_leave_timeline: LeaveTimeline,
+    settings: SDToolPlusSettings,
     dry_run: bool,
 ) -> None:
     user_key = _prefix_eng_user_key(
-        payload.employment_identifier, payload.institution_identifier
+        settings, payload.employment_identifier, payload.institution_identifier
     )
 
     logger.info(
@@ -284,6 +291,7 @@ async def sync_engagement(
     sd_client: SDClient,
     gql_client: GraphQLClient,
     payload: EngagementSyncPayload,
+    settings: SDToolPlusSettings,
     dry_run: bool = False,
 ) -> None:
     """
@@ -291,8 +299,10 @@ async def sync_engagement(
     SD EmploymentIdentifier (corresponding to the MO engagement user_key).
 
     Args:
+        sd_client: The SD client
         gql_client: The GraphQL client
         payload: The engagement sync payload
+        settings: The application settings
         dry_run: If true, nothing will be written to MO.
     """
 
@@ -335,7 +345,7 @@ async def sync_engagement(
         gql_client=gql_client,
         person=person.uuid,
         user_key=_prefix_eng_user_key(
-            payload.employment_identifier, payload.institution_identifier
+            settings, payload.employment_identifier, payload.institution_identifier
         ),
     )
 
@@ -345,6 +355,7 @@ async def sync_engagement(
         payload=payload,
         sd_eng_timeline=sd_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
+        settings=settings,
         dry_run=dry_run,
     )
 
@@ -353,7 +364,7 @@ async def sync_engagement(
         gql_client=gql_client,
         person=person.uuid,
         user_key=_prefix_eng_user_key(
-            payload.employment_identifier, payload.institution_identifier
+            settings, payload.employment_identifier, payload.institution_identifier
         ),
     )
 
@@ -363,5 +374,6 @@ async def sync_engagement(
         payload=payload,
         sd_leave_timeline=sd_leave_timeline,
         mo_leave_timeline=mo_leave_timeline,
+        settings=settings,
         dry_run=dry_run,
     )
