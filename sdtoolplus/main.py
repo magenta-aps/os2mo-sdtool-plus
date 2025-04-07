@@ -63,11 +63,11 @@ from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 from .timeline import prefix_unit_id_with_inst_id
-from .timeline import prefix_user_key_with_inst_id
-from .timeline import sync_eng
-from .timeline import sync_leave
-from .timeline import sync_ou
 from .timeline import sync_person
+from .timeline import _sync_eng_intervals
+from .timeline import _sync_leave_intervals
+from .timeline import _sync_ou_intervals
+from .timeline import prefix_user_key_with_inst_id
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -413,7 +413,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             ),
         )
 
-        await sync_eng(
+        await _sync_eng_intervals(
             gql_client=gql_client,
             person=person.uuid,
             payload=payload,
@@ -431,7 +431,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             ),
         )
 
-        await sync_leave(
+        await _sync_leave_intervals(
             gql_client=gql_client,
             person=person.uuid,
             payload=payload,
@@ -474,7 +474,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
-        await sync_ou(
+        await _sync_ou_intervals(
             gql_client=gql_client,
             org_unit=org_unit,
             sd_unit_timeline=sd_unit_timeline,

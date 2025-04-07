@@ -170,7 +170,7 @@ async def sync_person(
     logger.info("Done syncing person!")
 
 
-async def sync_eng(
+async def _sync_eng_intervals(
     gql_client: GraphQLClient,
     person: UUID,
     # TODO: we need to change the arguments to this function later in order to
@@ -240,7 +240,7 @@ async def sync_eng(
             )
 
 
-async def sync_leave(
+async def _sync_leave_intervals(
     gql_client: GraphQLClient,
     person: UUID,
     # TODO: we need to change the arguments to this function later in order to
@@ -327,7 +327,7 @@ async def sync_leave(
             )
 
 
-async def sync_ou(
+async def _sync_ou_intervals(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,
     org_unit_type_user_key: str,
