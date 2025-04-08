@@ -23,6 +23,7 @@ from sdtoolplus.models import EngType
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MUNICIPALITY_MODE": "false"})
 async def test_eng_timeline_http_triggered_sync(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -359,6 +360,7 @@ async def test_eng_timeline_http_triggered_sync(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MUNICIPALITY_MODE": "false"})
 async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -617,6 +619,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MUNICIPALITY_MODE": "false"})
 async def test_eng_timeline_create_new_engagement(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
