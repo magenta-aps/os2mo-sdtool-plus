@@ -24,6 +24,7 @@ from sdtoolplus.models import EngType
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MUNICIPALITY_MODE": "false"})
 async def test_leave_timeline(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
