@@ -5,6 +5,7 @@ from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
+from datetime import timezone
 
 import structlog
 from more_itertools import only
@@ -19,6 +20,7 @@ from sdclient.responses import WorkingTime
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import CPRNumber
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -26,8 +28,10 @@ from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
+from sdtoolplus.models import GivenName
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import PersonTimeline
+from sdtoolplus.models import Surname
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -146,11 +150,40 @@ async def get_department_timeline(
 
 async def get_person_timeline(sd_get_person_resp: GetPersonResponse) -> PersonTimeline:
     logger.info("Get SD Person")
-
-    person = only(sd_get_person_resp.Person, default=None)
+    person = only(sd_get_person_resp.Person)
+    today = datetime.now(timezone.utc)
     if person is None:
         return PersonTimeline()
-    return PersonTimeline()
+    person_timeline = PersonTimeline(
+        cpr_number=Timeline[CPRNumber](
+            intervals=(
+                CPRNumber(
+                    start=_sd_start_datetime(today),
+                    value=person.PersonCivilRegistrationIdentifier,
+                    end=_sd_end_datetime(date.max),
+                ),
+            )
+        ),
+        given_name=Timeline[GivenName](
+            intervals=(
+                GivenName(
+                    start=_sd_start_datetime(today),
+                    value=person.PersonGivenName,
+                    end=_sd_end_datetime(date.max),
+                ),
+            )
+        ),
+        surname=Timeline[Surname](
+            intervals=(
+                Surname(
+                    start=_sd_start_datetime(today),
+                    value=person.PersonSurnameName,
+                    end=_sd_end_datetime(date.max),
+                ),
+            )
+        ),
+    )
+    return person_timeline
 
 
 async def get_employment_timeline(

@@ -17,6 +17,7 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_leave
 from sdtoolplus.mo.timeline import create_ou
+from sdtoolplus.mo.timeline import create_person
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
@@ -29,6 +30,7 @@ from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import PersonTimeline
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
@@ -55,6 +57,66 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
 # TODO: replace this function with a proper strategy pattern when needed
 def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
     return f"{inst_id}-{user_key}"
+
+
+async def sync_person(
+    gql_client: GraphQLClient,
+    # TODO: we need to change the arguments to this function later in order to
+    #       to handle other triggering mechanisms
+    mo_person: UUID | None,
+    sd_person_timeline: PersonTimeline,
+    mo_person_timeline: PersonTimeline,
+    dry_run: bool,
+) -> None:
+    sd_interval_endpoints = sd_person_timeline.get_interval_endpoints()
+    mo_interval_endpoints = mo_person_timeline.get_interval_endpoints()
+
+    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
+    endpoints.sort()
+    logger.debug("List of endpoints", endpoints=endpoints)
+    for start, end in pairwise(endpoints):
+        logger.debug("Processing endpoint pair", start=start, end=end)
+        if sd_person_timeline.equal_at(start, mo_person_timeline):
+            logger.debug("SD and MO equal")
+            continue
+        elif sd_person_timeline.has_value(start):
+            if mo_person is None:
+                await create_person(
+                    gql_client=gql_client,
+                    cpr=one(sd_person_timeline.cpr_number.intervals).value,
+                    givenname=one(sd_person_timeline.given_name.intervals).value,
+                    lastname=one(sd_person_timeline.surname.intervals).value,
+                )
+
+            logger.debug("SD value available")
+        #     if mo_person_timeline.objects:
+        #         await update_engagement(
+        #             gql_client=gql_client,
+        #             person=person,
+        #             user_key=user_key,
+        #             start=start,
+        #             end=end,
+        #             sd_eng_timeline=sd_eng_timeline,
+        #             eng_types=eng_types,
+        #         )
+        #     else:
+        #         await create_engagement(
+        #             gql_client=gql_client,
+        #             person=person,
+        #             user_key=user_key,
+        #             start=start,
+        #             end=end,
+        #             sd_eng_timeline=sd_eng_timeline,
+        #             eng_types=eng_types,
+        #         )
+        # else:
+        #     await terminate_engagement(
+        #         gql_client=gql_client,
+        #         person=person,
+        #         user_key=user_key,
+        #         start=start,
+        #         end=end,
+        #     )
 
 
 async def sync_eng(

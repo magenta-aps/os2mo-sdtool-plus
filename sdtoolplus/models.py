@@ -117,6 +117,18 @@ class UnitParent(Interval[Optional[OrgUnitUUID]]):
     pass
 
 
+class GivenName(Interval[str]):
+    pass
+
+
+class CPRNumber(Interval[str]):
+    pass
+
+
+class Surname(Interval[str]):
+    pass
+
+
 class EngagementKey(Interval[str]):
     """
     The SD JobPositionIdentifier corresponding to MOs job_function user_key
@@ -256,7 +268,44 @@ class UnitTimeline(BaseModel):
 
 
 class PersonTimeline(BaseModel):
-    Name: Timeline[Active] = Timeline[Active]()
+    cpr_number: Timeline[CPRNumber] = Timeline[CPRNumber]()
+    given_name: Timeline[GivenName] = Timeline[GivenName]()
+    surname: Timeline[Surname] = Timeline[Surname]()
+
+    def get_interval_endpoints(self) -> set[datetime]:
+        return set(
+            collapse(
+                set(
+                    (i.start, i.end)
+                    for i in chain(
+                        cast(tuple[Interval, ...], self.given_name.intervals),
+                        cast(tuple[Interval, ...], self.surname.intervals),
+                    )
+                )
+            )
+        )
+
+    def has_value(self, timestamp: datetime) -> bool:
+        try:
+            self.given_name.entity_at(timestamp)
+            self.surname.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+    def equal_at(self, timestamp: datetime, other: Self) -> bool:
+        # TODO: unit test
+        if self.has_value(timestamp) == other.has_value(timestamp):
+            if self.has_value(timestamp) is False:
+                return True
+            return (
+                self.given_name.entity_at(timestamp),
+                self.surname.entity_at(timestamp),
+            ) == (
+                other.given_name.entity_at(timestamp),
+                other.surname.entity_at(timestamp),
+            )
+        return False
 
 
 class EngagementTimeline(BaseModel):
