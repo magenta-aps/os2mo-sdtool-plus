@@ -11,5 +11,6 @@
 .venv/
 venv
 
+docker-compose.override.yml
 # IDEs
 .idea
