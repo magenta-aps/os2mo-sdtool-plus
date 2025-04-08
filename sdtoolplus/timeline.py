@@ -398,6 +398,47 @@ async def _sync_ou_intervals(
             )
 
 
+async def engagement_ou_strategy_ny_logic(
+    sd_client: SDClient,
+    settings: SDToolPlusSettings,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    """
+    Engagement OU strategy that elevates the engagement from the
+    "Afdelings-niveau" to the parent "NY-niveau".
+    """
+    # TODO: implement NY-logic case!
+    return sd_eng_timeline
+
+
+async def engagement_ou_strategy_region(
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    # TODO: implement region case!
+    return sd_eng_timeline
+
+
+async def engagement_ou_strategy(
+    sd_client: SDClient,
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    """
+    Combined state/strategy pattern choosing an OU timeline strategy based on
+    the state specified in the application settings.
+    """
+    if settings.municipality_mode:
+        if settings.apply_ny_logic:
+            return await engagement_ou_strategy_ny_logic(
+                sd_client, settings, sd_eng_timeline
+            )
+        return sd_eng_timeline
+    return await engagement_ou_strategy_region(gql_client, settings, sd_eng_timeline)
+
+
 async def sync_engagement(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -442,8 +483,9 @@ async def sync_engagement(
     )
 
     sd_eng_timeline = await get_employment_timeline(r_employment)
-
-    # TODO: introduce OU strategy
+    sd_eng_timeline = await engagement_ou_strategy(
+        sd_client, gql_client, settings, sd_eng_timeline
+    )
 
     # Get the person
     r_person = await gql_client.get_person(payload.cpr)
