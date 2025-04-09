@@ -34,6 +34,7 @@ starlette = "^0.41"
 tenacity = "^8"
 ramodels = "^39"
 graphql-core = "^3"
+aio-pika = "^9"
 
 [tool.poetry.group.pre-commit.dependencies]
 pre-commit = "^3"
