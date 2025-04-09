@@ -33,6 +33,7 @@ from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
+from sdtoolplus.sd.amqp import SDAMQP
 from sdtoolplus.job_positions import sync_professions
 
 from . import depends
@@ -148,6 +149,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         settings.sd_username,
         settings.sd_password.get_secret_value(),
     )
+
+    if settings.amqp is not None:
+        sd_amqp = SDAMQP(settings.amqp)
+        fastramqpi.add_lifespan_manager(sd_amqp.lifespan())
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 

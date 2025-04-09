@@ -4,7 +4,9 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from fastramqpi.config import Settings as FastRAMQPISettings
+from pydantic import AmqpDsn
 from pydantic import AnyHttpUrl
+from pydantic import BaseModel
 from pydantic import BaseSettings
 from pydantic import EmailStr
 from pydantic import Field
@@ -16,6 +18,10 @@ from .mo_org_unit_importer import OrgUnitUUID
 SD_RETRY_WAIT_TIME = 15
 SD_RETRY_ATTEMPTS = 10
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
+
+
+class AMQPSettings(BaseModel):
+    url: AmqpDsn
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -50,6 +56,9 @@ class SDToolPlusSettings(BaseSettings):
     sd_username: str
     sd_institution_identifier: str
     sd_password: SecretStr
+
+    # SD AMQP
+    amqp: AMQPSettings | None
 
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
