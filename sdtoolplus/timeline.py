@@ -25,6 +25,7 @@ from sdtoolplus.mo.timeline import terminate_ou
 from sdtoolplus.mo.timeline import update_engagement
 from sdtoolplus.mo.timeline import update_leave
 from sdtoolplus.mo.timeline import update_ou
+from sdtoolplus.mo.timeline import update_person
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
@@ -86,37 +87,18 @@ async def sync_person(
                     cpr=one(sd_person_timeline.cpr_number.intervals).value,
                     givenname=one(sd_person_timeline.given_name.intervals).value,
                     lastname=one(sd_person_timeline.surname.intervals).value,
+                    dry_run=dry_run,
                 )
-
+            else:
+                await update_person(
+                    gql_client=gql_client,
+                    person=mo_person,
+                    start=start,
+                    end=end,
+                    dry_run=dry_run,
+                    sd_person_timeline=sd_person_timeline,
+                )
             logger.debug("SD value available")
-        #     if mo_person_timeline.objects:
-        #         await update_engagement(
-        #             gql_client=gql_client,
-        #             person=person,
-        #             user_key=user_key,
-        #             start=start,
-        #             end=end,
-        #             sd_eng_timeline=sd_eng_timeline,
-        #             eng_types=eng_types,
-        #         )
-        #     else:
-        #         await create_engagement(
-        #             gql_client=gql_client,
-        #             person=person,
-        #             user_key=user_key,
-        #             start=start,
-        #             end=end,
-        #             sd_eng_timeline=sd_eng_timeline,
-        #             eng_types=eng_types,
-        #         )
-        # else:
-        #     await terminate_engagement(
-        #         gql_client=gql_client,
-        #         person=person,
-        #         user_key=user_key,
-        #         start=start,
-        #         end=end,
-        #     )
 
 
 async def sync_eng(
