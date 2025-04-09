@@ -31,6 +31,12 @@ class SDToolPlusSettings(BaseSettings):
     auth_server: str = "http://keycloak:8080/auth"
 
     apply_ny_logic: bool = True
+    # If the NY-logic is enabled, move the engagements in these levels to the first
+    # higher NY-level not in the list. E.g. assume we have the org unit levels
+    # "Afdelings-niveau", "NY1-niveau", "NY2-niveau", ... . If ny_logic_levels_too_deep
+    # is set to ["Afdelings-niveau", "NY1-niveau"], the engagements will be moved from
+    # these levels to the above "NY2-niveau" level (or higher).
+    ny_logic_levels_too_deep = []
     httpx_timeout_ny_logic: PositiveInt = 120
 
     # Compare the SD tree to the MO tree found at the path. The path must be a

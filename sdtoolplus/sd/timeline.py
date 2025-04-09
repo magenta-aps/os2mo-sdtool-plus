@@ -15,6 +15,7 @@ from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
+from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
@@ -286,3 +287,26 @@ async def get_leave_timeline(
     logger.debug("SD leave timeline", timeline=timeline)
 
     return timeline
+
+
+
+
+async def engagement_ou_strategy_ny_logic(
+    sd_client: SDClient,
+    settings: SDToolPlusSettings,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    """
+    Engagement OU strategy that elevates the engagement to the
+    """
+
+    @cache
+    async def get_ny_level_ancestor(
+        department_uuid: OrgUnitUUID,
+        lookup_date: datetime,
+    ) -> OrgUnitUUID:
+        dep = await
+
+
+
+    return sd_eng_timeline
