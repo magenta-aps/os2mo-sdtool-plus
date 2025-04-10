@@ -26,6 +26,7 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.requests import GetEmploymentChangedRequest
@@ -51,16 +52,14 @@ from .exceptions import PersonNotFoundError
 from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .mo.timeline import get_ou_timeline
-from .mo.timeline import get_person_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
 from .models import EngagementSyncPayload
+from .models import Person
 from .models import PersonSyncPayload
-from .models import PersonTimeline
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
-from .sd.timeline import get_person_timeline as get_sd_person_timeline
 from .timeline import prefix_user_key_with_inst_id
 from .timeline import sync_eng
 from .timeline import sync_leave
@@ -339,7 +338,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         """
 
         logger.info(
-            "Sync person timeline",
+            "Sync person",
             inst_id=payload.institution_identifier,
             cpr=payload.cpr,
             dry_run=dry_run,
@@ -351,26 +350,30 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 InstitutionIdentifier=payload.institution_identifier,
                 PersonCivilRegistrationIdentifier=payload.cpr,
                 EffectiveDate=date.today(),
+                ContactInformationIndicator=True,
+                PostalAddressIndicator=True,
             ),
         )
-        sd_person_timeline = await get_sd_person_timeline(sd_response)
+
+        sd_response_person = one(sd_response.Person)
+
+        sd_person = Person(
+            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
+            given_name=sd_response_person.PersonGivenName,
+            surname=sd_response_person.PersonSurnameName,
+            emails=[],
+            phone_numbers=[],
+            addresses=[],
+        )
 
         # Get the person
         mo_person = await gql_client.get_person(payload.cpr)
         person = only(mo_person.objects)
 
-        mo_timeline = (
-            await get_person_timeline(gql_client=gql_client, person_uuid=person.uuid)
-            if person
-            else PersonTimeline()
-        )
-
-        logger.info("mo timeline", timeline=mo_timeline)
         await sync_person(
             gql_client=gql_client,
             mo_person=person.uuid if person else None,
-            sd_person_timeline=sd_person_timeline,
-            mo_person_timeline=mo_timeline,
+            sd_person=sd_person,
             dry_run=dry_run,
         )
 

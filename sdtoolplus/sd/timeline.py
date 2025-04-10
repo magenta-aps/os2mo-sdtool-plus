@@ -5,7 +5,6 @@ from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
-from datetime import timezone
 
 import structlog
 from more_itertools import only
@@ -14,7 +13,6 @@ from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import GetEmploymentChangedResponse
-from sdclient.responses import GetPersonResponse
 from sdclient.responses import WorkingTime
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -28,9 +26,6 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
-from sdtoolplus.models import PersonGivenName
-from sdtoolplus.models import PersonSurname
-from sdtoolplus.models import PersonTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -145,36 +140,6 @@ async def get_department_timeline(
     logger.debug("SD OU timeline", timeline=timeline)
 
     return timeline
-
-
-async def get_person_timeline(sd_get_person_resp: GetPersonResponse) -> PersonTimeline:
-    logger.info("Get SD Person")
-    person = only(sd_get_person_resp.Person)
-    today = datetime.now(timezone.utc)
-    if person is None:
-        raise SDRootElementNotFound("no person found in SD with the given cpr")
-    person_timeline = PersonTimeline(
-        cpr_number=person.PersonCivilRegistrationIdentifier,
-        given_name=Timeline[PersonGivenName](
-            intervals=(
-                PersonGivenName(
-                    start=_sd_start_datetime(today),
-                    value=person.PersonGivenName,
-                    end=_sd_end_datetime(date.max),
-                ),
-            )
-        ),
-        surname=Timeline[PersonSurname](
-            intervals=(
-                PersonSurname(
-                    start=_sd_start_datetime(today),
-                    value=person.PersonSurnameName,
-                    end=_sd_end_datetime(date.max),
-                ),
-            )
-        ),
-    )
-    return person_timeline
 
 
 async def get_employment_timeline(

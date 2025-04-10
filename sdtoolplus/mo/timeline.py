@@ -5,7 +5,6 @@ from datetime import timedelta
 from uuid import UUID
 
 import structlog
-from more_itertools import first
 from more_itertools import one
 from more_itertools import only
 
@@ -39,9 +38,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
-from sdtoolplus.models import PersonGivenName
-from sdtoolplus.models import PersonSurname
-from sdtoolplus.models import PersonTimeline
+from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -380,51 +377,6 @@ async def terminate_ou(
         await gql_client.terminate_org_unit(payload)
 
 
-async def get_person_timeline(
-    gql_client: GraphQLClient,
-    person_uuid: UUID,
-) -> PersonTimeline:
-    logger.info("Get MO person timeline", person=str(person_uuid))
-
-    gql_timeline = await gql_client.get_person_timeline(uuid=person_uuid)
-    objects = gql_timeline.objects
-
-    if not objects:
-        return PersonTimeline()
-
-    object_ = one(objects)
-    logger.warn("timeline", timeline=object_)
-    validities = object_.validities
-
-    givenname_intervals = tuple(
-        PersonGivenName(
-            start=obj.validity.from_,
-            end=mo_end_to_datetime(obj.validity.to),
-            value=obj.given_name,
-        )
-        for obj in validities
-    )
-    surname_intervals = tuple(
-        PersonGivenName(
-            start=obj.validity.from_,
-            end=mo_end_to_datetime(obj.validity.to),
-            value=obj.surname,
-        )
-        for obj in validities
-    )
-    timeline = PersonTimeline(
-        # Assume cpr-number to be constant
-        cpr_number=first(validities).cpr_number,
-        given_name=Timeline[PersonGivenName](
-            intervals=combine_intervals(givenname_intervals)
-        ),
-        surname=Timeline[PersonSurname](intervals=combine_intervals(surname_intervals)),
-    )
-    logger.debug("MO engagement timeline", timeline=timeline.dict())
-
-    return timeline
-
-
 async def get_engagement_timeline(
     gql_client: GraphQLClient,
     person: UUID,
@@ -622,45 +574,21 @@ async def create_person(
 
 async def update_person(
     gql_client: GraphQLClient,
-    person: UUID,
+    uuid: UUID,
     start: datetime,
-    end: datetime,
-    sd_person_timeline: PersonTimeline,
+    person: Person,
     dry_run: bool = False,
 ) -> None:
-    logger.info("Update person", person=str(person))
-    logger.debug(
-        "Update leave",
-        start=start,
-        end=end,
-        sd_leave_timeline=sd_person_timeline.dict(),
+    payload = EmployeeUpdateInput(
+        uuid=uuid,
+        cpr_number=person.cpr,
+        given_name=person.given_name,
+        surname=person.surname,
+        validity={"from": start, "to": None},
     )
-
-    mo_validity = timeline_interval_to_mo_validity(start, end)
-
-    mo_person = await gql_client.get_person_timeline(
-        uuid=person, from_date=start, to_date=end
-    )
-    objects = mo_person.objects
-    obj = only(objects)
-
-    if obj:
-        # The person already exists in this validity period
-        for validity in obj.validities:
-            assert validity.validity.from_
-            payload = EmployeeUpdateInput(
-                uuid=person,
-                cpr_number=sd_person_timeline.cpr_number,
-                given_name=sd_person_timeline.given_name.entity_at(start).value,
-                surname=sd_person_timeline.surname.entity_at(start).value,
-                validity=get_patch_validity(
-                    validity.validity.from_, validity.validity.to, mo_validity
-                ),
-            )
-            logger.debug("Update person", uuid=person)
-            if not dry_run:
-                await gql_client.update_person(payload)
-        return
+    logger.debug("Update person", uuid=person)
+    if not dry_run:
+        await gql_client.update_person(payload)
 
 
 async def create_leave(

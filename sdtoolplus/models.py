@@ -37,6 +37,8 @@ V = TypeVar("V")
 class AddressTypeUserKey(Enum):
     POSTAL_ADDR = "AddressMailUnit"
     PNUMBER_ADDR = "Pnummer"
+    EMAIL = "Email"
+    PHONE = "Phone"
 
 
 class EngType(Enum):
@@ -48,6 +50,15 @@ class EngType(Enum):
 class PersonSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
+
+
+class Person(BaseModel):
+    cpr: str
+    given_name: str
+    surname: str
+    emails: list[str]
+    phone_numbers: list[str]
+    addresses: list[str]
 
 
 class EngagementSyncPayload(BaseModel):
@@ -114,14 +125,6 @@ class UnitName(Interval[str]):
 
 
 class UnitParent(Interval[Optional[OrgUnitUUID]]):
-    pass
-
-
-class PersonGivenName(Interval[str]):
-    pass
-
-
-class PersonSurname(Interval[str]):
     pass
 
 
@@ -259,48 +262,6 @@ class UnitTimeline(BaseModel):
                 other.unit_id.entity_at(timestamp),
                 other.unit_level.entity_at(timestamp),
                 other.parent.entity_at(timestamp),
-            )
-        return False
-
-
-class PersonTimeline(BaseModel):
-    # CPR is only None if the user doesn't exist yet.
-    cpr_number: str | None
-    given_name: Timeline[PersonGivenName] = Timeline[PersonGivenName]()
-    surname: Timeline[PersonSurname] = Timeline[PersonSurname]()
-
-    def get_interval_endpoints(self) -> set[datetime]:
-        return set(
-            collapse(
-                set(
-                    (i.start, i.end)
-                    for i in chain(
-                        cast(tuple[Interval, ...], self.given_name.intervals),
-                        cast(tuple[Interval, ...], self.surname.intervals),
-                    )
-                )
-            )
-        )
-
-    def has_value(self, timestamp: datetime) -> bool:
-        try:
-            self.given_name.entity_at(timestamp)
-            self.surname.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
-    def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        # TODO: unit test
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
-            return (
-                self.given_name.entity_at(timestamp),
-                self.surname.entity_at(timestamp),
-            ) == (
-                other.given_name.entity_at(timestamp),
-                other.surname.entity_at(timestamp),
             )
         return False
 

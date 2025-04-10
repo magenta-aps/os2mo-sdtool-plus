@@ -17,6 +17,7 @@ CPR = "0101011234"
 EMP_ID = "12345"
 TODAY_SD_FORMAT = date.strftime(date.today(), "%Y-%m-%d")
 TODAY_URL_FORMAT = date.strftime(date.today(), "%d.%m.%Y")
+GETPERSON_URL = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
 
 SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
@@ -63,9 +64,7 @@ async def test_person_timeline_create_new(
     mo_person_before = await graphql_client.get_person(cpr=CPR)
 
     assert mo_person_before.objects == []
-    respx_mock.get(
-        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=False&PostalAddressIndicator=False"
-    ).respond(
+    respx_mock.get(GETPERSON_URL).respond(
         content_type="text/xml;charset=UTF-8",
         content=SD_RESP,
     )
@@ -115,9 +114,7 @@ async def test_person_timeline_update(
             surname="Norris",
         )
     )
-    respx_mock.get(
-        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=False&PostalAddressIndicator=False"
-    ).respond(
+    respx_mock.get(GETPERSON_URL).respond(
         content_type="text/xml;charset=UTF-8",
         content=SD_RESP,
     )
@@ -133,7 +130,9 @@ async def test_person_timeline_update(
 
     # Assert
     assert r.status_code == 200
-    mo_timeline = await graphql_client.get_person_timeline(mo_person.uuid)
+    mo_timeline = await graphql_client.get_person_timeline(
+        mo_person.uuid, from_date=None, to_date=None
+    )
     validities = one(mo_timeline.objects).validities
 
     assert len(validities) == 2

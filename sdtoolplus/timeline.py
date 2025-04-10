@@ -31,7 +31,7 @@ from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
-from sdtoolplus.models import PersonTimeline
+from sdtoolplus.models import Person
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
@@ -63,40 +63,32 @@ def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
 async def sync_person(
     gql_client: GraphQLClient,
     mo_person: UUID | None,
-    sd_person_timeline: PersonTimeline,
-    mo_person_timeline: PersonTimeline,
+    sd_person: Person,
     dry_run: bool,
 ) -> None:
-    sd_interval_endpoints = sd_person_timeline.get_interval_endpoints()
-    mo_interval_endpoints = mo_person_timeline.get_interval_endpoints()
+    if mo_person is None:
+        return await create_person(
+            gql_client=gql_client,
+            cpr=sd_person.cpr,
+            givenname=sd_person.given_name,
+            lastname=sd_person.surname,
+            dry_run=dry_run,
+        )
 
-    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
-    endpoints.sort()
-    logger.debug("List of endpoints", endpoints=endpoints)
-    for start, end in pairwise(endpoints):
-        logger.debug("Processing endpoint pair", start=start, end=end)
-        if sd_person_timeline.equal_at(start, mo_person_timeline):
-            logger.debug("SD and MO equal")
-            continue
-        elif sd_person_timeline.has_value(start):
-            if mo_person is None:
-                await create_person(
-                    gql_client=gql_client,
-                    cpr=sd_person_timeline.cpr_number,
-                    givenname=sd_person_timeline.given_name.entity_at(start).value,
-                    lastname=sd_person_timeline.surname.entity_at(start).value,
-                    dry_run=dry_run,
-                )
-            else:
-                await update_person(
-                    gql_client=gql_client,
-                    person=mo_person,
-                    start=start,
-                    end=end,
-                    dry_run=dry_run,
-                    sd_person_timeline=sd_person_timeline,
-                )
-            logger.debug("SD value available")
+    gql_timeline = await gql_client.get_person_timeline(uuid=mo_person)
+    mo_validities = one(gql_timeline.objects).validities if gql_timeline.objects else []
+    if (
+        len(mo_validities) > 1
+        or one(mo_validities).given_name
+        or one(mo_validities).surname != sd_person.surname
+    ):
+        await update_person(
+            gql_client=gql_client,
+            uuid=mo_person,
+            start=datetime.today(),
+            dry_run=dry_run,
+            person=sd_person,
+        )
 
 
 async def sync_eng(
