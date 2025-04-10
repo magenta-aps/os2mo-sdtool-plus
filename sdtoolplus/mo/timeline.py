@@ -5,6 +5,7 @@ from datetime import timedelta
 from uuid import UUID
 
 import structlog
+from more_itertools import first
 from more_itertools import one
 from more_itertools import only
 
@@ -30,7 +31,6 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitTypeUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
-from sdtoolplus.models import CPRNumber
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -38,10 +38,10 @@ from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
-from sdtoolplus.models import GivenName
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import PersonGivenName
+from sdtoolplus.models import PersonSurname
 from sdtoolplus.models import PersonTimeline
-from sdtoolplus.models import Surname
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
@@ -390,26 +390,14 @@ async def get_person_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        return PersonTimeline(
-            cpr_number=Timeline[CPRNumber](),
-            given_name=Timeline[GivenName](),
-            surname=Timeline[Surname](),
-        )
+        return PersonTimeline()
 
     object_ = one(objects)
     logger.warn("timeline", timeline=object_)
     validities = object_.validities
 
-    cpr_intervals = tuple(
-        CPRNumber(
-            start=obj.validity.from_,
-            end=mo_end_to_datetime(obj.validity.to),
-            value=obj.cpr_number,
-        )
-        for obj in validities
-    )
     givenname_intervals = tuple(
-        GivenName(
+        PersonGivenName(
             start=obj.validity.from_,
             end=mo_end_to_datetime(obj.validity.to),
             value=obj.given_name,
@@ -417,7 +405,7 @@ async def get_person_timeline(
         for obj in validities
     )
     surname_intervals = tuple(
-        GivenName(
+        PersonGivenName(
             start=obj.validity.from_,
             end=mo_end_to_datetime(obj.validity.to),
             value=obj.surname,
@@ -425,11 +413,12 @@ async def get_person_timeline(
         for obj in validities
     )
     timeline = PersonTimeline(
-        given_name=Timeline[GivenName](
+        # Assume cpr-number to be constant
+        cpr_number=first(validities).cpr_number,
+        given_name=Timeline[PersonGivenName](
             intervals=combine_intervals(givenname_intervals)
         ),
-        surname=Timeline[Surname](intervals=combine_intervals(surname_intervals)),
-        cpr_number=Timeline[CPRNumber](intervals=combine_intervals(cpr_intervals)),
+        surname=Timeline[PersonSurname](intervals=combine_intervals(surname_intervals)),
     )
     logger.debug("MO engagement timeline", timeline=timeline.dict())
 
@@ -657,11 +646,11 @@ async def update_person(
 
     if obj:
         # The person already exists in this validity period
-        for validity in one(objects).validities:
+        for validity in obj.validities:
             assert validity.validity.from_
             payload = EmployeeUpdateInput(
                 uuid=person,
-                cpr_number=sd_person_timeline.cpr_number.entity_at(start).value,
+                cpr_number=sd_person_timeline.cpr_number,
                 given_name=sd_person_timeline.given_name.entity_at(start).value,
                 surname=sd_person_timeline.surname.entity_at(start).value,
                 validity=get_patch_validity(

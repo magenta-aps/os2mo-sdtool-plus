@@ -62,8 +62,6 @@ def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
 
 async def sync_person(
     gql_client: GraphQLClient,
-    # TODO: we need to change the arguments to this function later in order to
-    #       to handle other triggering mechanisms
     mo_person: UUID | None,
     sd_person_timeline: PersonTimeline,
     mo_person_timeline: PersonTimeline,
@@ -84,9 +82,9 @@ async def sync_person(
             if mo_person is None:
                 await create_person(
                     gql_client=gql_client,
-                    cpr=one(sd_person_timeline.cpr_number.intervals).value,
-                    givenname=one(sd_person_timeline.given_name.intervals).value,
-                    lastname=one(sd_person_timeline.surname.intervals).value,
+                    cpr=sd_person_timeline.cpr_number,
+                    givenname=sd_person_timeline.given_name.entity_at(start).value,
+                    lastname=sd_person_timeline.surname.entity_at(start).value,
                     dry_run=dry_run,
                 )
             else:

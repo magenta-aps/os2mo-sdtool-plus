@@ -117,15 +117,11 @@ class UnitParent(Interval[Optional[OrgUnitUUID]]):
     pass
 
 
-class GivenName(Interval[str]):
+class PersonGivenName(Interval[str]):
     pass
 
 
-class CPRNumber(Interval[str]):
-    pass
-
-
-class Surname(Interval[str]):
+class PersonSurname(Interval[str]):
     pass
 
 
@@ -268,9 +264,10 @@ class UnitTimeline(BaseModel):
 
 
 class PersonTimeline(BaseModel):
-    cpr_number: Timeline[CPRNumber] = Timeline[CPRNumber]()
-    given_name: Timeline[GivenName] = Timeline[GivenName]()
-    surname: Timeline[Surname] = Timeline[Surname]()
+    # CPR is only None if the user doesn't exist yet.
+    cpr_number: str | None
+    given_name: Timeline[PersonGivenName] = Timeline[PersonGivenName]()
+    surname: Timeline[PersonSurname] = Timeline[PersonSurname]()
 
     def get_interval_endpoints(self) -> set[datetime]:
         return set(
