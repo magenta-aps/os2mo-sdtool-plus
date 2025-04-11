@@ -12,6 +12,7 @@ To run:
 
 import asyncio
 from datetime import date
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -20,23 +21,24 @@ from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import Depends
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
-from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
-from sdclient.requests import GetPersonRequest
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
+from sdtoolplus.sd.person import get_sd_persons
 
 from . import depends
 from .addresses import AddressFixer
@@ -60,7 +62,6 @@ from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
 from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
-from .models import Person
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
@@ -349,28 +350,18 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             cpr=payload.cpr,
             dry_run=dry_run,
         )
-
-        sd_response = await asyncio.to_thread(
-            sd_client.get_person,
-            GetPersonRequest(
-                InstitutionIdentifier=payload.institution_identifier,
-                PersonCivilRegistrationIdentifier=payload.cpr,
-                EffectiveDate=date.today(),
-                ContactInformationIndicator=True,
-                PostalAddressIndicator=True,
-            ),
-        )
-
-        sd_response_person = one(sd_response.Person)
-
-        sd_person = Person(
-            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
-            given_name=sd_response_person.PersonGivenName,
-            surname=sd_response_person.PersonSurnameName,
-            emails=[],
-            phone_numbers=[],
-            addresses=[],
-        )
+        try:
+            sd_person = await get_sd_persons(
+                sd_client=sd_client,
+                institution_identifier=payload.institution_identifier,
+                cpr=payload.cpr,
+                effective_date=datetime.today(),
+            )
+        except SDRootElementNotFound:
+            raise HTTPException(
+                status_code=HTTP_404_NOT_FOUND,
+                detail=f"Person not found in SD. {payload=}",
+            )
 
         # Get the person
         mo_person = await gql_client.get_person(payload.cpr)

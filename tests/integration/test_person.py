@@ -45,6 +45,63 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
 
 
 @pytest.mark.integration_test
+async def test_person_not_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+    A person dosnt exist in MO and is created
+
+
+    MO (givenname)
+    SD (givenname)              |-----------------Chuck--------------------------------------
+
+    """
+    # Arrange
+
+    cpr = "0101010101"
+    get_person_url = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+
+    respx_mock.get(get_person_url).respond(
+        content_type="text/xml;charset=UTF-8",
+        content="""
+        <Envelope>
+            <Body>
+                <Fault>
+                    <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+                    <faultstring>
+                        The stated PersonCivilRegistrationIdentifier '0101010101' does not exist.
+                    </faultstring>
+                    <faultactor>
+                        dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetPerson20111201BO
+                    </faultactor>
+                    <detail>
+                        <string>
+                            Missing or invalid parameter from client: "The stated PersonCivilRegistrationIdentifier '0101010101' does not exist."
+                        </string>
+                    </detail>
+                </Fault>
+            </Body>
+        </Envelope>
+        """,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 404
+
+
+@pytest.mark.integration_test
 async def test_person_timeline_create_new(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
