@@ -56,7 +56,7 @@ class Person(BaseModel):
     surname: str
     emails: list[str]
     phone_numbers: list[str]
-    addresses: list[str]
+    addresses: str
 
 
 class EngagementSyncPayload(BaseModel):

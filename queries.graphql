@@ -22,6 +22,22 @@ query AddressTypes {
     }
   }
 }
+query GetAddresses($filter: AddressFilter) {
+  addresses(filter: $filter) {
+    objects {
+      validities {
+        validity {
+          from
+          to
+        }
+        name
+        address_type {
+          user_key
+        }
+      }
+    }
+  }
+}
 
 mutation CreateAddress($input: AddressCreateInput!) {
   address_create(
@@ -160,13 +176,6 @@ query GetPersonTimeline($filter: EmployeeFilter) {
   employees(filter: $filter) {
     objects {
       validities {
-        addresses {
-          address_type {
-            user_key
-            scope
-          }
-          name
-        }
         cpr_number
         given_name
         surname
