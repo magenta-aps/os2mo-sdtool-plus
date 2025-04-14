@@ -1136,7 +1136,7 @@ def sqlite_engine() -> Engine:
 @pytest.fixture
 async def org_unit_type(graphql_client: GraphQLClient) -> uuid.UUID:
     r_org_unit_types = await graphql_client.get_class(
-        ClassFilter(facet=FacetFilter(user_key="org_unit_type"), user_keys=["Enhed"])
+        ClassFilter(facet=FacetFilter(user_keys=["org_unit_type"]), user_keys=["Enhed"])
     )
     org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
     return org_unit_type
@@ -1149,7 +1149,8 @@ async def org_unit_levels(graphql_client: GraphQLClient) -> dict[str, OrgUnitLev
     for org_unit_level in ["Afdelings-niveau", "NY0-niveau", "NY1-niveau", "non-SD"]:
         r_org_unit_level = await graphql_client.get_class(
             ClassFilter(
-                facet=FacetFilter(user_key="org_unit_level"), user_keys=[org_unit_level]
+                facet=FacetFilter(user_keys=["org_unit_level"]),
+                user_keys=[org_unit_level],
             )
         )
         org_unit_levels[org_unit_level] = one(r_org_unit_level.objects).current.uuid  # type: ignore
@@ -1255,7 +1256,7 @@ async def obsolete_unit_tree_builder(
     graphql_client: GraphQLClient, base_tree_builder: TestingCreateOrgUnitOrgUnitCreate
 ):
     r_org_unit_types = await graphql_client.get_class(
-        ClassFilter(facet=FacetFilter(user_key="org_unit_type"), user_keys=["Enhed"])
+        ClassFilter(facet=FacetFilter(user_keys=["org_unit_type"]), user_keys=["Enhed"])
     )
     org_unit_type = one(r_org_unit_types.objects).current.uuid  # type: ignore
 

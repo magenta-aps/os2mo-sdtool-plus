@@ -256,7 +256,7 @@ async def job_function(graphql_client: GraphQLClient) -> UUID:
         (
             await graphql_client.get_class(
                 ClassFilter(
-                    facet=FacetFilter(user_key="engagement_job_function"),
+                    facet=FacetFilter(user_keys=["engagement_job_function"]),
                     user_keys=["Ninja"],
                 )
             )
@@ -272,7 +272,7 @@ async def job_function_1234(graphql_client: GraphQLClient) -> UUID:
         (
             await graphql_client.get_class(
                 ClassFilter(
-                    facet=FacetFilter(user_key="engagement_job_function"),
+                    facet=FacetFilter(user_keys=["engagement_job_function"]),
                     user_keys=["1234"],
                 )
             )
@@ -288,7 +288,7 @@ async def job_function_5678(graphql_client: GraphQLClient) -> UUID:
         (
             await graphql_client.get_class(
                 ClassFilter(
-                    facet=FacetFilter(user_key="engagement_job_function"),
+                    facet=FacetFilter(user_keys=["engagement_job_function"]),
                     user_keys=["5678"],
                 )
             )
@@ -304,7 +304,7 @@ async def job_function_9000(graphql_client: GraphQLClient) -> UUID:
         (
             await graphql_client.get_class(
                 ClassFilter(
-                    facet=FacetFilter(user_key="engagement_job_function"),
+                    facet=FacetFilter(user_keys=["engagement_job_function"]),
                     user_keys=["9000"],
                 )
             )
@@ -320,7 +320,7 @@ async def engagement_type(graphql_client: GraphQLClient) -> UUID:
         (
             await graphql_client.get_class(
                 ClassFilter(
-                    facet=FacetFilter(user_key="engagement_type"),
+                    facet=FacetFilter(user_keys=["engagement_type"]),
                     user_keys=["TestAnsat"],
                 )
             )

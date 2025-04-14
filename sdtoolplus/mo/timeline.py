@@ -110,7 +110,7 @@ async def _get_ou_type(
 ) -> OrgUnitTypeUUID:
     ou_type_classes = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_key="org_unit_type"),
+            facet=FacetFilter(user_keys=["org_unit_type"]),
             user_keys=[org_unit_type_user_key],
         )
     )
@@ -126,7 +126,7 @@ async def _get_ou_level(
 ) -> OrgUnitLevelUUID:
     ou_level_classes = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_key="org_unit_level"),
+            facet=FacetFilter(user_keys=["org_unit_level"]),
             user_keys=[org_unit_level_user_key],
         )
     )
@@ -141,7 +141,7 @@ async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]
     Get map from engagement type (Enum) to MO engagement type class UUID
     """
     r_eng_types = await gql_client.get_class(
-        ClassFilter(facet=FacetFilter(user_key="engagement_type"))
+        ClassFilter(facet=FacetFilter(user_keys=["engagement_type"]))
     )
 
     relevant_classes = (
@@ -526,7 +526,7 @@ async def create_engagement(
     # Get the job_function
     r_job_function = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_key="engagement_job_function"),
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
             user_keys=[str(sd_eng_timeline.eng_key.entity_at(start).value)],
         )
     )
@@ -600,7 +600,7 @@ async def update_engagement(
     # Get the job_function
     r_job_function = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_key="engagement_job_function"),
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
             user_keys=[str(sd_eng_timeline.eng_key.entity_at(start).value)],
         )
     )

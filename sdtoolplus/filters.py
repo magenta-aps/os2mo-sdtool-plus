@@ -33,7 +33,7 @@ async def filter_by_line_management(
 
     facet_class_resp = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_key="org_unit_hierarchy"), user_keys=["linjeorg"]
+            facet=FacetFilter(user_keys=["org_unit_hierarchy"]), user_keys=["linjeorg"]
         )
     )
     current = one(facet_class_resp.objects).current
