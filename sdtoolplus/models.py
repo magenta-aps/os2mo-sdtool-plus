@@ -19,6 +19,7 @@ from more_itertools import last
 from more_itertools import only
 from more_itertools import split_when
 from pydantic import BaseModel
+from pydantic import Extra
 from pydantic import root_validator
 from pydantic import validator
 from pydantic.generics import GenericModel
@@ -49,6 +50,13 @@ class EngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
     employment_identifier: str
+
+    class Config:
+        extra = Extra.forbid
+        frozen = True
+
+
+class EngagementMovePayload(EngagementSyncPayload):
     org_unit_uuid: OrgUnitUUID
     start: date
     end: date
