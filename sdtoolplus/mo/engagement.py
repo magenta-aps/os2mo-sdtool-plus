@@ -18,9 +18,9 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import EngagementNotActiveError
 from sdtoolplus.exceptions import EngagementNotFoundError
 from sdtoolplus.exceptions import PersonNotFoundError
-from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity, mo_end_to_datetime
 from sdtoolplus.mo.timeline import get_patch_validity
-from sdtoolplus.models import POSITIVE_INFINITY
+from sdtoolplus.mo.timeline import mo_end_to_datetime
+from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.models import EngagementMovePayload
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
@@ -46,8 +46,7 @@ def _is_active_in_entire_interval(
 
     datetime_validities = [
         Validity(
-            from_=validity.validity.from_,
-            to=mo_end_to_datetime(validity.validity.to)
+            from_=validity.validity.from_, to=mo_end_to_datetime(validity.validity.to)
         )
         for validity in validities
     ]
@@ -84,7 +83,8 @@ async def move_engagement(
     )
 
     payload_validity = timeline_interval_to_mo_validity(
-        start=sd_start_to_timeline_start(payload.start), end=sd_end_to_timeline_end(payload.end)
+        start=sd_start_to_timeline_start(payload.start),
+        end=sd_end_to_timeline_end(payload.end),
     )
 
     # Get the person in MO
