@@ -6,5 +6,13 @@ class NoValueError(Exception):
     pass
 
 
+class EngagementNotFoundError(Exception):
+    pass
+
+
+class EngagementNotActiveError(Exception):
+    pass
+
+
 class PersonNotFoundError(Exception):
     pass
