@@ -37,7 +37,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     Time  --------t1--------t2---------t3------t4-----t5-----t6------------t7------->
 
     MO (name)               |------name4-------|---------------name5-----------------
-    MO (id)                 |--------------ABCD--------------|----------IJKL---------
+    MO (id)                 |-----------II-ABCD--------------|-------II-IJKL---------
     MO (level)              |---NY0----|-------------------NY1-----------------------
     MO (parent)             |----------dep1-----------|-----------dep2---------------
 
@@ -71,7 +71,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     await graphql_client._testing__create_org_unit(
         uuid=unit_uuid,
         name="name4",
-        user_key="ABCD",
+        user_key="II-ABCD",
         org_unit_type=org_unit_type,
         org_unit_level=org_unit_levels["NY0-niveau"],
         from_date=t2,
@@ -83,7 +83,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
             name="name4",
-            user_key="ABCD",
+            user_key="II-ABCD",
             org_unit_level=org_unit_levels["NY1-niveau"],
             validity=RAValidityInput(
                 from_=t3,
@@ -98,7 +98,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
             name="name5",
-            user_key="ABCD",
+            user_key="II-ABCD",
             org_unit_level=org_unit_levels["NY1-niveau"],
             validity=RAValidityInput(
                 from_=t4,
@@ -113,7 +113,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
             name="name5",
-            user_key="ABCD",
+            user_key="II-ABCD",
             org_unit_level=org_unit_levels["NY1-niveau"],
             validity=RAValidityInput(
                 from_=t5,
@@ -128,7 +128,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
             name="name5",
-            user_key="IJKL",
+            user_key="II-IJKL",
             org_unit_level=org_unit_levels["NY1-niveau"],
             validity=RAValidityInput(
                 from_=t6,
@@ -229,7 +229,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.validity.from_ == t1
     assert _mo_end_to_timeline_end(validity.validity.to) == t2
     assert validity.name == "name1"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
     assert validity.parent is not None
@@ -239,7 +239,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.validity.from_ == t2
     assert _mo_end_to_timeline_end(validity.validity.to) == t3
     assert validity.name == "name1"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
     assert validity.parent is not None
@@ -249,7 +249,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.validity.from_ == t3
     assert _mo_end_to_timeline_end(validity.validity.to) == t5
     assert validity.name == "name2"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
     assert validity.parent is not None
@@ -259,7 +259,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.validity.from_ == t5
     assert _mo_end_to_timeline_end(validity.validity.to) == t7
     assert validity.name == "name3"
-    assert validity.user_key == "EFGH"
+    assert validity.user_key == "II-EFGH"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
     assert validity.parent is not None
@@ -282,7 +282,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     Time  --------t1--------t2-------------------------------t6--------------------->
 
     MO (name)               |--------------name1-------------|
-    MO (id)                 |--------------ABCD--------------|
+    MO (id)                 |-----------II-ABCD--------------|
     MO (level)              |---------------NY0--------------|
     MO (parent)             |--------------dep1--------------|
 
@@ -311,7 +311,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
             uuid=unit_uuid,
             validity=timeline_interval_to_mo_validity(start=t2, end=t6),
             name="name1",
-            user_key="ABCD",
+            user_key="II-ABCD",
             parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
             org_unit_type=org_unit_type,
             org_unit_level=org_unit_levels["NY0-niveau"],
@@ -383,7 +383,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     assert validity.validity.from_ == t1
     assert _mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
     assert validity.name == "name1"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
     assert validity.parent is not None
@@ -483,7 +483,7 @@ async def test_ou_timeline_create_new_unit(
     assert validity.validity.from_ == t1
     assert _mo_end_to_timeline_end(validity.validity.to) == t3
     assert validity.name == "name1"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
     assert validity.parent is not None
@@ -493,7 +493,7 @@ async def test_ou_timeline_create_new_unit(
     assert validity.validity.from_ == t3
     assert _mo_end_to_timeline_end(validity.validity.to) == t7
     assert validity.name == "name1"
-    assert validity.user_key == "ABCD"
+    assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
     assert validity.parent is not None

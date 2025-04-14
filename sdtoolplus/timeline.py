@@ -29,6 +29,8 @@ from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
@@ -55,6 +57,30 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
 # TODO: replace this function with a proper strategy pattern when needed
 def prefix_user_key_with_inst_id(user_key: str, inst_id: str) -> str:
     return f"{inst_id}-{user_key}"
+
+
+def prefix_unit_id_with_inst_id(
+    unit_timeline: UnitTimeline, inst_id: str
+) -> UnitTimeline:
+    unit_id_intervals = tuple(
+        UnitId(
+            start=interval.start, end=interval.end, value=f"{inst_id}-{interval.value}"
+        )
+        for interval in unit_timeline.unit_id.intervals
+    )
+
+    prefixed_unit_timeline = UnitTimeline(
+        active=unit_timeline.active,
+        name=unit_timeline.name,
+        unit_id=Timeline[UnitId](intervals=unit_id_intervals),
+        unit_level=unit_timeline.unit_level,
+        parent=unit_timeline.parent,
+    )
+    logger.debug(
+        "SD timeline with prefixed unit_id", timeline=prefixed_unit_timeline.dict()
+    )
+
+    return prefixed_unit_timeline
 
 
 async def sync_eng(
