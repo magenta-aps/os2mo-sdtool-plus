@@ -31,6 +31,7 @@ from sdclient.client import SDClient
 from sdclient.requests import GetEmploymentChangedRequest
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
+from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
@@ -46,12 +47,16 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .exceptions import EngagementNotActiveError
+from .exceptions import EngagementNotFoundError
 from .exceptions import PersonNotFoundError
+from .mo.engagement import move_engagement
 from .mo.timeline import get_engagement_timeline
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
+from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
@@ -441,6 +446,26 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             dry_run=dry_run,
         )
 
+        return {"msg": "success"}
+
+    @fastapi_router.post("/minisync/move-employment", status_code=HTTP_200_OK)
+    async def engagement_move(
+        response: Response,
+        gql_client: depends.GraphQLClient,
+        payload: EngagementMovePayload,
+        dry_run: bool = False,
+    ) -> dict:
+        try:
+            await move_engagement(gql_client, payload, dry_run)
+        except PersonNotFoundError:
+            response.status_code = HTTP_404_NOT_FOUND
+            return {"msg": "The person could not be found i MO"}
+        except EngagementNotFoundError:
+            response.status_code = HTTP_404_NOT_FOUND
+            return {"msg": "The engagement could not be found i MO"}
+        except EngagementNotActiveError:
+            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+            return {"msg": "The engagement is not active in the entire move interval"}
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
