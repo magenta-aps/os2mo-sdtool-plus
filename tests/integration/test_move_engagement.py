@@ -78,7 +78,7 @@ async def test_move_engagement(
     emp_id = "12345"
     user_key = f"II-{emp_id}"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
@@ -321,7 +321,7 @@ async def test_move_engagement_to_infinity(
     emp_id = "12345"
     user_key = f"II-{emp_id}"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
@@ -547,7 +547,7 @@ async def test_move_engagement_where_engagement_not_active_in_entire_period(
     emp_id = "12345"
     user_key = f"II-{emp_id}"
 
-    await graphql_client._testing__create_person(
+    await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
             cpr_number=cpr,
