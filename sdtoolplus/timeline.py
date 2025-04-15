@@ -117,8 +117,8 @@ async def sync_person(
             gql_client=gql_client,
             uuid=one(mo_person.objects).uuid,
             start=datetime.today(),
-            dry_run=dry_run,
             person=sd_person,
+            dry_run=dry_run,
         )
 
 

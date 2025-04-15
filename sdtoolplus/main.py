@@ -364,18 +364,21 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
                 detail=f"Person not found in SD. {payload=}",
             )
 
-        mo_person_timeline = await gql_client.get_person_timeline(
+        mo_person = await gql_client.get_person_timeline(
             filter=EmployeeFilter(
                 cpr_numbers=[payload.cpr], from_date=datetime.today(), to_date=None
             )
         )
+        logger.debug("MO person", mo_person=mo_person.dict())
 
         await sync_person(
             gql_client=gql_client,
-            mo_person=mo_person_timeline,
+            mo_person=mo_person,
             sd_person=sd_person,
             dry_run=dry_run,
         )
+
+        logger.info("Done syncing person!")
 
         return {"msg": "success"}
 

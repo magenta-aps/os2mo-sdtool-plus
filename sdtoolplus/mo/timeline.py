@@ -561,13 +561,14 @@ async def create_person(
     lastname: str,
     dry_run: bool = False,
 ) -> None:
-    logger.info("Create new person")
+    logger.info("Create new person", cpr=cpr, givenname=givenname, lastname=lastname)
 
     employee_input = EmployeeCreateInput(
         cpr_number=cpr,
         given_name=givenname,
         surname=lastname,
     )
+    logger.debug("Create person payload", payload=employee_input.dict())
     if not dry_run:
         await gql_client.create_person(input=employee_input)
 
@@ -579,6 +580,8 @@ async def update_person(
     person: Person,
     dry_run: bool = False,
 ) -> None:
+    logger.info("Update person")
+
     payload = EmployeeUpdateInput(
         uuid=uuid,
         cpr_number=person.cpr,
@@ -586,7 +589,7 @@ async def update_person(
         surname=person.surname,
         validity=RAValidityInput(from_=start, to=None),
     )
-    logger.debug("Update person", uuid=uuid, person=person)
+    logger.debug("Update person payload", payload=payload.dict())
     if not dry_run:
         await gql_client.update_person(payload)
 

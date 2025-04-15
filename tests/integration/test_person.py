@@ -243,3 +243,6 @@ async def test_person_timeline_update(
     assert interval_2.surname == "Norris"
 
     assert len(validities) == 2
+
+
+# TODO: add test where MO-person validity should be extended
