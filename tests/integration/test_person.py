@@ -51,13 +51,9 @@ async def test_person_not_in_sd(
     respx_mock: MockRouter,
 ):
     """
-    We are testing this scenario:
-    A person dosnt exist in MO and is created
-
-
-    MO (givenname)
-    SD (givenname)              |-----------------Chuck--------------------------------------
-
+    We are testing the case where the person is not found in SD. We should return
+    HTTP 404. Note: if the person actually exists in MO, we will not terminate the
+    person in MO.
     """
     # Arrange
 
