@@ -200,14 +200,14 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.1&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
     )
 
     respx_mock.get(
-        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+        f"https://service.sd.dk/api-gateway/organization/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
         json=sd_parent_history_resp,
     )
@@ -348,14 +348,14 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.1&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
     )
 
     respx_mock.get(
-        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+        f"https://service.sd.dk/api-gateway/organization/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
         json=[
             {
@@ -454,14 +454,14 @@ async def test_ou_timeline_create_new_unit(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.1&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
     )
 
     respx_mock.get(
-        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+        f"https://service.sd.dk/api-gateway/organization/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
     ).respond(
         json=sd_parent_history_resp,
     )
