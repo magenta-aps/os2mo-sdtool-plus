@@ -35,9 +35,9 @@ from sdtoolplus.models import EngagementSyncPayload
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
-from sdtoolplus.models import Person
 from sdtoolplus.models import UnitTimeline
 
 logger = structlog.stdlib.get_logger()
