@@ -179,13 +179,13 @@ tz = ["tzdata"]
 
 [[package]]
 name = "another-sd-client"
-version = "1.18.1"
+version = "1.18.3"
 description = "Client for communicating with SD Løn"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "another_sd_client-1.18.1-py3-none-any.whl", hash = "sha256:5593b66f0bf6b0ea921de5ed3791d386e56ffcf912d447c61f19a74a1929044c"},
-    {file = "another_sd_client-1.18.1.tar.gz", hash = "sha256:7c31f19e7d8672c0d25865f53dbaa60a8c000d2accf399edef7aac26f562ba7c"},
+    {file = "another_sd_client-1.18.3-py3-none-any.whl", hash = "sha256:f02b2f2ebc225d44ed3aff7760ee317ccf2d81155bed6beae10083022ca7d032"},
+    {file = "another_sd_client-1.18.3.tar.gz", hash = "sha256:e69c5bfd0b0059185957987130425c7a79ceaa4b5bbd5c03a64c13b172d350da"},
 ]
 
 [package.dependencies]
@@ -1262,13 +1262,13 @@ files = [
 
 [[package]]
 name = "httpcore"
-version = "1.0.7"
+version = "1.0.8"
 description = "A minimal low-level HTTP client."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "httpcore-1.0.7-py3-none-any.whl", hash = "sha256:a3fff8f43dc260d5bd363d9f9cf1830fa3a458b332856f34282de498ed420edd"},
-    {file = "httpcore-1.0.7.tar.gz", hash = "sha256:8551cb62a169ec7162ac7be8d4817d561f60e08eaa485234898414bb5a8a0b4c"},
+    {file = "httpcore-1.0.8-py3-none-any.whl", hash = "sha256:5254cf149bcb5f75e9d1b2b9f729ea4a4b883d1ad7379fc632b727cec23674be"},
+    {file = "httpcore-1.0.8.tar.gz", hash = "sha256:86e94505ed24ea06514883fd44d2bc02d90e77e7979c8eb71b90f41d364a1bad"},
 ]
 
 [package.dependencies]
@@ -1539,17 +1539,17 @@ testing = ["pytest"]
 
 [[package]]
 name = "markdown"
-version = "3.7"
+version = "3.8"
 description = "Python implementation of John Gruber's Markdown."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "Markdown-3.7-py3-none-any.whl", hash = "sha256:7eb6df5690b81a1d7942992c97fad2938e956e79df20cbc6186e9c3a77b1c803"},
-    {file = "markdown-3.7.tar.gz", hash = "sha256:2ae2471477cfd02dbbf038d5d9bc226d40def84b4fe2986e49b59b6b472bbed2"},
+    {file = "markdown-3.8-py3-none-any.whl", hash = "sha256:794a929b79c5af141ef5ab0f2f642d0f7b1872981250230e72682346f7cc90dc"},
+    {file = "markdown-3.8.tar.gz", hash = "sha256:7df81e63f0df5c4b24b7d156eb81e4690595239b7d70937d0409f1b0de319c6f"},
 ]
 
 [package.extras]
-docs = ["mdx-gh-links (>=0.2)", "mkdocs (>=1.5)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
+docs = ["mdx_gh_links (>=0.2)", "mkdocs (>=1.6)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
 testing = ["coverage", "pyyaml"]
 
 [[package]]

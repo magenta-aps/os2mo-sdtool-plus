@@ -13,6 +13,7 @@ from typing import TypeVar
 from typing import cast
 from zoneinfo import ZoneInfo
 
+import structlog.stdlib
 from more_itertools import collapse
 from more_itertools import first
 from more_itertools import last
@@ -33,6 +34,8 @@ POSITIVE_INFINITY = datetime.max.replace(tzinfo=ZoneInfo("UTC"))
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f (%Z)"
 
 V = TypeVar("V")
+
+logger = structlog.stdlib.get_logger()
 
 
 class AddressTypeUserKey(Enum):
@@ -238,23 +241,31 @@ class UnitTimeline(BaseModel):
             return False
 
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        # TODO: unit test
+        # TODO: unit test <-- maybe we should do this anytime soon now...
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
-            return (
-                self.active.entity_at(timestamp),
-                self.name.entity_at(timestamp),
-                self.unit_id.entity_at(timestamp),
-                self.unit_level.entity_at(timestamp),
-                self.parent.entity_at(timestamp),
-            ) == (
-                other.active.entity_at(timestamp),
-                other.name.entity_at(timestamp),
-                other.unit_id.entity_at(timestamp),
-                other.unit_level.entity_at(timestamp),
-                other.parent.entity_at(timestamp),
+
+            self_values = (
+                self.active.entity_at(timestamp).value,
+                self.name.entity_at(timestamp).value,
+                self.unit_id.entity_at(timestamp).value,
+                self.unit_level.entity_at(timestamp).value,
+                self.parent.entity_at(timestamp).value,
             )
+            other_values = (
+                other.active.entity_at(timestamp).value,
+                other.name.entity_at(timestamp).value,
+                other.unit_id.entity_at(timestamp).value,
+                other.unit_level.entity_at(timestamp).value,
+                other.parent.entity_at(timestamp).value,
+            )
+            logger.debug(
+                "Values to compare", self_values=self_values, other_values=other_values
+            )
+
+            return self_values == other_values
+
         return False
 
 
@@ -295,24 +306,24 @@ class EngagementTimeline(BaseModel):
             return False
 
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        # TODO: unit test
+        # TODO: unit test <-- maybe we should do this anytime soon now...
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
             return (
-                self.eng_active.entity_at(timestamp),
-                self.eng_key.entity_at(timestamp),
-                self.eng_name.entity_at(timestamp),
-                self.eng_unit.entity_at(timestamp),
-                self.eng_unit_id.entity_at(timestamp),
-                self.eng_type.entity_at(timestamp),
+                self.eng_active.entity_at(timestamp).value,
+                self.eng_key.entity_at(timestamp).value,
+                self.eng_name.entity_at(timestamp).value,
+                self.eng_unit.entity_at(timestamp).value,
+                self.eng_unit_id.entity_at(timestamp).value,
+                self.eng_type.entity_at(timestamp).value,
             ) == (
-                other.eng_active.entity_at(timestamp),
-                other.eng_key.entity_at(timestamp),
-                other.eng_name.entity_at(timestamp),
-                other.eng_unit.entity_at(timestamp),
-                other.eng_unit_id.entity_at(timestamp),
-                other.eng_type.entity_at(timestamp),
+                other.eng_active.entity_at(timestamp).value,
+                other.eng_key.entity_at(timestamp).value,
+                other.eng_name.entity_at(timestamp).value,
+                other.eng_unit.entity_at(timestamp).value,
+                other.eng_unit_id.entity_at(timestamp).value,
+                other.eng_type.entity_at(timestamp).value,
             )
         return False
 
@@ -343,7 +354,8 @@ class LeaveTimeline(BaseModel):
         if self.has_value(timestamp) == other.has_value(timestamp):
             if self.has_value(timestamp) is False:
                 return True
-            return self.leave_active.entity_at(
-                timestamp
-            ) == other.leave_active.entity_at(timestamp)
+            return (
+                self.leave_active.entity_at(timestamp).value
+                == other.leave_active.entity_at(timestamp).value
+            )
         return False

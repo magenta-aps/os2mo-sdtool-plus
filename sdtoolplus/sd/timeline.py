@@ -82,7 +82,8 @@ async def get_department_timeline(
             ),
         )
         parents = sd_client.get_department_parent_history(unit_uuid)
-    except (SDRootElementNotFound, SDParentNotFound):
+    except (SDRootElementNotFound, SDParentNotFound) as error:
+        logger.debug("Error getting department from SD", error=error)
         return UnitTimeline()
 
     active_intervals = tuple(
@@ -137,7 +138,7 @@ async def get_department_timeline(
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
-    logger.debug("SD OU timeline", timeline=timeline)
+    logger.debug("SD OU timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -283,6 +284,6 @@ async def get_leave_timeline(
     timeline = LeaveTimeline(
         leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
     )
-    logger.debug("SD leave timeline", timeline=timeline)
+    logger.debug("SD leave timeline", timeline=timeline.dict())
 
     return timeline
