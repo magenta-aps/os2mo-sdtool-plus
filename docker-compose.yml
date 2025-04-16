@@ -46,6 +46,8 @@ services:
       EMAIL_USER: "70e58fda8d0426"
       EMAIL_PASSWORD: "3dcafadaff221e"
       EMAIL_TO: '["to@example.com"]'
+
+      UNKNOWN_UNIT: "44c15403-2a66-429e-8893-acaae9f30dfb"
     ports:
       - "127.0.0.1:8000:8000"
     networks:

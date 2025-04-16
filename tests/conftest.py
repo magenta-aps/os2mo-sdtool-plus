@@ -1248,6 +1248,15 @@ async def base_tree_builder(
         parent=dep5.uuid,
     )
 
+    # Also build the unit "Ukendt" needed in the case where MUNICIPALITY_MODE is false
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("44c15403-2a66-429e-8893-acaae9f30dfb"),
+        name="Ukendt",
+        user_key="ukendt",
+        org_unit_type=org_unit_type,
+        from_date=now,
+    )
+
     return root
 
 
