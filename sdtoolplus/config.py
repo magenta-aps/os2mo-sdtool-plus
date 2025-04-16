@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastramqpi.config import Settings as FastRAMQPISettings
@@ -10,6 +11,7 @@ from pydantic import EmailStr
 from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
+from pydantic import root_validator
 
 from .mo_org_unit_importer import OrgUnitUUID
 
@@ -115,8 +117,19 @@ class SDToolPlusSettings(BaseSettings):
     email_notifications_disabled_units: list[OrgUnitUUID] = []
     ##################################################################
 
+    # UUID of the unit "Ukendt" (only used when municipality_mode is false)
+    unknown_unit: OrgUnitUUID | None = None
+
     class Config:
         env_nested_delimiter = "__"
+
+    @root_validator
+    def unknown_unit_must_be_set_when_municipality_mode_disabled(
+        cls, values: dict[str, Any]
+    ) -> dict[str, Any]:
+        if values["municipality_mode"] is False and values["unknown_unit"] is None:
+            raise ValueError("Unknown unit must be set when MUNICIPALITY_MODE is false")
+        return values
 
 
 def get_settings(*args, **kwargs) -> SDToolPlusSettings:
