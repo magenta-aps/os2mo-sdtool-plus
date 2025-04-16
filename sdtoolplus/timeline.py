@@ -418,6 +418,7 @@ async def engagement_ou_strategy_region(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     sd_eng_timeline: EngagementTimeline,
+    mo_eng_timeline: EngagementTimeline,
 ) -> EngagementTimeline:
     # TODO: implement region case!
     return sd_eng_timeline
@@ -428,6 +429,7 @@ async def engagement_ou_strategy(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     sd_eng_timeline: EngagementTimeline,
+    mo_eng_timeline: EngagementTimeline,
 ) -> EngagementTimeline:
     """
     Combined state/strategy pattern choosing an OU timeline strategy based on
@@ -439,7 +441,12 @@ async def engagement_ou_strategy(
                 sd_client, settings, sd_eng_timeline
             )
         return sd_eng_timeline
-    return await engagement_ou_strategy_region(gql_client, settings, sd_eng_timeline)
+    return await engagement_ou_strategy_region(
+        gql_client=gql_client,
+        settings=settings,
+        sd_eng_timeline=sd_eng_timeline,
+        mo_eng_timeline=mo_eng_timeline,
+    )
 
 
 async def sync_engagement(
@@ -486,9 +493,6 @@ async def sync_engagement(
     )
 
     sd_eng_timeline = await get_employment_timeline(r_employment)
-    sd_eng_timeline = await engagement_ou_strategy(
-        sd_client, gql_client, settings, sd_eng_timeline
-    )
 
     # Get the person
     r_person = await gql_client.get_person(payload.cpr)
@@ -503,6 +507,14 @@ async def sync_engagement(
         user_key=_prefix_eng_user_key(
             settings, payload.employment_identifier, payload.institution_identifier
         ),
+    )
+
+    sd_eng_timeline = await engagement_ou_strategy(
+        sd_client=sd_client,
+        gql_client=gql_client,
+        settings=settings,
+        sd_eng_timeline=sd_eng_timeline,
+        mo_eng_timeline=mo_eng_timeline,
     )
 
     await _sync_eng_intervals(
