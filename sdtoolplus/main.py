@@ -54,10 +54,10 @@ from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
-from .timeline import prefix_unit_id_with_inst_id
-from .timeline import sync_person
 from .timeline import _sync_ou_intervals
+from .timeline import prefix_unit_id_with_inst_id
 from .timeline import sync_engagement
+from .timeline import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
