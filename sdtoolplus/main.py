@@ -382,8 +382,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         sd_unit_timeline = await get_department_timeline(
             sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
         )
-        # TODO: introduce unit_id strategy
-        sd_unit_timeline = prefix_unit_id_with_inst_id(sd_unit_timeline, inst_id)
+        sd_unit_timeline = prefix_unit_id_with_inst_id(
+            settings, sd_unit_timeline, inst_id
+        )
 
         mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 

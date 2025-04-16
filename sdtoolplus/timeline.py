@@ -85,8 +85,11 @@ def _prefix_eng_user_key(
 
 
 def prefix_unit_id_with_inst_id(
-    unit_timeline: UnitTimeline, inst_id: str
+    settings: SDToolPlusSettings, unit_timeline: UnitTimeline, inst_id: str
 ) -> UnitTimeline:
+    if settings.municipality_mode:
+        return unit_timeline
+
     unit_id_intervals = tuple(
         UnitId(
             start=interval.start, end=interval.end, value=f"{inst_id}-{interval.value}"
