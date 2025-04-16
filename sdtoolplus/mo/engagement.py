@@ -24,7 +24,6 @@ from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.models import EngagementMovePayload
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
-from sdtoolplus.timeline import prefix_user_key_with_inst_id
 
 logger = structlog.stdlib.get_logger()
 
@@ -78,9 +77,7 @@ async def move_engagement(
     """
     logger.info("Move engagement", payload=payload.dict())
 
-    user_key = prefix_user_key_with_inst_id(
-        payload.employment_identifier, payload.institution_identifier
-    )
+    user_key = f"{payload.institution_identifier}-{payload.employment_identifier}"
 
     payload_validity = timeline_interval_to_mo_validity(
         start=sd_start_to_timeline_start(payload.start),
