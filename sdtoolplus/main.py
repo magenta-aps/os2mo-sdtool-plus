@@ -144,6 +144,11 @@ async def background_run(
     logger.info("Run completed!")
 
 
+from fastramqpi.events import GraphQLEvents
+from fastramqpi.events import Listener
+from fastramqpi.events import Namespace
+
+
 def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     settings = kwargs.get("settings") or SDToolPlusSettings()
 
@@ -151,6 +156,19 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
         graphql_client_cls=GraphQLClient,
+        graphql_events=GraphQLEvents(
+            namespaces=[
+                Namespace(name="foo"),
+            ],
+            listeners=[
+                Listener(
+                    namespace="mo",
+                    user_key="test1",
+                    routing_key="org_unit",
+                    url="/todo",
+                ),
+            ],
+        ),
         graphql_version=22,
     )
     fastramqpi.add_context(settings=settings)
@@ -517,6 +535,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return {"msg": "success"}
 
+    @fastapi_router.post("/todo")
+    async def todo() -> str:
+        print("TODOTODOTODOTODOTODOTODO2")
+        return "ok"
     @fastapi_router.post("/minisync/move-employment", status_code=HTTP_200_OK)
     async def engagement_move(
         response: Response,
