@@ -28,7 +28,7 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitTypeUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
-from sdtoolplus.models import POSITIVE_INFINITY
+from sdtoolplus.models import POSITIVE_INFINITY, RelatedUnit
 from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
@@ -865,3 +865,9 @@ async def terminate_leave(
 
     if not dry_run:
         await gql_client.terminate_leave(payload)
+
+
+async def related_units(
+    gql_client: GraphQLClient, start: datetime, end: datetime, lookup_unit: OrgUnitUUID
+) -> list[RelatedUnit]:
+    return []
