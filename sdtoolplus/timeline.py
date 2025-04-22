@@ -40,7 +40,6 @@ from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Person
-from sdtoolplus.models import PersonSyncPayload
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitTimeline
@@ -131,31 +130,32 @@ async def _sync_person(
 async def sync_person(
     sd_client: SDClient,
     gql_client: GraphQLClient,
-    payload: PersonSyncPayload,
+    institution_identifier: str,
+    cpr: str,
     dry_run: bool,
 ) -> None:
     logger.info(
         "Sync person",
-        inst_id=payload.institution_identifier,
-        cpr=payload.cpr,
+        inst_id=institution_identifier,
+        cpr=cpr,
         dry_run=dry_run,
     )
     try:
         sd_person = await get_sd_persons(
             sd_client=sd_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
+            institution_identifier=institution_identifier,
+            cpr=cpr,
             effective_date=datetime.today(),
         )
     except SDRootElementNotFound:
         raise HTTPException(
             status_code=HTTP_404_NOT_FOUND,
-            detail=f"Person not found in SD. {payload=}",
+            detail="Person not found in SD",
         )
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
-            cpr_numbers=[payload.cpr], from_date=datetime.today(), to_date=None
+            cpr_numbers=[cpr], from_date=datetime.today(), to_date=None
         )
     )
     logger.debug("MO person", mo_person=mo_person.dict())

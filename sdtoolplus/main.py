@@ -342,7 +342,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
-            payload=payload,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
             dry_run=dry_run,
         )
 
@@ -534,10 +535,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
-            payload=PersonSyncPayload(
-                institution_identifier=payload.institution_identifier,
-                cpr=payload.cpr,
-            ),
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
             dry_run=dry_run,
         )
 
