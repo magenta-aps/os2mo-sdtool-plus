@@ -503,6 +503,46 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             return {"msg": "The engagement is not active in the entire move interval"}
         return {"msg": "success"}
 
+    @fastapi_router.post(
+        "/minisync/sync-person-and-employment", status_code=HTTP_200_OK
+    )
+    async def sync_person_and_engagement(
+        gql_client: depends.GraphQLClient,
+        payload: EngagementSyncPayload,
+        dry_run: bool = False,
+    ) -> dict:
+        """
+        Sync the person with the given CPR from the given institution identifier and the
+        EmploymentIdentifier provided in the payload.
+
+        Args:
+            gql_client: The GraphQL client
+
+            payload:
+                institution_identifier: The SD institution
+                cpr: CPR number of the person
+                employment_identifier: The SD EmploymentIdentifier
+
+            dry_run: If true, nothing will be written to MO.
+
+        Returns:
+            Dictionary with status
+        """
+
+        # TODO: add integration test when endpoint fully implemented.
+
+        await sync_person(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            payload=PersonSyncPayload(
+                institution_identifier=payload.institution_identifier,
+                cpr=payload.cpr,
+            ),
+            dry_run=dry_run,
+        )
+
+        return {"msg": "success"}
+
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
 
