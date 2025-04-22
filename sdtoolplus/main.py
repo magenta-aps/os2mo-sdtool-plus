@@ -67,12 +67,12 @@ from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .sd.timeline import get_employment_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
+from .timeline import _sync_person
 from .timeline import prefix_unit_id_with_inst_id
 from .timeline import prefix_user_key_with_inst_id
 from .timeline import sync_eng
 from .timeline import sync_leave
 from .timeline import sync_ou
-from .timeline import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -371,7 +371,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         )
         logger.debug("MO person", mo_person=mo_person.dict())
 
-        await sync_person(
+        await _sync_person(
             gql_client=gql_client,
             mo_person=mo_person,
             sd_person=sd_person,

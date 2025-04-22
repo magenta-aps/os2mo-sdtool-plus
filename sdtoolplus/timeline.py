@@ -90,7 +90,7 @@ def prefix_unit_id_with_inst_id(
     return prefixed_unit_timeline
 
 
-async def sync_person(
+async def _sync_person(
     gql_client: GraphQLClient,
     sd_person: Person,
     mo_person: GetPersonTimelineEmployees,
