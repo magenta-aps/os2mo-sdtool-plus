@@ -50,6 +50,7 @@ class SDToolPlusSettings(BaseSettings):
     sd_username: str
     sd_institution_identifier: str
     sd_password: SecretStr
+    sd_use_test_env: bool = False
 
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.

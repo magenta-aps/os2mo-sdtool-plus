@@ -153,8 +153,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     # TODO: make into dependencies
     engine = get_engine(settings)
     sd_client = SDClient(
-        settings.sd_username,
-        settings.sd_password.get_secret_value(),
+        sd_username=settings.sd_username,
+        sd_password=settings.sd_password.get_secret_value(),
+        use_test_env=settings.sd_use_test_env,
     )
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
