@@ -307,6 +307,29 @@ mutation TerminateLeave($input: LeaveTerminateInput!) {
   }
 }
 
+query GetRelatedUnits($filter: RelatedUnitFilter!) {
+  related_units(filter: $filter) {
+    objects {
+      validities {
+        uuid
+        validity {
+          from
+          to
+        }
+        org_units {
+          uuid
+        }
+      }
+    }
+  }
+}
+
+mutation _Testing_UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
+  related_units_update(input: $input) {
+    uuid
+  }
+}
+
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
   $given_name: String!,
