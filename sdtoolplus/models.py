@@ -282,6 +282,9 @@ class UnitTimeline(BaseModel):
 
         return False
 
+    class Config:
+        frozen = True
+
 
 class EngagementTimeline(BaseModel):
     eng_active: Timeline[Active] = Timeline[Active]()
@@ -341,6 +344,9 @@ class EngagementTimeline(BaseModel):
             )
         return False
 
+    class Config:
+        frozen = True
+
 
 class LeaveTimeline(BaseModel):
     leave_active: Timeline[Active] = Timeline[Active]()
@@ -373,3 +379,6 @@ class LeaveTimeline(BaseModel):
                 == other.leave_active.entity_at(timestamp).value
             )
         return False
+
+    class Config:
+        frozen = True
