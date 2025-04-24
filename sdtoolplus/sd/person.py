@@ -14,14 +14,14 @@ logger = structlog.stdlib.get_logger()
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
-async def get_sd_persons(
+async def get_sd_person(
     sd_client: SDClient,
     institution_identifier: str,
     cpr: str,
     effective_date: date,
     contact_information: bool = True,
     postal_address: bool = True,
-):
+) -> Person:
     sd_response = await asyncio.to_thread(
         sd_client.get_person,
         GetPersonRequest(
