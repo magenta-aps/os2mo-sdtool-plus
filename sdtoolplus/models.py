@@ -127,6 +127,18 @@ class UnitParent(Interval[Optional[OrgUnitUUID]]):
     pass
 
 
+class UnitPostalAddress(Interval[str]):
+    pass
+
+
+class UnitPhoneNumber(Interval[str]):
+    pass
+
+
+class UnitPNumber(Interval[str]):
+    pass
+
+
 class EngagementKey(Interval[str]):
     """
     The SD JobPositionIdentifier corresponding to MOs job_function user_key
@@ -262,6 +274,9 @@ class UnitTimeline(BaseTimeline):
     unit_id: Timeline[UnitId] = Timeline[UnitId]()
     unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
     parent: Timeline[UnitParent] = Timeline[UnitParent]()
+    postal_address: Timeline[UnitPostalAddress] = Timeline[UnitPostalAddress]()
+    phone: Timeline[UnitPhoneNumber] = Timeline[UnitPhoneNumber]()
+    p_number: Timeline[UnitPNumber] = Timeline[UnitPNumber]()
 
     def has_required_mo_values(self, timestamp: datetime) -> bool:
         try:
