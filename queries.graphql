@@ -123,6 +123,19 @@ query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: Date
         parent {
           uuid
         }
+        addresses {
+          uuid
+          name
+          user_key
+          value
+          address_type {
+            user_key
+            name
+          }
+          visibility {
+            uuid
+          }
+        }
       }
     }
   }
