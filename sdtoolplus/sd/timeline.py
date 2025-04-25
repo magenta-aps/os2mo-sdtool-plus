@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import re
 from datetime import date
 from datetime import datetime
 from datetime import time
@@ -12,6 +13,7 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import Department
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -31,12 +33,17 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
+from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 logger = structlog.stdlib.get_logger()
+
+_INVALID_PHONE_NUMBER_REGEX = re.compile("^0+$")
 
 
 def sd_start_to_timeline_start(d: date) -> datetime:
@@ -62,6 +69,22 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     return EngType.MONTHLY_PART_TIME
 
 
+def _sd_ou_phone(department: Department) -> str | None:
+    contact_info = department.ContactInformation
+    if contact_info is None:
+        return None
+
+    phone_numbers = contact_info.TelephoneNumberIdentifier
+    if phone_numbers is None:
+        return None
+
+    return only(
+        phone_number
+        for phone_number in phone_numbers
+        if not _INVALID_PHONE_NUMBER_REGEX.match(phone_number)
+    )
+
+
 async def get_department_timeline(
     sd_client: SDClient,
     inst_id: str,
@@ -78,6 +101,9 @@ async def get_department_timeline(
                 ActivationDate=date.min,
                 DeactivationDate=date.max,
                 DepartmentNameIndicator=True,
+                PostalAddressIndicator=True,
+                ProductionUnitIndicator=True,
+                ContactInformationIndicator=True,
                 UUIDIndicator=True,
             ),
         )
@@ -131,12 +157,47 @@ async def get_department_timeline(
         for parent in parents
     )
 
+    postal_address_intervals = tuple(
+        UnitPostalAddress(
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
+            value=f"{dep.PostalAddress.StandardAddressIdentifier}, {dep.PostalAddress.PostalCode}, {dep.PostalAddress.DistrictName}",
+        )
+        for dep in department.Department
+        if dep.PostalAddress is not None
+    )
+
+    phone_intervals = tuple(
+        UnitPhoneNumber(
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
+            value=_sd_ou_phone(dep),
+        )
+        for dep in department.Department
+        if _sd_ou_phone(dep) is not None
+    )
+
+    p_number_intervals = tuple(
+        UnitPNumber(
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
+            value=dep.ProductionUnitIdentifier,
+        )
+        for dep in department.Department
+        if dep.ProductionUnitIdentifier is not None
+    )
+
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(active_intervals)),
         unit_id=Timeline[UnitId](intervals=combine_intervals(id_intervals)),
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
+        postal_address=Timeline[UnitPostalAddress](
+            intervals=combine_intervals(postal_address_intervals)
+        ),
+        phone=Timeline[UnitPhoneNumber](intervals=combine_intervals(phone_intervals)),
+        p_number=Timeline[UnitPNumber](intervals=combine_intervals(p_number_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline.dict())
 

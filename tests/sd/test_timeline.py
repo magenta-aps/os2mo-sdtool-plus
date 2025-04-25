@@ -32,6 +32,9 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
+from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
 from sdtoolplus.sd.timeline import get_department_timeline
@@ -57,6 +60,15 @@ async def test_get_department_timeline():
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "name1",
                 "DepartmentUUIDIdentifier": dep_uuid,
+                "ProductionUnitIdentifier": "12345678",
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Paradisæblevej 13",
+                    "PostalCode": "1000",
+                    "DistrictName": "Andeby",
+                },
+                "ContactInformation": {
+                    "TelephoneNumberIdentifier": ["87654321", "00000000"]
+                },
             },
             {
                 "ActivationDate": "2002-01-01",
@@ -65,6 +77,14 @@ async def test_get_department_timeline():
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "name1",  # Not changed
                 "DepartmentUUIDIdentifier": dep_uuid,
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Paradisæblevej 13",
+                    "PostalCode": "1000",
+                    "DistrictName": "Andeby",
+                },
+                "ContactInformation": {
+                    "TelephoneNumberIdentifier": ["87654321", "00000000"]
+                },
             },
             # Hole in SD timeline here
             {
@@ -74,6 +94,12 @@ async def test_get_department_timeline():
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "name3",
                 "DepartmentUUIDIdentifier": dep_uuid,
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Paradisæblevej 31",
+                    "PostalCode": "1000",
+                    "DistrictName": "Andeby",
+                },
+                "ContactInformation": {"TelephoneNumberIdentifier": ["98765432"]},
             },
             {
                 "ActivationDate": "2005-01-01",
@@ -82,6 +108,7 @@ async def test_get_department_timeline():
                 "DepartmentLevelIdentifier": "NY0-niveau",
                 "DepartmentName": "name4",
                 "DepartmentUUIDIdentifier": dep_uuid,
+                "ProductionUnitIdentifier": "23456789",
             },
         ],
     }
@@ -119,6 +146,9 @@ async def test_get_department_timeline():
     assert query_params.ActivationDate == date.min
     assert query_params.DeactivationDate == date.max
     assert query_params.DepartmentNameIndicator is True
+    assert query_params.PostalAddressIndicator is True
+    assert query_params.ProductionUnitIndicator is True
+    assert query_params.ContactInformationIndicator is True
     assert query_params.UUIDIndicator is True
 
     mock_sd_client.get_department_parent_history.assert_called_once_with(dep_uuid)
@@ -204,6 +234,51 @@ async def test_get_department_timeline():
                 start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
                 value=OrgUnitUUID("d567f959-ab77-4849-9cd0-c14e9120433c"),
+            ),
+        )
+    )
+
+    assert department_timeline.postal_address == Timeline[UnitPostalAddress](
+        intervals=(
+            UnitPostalAddress(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="Paradisæblevej 13, 1000, Andeby",
+            ),
+            UnitPostalAddress(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="Paradisæblevej 31, 1000, Andeby",
+            ),
+        )
+    )
+
+    assert department_timeline.p_number == Timeline[UnitPNumber](
+        intervals=(
+            UnitPNumber(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="12345678",
+            ),
+            UnitPNumber(
+                start=datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
+                value="23456789",
+            ),
+        )
+    )
+
+    assert department_timeline.phone == Timeline[UnitPhoneNumber](
+        intervals=(
+            UnitPhoneNumber(
+                start=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="87654321",
+            ),
+            UnitPhoneNumber(
+                start=datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="98765432",
             ),
         )
     )
