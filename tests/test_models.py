@@ -3,6 +3,7 @@
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -261,7 +262,7 @@ def test_leave_timeline_get_interval_endpoints():
     assert endpoints == {YESTERDAY_START, TODAY_START, TOMORROW_START}
 
 
-def test_engagement_timeline_get_interval_endpoints_engagement_type():
+def test_engagement_timeline_get_interval_endpoints_engagement_unit_id_and_type():
     # Arrange
     engagement_timeline = EngagementTimeline(
         eng_unit_id=Timeline[EngagementUnitId](
@@ -299,3 +300,54 @@ def test_engagement_timeline_get_interval_endpoints_engagement_type():
         TOMORROW_START,
         DAY_AFTER_TOMORROW_START,
     }
+
+
+def test_unit_timeline_get_interval_endpoints():
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(1990, 1, 1, tzinfo=tz)
+    t2 = datetime(1999, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+    t6 = datetime(2006, 1, 1, tzinfo=tz)
+    t7 = datetime(2007, 1, 1, tzinfo=tz)
+
+    ou_timeline = UnitTimeline(
+        active=Timeline[Active](
+            intervals=(
+                Active(start=t1, end=t2, value=True),
+                Active(start=t2, end=t3, value=False),
+            )
+        ),
+        name=Timeline[UnitName](
+            intervals=(
+                UnitName(start=t1, end=t3, value="name1"),
+                UnitName(start=t3, end=t4, value="name2"),
+            )
+        ),
+        unit_id=Timeline[UnitId](
+            intervals=(
+                UnitId(start=t5, end=t6, value="id1"),
+                UnitId(start=t6, end=t7, value="id2"),
+            )
+        ),
+        unit_level=Timeline[UnitLevel](
+            intervals=(
+                UnitLevel(start=t5, end=t6, value="level1"),
+                UnitLevel(start=t6, end=t7, value="level2"),
+            )
+        ),
+        parent=Timeline[UnitParent](
+            intervals=(
+                UnitParent(start=t5, end=t6, value=uuid4()),
+                UnitParent(start=t6, end=t7, value=uuid4()),
+            )
+        ),
+    )
+
+    endpoints = ou_timeline.get_ou_interval_endpoints()
+
+    # Assert
+    assert endpoints == {t1, t2, t3, t4, t5, t6, t7}

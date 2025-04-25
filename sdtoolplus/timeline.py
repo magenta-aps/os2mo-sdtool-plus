@@ -369,10 +369,10 @@ async def _sync_ou_intervals(
 ) -> None:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
-    sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
+    desired_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
 
-    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
+    endpoints = sorted(desired_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
