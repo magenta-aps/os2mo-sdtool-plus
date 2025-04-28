@@ -131,7 +131,7 @@ class SDToolPlusSettings(BaseSettings):
     email_notifications_disabled_units: list[OrgUnitUUID] = []
     ##################################################################
 
-    # UUID of the unit "Ukendt" (only used when municipality_mode is false)
+    # UUID of the unit "Ukendt" (only used when running in "region" mode)
     unknown_unit: OrgUnitUUID | None = None
 
     class Config:
