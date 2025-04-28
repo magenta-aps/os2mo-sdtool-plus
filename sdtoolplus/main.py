@@ -382,7 +382,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         sd_unit_timeline = await get_department_timeline(
             sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
         )
-        sd_unit_timeline = prefix_unit_id_with_inst_id(
+        desired_unit_timeline = prefix_unit_id_with_inst_id(
             settings, sd_unit_timeline, inst_id
         )
 
@@ -391,7 +391,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         await _sync_ou_intervals(
             gql_client=gql_client,
             org_unit=org_unit,
-            sd_unit_timeline=sd_unit_timeline,
+            desired_unit_timeline=desired_unit_timeline,
             mo_unit_timeline=mo_unit_timeline,
             org_unit_type_user_key=settings.org_unit_type,
             dry_run=dry_run,

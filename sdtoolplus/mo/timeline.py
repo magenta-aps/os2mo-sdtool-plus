@@ -250,28 +250,31 @@ async def create_ou(
     org_unit: OrgUnitUUID,
     start: datetime,
     end: datetime,
-    sd_unit_timeline: UnitTimeline,
+    desired_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
     dry_run: bool = False,
 ) -> None:
     logger.info("Creating OU", uuid=str(org_unit))
     logger.debug(
-        "Creating OU", start=start, end=end, sd_unit_timeline=sd_unit_timeline.dict()
+        "Creating OU",
+        start=start,
+        end=end,
+        desired_unit_timeline=desired_unit_timeline.dict(),
     )
 
     # Get the OU type UUID
     ou_type_uuid = await _get_ou_type(gql_client, org_unit_type_user_key)
 
     # Get the OU level UUID
-    unit_level = sd_unit_timeline.unit_level.entity_at(start)
+    unit_level = desired_unit_timeline.unit_level.entity_at(start)
     ou_level_uuid = await _get_ou_level(gql_client, unit_level.value)  # type: ignore
 
     payload = OrganisationUnitCreateInput(
         uuid=org_unit,
         validity=timeline_interval_to_mo_validity(start, end),
-        name=sd_unit_timeline.name.entity_at(start).value,
-        user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-        parent=sd_unit_timeline.parent.entity_at(start).value,
+        name=desired_unit_timeline.name.entity_at(start).value,
+        user_key=desired_unit_timeline.unit_id.entity_at(start).value,
+        parent=desired_unit_timeline.parent.entity_at(start).value,
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )
@@ -285,13 +288,16 @@ async def update_ou(
     org_unit: OrgUnitUUID,
     start: datetime,
     end: datetime,
-    sd_unit_timeline: UnitTimeline,
+    desired_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
     dry_run: bool = False,
 ) -> None:
     logger.info("Updating OU", uuid=str(org_unit))
     logger.debug(
-        "Updating OU", start=start, end=end, sd_unit_timeline=sd_unit_timeline.dict()
+        "Updating OU",
+        start=start,
+        end=end,
+        desired_unit_timeline=desired_unit_timeline.dict(),
     )
 
     mo_validity = timeline_interval_to_mo_validity(start, end)
@@ -305,7 +311,7 @@ async def update_ou(
     ou_type_uuid = await _get_ou_type(gql_client, org_unit_type_user_key)
 
     # Get the OU level UUID
-    unit_level = sd_unit_timeline.unit_level.entity_at(start)
+    unit_level = desired_unit_timeline.unit_level.entity_at(start)
     ou_level_uuid = await _get_ou_level(gql_client, unit_level.value)  # type: ignore
 
     if ou.objects:
@@ -327,9 +333,9 @@ async def update_ou(
                 validity=get_patch_validity(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
-                name=sd_unit_timeline.name.entity_at(start).value,
-                user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-                parent=sd_unit_timeline.parent.entity_at(start).value,
+                name=desired_unit_timeline.name.entity_at(start).value,
+                user_key=desired_unit_timeline.unit_id.entity_at(start).value,
+                parent=desired_unit_timeline.parent.entity_at(start).value,
                 org_unit_type=ou_type_uuid,
                 org_unit_level=ou_level_uuid,
                 org_unit_hierarchy=org_unit_hierarchy,
@@ -344,9 +350,9 @@ async def update_ou(
     payload = OrganisationUnitUpdateInput(
         uuid=org_unit,
         validity=mo_validity,
-        name=sd_unit_timeline.name.entity_at(start).value,
-        user_key=sd_unit_timeline.unit_id.entity_at(start).value,
-        parent=sd_unit_timeline.parent.entity_at(start).value,
+        name=desired_unit_timeline.name.entity_at(start).value,
+        user_key=desired_unit_timeline.unit_id.entity_at(start).value,
+        parent=desired_unit_timeline.parent.entity_at(start).value,
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )

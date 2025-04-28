@@ -353,13 +353,13 @@ async def _sync_ou_intervals(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,
     org_unit_type_user_key: str,
-    sd_unit_timeline: UnitTimeline,
+    desired_unit_timeline: UnitTimeline,
     mo_unit_timeline: UnitTimeline,
     dry_run: bool,
 ) -> None:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
-    sd_interval_endpoints = _get_ou_interval_endpoints(sd_unit_timeline)
+    sd_interval_endpoints = _get_ou_interval_endpoints(desired_unit_timeline)
     mo_interval_endpoints = _get_ou_interval_endpoints(mo_unit_timeline)
 
     endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
@@ -368,10 +368,10 @@ async def _sync_ou_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
-        if sd_unit_timeline.equal_at(start, mo_unit_timeline):
+        if desired_unit_timeline.equal_at(start, mo_unit_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif sd_unit_timeline.has_value(start):
+        elif desired_unit_timeline.has_value(start):
             ou = await gql_client.get_org_unit_timeline(
                 unit_uuid=org_unit, from_date=None, to_date=None
             )
@@ -381,7 +381,7 @@ async def _sync_ou_intervals(
                     org_unit=org_unit,
                     start=start,
                     end=end,
-                    sd_unit_timeline=sd_unit_timeline,
+                    desired_unit_timeline=desired_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
                     dry_run=dry_run,
                 )
@@ -391,7 +391,7 @@ async def _sync_ou_intervals(
                     org_unit=org_unit,
                     start=start,
                     end=end,
-                    sd_unit_timeline=sd_unit_timeline,
+                    desired_unit_timeline=desired_unit_timeline,
                     org_unit_type_user_key=org_unit_type_user_key,
                     dry_run=dry_run,
                 )
