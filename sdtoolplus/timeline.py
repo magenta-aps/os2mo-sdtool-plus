@@ -217,8 +217,7 @@ async def _sync_eng_intervals(
     sd_interval_endpoints = sd_eng_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_eng_timeline.get_interval_endpoints()
 
-    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
-    endpoints.sort()
+    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
@@ -295,8 +294,7 @@ async def _sync_leave_intervals(
     sd_interval_endpoints = sd_leave_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_leave_timeline.get_interval_endpoints()
 
-    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
-    endpoints.sort()
+    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
@@ -362,8 +360,7 @@ async def _sync_ou_intervals(
     sd_interval_endpoints = _get_ou_interval_endpoints(desired_unit_timeline)
     mo_interval_endpoints = _get_ou_interval_endpoints(mo_unit_timeline)
 
-    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
-    endpoints.sort()
+    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
@@ -441,8 +438,7 @@ async def engagement_ou_strategy_region(
     sd_interval_endpoints = sd_ou_only_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_ou_only_timeline.get_interval_endpoints()
 
-    endpoints = list(sd_interval_endpoints.union(mo_interval_endpoints))
-    endpoints.sort()
+    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of engagement unit endpoints", endpoints=endpoints)
 
     # Get the MO unit for each endpoint interval or set to "Unknown", if no value is
