@@ -22,6 +22,7 @@ from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import EngType
+from tests.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
@@ -841,7 +842,7 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
-@pytest.mark.envvar({"MODE": "region"})
+@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
 async def test_eng_timeline_related_units(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -911,7 +912,6 @@ async def test_eng_timeline_related_units(
     C_uuid = UUID("cccccccc-2a66-429e-8893-cccccccccccc")
     D_uuid = UUID("dddddddd-2a66-429e-8893-dddddddddddd")
     E_uuid = UUID("eeeeeeee-2a66-429e-8893-eeeeeeeeeeee")
-    unknown_uuid = UUID("44c15403-2a66-429e-8893-acaae9f30dfb")
 
     eng_types = await get_engagement_types(graphql_client)
 
@@ -957,7 +957,7 @@ async def test_eng_timeline_related_units(
             extension_2="ukendt",
             extension_7="v1",
             person=person_uuid,
-            org_unit=unknown_uuid,
+            org_unit=UNKNOWN_UNIT,
             engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
             job_function=job_function_1234,
         )
@@ -1178,7 +1178,7 @@ async def test_eng_timeline_related_units(
     assert interval_5.extension_2 == "dep3"
     assert interval_5.user_key == user_key
     assert interval_5.job_function.uuid == job_function_1234
-    assert one(interval_5.org_unit).uuid == unknown_uuid
+    assert one(interval_5.org_unit).uuid == UNKNOWN_UNIT
     assert interval_5.extension_7 == "v1"
     assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 

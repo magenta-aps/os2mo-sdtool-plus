@@ -52,6 +52,8 @@ from sdtoolplus.mo_org_unit_importer import OrgUUID
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.tree_diff_executor import TreeDiffExecutor
 
+UNKNOWN_UNIT = OrgUnitUUID("44c15403-2a66-429e-8893-acaae9f30dfb")
+
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
 _TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
 
@@ -1250,7 +1252,7 @@ async def base_tree_builder(
 
     # Also build the unit "Ukendt" needed in the case where MODE is "region"
     await graphql_client._testing__create_org_unit(
-        uuid=uuid.UUID("44c15403-2a66-429e-8893-acaae9f30dfb"),
+        uuid=UNKNOWN_UNIT,
         name="Ukendt",
         user_key="ukendt",
         org_unit_type=org_unit_type,
