@@ -841,7 +841,7 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
-@pytest.mark.envvar({"MUNICIPALITY_MODE": "false"})
+@pytest.mark.envvar({"MODE": "region"})
 async def test_eng_timeline_related_units(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,

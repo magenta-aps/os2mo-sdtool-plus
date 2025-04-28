@@ -54,6 +54,7 @@ from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_persons
 from sdtoolplus.sd.timeline import get_employment_timeline
 
+from .config import Mode
 from .config import SDToolPlusSettings
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
@@ -82,7 +83,7 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
 def _prefix_eng_user_key(
     settings: SDToolPlusSettings, user_key: str, inst_id: str
 ) -> str:
-    if settings.municipality_mode:
+    if settings.mode == Mode.MUNICIPALITY:
         return user_key
     return f"{inst_id}-{user_key}"
 
@@ -90,7 +91,7 @@ def _prefix_eng_user_key(
 def prefix_unit_id_with_inst_id(
     settings: SDToolPlusSettings, unit_timeline: UnitTimeline, inst_id: str
 ) -> UnitTimeline:
-    if settings.municipality_mode:
+    if settings.mode == Mode.MUNICIPALITY:
         return unit_timeline
 
     unit_id_intervals = tuple(
@@ -502,7 +503,7 @@ async def engagement_ou_strategy(
     Combined state/strategy pattern choosing an OU timeline strategy based on
     the state specified in the application settings.
     """
-    if settings.municipality_mode:
+    if settings.mode == Mode.MUNICIPALITY:
         if settings.apply_ny_logic:
             return await engagement_ou_strategy_ny_logic(
                 sd_client, settings, sd_eng_timeline
