@@ -63,14 +63,10 @@ class Person(BaseModel):
     addresses: list[str]
 
 
-class EngagementSyncPayload(BaseModel):
+class EngagementSyncPayload(BaseModel, frozen=True, extra=Extra.forbid):
     institution_identifier: str
     cpr: str
     employment_identifier: str
-
-    class Config:
-        extra = Extra.forbid
-        frozen = True
 
 
 class EngagementMovePayload(EngagementSyncPayload):
@@ -79,7 +75,7 @@ class EngagementMovePayload(EngagementSyncPayload):
     end: date
 
 
-class Interval(GenericModel, Generic[V]):
+class Interval(GenericModel, Generic[V], frozen=True):
     """
     Interval conventions:
     1) 'start' is included in the interval, but 'end' is not
@@ -109,9 +105,6 @@ class Interval(GenericModel, Generic[V]):
             f"end={self.end.strftime(DATETIME_FORMAT)}, "
             f"value={str(self.value)})"
         )
-
-    class Config:
-        frozen = True
 
 
 T = TypeVar("T", bound=Interval)
@@ -183,7 +176,7 @@ def combine_intervals(intervals: tuple[T, ...]) -> tuple[T, ...]:
     )
 
 
-class Timeline(GenericModel, Generic[T]):
+class Timeline(GenericModel, Generic[T], frozen=True):
     intervals: tuple[T, ...] = tuple()
 
     @validator("intervals")
@@ -231,11 +224,8 @@ class Timeline(GenericModel, Generic[T]):
             )
         return entity
 
-    class Config:
-        frozen = True
 
-
-class UnitTimeline(BaseModel):
+class UnitTimeline(BaseModel, frozen=True):
     active: Timeline[Active] = Timeline[Active]()
     name: Timeline[UnitName] = Timeline[UnitName]()
     unit_id: Timeline[UnitId] = Timeline[UnitId]()
@@ -282,11 +272,8 @@ class UnitTimeline(BaseModel):
 
         return False
 
-    class Config:
-        frozen = True
 
-
-class EngagementTimeline(BaseModel):
+class EngagementTimeline(BaseModel, frozen=True):
     eng_active: Timeline[Active] = Timeline[Active]()
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
@@ -344,11 +331,8 @@ class EngagementTimeline(BaseModel):
             )
         return False
 
-    class Config:
-        frozen = True
 
-
-class LeaveTimeline(BaseModel):
+class LeaveTimeline(BaseModel, frozen=True):
     leave_active: Timeline[Active] = Timeline[Active]()
 
     def get_interval_endpoints(self) -> set[datetime]:
@@ -379,6 +363,3 @@ class LeaveTimeline(BaseModel):
                 == other.leave_active.entity_at(timestamp).value
             )
         return False
-
-    class Config:
-        frozen = True
