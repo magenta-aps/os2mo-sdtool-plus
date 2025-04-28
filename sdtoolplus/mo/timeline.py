@@ -958,14 +958,6 @@ async def related_units(
     )
 
     objects = mo_rel_units.objects
-    if not objects:
-        return [
-            EngagementUnit(
-                start=unit_interval.start,
-                end=unit_interval.end,
-                value=unknown_unit_uuid,
-            )
-        ]
 
     # Get the related unit interval endpoints as timeline datetimes
     endpoints = _get_related_units_endpoints(
