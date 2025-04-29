@@ -842,7 +842,9 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
-@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
+@pytest.mark.envvar(
+    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+)
 async def test_eng_timeline_related_units(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,

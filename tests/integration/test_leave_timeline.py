@@ -25,7 +25,9 @@ from tests.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
-@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
+@pytest.mark.envvar(
+    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+)
 async def test_leave_timeline(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
