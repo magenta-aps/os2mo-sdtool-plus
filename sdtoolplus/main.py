@@ -10,8 +10,6 @@ To run:
     $ poetry run docker/start.sh
 """
 
-import asyncio
-from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -26,9 +24,7 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
-from more_itertools import only
 from sdclient.client import SDClient
-from sdclient.requests import GetEmploymentChangedRequest
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_404_NOT_FOUND
@@ -51,8 +47,6 @@ from .exceptions import EngagementNotActiveError
 from .exceptions import EngagementNotFoundError
 from .exceptions import PersonNotFoundError
 from .mo.engagement import move_engagement
-from .mo.timeline import get_engagement_timeline
-from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
@@ -60,13 +54,9 @@ from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
-from .sd.timeline import get_employment_timeline
-from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
+from .timeline import _sync_ou_intervals
 from .timeline import prefix_unit_id_with_inst_id
-from .timeline import prefix_user_key_with_inst_id
-from .timeline import sync_eng
-from .timeline import sync_leave
-from .timeline import sync_ou
+from .timeline import sync_engagement
 from .timeline import sync_person
 from .tree_tools import tree_as_string
 
@@ -356,90 +346,13 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         payload: EngagementSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        """
-        Sync the entire engagement and leave timelines for the given CPR and
-        SD EmploymentIdentifier (corresponding to the MO engagement user_key).
-
-        Args:
-            gql_client: The GraphQL client
-
-            inst_id: The SD institution
-            dry_run: If true, nothing will be written to MO.
-
-        Returns:
-            Dictionary with status
-        """
-
-        logger.info(
-            "Sync engagement timeline",
-            inst_id=payload.institution_identifier,
-            cpr=payload.cpr,
-            emp_id=payload.employment_identifier,
-            dry_run=dry_run,
-        )
-
-        r_employment = await asyncio.to_thread(
-            sd_client.get_employment_changed,
-            GetEmploymentChangedRequest(
-                InstitutionIdentifier=payload.institution_identifier,
-                PersonCivilRegistrationIdentifier=payload.cpr,
-                EmploymentIdentifier=payload.employment_identifier,
-                ActivationDate=date.min,
-                DeactivationDate=date.max,
-                DepartmentIndicator=True,
-                EmploymentStatusIndicator=True,
-                ProfessionIndicator=True,
-                WorkingTimeIndicator=True,
-                UUIDIndicator=True,
-            ),
-        )
-
-        sd_eng_timeline = await get_employment_timeline(r_employment)
-
-        # TODO: introduce OU strategy
-
-        # Get the person
-        r_person = await gql_client.get_person(payload.cpr)
-        person = only(r_person.objects)
-        if person is None:
-            # TODO: Return proper HTTP 5xx error message if this happens
-            raise PersonNotFoundError("Could not find person in MO")
-
-        mo_eng_timeline = await get_engagement_timeline(
+        await sync_engagement(
+            sd_client=sd_client,
             gql_client=gql_client,
-            person=person.uuid,
-            user_key=prefix_user_key_with_inst_id(
-                payload.employment_identifier, payload.institution_identifier
-            ),
-        )
-
-        await sync_eng(
-            gql_client=gql_client,
-            person=person.uuid,
             payload=payload,
-            sd_eng_timeline=sd_eng_timeline,
-            mo_eng_timeline=mo_eng_timeline,
+            settings=settings,
             dry_run=dry_run,
         )
-
-        sd_leave_timeline = await get_sd_leave_timeline(r_employment)
-        mo_leave_timeline = await get_mo_leave_timeline(
-            gql_client=gql_client,
-            person=person.uuid,
-            user_key=prefix_user_key_with_inst_id(
-                payload.employment_identifier, payload.institution_identifier
-            ),
-        )
-
-        await sync_leave(
-            gql_client=gql_client,
-            person=person.uuid,
-            payload=payload,
-            sd_leave_timeline=sd_leave_timeline,
-            mo_leave_timeline=mo_leave_timeline,
-            dry_run=dry_run,
-        )
-
         return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
@@ -469,15 +382,16 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         sd_unit_timeline = await get_department_timeline(
             sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
         )
-        # TODO: introduce unit_id strategy
-        sd_unit_timeline = prefix_unit_id_with_inst_id(sd_unit_timeline, inst_id)
+        desired_unit_timeline = prefix_unit_id_with_inst_id(
+            settings, sd_unit_timeline, inst_id
+        )
 
         mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
-        await sync_ou(
+        await _sync_ou_intervals(
             gql_client=gql_client,
             org_unit=org_unit,
-            sd_unit_timeline=sd_unit_timeline,
+            desired_unit_timeline=desired_unit_timeline,
             mo_unit_timeline=mo_unit_timeline,
             org_unit_type_user_key=settings.org_unit_type,
             dry_run=dry_run,

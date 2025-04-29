@@ -19,9 +19,11 @@ from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
+from tests.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
 async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,  # Maybe switch
@@ -267,6 +269,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
 async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,  # Maybe switch
@@ -391,6 +394,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar({"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT)})
 async def test_ou_timeline_create_new_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,  # Maybe switch

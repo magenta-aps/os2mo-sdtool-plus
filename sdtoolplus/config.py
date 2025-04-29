@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from enum import Enum
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastramqpi.config import Settings as FastRAMQPISettings
@@ -10,12 +12,18 @@ from pydantic import EmailStr
 from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
+from pydantic import root_validator
 
 from .mo_org_unit_importer import OrgUnitUUID
 
 SD_RETRY_WAIT_TIME = 15
 SD_RETRY_ATTEMPTS = 10
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
+
+
+class Mode(Enum):
+    MUNICIPALITY = "municipality"
+    REGION = "region"
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -51,6 +59,18 @@ class SDToolPlusSettings(BaseSettings):
     sd_institution_identifier: str
     sd_password: SecretStr
     sd_use_test_env: bool = False
+
+    # Whether to run in "municipality" mode or "region" mode.
+    # In "municipality" mode, we
+    # 1) Do not prefix engagement user keys with the SD institution identifier
+    # 2) Do not prefix unitIDs with the SD institution identifier
+    # 3) May (or may not) apply the NY-logic, which elevates engagement from
+    #    "Afdelings-niveau" to the parent "NY-niveau" - see the APPLY_NY_LOGIC flag.
+    # In "region" mode, we
+    # 1) Prefix engagement user keys with the SD institution identifier
+    # 2) Prefix unitIDs with the SD institution identifier
+    # 3) Apply the special engagement OU strategy for the regions.
+    mode: Mode = Mode.MUNICIPALITY
 
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
@@ -111,8 +131,19 @@ class SDToolPlusSettings(BaseSettings):
     email_notifications_disabled_units: list[OrgUnitUUID] = []
     ##################################################################
 
+    # UUID of the unit "Ukendt" (only used when running in "region" mode)
+    unknown_unit: OrgUnitUUID | None = None
+
     class Config:
         env_nested_delimiter = "__"
+
+    @root_validator
+    def unknown_unit_must_be_set_when_running_in_region_mode(
+        cls, values: dict[str, Any]
+    ) -> dict[str, Any]:
+        if values["mode"] == Mode.REGION and values["unknown_unit"] is None:
+            raise ValueError("Unknown unit must be set when running in region mode")
+        return values
 
 
 def get_settings(*args, **kwargs) -> SDToolPlusSettings:

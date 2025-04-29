@@ -52,6 +52,8 @@ from sdtoolplus.mo_org_unit_importer import OrgUUID
 from sdtoolplus.sd.tree import build_tree
 from sdtoolplus.tree_diff_executor import TreeDiffExecutor
 
+UNKNOWN_UNIT = OrgUnitUUID("44c15403-2a66-429e-8893-acaae9f30dfb")
+
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
 _TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
 
@@ -1246,6 +1248,69 @@ async def base_tree_builder(
         org_unit_level=org_unit_levels["NY1-niveau"],
         from_date=now,
         parent=dep5.uuid,
+    )
+
+    # Also build the unit "Ukendt" needed in the case where MODE is "region"
+    await graphql_client._testing__create_org_unit(
+        uuid=UNKNOWN_UNIT,
+        name="Ukendt",
+        user_key="ukendt",
+        org_unit_type=org_unit_type,
+        from_date=now,
+    )
+
+    # ... and also build an "administrative organization"
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
+        name="Administrative org",
+        user_key="adm",
+        org_unit_type=org_unit_type,
+        from_date=now,
+    )
+
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("aaaaaaaa-2a66-429e-8893-aaaaaaaaaaaa"),
+        name="A",
+        user_key="a",
+        org_unit_type=org_unit_type,
+        from_date=now,
+        parent=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
+    )
+
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("bbbbbbbb-2a66-429e-8893-bbbbbbbbbbbb"),
+        name="B",
+        user_key="b",
+        org_unit_type=org_unit_type,
+        from_date=now,
+        parent=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
+    )
+
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("cccccccc-2a66-429e-8893-cccccccccccc"),
+        name="C",
+        user_key="c",
+        org_unit_type=org_unit_type,
+        from_date=now,
+        parent=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
+    )
+
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("dddddddd-2a66-429e-8893-dddddddddddd"),
+        name="D",
+        user_key="d",
+        org_unit_type=org_unit_type,
+        from_date=now,
+        parent=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
+    )
+
+    await graphql_client._testing__create_org_unit(
+        uuid=uuid.UUID("eeeeeeee-2a66-429e-8893-eeeeeeeeeeee"),
+        name="E",
+        user_key="e",
+        org_unit_type=org_unit_type,
+        from_date=now,
+        parent=uuid.UUID("649dd6ee-becc-4c0e-ad5e-7a7a6aea37fb"),
     )
 
     return root
