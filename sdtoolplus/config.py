@@ -138,11 +138,11 @@ class SDToolPlusSettings(BaseSettings):
         env_nested_delimiter = "__"
 
     @root_validator
-    def unknown_unit_must_be_set_when_running_in_region_mode(
-        cls, values: dict[str, Any]
-    ) -> dict[str, Any]:
+    def check_region_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
         if values["mode"] == Mode.REGION and values["unknown_unit"] is None:
             raise ValueError("Unknown unit must be set when running in region mode")
+        if values["mode"] == Mode.REGION and values["apply_ny_logic"] is True:
+            raise ValueError("Apply NY logic not allowed to be enabled in region mode")
         return values
 
 
