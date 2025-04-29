@@ -244,6 +244,7 @@ async def _sync_eng_intervals(
                     end=end,
                     desired_eng_timeline=desired_eng_timeline,
                     eng_types=eng_types,
+                    dry_run=dry_run,
                 )
             else:
                 await create_engagement(
@@ -254,6 +255,7 @@ async def _sync_eng_intervals(
                     end=end,
                     desired_eng_timeline=desired_eng_timeline,
                     eng_types=eng_types,
+                    dry_run=dry_run,
                 )
         else:
             await terminate_engagement(
@@ -262,6 +264,7 @@ async def _sync_eng_intervals(
                 user_key=user_key,
                 start=start,
                 end=end,
+                dry_run=dry_run,
             )
 
 
