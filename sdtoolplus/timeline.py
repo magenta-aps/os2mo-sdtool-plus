@@ -196,7 +196,7 @@ async def _sync_eng_intervals(
     # TODO: we need to change the arguments to this function later in order to
     #       to handle other triggering mechanisms
     payload: EngagementSyncPayload,
-    sd_eng_timeline: EngagementTimeline,
+    desired_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
     settings: SDToolPlusSettings,
     dry_run: bool,
@@ -214,18 +214,18 @@ async def _sync_eng_intervals(
     # Get the engagement types
     eng_types = await get_engagement_types(gql_client)
 
-    sd_interval_endpoints = sd_eng_timeline.get_interval_endpoints()
+    desired_interval_endpoints = desired_eng_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_eng_timeline.get_interval_endpoints()
 
-    endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
+    endpoints = sorted(desired_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
-        if sd_eng_timeline.equal_at(start, mo_eng_timeline):
+        if desired_eng_timeline.equal_at(start, mo_eng_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif sd_eng_timeline.has_value(start):
+        elif desired_eng_timeline.has_value(start):
             logger.debug("SD value available")
             mo_eng = await gql_client.get_engagement_timeline(
                 person=person, user_key=user_key, from_date=None, to_date=None
@@ -237,7 +237,7 @@ async def _sync_eng_intervals(
                     user_key=user_key,
                     start=start,
                     end=end,
-                    sd_eng_timeline=sd_eng_timeline,
+                    desired_eng_timeline=desired_eng_timeline,
                     eng_types=eng_types,
                 )
             else:
@@ -247,7 +247,7 @@ async def _sync_eng_intervals(
                     user_key=user_key,
                     start=start,
                     end=end,
-                    sd_eng_timeline=sd_eng_timeline,
+                    desired_eng_timeline=desired_eng_timeline,
                     eng_types=eng_types,
                 )
         else:
@@ -573,7 +573,7 @@ async def sync_engagement(
         ),
     )
 
-    sd_eng_timeline = await engagement_ou_strategy(
+    desired_eng_timeline = await engagement_ou_strategy(
         sd_client=sd_client,
         gql_client=gql_client,
         settings=settings,
@@ -585,7 +585,7 @@ async def sync_engagement(
         gql_client=gql_client,
         person=person.uuid,
         payload=payload,
-        sd_eng_timeline=sd_eng_timeline,
+        desired_eng_timeline=desired_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
         settings=settings,
         dry_run=dry_run,

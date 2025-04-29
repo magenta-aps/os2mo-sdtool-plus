@@ -528,7 +528,7 @@ async def create_engagement(
     user_key: str,
     start: datetime,
     end: datetime,
-    sd_eng_timeline: EngagementTimeline,
+    desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
@@ -536,14 +536,14 @@ async def create_engagement(
         "Creating engagement",
         start=start,
         end=end,
-        sd_eng_timeline=sd_eng_timeline.dict(),
+        desired_eng_timeline=desired_eng_timeline.dict(),
     )
 
     # Get the job_function
     r_job_function = await gql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=[str(sd_eng_timeline.eng_key.entity_at(start).value)],
+            user_keys=[str(desired_eng_timeline.eng_key.entity_at(start).value)],
         )
     )
     current_job_function = one(r_job_function.objects).current
@@ -555,12 +555,14 @@ async def create_engagement(
             user_key=user_key,
             validity=timeline_interval_to_mo_validity(start, end),
             # TODO: introduce extension_1 strategy
-            extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
-            extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
+            extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
+            extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
             person=person,
             # TODO: introduce org_unit strategy
-            org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-            engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
+            org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
+            engagement_type=eng_types[
+                desired_eng_timeline.eng_type.entity_at(start).value  # type: ignore
+            ],
             # TODO: introduce job_function strategy
             job_function=job_function_uuid,
         )
@@ -642,7 +644,7 @@ async def update_engagement(
     user_key: str,
     start: datetime,
     end: datetime,
-    sd_eng_timeline: EngagementTimeline,
+    desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
@@ -650,14 +652,14 @@ async def update_engagement(
         "Update engagement",
         start=start,
         end=end,
-        sd_eng_timeline=sd_eng_timeline.dict(),
+        desired_eng_timeline=desired_eng_timeline.dict(),
     )
 
     # Get the job_function
     r_job_function = await gql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=[str(sd_eng_timeline.eng_key.entity_at(start).value)],
+            user_keys=[str(desired_eng_timeline.eng_key.entity_at(start).value)],
         )
     )
     current_job_function = one(r_job_function.objects).current
@@ -682,8 +684,8 @@ async def update_engagement(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
                 # TODO: introduce extention_1 strategy
-                extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
-                extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
+                extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
+                extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
                 extension_3=validity.extension_3,
                 extension_4=validity.extension_4,
                 extension_5=validity.extension_5,
@@ -693,9 +695,9 @@ async def update_engagement(
                 extension_9=validity.extension_9,
                 extension_10=validity.extension_10,
                 person=person,
-                org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
+                org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
                 engagement_type=eng_types[
-                    sd_eng_timeline.eng_type.entity_at(start).value  # type: ignore
+                    desired_eng_timeline.eng_type.entity_at(start).value  # type: ignore
                 ],
                 job_function=job_function_uuid,
             )
@@ -716,11 +718,11 @@ async def update_engagement(
         user_key=user_key,
         validity=mo_validity,
         # TODO: introduce extention_1 strategy
-        extension_1=sd_eng_timeline.eng_name.entity_at(start).value,
-        extension_2=sd_eng_timeline.eng_unit_id.entity_at(start).value,
+        extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
+        extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
         person=person,
-        org_unit=sd_eng_timeline.eng_unit.entity_at(start).value,
-        engagement_type=eng_types[sd_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
+        org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
+        engagement_type=eng_types[desired_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
         job_function=job_function_uuid,
     )
     logger.debug(
