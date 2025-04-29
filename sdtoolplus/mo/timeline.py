@@ -3,7 +3,6 @@
 from datetime import datetime
 from datetime import timedelta
 from itertools import pairwise
-from typing import cast
 from uuid import UUID
 
 import structlog
@@ -934,7 +933,7 @@ def _get_related_unit_at(
 
 async def related_units(
     gql_client: GraphQLClient,
-    sd_eng_timeline: EngagementTimeline,
+    unit_uuid: OrgUnitUUID,
     unit_interval: EngagementUnit,
     unknown_unit_uuid: OrgUnitUUID,
 ) -> list[EngagementUnit]:
@@ -943,10 +942,6 @@ async def related_units(
     unit can be found). Note that the input interval may be divided into smaller
     intervals.
     """
-    unit_uuid = cast(
-        OrgUnitUUID, sd_eng_timeline.eng_unit.entity_at(unit_interval.start).value
-    )
-
     mo_validity = timeline_interval_to_mo_validity(
         unit_interval.start, unit_interval.end
     )

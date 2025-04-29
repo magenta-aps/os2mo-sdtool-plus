@@ -466,7 +466,9 @@ async def engagement_ou_strategy_region(
             related_unit_intervals.extend(
                 await related_units(
                     gql_client=gql_client,
-                    sd_eng_timeline=sd_eng_timeline,
+                    unit_uuid=sd_eng_timeline.eng_unit.entity_at(
+                        unit_interval.start
+                    ).value,  # type: ignore
                     unit_interval=unit_interval,
                     unknown_unit_uuid=settings.unknown_unit,
                 )
