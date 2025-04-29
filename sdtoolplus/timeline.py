@@ -80,12 +80,16 @@ def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
     )
 
 
+def _sd_inst_id_prefix(key: str, inst_id: str) -> str:
+    return f"{inst_id}-{key}"
+
+
 def _prefix_eng_user_key(
     settings: SDToolPlusSettings, user_key: str, inst_id: str
 ) -> str:
     if settings.mode == Mode.MUNICIPALITY:
         return user_key
-    return f"{inst_id}-{user_key}"
+    return _sd_inst_id_prefix(user_key, inst_id)
 
 
 def prefix_unit_id_with_inst_id(
@@ -96,7 +100,9 @@ def prefix_unit_id_with_inst_id(
 
     unit_id_intervals = tuple(
         UnitId(
-            start=interval.start, end=interval.end, value=f"{inst_id}-{interval.value}"
+            start=interval.start,
+            end=interval.end,
+            value=_sd_inst_id_prefix(interval.value, inst_id),  # type: ignore
         )
         for interval in unit_timeline.unit_id.intervals
     )
