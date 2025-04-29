@@ -557,7 +557,6 @@ async def create_engagement(
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
         extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
         person=person,
-        # TODO: introduce org_unit strategy
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[
             desired_eng_timeline.eng_type.entity_at(start).value  # type: ignore
