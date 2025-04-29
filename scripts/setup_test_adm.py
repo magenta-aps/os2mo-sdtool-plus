@@ -130,34 +130,6 @@ def main(
             ClassFilter(facet_user_keys=["org_unit_type"], user_keys=["enhed"])
         )
         org_type_uuid = one(org_unit_type.objects).uuid
-        facet_query = """mutation CreateOrgHierarchyFacet {
-            facet_create(input: { user_key: "org_hierarchy", validity: { from: "1970-01-01" }, uuid: "2d4059fa-3660-4945-944a-1ecc92ac91b7" }) {
-                uuid
-            }
-            }
-        """
-        await gql_client.execute(facet_query)
-        class_query = """
-        mutation create_adm_org_hierarchy {
-          class_create(
-            input: { uuid: "ac085f9f-d611-4bae-8606-55972a4d1f69", name: "Administrativ Organisation", user_key: "ADM_ORG", facet_uuid: "2d4059fa-3660-4945-944a-1ecc92ac91b7", validity: { from: "1970-01-01" } }
-          ) {
-            uuid
-          }
-        }
-        """
-        await gql_client.execute(class_query)
-        # create top unit manually:
-        adm_root = OrganisationUnitCreateInput(
-            uuid="00923955-db6e-49fc-a191-ec36ff151ec7",
-            name="Region Syddanmark",
-            user_key="-",
-            parent=None,
-            validity=RAValidityInput(from_=datetime.now()),
-            org_unit_type=org_type_uuid,
-            org_unit_hierarchy="ac085f9f-d611-4bae-8606-55972a4d1f69",
-        )
-        await gql_client.create_org_unit(adm_root)
         # Sort by amount of ancestors to create the top units first.
         pay_unit_cache: dict[str, str | None] = dict()
         for org_unit in sorted(
