@@ -529,6 +529,7 @@ async def create_engagement(
     end: datetime,
     desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
+    dry_run: bool = False,
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -549,23 +550,23 @@ async def create_engagement(
     assert current_job_function is not None
     job_function_uuid = current_job_function.uuid
 
-    await gql_client.create_engagement(
-        EngagementCreateInput(
-            user_key=user_key,
-            validity=timeline_interval_to_mo_validity(start, end),
-            # TODO: introduce extension_1 strategy
-            extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
-            extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-            person=person,
-            # TODO: introduce org_unit strategy
-            org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
-            engagement_type=eng_types[
-                desired_eng_timeline.eng_type.entity_at(start).value  # type: ignore
-            ],
-            # TODO: introduce job_function strategy
-            job_function=job_function_uuid,
-        )
+    payload = EngagementCreateInput(
+        user_key=user_key,
+        validity=timeline_interval_to_mo_validity(start, end),
+        # TODO: introduce extension_1 strategy
+        extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
+        extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        person=person,
+        org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
+        engagement_type=eng_types[
+            desired_eng_timeline.eng_type.entity_at(start).value  # type: ignore
+        ],
+        # TODO: introduce job_function strategy
+        job_function=job_function_uuid,
     )
+    logger.debug("Create engagement payload", payload=payload.dict())
+    if not dry_run:
+        await gql_client.create_engagement(payload)
 
 
 async def create_person(
@@ -645,6 +646,7 @@ async def update_engagement(
     end: datetime,
     desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
+    dry_run: bool = False,
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -705,7 +707,8 @@ async def update_engagement(
                 payload=payload.dict(),
                 validity=validity,
             )
-            await gql_client.update_engagement(payload)
+            if not dry_run:
+                await gql_client.update_engagement(payload)
         return
 
     # The engagement does not already exist in this validity period
@@ -727,7 +730,8 @@ async def update_engagement(
     logger.debug(
         "Update engagement in interval", payload=payload.dict(), mo_validity=mo_validity
     )
-    await gql_client.update_engagement(payload)
+    if not dry_run:
+        await gql_client.update_engagement(payload)
 
 
 async def update_leave(
@@ -806,6 +810,7 @@ async def terminate_engagement(
     user_key: str,
     start: datetime,
     end: datetime,
+    dry_run: bool = False,
 ) -> None:
     logger.info(
         "(Re-)terminate engagement",
@@ -834,7 +839,8 @@ async def terminate_engagement(
         )
     logger.debug("Terminate engagement", payload=payload.dict())
 
-    await gql_client.terminate_engagement(payload)
+    if not dry_run:
+        await gql_client.terminate_engagement(payload)
 
 
 async def terminate_leave(

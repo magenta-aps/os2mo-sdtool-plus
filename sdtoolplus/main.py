@@ -349,7 +349,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         await sync_engagement(
             sd_client=sd_client,
             gql_client=gql_client,
-            payload=payload,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
             settings=settings,
             dry_run=dry_run,
         )
@@ -452,6 +454,16 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             gql_client=gql_client,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
+            dry_run=dry_run,
+        )
+
+        await sync_engagement(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
+            settings=settings,
             dry_run=dry_run,
         )
 
