@@ -154,6 +154,7 @@ def main(
         )
         await gql_client.create_org_unit(adm_root)
         # Sort by amount of ancestors to create the top units first.
+        pay_unit_cache: dict[str, str | None] = dict()
         for org_unit in sorted(
             units["data"]["org_units"]["objects"],
             key=lambda u: len(u["current"]["ancestors"]),
@@ -172,17 +173,29 @@ def main(
             unit_uuids = []
             for r in current["related_units"]:
                 user_key = one(r["org_units"])["user_key"]
-                # Todo: cache
-                resp = await gql_client.execute(
-                    find_unit_query, variables={"user_key": user_key}
-                )
-                pay_org = resp.json()["data"]["org_units"]["objects"]
-                try:
-                    pay_org_uuid = first(pay_org)["uuid"]
-                    unit_uuids.append(pay_org_uuid)
-                except ValueError:
-                    click.echo(f"pay-unit not found {user_key=}")
-                    continue
+                if user_key not in pay_unit_cache:
+                    resp = await gql_client.execute(
+                        find_unit_query, variables={"user_key": user_key}
+                    )
+                    pay_org = resp.json()["data"]["org_units"]["objects"]
+                    match len(pay_org):
+                        case 0:
+                            click.echo(f"pay-unit not found {user_key=}")
+                            pay_unit_cache[user_key] = None
+                            continue
+                        case 1:
+                            pay_org_uuid = one(pay_org)["uuid"]
+                            pay_unit_cache[user_key] = pay_org_uuid
+                        case _:
+                            click.echo(f"Multiple units found with {user_key=}")
+                            pay_org_uuid = first(pay_org)["uuid"]
+                            pay_unit_cache[user_key] = pay_org_uuid
+                else:
+                    pay_org_uuid = pay_unit_cache[user_key]
+                    if pay_org_uuid is None:
+                        continue
+
+                unit_uuids.append(pay_org_uuid)
             if unit_uuids:
                 rel = await gql_client.execute(
                     related_units_mutation,
