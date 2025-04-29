@@ -457,6 +457,16 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             dry_run=dry_run,
         )
 
+        await sync_engagement(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
+            settings=settings,
+            dry_run=dry_run,
+        )
+
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
