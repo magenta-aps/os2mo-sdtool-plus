@@ -446,7 +446,7 @@ async def get_engagement_timeline(
         EngagementUnit(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=one(obj.org_unit).uuid,
+            value=one(set(ou.uuid for ou in obj.org_unit)),
         )
         for obj in validities
     )

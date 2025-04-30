@@ -236,7 +236,7 @@ query GetEngagementTimeline(
         person {
           uuid
         }
-        org_unit {
+        org_unit(filter: {from_date: $from_date, to_date: $to_date}) {
           uuid
         }
         engagement_type {
