@@ -31,6 +31,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
+from sdtoolplus.minisync.engagement import move_engagement
 
 from . import depends
 from .addresses import AddressFixer
@@ -46,7 +47,6 @@ from .depends import request_id
 from .exceptions import EngagementNotActiveError
 from .exceptions import EngagementNotFoundError
 from .exceptions import PersonNotFoundError
-from .mo.engagement import move_engagement
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
