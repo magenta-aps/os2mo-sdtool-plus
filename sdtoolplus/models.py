@@ -232,31 +232,22 @@ class UnitTimeline(BaseModel, frozen=True):
 
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test <-- maybe we should do this anytime soon now...
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
+        missing = object()
+        self_fields = [field for _, field in iter(self)]
+        other_fields = [field for _, field in iter(other)]
+        for self_field, other_field in zip(self_fields, other_fields):
+            try:
+                v1: Any = self_field.entity_at(timestamp).value
+            except NoValueError:
+                v1 = missing
+            try:
+                v2 = other_field.entity_at(timestamp).value
+            except NoValueError:
+                v2 = missing
 
-            self_values = (
-                self.active.entity_at(timestamp).value,
-                self.name.entity_at(timestamp).value,
-                self.unit_id.entity_at(timestamp).value,
-                self.unit_level.entity_at(timestamp).value,
-                self.parent.entity_at(timestamp).value,
-            )
-            other_values = (
-                other.active.entity_at(timestamp).value,
-                other.name.entity_at(timestamp).value,
-                other.unit_id.entity_at(timestamp).value,
-                other.unit_level.entity_at(timestamp).value,
-                other.parent.entity_at(timestamp).value,
-            )
-            logger.debug(
-                "Values to compare", self_values=self_values, other_values=other_values
-            )
-
-            return self_values == other_values
-
-        return False
+            if v1 != v2:
+                return False
+        return True
 
 
 class EngagementTimeline(BaseModel, frozen=True):
