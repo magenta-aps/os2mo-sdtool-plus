@@ -27,11 +27,9 @@ from more_itertools import first
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
-from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
-from sdtoolplus.minisync.engagement import move_engagement
 
 from . import depends
 from .addresses import AddressFixer
@@ -44,13 +42,10 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
-from .exceptions import EngagementNotActiveError
-from .exceptions import EngagementNotFoundError
-from .exceptions import PersonNotFoundError
+from .minisync.api import minisync_router
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
-from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
@@ -410,78 +405,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return {"msg": "success"}
 
-    @fastapi_router.post("/minisync/move-employment", status_code=HTTP_200_OK)
-    async def engagement_move(
-        response: Response,
-        gql_client: depends.GraphQLClient,
-        payload: EngagementMovePayload,
-        dry_run: bool = False,
-    ) -> dict:
-        try:
-            await move_engagement(gql_client, payload, dry_run)
-        except PersonNotFoundError:
-            response.status_code = HTTP_404_NOT_FOUND
-            return {"msg": "The person could not be found i MO"}
-        except EngagementNotFoundError:
-            response.status_code = HTTP_404_NOT_FOUND
-            return {"msg": "The engagement could not be found i MO"}
-        except EngagementNotActiveError:
-            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "The engagement is not active in the entire move interval"}
-        return {"msg": "success"}
-
-    @fastapi_router.post(
-        "/minisync/sync-person-and-employment", status_code=HTTP_200_OK
-    )
-    async def sync_person_and_engagement(
-        settings: depends.Settings,
-        sd_client: depends.SDClient,
-        gql_client: depends.GraphQLClient,
-        payload: EngagementSyncPayload,
-        dry_run: bool = False,
-    ) -> dict:
-        """
-        Sync the person with the given CPR from the given institution identifier and the
-        EmploymentIdentifier provided in the payload.
-
-        Args:
-            gql_client: The GraphQL client
-
-            payload:
-                institution_identifier: The SD institution
-                cpr: CPR number of the person
-                employment_identifier: The SD EmploymentIdentifier
-
-            dry_run: If true, nothing will be written to MO.
-
-        Returns:
-            Dictionary with status
-        """
-
-        # TODO: add integration test when endpoint fully implemented.
-
-        await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            dry_run=dry_run,
-        )
-
-        await sync_engagement(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            employment_identifier=payload.employment_identifier,
-            settings=settings,
-            dry_run=dry_run,
-        )
-
-        return {"msg": "success"}
-
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
+    app.include_router(minisync_router)
 
     return fastramqpi
 
