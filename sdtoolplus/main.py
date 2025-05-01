@@ -43,10 +43,10 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .minisync.api import minisync_router
+from .minisync.models import EngagementSyncPayload
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
-from .models import EngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .timeline import _sync_ou_intervals

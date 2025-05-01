@@ -7,16 +7,15 @@ from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
-from sdtoolplus.minisync.engagement import move_engagement
-
 from .. import depends
 from ..exceptions import EngagementNotActiveError
 from ..exceptions import EngagementNotFoundError
 from ..exceptions import PersonNotFoundError
-from ..models import EngagementMovePayload
-from ..models import EngagementSyncPayload
 from ..timeline import sync_engagement
 from ..timeline import sync_person
+from .engagement import move_engagement
+from .models import EngagementMovePayload
+from .models import EngagementSyncPayload
 
 minisync_router = APIRouter(dependencies=[Depends(depends.request_id)])
 

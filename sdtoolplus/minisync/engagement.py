@@ -21,9 +21,10 @@ from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timeline import get_patch_validity
 from sdtoolplus.mo.timeline import mo_end_to_datetime
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
-from sdtoolplus.models import EngagementMovePayload
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+
+from .models import EngagementMovePayload
 
 logger = structlog.stdlib.get_logger()
 
