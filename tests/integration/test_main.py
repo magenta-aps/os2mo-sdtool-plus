@@ -19,6 +19,7 @@ from sdtoolplus.main import background_run
 from sdtoolplus.main import create_app
 
 
+@pytest.mark.integration_test
 class TestFastAPIApp:
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
@@ -31,9 +32,11 @@ class TestFastAPIApp:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Arrange
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
             last_run_val_before: float = self._get_last_run_metric(client)
 
             # Act
@@ -92,9 +95,10 @@ class TestFastAPIApp:
         mock_engine = MagicMock()
         mock_get_engine.return_value = mock_engine
 
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response: Response = client.post("/trigger-all-inst-ids")
 
@@ -139,9 +143,10 @@ class TestFastAPIApp:
         mock_engine = MagicMock()
         mock_get_engine.return_value = mock_engine
 
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response: Response = client.post(
                 "/trigger-all-inst-ids",
@@ -175,9 +180,10 @@ class TestFastAPIApp:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response: Response = client.post("/trigger")
 
@@ -199,9 +205,10 @@ class TestFastAPIApp:
     ) -> None:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             client.post("/trigger?org_unit=70000000-0000-0000-0000-000000000000")
 
@@ -221,8 +228,10 @@ class TestFastAPIApp:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
-        with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app):
-            client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
+        with (
+            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response: Response = client.post("/trigger?dry_run=true")
 
@@ -254,9 +263,10 @@ class TestFastAPIApp:
         sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
-        client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
-        with patch("sdtoolplus.main.get_status", return_value=rundb_status):
+        with (
+            patch("sdtoolplus.main.get_status", return_value=rundb_status),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response = client.get("/rundb/status")
 
@@ -266,9 +276,10 @@ class TestFastAPIApp:
 
     def test_rundb_get_status_on_error(self, sdtoolplus_settings: SDToolPlusSettings):
         # Arrange
-        client: TestClient = TestClient(create_app(settings=sdtoolplus_settings))
-
-        with patch("sdtoolplus.main.get_status", side_effect=SQLAlchemyError()):
+        with (
+            patch("sdtoolplus.main.get_status", side_effect=SQLAlchemyError()),
+            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+        ):
             # Act
             response = client.get("/rundb/status")
 

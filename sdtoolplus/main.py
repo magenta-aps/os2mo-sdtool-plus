@@ -27,7 +27,6 @@ from more_itertools import first
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
-from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
@@ -43,15 +42,11 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
-from .exceptions import EngagementNotActiveError
-from .exceptions import EngagementNotFoundError
-from .exceptions import PersonNotFoundError
-from .mo.engagement import move_engagement
+from .minisync.api import minisync_router
+from .minisync.models import EngagementSyncPayload
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .mo_org_unit_importer import OrgUnitUUID
-from .models import EngagementMovePayload
-from .models import EngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .timeline import _sync_ou_intervals
@@ -140,13 +135,15 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     )
     fastramqpi.add_context(settings=settings)
 
-    # TODO: make into dependencies
     engine = get_engine(settings)
+    fastramqpi.add_context(engine=engine)
+
     sd_client = SDClient(
         sd_username=settings.sd_username,
         sd_password=settings.sd_password.get_secret_value(),
         use_test_env=settings.sd_use_test_env,
     )
+    fastramqpi.add_context(sd_client=sd_client)
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
@@ -171,7 +168,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         return tree_as_string(sd_tree)
 
     @fastapi_router.get("/rundb/status")
-    async def rundb_get_status() -> int:
+    async def rundb_get_status(engine: depends.Engine) -> int:
         """
         Get the RunDB status and return a job-runner.sh (curl) friendly integer
         status.
@@ -187,12 +184,13 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             return 3
 
     @fastapi_router.post("/rundb/delete-last-run")
-    async def rundb_delete_last_run():
+    async def rundb_delete_last_run(engine: depends.Engine):
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
     @fastapi_router.post("/job-functions/sync")
     async def sync_job_functions(
+        sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
     ) -> None:
@@ -200,6 +198,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
+        engine: depends.Engine,
         response: Response,
         org_unit: UUID | None = None,
         inst_id: str | None = None,
@@ -238,6 +237,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
     async def trigger_all_inst_ids(
+        engine: depends.Engine,
         response: Response,
         background_tasks: BackgroundTasks,
         org_unit: UUID | None = None,
@@ -266,6 +266,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
+        engine: depends.Engine,
         response: Response,
         gql_client: depends.GraphQLClient,
         org_unit: UUID | None = None,
@@ -311,6 +312,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
     async def timeline_sync_person(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: PersonSyncPayload,
         dry_run: bool = False,
@@ -342,6 +344,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: EngagementSyncPayload,
         dry_run: bool = False,
@@ -359,6 +362,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         org_unit: OrgUnitUUID,
         inst_id: str,
@@ -401,76 +405,9 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         return {"msg": "success"}
 
-    @fastapi_router.post("/minisync/move-employment", status_code=HTTP_200_OK)
-    async def engagement_move(
-        response: Response,
-        gql_client: depends.GraphQLClient,
-        payload: EngagementMovePayload,
-        dry_run: bool = False,
-    ) -> dict:
-        try:
-            await move_engagement(gql_client, payload, dry_run)
-        except PersonNotFoundError:
-            response.status_code = HTTP_404_NOT_FOUND
-            return {"msg": "The person could not be found i MO"}
-        except EngagementNotFoundError:
-            response.status_code = HTTP_404_NOT_FOUND
-            return {"msg": "The engagement could not be found i MO"}
-        except EngagementNotActiveError:
-            response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-            return {"msg": "The engagement is not active in the entire move interval"}
-        return {"msg": "success"}
-
-    @fastapi_router.post(
-        "/minisync/sync-person-and-employment", status_code=HTTP_200_OK
-    )
-    async def sync_person_and_engagement(
-        gql_client: depends.GraphQLClient,
-        payload: EngagementSyncPayload,
-        dry_run: bool = False,
-    ) -> dict:
-        """
-        Sync the person with the given CPR from the given institution identifier and the
-        EmploymentIdentifier provided in the payload.
-
-        Args:
-            gql_client: The GraphQL client
-
-            payload:
-                institution_identifier: The SD institution
-                cpr: CPR number of the person
-                employment_identifier: The SD EmploymentIdentifier
-
-            dry_run: If true, nothing will be written to MO.
-
-        Returns:
-            Dictionary with status
-        """
-
-        # TODO: add integration test when endpoint fully implemented.
-
-        await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            dry_run=dry_run,
-        )
-
-        await sync_engagement(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            employment_identifier=payload.employment_identifier,
-            settings=settings,
-            dry_run=dry_run,
-        )
-
-        return {"msg": "success"}
-
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
+    app.include_router(minisync_router)
 
     return fastramqpi
 
