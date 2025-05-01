@@ -132,7 +132,7 @@ class EngagementUnit(Interval[OrgUnitUUID]):
     pass
 
 
-class EngagementUnitId(Interval[str]):
+class EngagementUnitId(Interval[Optional[str]]):
     pass
 
 

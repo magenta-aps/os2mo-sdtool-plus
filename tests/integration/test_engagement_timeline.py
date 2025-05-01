@@ -26,6 +26,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitTypeUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from tests.conftest import UNKNOWN_UNIT
@@ -1216,7 +1217,7 @@ async def test_eng_timeline_related_units(
 
 
 @pytest.mark.integration_test
-async def test_get_engagement_timeline(
+async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -1330,6 +1331,112 @@ async def test_get_engagement_timeline(
                 start=t3,
                 end=POSITIVE_INFINITY,
                 value=dep4_uuid,
+            ),
+        )
+    )
+
+
+@pytest.mark.integration_test
+async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    org_unit_type: OrgUnitTypeUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+):
+    """
+    Test that we handle the case where unitID (extension_2) is not set in a given
+    interval (from t3 to infinity).
+
+    Time  ------------------t2---------t3------------------------------------------->
+
+    MO (name)               |-------------------------name4--------------------------
+    MO (key)                |------------------------ 1234 --------------------------
+    MO (unit)               |-------------------------dep4---------------------------
+    MO (unit ID)            |---dep4---|
+    MO (ext_7)              |--------------------------v1----------------------------
+    MO (active)             |--------------------------------------------------------
+    MO (eng_type)           |-------------------------full---------------------------
+
+    "Arrange" intervals     |-----1----|-----------------2---------------------------
+    "Assert" intervals      |-----1----|-----------------2---------------------------
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+
+    # Units
+    dep4_uuid = UUID("40000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange intervals 1)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t2, t3),
+                extension_1="name4",
+                extension_2="dep4",
+                extension_7="v1",
+                person=person_uuid,
+                org_unit=dep4_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Update engagement (arrange interval 2)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t3, POSITIVE_INFINITY),
+            extension_1="name4",
+            extension_2=None,
+            extension_7="v1",
+            person=person_uuid,
+            org_unit=dep4_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # Act
+    engagement_timeline = await get_engagement_timeline(
+        gql_client=graphql_client, person=person_uuid, user_key="12345"
+    )
+
+    # Assert
+    assert engagement_timeline.eng_unit_id == Timeline[EngagementUnitId](
+        intervals=(
+            EngagementUnitId(
+                start=t2,
+                end=t3,
+                value="dep4",
+            ),
+            EngagementUnitId(
+                start=t3,
+                end=POSITIVE_INFINITY,
+                value=None,
             ),
         )
     )
