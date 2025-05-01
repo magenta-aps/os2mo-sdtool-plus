@@ -140,13 +140,15 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     )
     fastramqpi.add_context(settings=settings)
 
-    # TODO: make into dependencies
     engine = get_engine(settings)
+    fastramqpi.add_context(engine=engine)
+
     sd_client = SDClient(
         sd_username=settings.sd_username,
         sd_password=settings.sd_password.get_secret_value(),
         use_test_env=settings.sd_use_test_env,
     )
+    fastramqpi.add_context(sd_client=sd_client)
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
@@ -171,7 +173,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         return tree_as_string(sd_tree)
 
     @fastapi_router.get("/rundb/status")
-    async def rundb_get_status() -> int:
+    async def rundb_get_status(engine: depends.Engine) -> int:
         """
         Get the RunDB status and return a job-runner.sh (curl) friendly integer
         status.
@@ -187,12 +189,13 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
             return 3
 
     @fastapi_router.post("/rundb/delete-last-run")
-    async def rundb_delete_last_run():
+    async def rundb_delete_last_run(engine: depends.Engine):
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
     @fastapi_router.post("/job-functions/sync")
     async def sync_job_functions(
+        sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
     ) -> None:
@@ -200,6 +203,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
+        engine: depends.Engine,
         response: Response,
         org_unit: UUID | None = None,
         inst_id: str | None = None,
@@ -238,6 +242,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
     async def trigger_all_inst_ids(
+        engine: depends.Engine,
         response: Response,
         background_tasks: BackgroundTasks,
         org_unit: UUID | None = None,
@@ -266,6 +271,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
+        engine: depends.Engine,
         response: Response,
         gql_client: depends.GraphQLClient,
         org_unit: UUID | None = None,
@@ -311,6 +317,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
     async def timeline_sync_person(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: PersonSyncPayload,
         dry_run: bool = False,
@@ -342,6 +349,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: EngagementSyncPayload,
         dry_run: bool = False,
@@ -359,6 +367,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         org_unit: OrgUnitUUID,
         inst_id: str,
@@ -425,6 +434,8 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         "/minisync/sync-person-and-employment", status_code=HTTP_200_OK
     )
     async def sync_person_and_engagement(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: EngagementSyncPayload,
         dry_run: bool = False,
