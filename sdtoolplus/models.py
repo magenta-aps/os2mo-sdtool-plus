@@ -211,25 +211,7 @@ class Timeline(GenericModel, Generic[T], frozen=True):
         return entity
 
 
-class UnitTimeline(BaseModel, frozen=True):
-    active: Timeline[Active] = Timeline[Active]()
-    name: Timeline[UnitName] = Timeline[UnitName]()
-    unit_id: Timeline[UnitId] = Timeline[UnitId]()
-    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
-    parent: Timeline[UnitParent] = Timeline[UnitParent]()
-
-    def has_value(self, timestamp: datetime) -> bool:
-        # TODO: unit test
-        try:
-            self.active.entity_at(timestamp)
-            self.name.entity_at(timestamp)
-            self.unit_id.entity_at(timestamp)
-            self.unit_level.entity_at(timestamp)
-            self.parent.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
+class BaseTimeline(BaseModel, frozen=True):
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test <-- maybe we should do this anytime soon now...
         missing = object()
@@ -250,7 +232,26 @@ class UnitTimeline(BaseModel, frozen=True):
         return True
 
 
-class EngagementTimeline(BaseModel, frozen=True):
+class UnitTimeline(BaseTimeline):
+    active: Timeline[Active] = Timeline[Active]()
+    name: Timeline[UnitName] = Timeline[UnitName]()
+    unit_id: Timeline[UnitId] = Timeline[UnitId]()
+    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
+    parent: Timeline[UnitParent] = Timeline[UnitParent]()
+
+    def has_value(self, timestamp: datetime) -> bool:
+        # TODO: unit test
+        try:
+            self.active.entity_at(timestamp)
+            self.name.entity_at(timestamp)
+            self.unit_id.entity_at(timestamp)
+            self.unit_level.entity_at(timestamp)
+            self.parent.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+class EngagementTimeline(BaseTimeline):
     eng_active: Timeline[Active] = Timeline[Active]()
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
@@ -310,8 +311,7 @@ class EngagementTimeline(BaseModel, frozen=True):
             )
         return False
 
-
-class LeaveTimeline(BaseModel, frozen=True):
+class LeaveTimeline(BaseTimeline):
     leave_active: Timeline[Active] = Timeline[Active]()
 
     def get_interval_endpoints(self) -> set[datetime]:
