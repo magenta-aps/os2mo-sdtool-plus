@@ -277,6 +277,8 @@ class EngagementTimeline(BaseModel, frozen=True):
                         cast(tuple[Interval, ...], self.eng_key.intervals),
                         cast(tuple[Interval, ...], self.eng_name.intervals),
                         cast(tuple[Interval, ...], self.eng_unit.intervals),
+                        cast(tuple[Interval, ...], self.eng_unit_id.intervals),
+                        cast(tuple[Interval, ...], self.eng_type.intervals),
                     )
                 )
             )
