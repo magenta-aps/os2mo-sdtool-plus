@@ -3,14 +3,11 @@
 import asyncio
 from datetime import date
 from datetime import datetime
-from itertools import chain
 from itertools import pairwise
-from typing import cast
 from uuid import UUID
 
 import structlog
 from fastapi import HTTPException
-from more_itertools import collapse
 from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
@@ -44,7 +41,6 @@ from sdtoolplus.mo.timeline import update_person
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
-from sdtoolplus.models import Interval
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
@@ -60,24 +56,6 @@ from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 
 logger = structlog.stdlib.get_logger()
-
-
-# TODO: move function to UnitTimeline class
-def _get_ou_interval_endpoints(ou_timeline: UnitTimeline) -> set[datetime]:
-    return set(
-        collapse(
-            set(
-                (i.start, i.end)
-                for i in chain(
-                    cast(tuple[Interval, ...], ou_timeline.active.intervals),
-                    cast(tuple[Interval, ...], ou_timeline.name.intervals),
-                    cast(tuple[Interval, ...], ou_timeline.unit_id.intervals),
-                    cast(tuple[Interval, ...], ou_timeline.unit_level.intervals),
-                    cast(tuple[Interval, ...], ou_timeline.parent.intervals),
-                )
-            )
-        )
-    )
 
 
 def _sd_inst_id_prefix(key: str, inst_id: str) -> str:
@@ -364,8 +342,8 @@ async def _sync_ou_intervals(
 ) -> None:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
-    sd_interval_endpoints = _get_ou_interval_endpoints(desired_unit_timeline)
-    mo_interval_endpoints = _get_ou_interval_endpoints(mo_unit_timeline)
+    sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
+    mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
 
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.debug("List of endpoints", endpoints=endpoints)

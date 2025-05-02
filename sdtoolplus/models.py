@@ -241,6 +241,12 @@ class BaseTimeline(BaseModel, frozen=True):
                 return False
         return True
 
+    def get_interval_endpoints(self) -> set[datetime]:
+        intervals = [
+            cast(tuple[Interval, ...], field.intervals) for _, field in iter(self)
+        ]
+        return set(collapse((i.start, i.end) for i in chain(*intervals)))
+
 
 class UnitTimeline(BaseTimeline):
     active: Timeline[Active] = Timeline[Active]()
@@ -258,35 +264,6 @@ class EngagementTimeline(BaseTimeline):
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
-    def get_interval_endpoints(self) -> set[datetime]:
-        return set(
-            collapse(
-                set(
-                    (i.start, i.end)
-                    for i in chain(
-                        cast(tuple[Interval, ...], self.eng_active.intervals),
-                        cast(tuple[Interval, ...], self.eng_key.intervals),
-                        cast(tuple[Interval, ...], self.eng_name.intervals),
-                        cast(tuple[Interval, ...], self.eng_unit.intervals),
-                        cast(tuple[Interval, ...], self.eng_unit_id.intervals),
-                        cast(tuple[Interval, ...], self.eng_type.intervals),
-                    )
-                )
-            )
-        )
-
 
 class LeaveTimeline(BaseTimeline):
     leave_active: Timeline[Active] = Timeline[Active]()
-
-    def get_interval_endpoints(self) -> set[datetime]:
-        return set(
-            collapse(
-                set(
-                    (i.start, i.end)
-                    for i in chain(
-                        cast(tuple[Interval, ...], self.leave_active.intervals)
-                    )
-                )
-            )
-        )

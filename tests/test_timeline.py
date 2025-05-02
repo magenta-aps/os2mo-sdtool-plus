@@ -12,7 +12,6 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
-from sdtoolplus.timeline import _get_ou_interval_endpoints
 
 
 def test__get_ou_interval_endpoints():
@@ -61,7 +60,7 @@ def test__get_ou_interval_endpoints():
     )
 
     # Act
-    endpoints = _get_ou_interval_endpoints(ou_timeline)
+    endpoints = ou_timeline.get_interval_endpoints()
 
     # Assert
     assert endpoints == {t1, t2, t3, t4, t5, t6, t7}
