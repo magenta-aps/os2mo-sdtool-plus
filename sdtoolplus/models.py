@@ -212,6 +212,16 @@ class Timeline(GenericModel, Generic[T], frozen=True):
 
 
 class BaseTimeline(BaseModel, frozen=True):
+    def has_value(self, timestamp: datetime) -> bool:
+        # TODO: unit test
+        fields = [field for _, field in iter(self)]
+        try:
+            for field in fields:
+                field.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test <-- maybe we should do this anytime soon now...
         missing = object()
@@ -239,17 +249,6 @@ class UnitTimeline(BaseTimeline):
     unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
     parent: Timeline[UnitParent] = Timeline[UnitParent]()
 
-    def has_value(self, timestamp: datetime) -> bool:
-        # TODO: unit test
-        try:
-            self.active.entity_at(timestamp)
-            self.name.entity_at(timestamp)
-            self.unit_id.entity_at(timestamp)
-            self.unit_level.entity_at(timestamp)
-            self.parent.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
 
 class EngagementTimeline(BaseTimeline):
     eng_active: Timeline[Active] = Timeline[Active]()
