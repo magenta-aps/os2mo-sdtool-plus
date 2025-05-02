@@ -12,7 +12,10 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
+from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
+from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -256,3 +259,43 @@ def test_leave_timeline_get_interval_endpoints():
 
     # Assert
     assert endpoints == {YESTERDAY_START, TODAY_START, TOMORROW_START}
+
+
+def test_engagement_timeline_get_interval_endpoints_engagement_type():
+    # Arrange
+    engagement_timeline = EngagementTimeline(
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(
+                EngagementUnitId(
+                    start=YESTERDAY_START,
+                    end=DAY_AFTER_TOMORROW_START,
+                    value="ABCD",
+                ),
+            )
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(
+                    start=YESTERDAY_START,
+                    end=TODAY_START,
+                    value=EngType.MONTHLY_FULL_TIME,
+                ),
+                EngagementType(
+                    start=TODAY_START,
+                    end=TOMORROW_START,
+                    value=EngType.MONTHLY_PART_TIME,
+                ),
+            )
+        ),
+    )
+
+    # Act
+    endpoints = engagement_timeline.get_interval_endpoints()
+
+    # Assert
+    assert endpoints == {
+        YESTERDAY_START,
+        TODAY_START,
+        TOMORROW_START,
+        DAY_AFTER_TOMORROW_START,
+    }
