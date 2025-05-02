@@ -275,40 +275,6 @@ class EngagementTimeline(BaseTimeline):
             )
         )
 
-    def has_value(self, timestamp: datetime) -> bool:
-        # TODO: unit test
-        try:
-            self.eng_active.entity_at(timestamp)
-            self.eng_key.entity_at(timestamp)
-            self.eng_name.entity_at(timestamp)
-            self.eng_unit.entity_at(timestamp)
-            self.eng_unit_id.entity_at(timestamp)
-            self.eng_type.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
-    def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        # TODO: unit test <-- maybe we should do this anytime soon now...
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
-            return (
-                self.eng_active.entity_at(timestamp).value,
-                self.eng_key.entity_at(timestamp).value,
-                self.eng_name.entity_at(timestamp).value,
-                self.eng_unit.entity_at(timestamp).value,
-                self.eng_unit_id.entity_at(timestamp).value,
-                self.eng_type.entity_at(timestamp).value,
-            ) == (
-                other.eng_active.entity_at(timestamp).value,
-                other.eng_key.entity_at(timestamp).value,
-                other.eng_name.entity_at(timestamp).value,
-                other.eng_unit.entity_at(timestamp).value,
-                other.eng_unit_id.entity_at(timestamp).value,
-                other.eng_type.entity_at(timestamp).value,
-            )
-        return False
 
 class LeaveTimeline(BaseTimeline):
     leave_active: Timeline[Active] = Timeline[Active]()
@@ -324,20 +290,3 @@ class LeaveTimeline(BaseTimeline):
                 )
             )
         )
-
-    def has_value(self, timestamp: datetime) -> bool:
-        try:
-            self.leave_active.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
-    def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
-            return (
-                self.leave_active.entity_at(timestamp).value
-                == other.leave_active.entity_at(timestamp).value
-            )
-        return False
