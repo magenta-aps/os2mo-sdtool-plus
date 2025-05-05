@@ -211,55 +211,52 @@ class Timeline(GenericModel, Generic[T], frozen=True):
         return entity
 
 
-class UnitTimeline(BaseModel, frozen=True):
-    active: Timeline[Active] = Timeline[Active]()
-    name: Timeline[UnitName] = Timeline[UnitName]()
-    unit_id: Timeline[UnitId] = Timeline[UnitId]()
-    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
-    parent: Timeline[UnitParent] = Timeline[UnitParent]()
-
+class BaseTimeline(BaseModel, frozen=True):
     def has_value(self, timestamp: datetime) -> bool:
         # TODO: unit test
+        fields = [field for _, field in iter(self)]
         try:
-            self.active.entity_at(timestamp)
-            self.name.entity_at(timestamp)
-            self.unit_id.entity_at(timestamp)
-            self.unit_level.entity_at(timestamp)
-            self.parent.entity_at(timestamp)
+            for field in fields:
+                field.entity_at(timestamp)
             return True
         except NoValueError:
             return False
 
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test <-- maybe we should do this anytime soon now...
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
+        missing = object()
+        self_fields = [field for _, field in iter(self)]
+        other_fields = [field for _, field in iter(other)]
+        for self_field, other_field in zip(self_fields, other_fields):
+            try:
+                v1: Any = self_field.entity_at(timestamp).value
+            except NoValueError:
+                v1 = missing
+            try:
+                v2 = other_field.entity_at(timestamp).value
+            except NoValueError:
+                v2 = missing
 
-            self_values = (
-                self.active.entity_at(timestamp).value,
-                self.name.entity_at(timestamp).value,
-                self.unit_id.entity_at(timestamp).value,
-                self.unit_level.entity_at(timestamp).value,
-                self.parent.entity_at(timestamp).value,
-            )
-            other_values = (
-                other.active.entity_at(timestamp).value,
-                other.name.entity_at(timestamp).value,
-                other.unit_id.entity_at(timestamp).value,
-                other.unit_level.entity_at(timestamp).value,
-                other.parent.entity_at(timestamp).value,
-            )
-            logger.debug(
-                "Values to compare", self_values=self_values, other_values=other_values
-            )
+            if v1 != v2:
+                return False
+        return True
 
-            return self_values == other_values
-
-        return False
+    def get_interval_endpoints(self) -> set[datetime]:
+        intervals = [
+            cast(tuple[Interval, ...], field.intervals) for _, field in iter(self)
+        ]
+        return set(collapse((i.start, i.end) for i in chain(*intervals)))
 
 
-class EngagementTimeline(BaseModel, frozen=True):
+class UnitTimeline(BaseTimeline):
+    active: Timeline[Active] = Timeline[Active]()
+    name: Timeline[UnitName] = Timeline[UnitName]()
+    unit_id: Timeline[UnitId] = Timeline[UnitId]()
+    unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
+    parent: Timeline[UnitParent] = Timeline[UnitParent]()
+
+
+class EngagementTimeline(BaseTimeline):
     eng_active: Timeline[Active] = Timeline[Active]()
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
@@ -267,87 +264,6 @@ class EngagementTimeline(BaseModel, frozen=True):
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
-    def get_interval_endpoints(self) -> set[datetime]:
-        return set(
-            collapse(
-                set(
-                    (i.start, i.end)
-                    for i in chain(
-                        cast(tuple[Interval, ...], self.eng_active.intervals),
-                        cast(tuple[Interval, ...], self.eng_key.intervals),
-                        cast(tuple[Interval, ...], self.eng_name.intervals),
-                        cast(tuple[Interval, ...], self.eng_unit.intervals),
-                        cast(tuple[Interval, ...], self.eng_unit_id.intervals),
-                        cast(tuple[Interval, ...], self.eng_type.intervals),
-                    )
-                )
-            )
-        )
 
-    def has_value(self, timestamp: datetime) -> bool:
-        # TODO: unit test
-        try:
-            self.eng_active.entity_at(timestamp)
-            self.eng_key.entity_at(timestamp)
-            self.eng_name.entity_at(timestamp)
-            self.eng_unit.entity_at(timestamp)
-            self.eng_unit_id.entity_at(timestamp)
-            self.eng_type.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
-    def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        # TODO: unit test <-- maybe we should do this anytime soon now...
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
-            return (
-                self.eng_active.entity_at(timestamp).value,
-                self.eng_key.entity_at(timestamp).value,
-                self.eng_name.entity_at(timestamp).value,
-                self.eng_unit.entity_at(timestamp).value,
-                self.eng_unit_id.entity_at(timestamp).value,
-                self.eng_type.entity_at(timestamp).value,
-            ) == (
-                other.eng_active.entity_at(timestamp).value,
-                other.eng_key.entity_at(timestamp).value,
-                other.eng_name.entity_at(timestamp).value,
-                other.eng_unit.entity_at(timestamp).value,
-                other.eng_unit_id.entity_at(timestamp).value,
-                other.eng_type.entity_at(timestamp).value,
-            )
-        return False
-
-
-class LeaveTimeline(BaseModel, frozen=True):
+class LeaveTimeline(BaseTimeline):
     leave_active: Timeline[Active] = Timeline[Active]()
-
-    def get_interval_endpoints(self) -> set[datetime]:
-        return set(
-            collapse(
-                set(
-                    (i.start, i.end)
-                    for i in chain(
-                        cast(tuple[Interval, ...], self.leave_active.intervals)
-                    )
-                )
-            )
-        )
-
-    def has_value(self, timestamp: datetime) -> bool:
-        try:
-            self.leave_active.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
-
-    def equal_at(self, timestamp: datetime, other: Self) -> bool:
-        if self.has_value(timestamp) == other.has_value(timestamp):
-            if self.has_value(timestamp) is False:
-                return True
-            return (
-                self.leave_active.entity_at(timestamp).value
-                == other.leave_active.entity_at(timestamp).value
-            )
-        return False
