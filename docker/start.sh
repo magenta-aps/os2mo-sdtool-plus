@@ -13,8 +13,8 @@ fi
 # Run app
 if [ "$ENVIRONMENT" = "development" ]; then
     echo "Running in development mode (hot-reload)"
-    uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0 --reload
+    exec uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0 --reload
 else
     echo "Running in production mode"
-    uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0
+    exec uvicorn --factory sdtoolplus.main:create_app --host 0.0.0.0
 fi
