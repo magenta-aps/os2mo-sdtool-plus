@@ -119,34 +119,19 @@ def get_patch_validity(
     )
 
 
-async def _get_ou_type(
+async def _get_facet_class(
     gql_client: GraphQLClient,
-    org_unit_type_user_key: str,
+    facet_user_key: str,
+    class_user_key: str,
 ) -> OrgUnitTypeUUID:
     ou_type_classes = await gql_client.get_class(
         ClassFilter(
-            facet=FacetFilter(user_keys=["org_unit_type"]),
-            user_keys=[org_unit_type_user_key],
+            facet=FacetFilter(user_keys=[facet_user_key]),
+            user_keys=[class_user_key],
         )
     )
 
     current = one(ou_type_classes.objects).current
-    assert current is not None
-    return current.uuid
-
-
-async def _get_ou_level(
-    gql_client: GraphQLClient,
-    org_unit_level_user_key: str,
-) -> OrgUnitLevelUUID:
-    ou_level_classes = await gql_client.get_class(
-        ClassFilter(
-            facet=FacetFilter(user_keys=["org_unit_level"]),
-            user_keys=[org_unit_level_user_key],
-        )
-    )
-
-    current = one(ou_level_classes.objects).current
     assert current is not None
     return current.uuid
 
@@ -314,11 +299,19 @@ async def create_ou(
     )
 
     # Get the OU type UUID
-    ou_type_uuid = await _get_ou_type(gql_client, org_unit_type_user_key)
+    ou_type_uuid = await _get_facet_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_type",
+        class_user_key=org_unit_type_user_key,
+    )
 
     # Get the OU level UUID
     unit_level = desired_unit_timeline.unit_level.entity_at(start)
-    ou_level_uuid = await _get_ou_level(gql_client, unit_level.value)  # type: ignore
+    ou_level_uuid = await _get_facet_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_level",
+        class_user_key=unit_level.value,  # type: ignore
+    )
 
     payload = OrganisationUnitCreateInput(
         uuid=org_unit,
@@ -359,11 +352,19 @@ async def update_ou(
     )
 
     # Get the OU type UUID
-    ou_type_uuid = await _get_ou_type(gql_client, org_unit_type_user_key)
+    ou_type_uuid = await _get_facet_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_type",
+        class_user_key=org_unit_type_user_key,
+    )
 
     # Get the OU level UUID
     unit_level = desired_unit_timeline.unit_level.entity_at(start)
-    ou_level_uuid = await _get_ou_level(gql_client, unit_level.value)  # type: ignore
+    ou_level_uuid = await _get_facet_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_level",
+        class_user_key=unit_level.value,  # type: ignore
+    )
 
     if ou.objects:
         # The OU already exists in this validity period
