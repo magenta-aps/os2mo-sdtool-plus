@@ -7,7 +7,6 @@ from datetime import datetime
 import click
 from fastramqpi.raclients.auth import AuthenticatedAsyncHTTPXClient
 from fastramqpi.raclients.auth import keycloak_token_endpoint
-from more_itertools import first
 from more_itertools import one
 from pydantic import AnyHttpUrl
 
@@ -68,10 +67,16 @@ related_units_mutation = """mutation UpdateRelatedUnits(
   }
 }
 """
-find_unit_query = """query FindUnitUUID($user_key: String!) {
+find_unit_query = """
+query FindUnitUUID($user_key: String!) {
   org_units(filter: { user_keys: [$user_key] }) {
     objects {
       uuid
+      current {
+        org_unit_level {
+          name
+        }
+      }
     }
   }
 }
@@ -187,8 +192,14 @@ def main(
                             pay_org_uuid = one(pay_org)["uuid"]
                             pay_unit_cache[user_key] = pay_org_uuid
                         case _:
-                            click.echo(f"Multiple units found with {user_key=}")
-                            pay_org_uuid = first(pay_org)["uuid"]
+                            pay_org_uuid = one(
+                                [
+                                    p
+                                    for p in pay_org
+                                    if p["current"]["org_unit_level"]["name"]
+                                    == "Afdelings-niveau"
+                                ]
+                            )["uuid"]
                             pay_unit_cache[user_key] = pay_org_uuid
                 else:
                     pay_org_uuid = pay_unit_cache[user_key]
