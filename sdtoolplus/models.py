@@ -52,6 +52,17 @@ class PersonSyncPayload(BaseModel):
     cpr: str
 
 
+class EngagementSyncPayload(BaseModel):
+    institution_identifier: str
+    cpr: str
+    employment_identifier: str
+
+
+class OrgUnitSyncPayload(BaseModel):
+    institution_identifier: str
+    org_unit: OrgUnitUUID
+
+
 class Person(BaseModel):
     cpr: str
     given_name: str

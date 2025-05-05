@@ -43,10 +43,10 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .minisync.api import minisync_router
-from .minisync.models import EngagementSyncPayload
 from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
-from .mo_org_unit_importer import OrgUnitUUID
+from .models import EngagementSyncPayload
+from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.timeline import get_department_timeline
 from .timeline import _sync_ou_intervals
@@ -317,21 +317,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         payload: PersonSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        """
-        Sync the person with the given CPR from the given institution identifier
-
-        Args:
-            gql_client: The GraphQL client
-
-            payload:
-                inst_id: The SD institution
-                cpr_number: CPR number of the person
-
-            dry_run: If true, nothing will be written to MO.
-
-        Returns:
-            Dictionary with status
-        """
+        """Sync the person with the given CPR from the given institution identifier."""
         await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
@@ -364,39 +350,31 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     async def timeline_sync_ou(
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
-        org_unit: OrgUnitUUID,
-        inst_id: str,
+        payload: OrgUnitSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        """
-        Sync the entire org unit timeline for the given unit.
-
-        Args:
-            gql_client: The GraphQL client
-            org_unit: The UUID of the org unit to sync.
-            inst_id: The SD institution
-            dry_run: If true, nothing will be written to MO.
-
-        Returns:
-            Dictionary with status
-        """
-
+        """Sync the entire org unit timeline for the given unit."""
         logger.info(
-            "Sync OU timeline", inst_id=inst_id, org_uuid=str(org_unit), dry_run=dry_run
+            "Sync OU timeline",
+            institution_identifier=payload.institution_identifier,
+            org_uuid=str(payload.org_unit),
+            dry_run=dry_run,
         )
 
         sd_unit_timeline = await get_department_timeline(
-            sd_client=sd_client, inst_id=inst_id, unit_uuid=org_unit
+            sd_client=sd_client,
+            inst_id=payload.institution_identifier,
+            unit_uuid=payload.org_unit,
         )
         desired_unit_timeline = prefix_unit_id_with_inst_id(
-            settings, sd_unit_timeline, inst_id
+            settings, sd_unit_timeline, payload.institution_identifier
         )
 
-        mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
+        mo_unit_timeline = await get_ou_timeline(gql_client, payload.org_unit)
 
         await _sync_ou_intervals(
             gql_client=gql_client,
-            org_unit=org_unit,
+            org_unit=payload.org_unit,
             desired_unit_timeline=desired_unit_timeline,
             mo_unit_timeline=mo_unit_timeline,
             org_unit_type_user_key=settings.org_unit_type,
