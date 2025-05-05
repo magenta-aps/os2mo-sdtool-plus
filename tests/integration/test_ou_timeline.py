@@ -218,7 +218,8 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
     )
 
     # Assert
@@ -375,7 +376,8 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
     )
 
     # Assert
@@ -478,7 +480,8 @@ async def test_ou_timeline_create_new_unit(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou", params={"inst_id": "II", "org_unit": str(unit_uuid)}
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
     )
 
     # Assert
