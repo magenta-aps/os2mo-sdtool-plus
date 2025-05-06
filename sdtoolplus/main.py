@@ -131,7 +131,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
         graphql_client_cls=GraphQLClient,
-        graphql_version=22,
+        graphql_version=25,
     )
     fastramqpi.add_context(settings=settings)
 
