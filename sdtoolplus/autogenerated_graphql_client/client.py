@@ -300,6 +300,19 @@ class GraphQLClient(AsyncBaseClient):
                     parent {
                       uuid
                     }
+                    addresses {
+                      uuid
+                      name
+                      user_key
+                      value
+                      address_type {
+                        user_key
+                        name
+                      }
+                      visibility {
+                        uuid
+                      }
+                    }
                   }
                 }
               }

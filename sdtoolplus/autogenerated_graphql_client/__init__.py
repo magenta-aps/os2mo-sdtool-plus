@@ -95,6 +95,13 @@ from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjects
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValidities
+from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses
+from .get_org_unit_timeline import (
+    GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType,
+)
+from .get_org_unit_timeline import (
+    GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility,
+)
 from .get_org_unit_timeline import (
     GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel,
 )
@@ -380,6 +387,9 @@ __all__ = [
     "GetOrgUnitTimelineOrgUnits",
     "GetOrgUnitTimelineOrgUnitsObjects",
     "GetOrgUnitTimelineOrgUnitsObjectsValidities",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitLevel",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent",
