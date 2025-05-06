@@ -6,6 +6,7 @@ from fastapi import Depends
 from fastapi import Response
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_404_NOT_FOUND
+from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from .. import depends
@@ -99,7 +100,7 @@ async def sync_person_and_engagement(
             cpr=payload.cpr,
             employment_identifier=payload.employment_identifier,
         )
-        response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+        response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
         return {"msg": "Empty department timeline for employment found in SD"}
 
     return {"msg": "success"}
