@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import structlog.stdlib
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
@@ -8,6 +9,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from .. import depends
+from ..exceptions import DepartmentTimelineNotFound
 from ..exceptions import EngagementNotActiveError
 from ..exceptions import EngagementNotFoundError
 from ..exceptions import PersonNotFoundError
@@ -16,6 +18,8 @@ from ..timeline import sync_person
 from .engagement import move_engagement
 from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
+
+logger = structlog.stdlib.get_logger()
 
 minisync_router = APIRouter(dependencies=[Depends(depends.request_id)])
 
@@ -43,6 +47,7 @@ async def engagement_move(
 
 @minisync_router.post("/minisync/sync-person-and-employment", status_code=HTTP_200_OK)
 async def sync_person_and_engagement(
+    response: Response,
     settings: depends.Settings,
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
@@ -77,14 +82,24 @@ async def sync_person_and_engagement(
         dry_run=dry_run,
     )
 
-    await sync_engagement(
-        sd_client=sd_client,
-        gql_client=gql_client,
-        institution_identifier=payload.institution_identifier,
-        cpr=payload.cpr,
-        employment_identifier=payload.employment_identifier,
-        settings=settings,
-        dry_run=dry_run,
-    )
+    try:
+        await sync_engagement(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
+            settings=settings,
+            dry_run=dry_run,
+        )
+    except DepartmentTimelineNotFound:
+        logger.error(
+            "Empty department timeline for employment found in SD",
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
+        )
+        response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
+        return {"msg": "Empty department timeline for employment found in SD"}
 
     return {"msg": "success"}
