@@ -6,6 +6,7 @@ from uuid import UUID
 import httpx
 import sentry_sdk
 import structlog
+from httpx import HTTPStatusError
 from httpx import Response
 from httpx import Timeout
 from more_itertools import last
@@ -298,7 +299,14 @@ class App:
         # NOTE: if _call_apply_ny_logic fails, you will have to make the
         # failing POST request again manually to make sure the NY logic
         # has been applied properly for the given org unit
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except HTTPStatusError as error:
+            logger.error(
+                "Apply-NY-logic call failed!!", org_unit_uuid=str(org_unit_uuid)
+            )
+            raise error
+
         logger.info("NY logic applied successfully")
 
     @staticmethod
