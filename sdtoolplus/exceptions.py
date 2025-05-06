@@ -16,3 +16,7 @@ class EngagementNotActiveError(Exception):
 
 class PersonNotFoundError(Exception):
     pass
+
+
+class DepartmentTimelineNotFound(Exception):
+    pass
