@@ -364,44 +364,55 @@ async def _sync_ou_intervals(
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
 
+        if desired_unit_timeline.equal_at(start, mo_unit_timeline):
+            logger.debug("SD and MO equal")
+            continue
+
         try:
             is_active = desired_unit_timeline.active.entity_at(start).value
         except NoValueError:
             is_active = False  # type: ignore
 
-        if desired_unit_timeline.equal_at(start, mo_unit_timeline):
-            logger.debug("SD and MO equal")
-            continue
-        elif is_active:
-            ou = await gql_client.get_org_unit_timeline(
-                unit_uuid=org_unit, from_date=None, to_date=None
-            )
-            if ou.objects:
-                await update_ou(
-                    gql_client=gql_client,
-                    org_unit=org_unit,
-                    start=start,
-                    end=end,
-                    desired_unit_timeline=desired_unit_timeline,
-                    org_unit_type_user_key=org_unit_type_user_key,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_ou(
-                    gql_client=gql_client,
-                    org_unit=org_unit,
-                    start=start,
-                    end=end,
-                    desired_unit_timeline=desired_unit_timeline,
-                    org_unit_type_user_key=org_unit_type_user_key,
-                    dry_run=dry_run,
-                )
-        else:
+        if not is_active:
             await terminate_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+            continue
+
+        try:
+            desired_unit_timeline.unit_level.entity_at(start)
+            desired_unit_timeline.name.entity_at(start).value
+            desired_unit_timeline.unit_id.entity_at(start).value
+            desired_unit_timeline.parent.entity_at(start).value
+        except NoValueError:
+            logger.error("Cannot update OU due to missing timeline data")
+            continue
+
+        ou = await gql_client.get_org_unit_timeline(
+            unit_uuid=org_unit, from_date=None, to_date=None
+        )
+        if ou.objects:
+            await update_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                start=start,
+                end=end,
+                desired_unit_timeline=desired_unit_timeline,
+                org_unit_type_user_key=org_unit_type_user_key,
+                dry_run=dry_run,
+            )
+        else:
+            await create_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                start=start,
+                end=end,
+                desired_unit_timeline=desired_unit_timeline,
+                org_unit_type_user_key=org_unit_type_user_key,
                 dry_run=dry_run,
             )
 
