@@ -286,7 +286,11 @@ async def _sync_leave_intervals(
     mo_eng = await gql_client.get_engagement_timeline(
         person=person, user_key=user_key, from_date=None, to_date=None
     )
-    eng_uuid = one(mo_eng.objects).uuid
+    eng_obj = only(mo_eng.objects)
+    if eng_obj is None:
+        logger.warning("Not syncing leaves - no corresponding engagement found")
+        return
+    eng_uuid = eng_obj.uuid
 
     sd_interval_endpoints = sd_leave_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_leave_timeline.get_interval_endpoints()
