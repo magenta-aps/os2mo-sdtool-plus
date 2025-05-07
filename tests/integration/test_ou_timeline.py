@@ -513,4 +513,88 @@ async def test_ou_timeline_create_new_unit(
     assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
 
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+)
+async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,  # Maybe switch
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: list[dict[str, str]],
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the scenario where an org unit is not created when there are
+    data missing in the SD timeline.
+
+    Time  ------------------------------------------------------------------------->
+
+    MO (unit does not exist)
+
+    SD (name)     |-------------------------name1-----------------------------------
+    SD (id)       |-------------------------ABCD------------------------------------
+    SD (level)    |-------------------------NY0-------------------------------------
+    SD (parent)                           MISSING!
+    """
+    # Arrange
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>false</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[],  # No parent info!
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_org_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    assert mo_org_unit.objects == []
+
+
 # TODO: add test with two successive intervals to be termination intervals

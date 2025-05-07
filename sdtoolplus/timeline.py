@@ -206,43 +206,54 @@ async def _sync_eng_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
         if desired_eng_timeline.equal_at(start, mo_eng_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif desired_eng_timeline.has_value(start):
-            logger.debug("SD value available")
-            mo_eng = await gql_client.get_engagement_timeline(
-                person=person, user_key=user_key, from_date=None, to_date=None
-            )
-            if mo_eng.objects:
-                await update_engagement(
-                    gql_client=gql_client,
-                    person=person,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    desired_eng_timeline=desired_eng_timeline,
-                    eng_types=eng_types,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_engagement(
-                    gql_client=gql_client,
-                    person=person,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    desired_eng_timeline=desired_eng_timeline,
-                    eng_types=eng_types,
-                    dry_run=dry_run,
-                )
-        else:
+
+        try:
+            is_active = desired_eng_timeline.eng_active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
+        if not is_active:
             await terminate_engagement(
                 gql_client=gql_client,
                 person=person,
                 user_key=user_key,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+            continue
+
+        if not desired_eng_timeline.has_required_mo_values(start):
+            logger.error("Cannot create/update engagement due to missing timeline data")
+            continue
+
+        mo_eng = await gql_client.get_engagement_timeline(
+            person=person, user_key=user_key, from_date=None, to_date=None
+        )
+        if mo_eng.objects:
+            await update_engagement(
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                start=start,
+                end=end,
+                desired_eng_timeline=desired_eng_timeline,
+                eng_types=eng_types,
+                dry_run=dry_run,
+            )
+        else:
+            await create_engagement(
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                start=start,
+                end=end,
+                desired_eng_timeline=desired_eng_timeline,
+                eng_types=eng_types,
                 dry_run=dry_run,
             )
 
@@ -275,7 +286,11 @@ async def _sync_leave_intervals(
     mo_eng = await gql_client.get_engagement_timeline(
         person=person, user_key=user_key, from_date=None, to_date=None
     )
-    eng_uuid = one(mo_eng.objects).uuid
+    eng_obj = only(mo_eng.objects)
+    if eng_obj is None:
+        logger.warning("Not syncing leaves - no corresponding engagement found")
+        return
+    eng_uuid = eng_obj.uuid
 
     sd_interval_endpoints = sd_leave_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_leave_timeline.get_interval_endpoints()
@@ -285,50 +300,61 @@ async def _sync_leave_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
         if sd_leave_timeline.equal_at(start, mo_leave_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif sd_leave_timeline.has_value(start):
-            logger.debug("SD value available")
-            mo_leave = await gql_client.get_leave(
-                LeaveFilter(
-                    employee=EmployeeFilter(uuids=[person]),
-                    user_keys=[user_key],
-                    from_date=None,
-                    to_date=None,
-                )
-            )
-            if mo_leave.objects:
-                await update_leave(
-                    gql_client=gql_client,
-                    person=person,
-                    eng_uuid=eng_uuid,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    sd_leave_timeline=sd_leave_timeline,
-                    leave_type=leave_type,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_leave(
-                    gql_client=gql_client,
-                    person=person,
-                    eng_uuid=eng_uuid,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    sd_leave_timeline=sd_leave_timeline,
-                    leave_type=leave_type,
-                    dry_run=dry_run,
-                )
-        else:
+
+        try:
+            is_active = sd_leave_timeline.leave_active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
+        if not is_active:
             await terminate_leave(
                 gql_client=gql_client,
                 person=person,
                 user_key=user_key,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+            continue
+
+        if not sd_leave_timeline.has_required_mo_values(start):
+            logger.error("Cannot create/update leave due to missing timeline data")
+            continue
+
+        mo_leave = await gql_client.get_leave(
+            LeaveFilter(
+                employee=EmployeeFilter(uuids=[person]),
+                user_keys=[user_key],
+                from_date=None,
+                to_date=None,
+            )
+        )
+        if mo_leave.objects:
+            await update_leave(
+                gql_client=gql_client,
+                person=person,
+                eng_uuid=eng_uuid,
+                user_key=user_key,
+                start=start,
+                end=end,
+                sd_leave_timeline=sd_leave_timeline,
+                leave_type=leave_type,
+                dry_run=dry_run,
+            )
+        else:
+            await create_leave(
+                gql_client=gql_client,
+                person=person,
+                eng_uuid=eng_uuid,
+                user_key=user_key,
+                start=start,
+                end=end,
+                sd_leave_timeline=sd_leave_timeline,
+                leave_type=leave_type,
                 dry_run=dry_run,
             )
 
@@ -351,39 +377,51 @@ async def _sync_ou_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
         if desired_unit_timeline.equal_at(start, mo_unit_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif desired_unit_timeline.has_value(start):
-            ou = await gql_client.get_org_unit_timeline(
-                unit_uuid=org_unit, from_date=None, to_date=None
-            )
-            if ou.objects:
-                await update_ou(
-                    gql_client=gql_client,
-                    org_unit=org_unit,
-                    start=start,
-                    end=end,
-                    desired_unit_timeline=desired_unit_timeline,
-                    org_unit_type_user_key=org_unit_type_user_key,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_ou(
-                    gql_client=gql_client,
-                    org_unit=org_unit,
-                    start=start,
-                    end=end,
-                    desired_unit_timeline=desired_unit_timeline,
-                    org_unit_type_user_key=org_unit_type_user_key,
-                    dry_run=dry_run,
-                )
-        else:
+
+        try:
+            is_active = desired_unit_timeline.active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
+        if not is_active:
             await terminate_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+            continue
+
+        if not desired_unit_timeline.has_required_mo_values(start):
+            logger.error("Cannot update OU due to missing timeline data")
+            continue
+
+        ou = await gql_client.get_org_unit_timeline(
+            unit_uuid=org_unit, from_date=None, to_date=None
+        )
+        if ou.objects:
+            await update_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                start=start,
+                end=end,
+                desired_unit_timeline=desired_unit_timeline,
+                org_unit_type_user_key=org_unit_type_user_key,
+                dry_run=dry_run,
+            )
+        else:
+            await create_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                start=start,
+                end=end,
+                desired_unit_timeline=desired_unit_timeline,
+                org_unit_type_user_key=org_unit_type_user_key,
                 dry_run=dry_run,
             )
 
