@@ -1,17 +1,21 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import re
 from datetime import date
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
 
 import structlog
+from more_itertools import one
 from more_itertools import only
+from ordered_set import OrderedSet
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import Department
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -60,6 +64,44 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     if worktime.FullTimeIndicator:
         return EngType.MONTHLY_FULL_TIME
     return EngType.MONTHLY_PART_TIME
+
+
+ny_regex = re.compile(r"NY(\d)-niveau")
+
+
+def sort_NY_levels(department: Department) -> int:
+    if department.DepartmentLevelIdentifier == "Afdelings-niveau":
+        return 0
+    match = ny_regex.match(department.DepartmentLevelIdentifier)
+    assert match
+    return int(one(match.groups()))
+
+
+async def get_all_departments(
+    sd_client: SDClient,
+    inst_id: str,
+) -> OrderedSet[OrgUnitUUID]:
+    """Find uuids of all departments in SD for a given institution identifier.
+    The departments will be sorted by department-level, returning those with highest NY-level first and "Afdelingsniveau" last.
+    """
+    departments = await asyncio.to_thread(
+        sd_client.get_department,
+        GetDepartmentRequest(
+            InstitutionIdentifier=inst_id,
+            ActivationDate=date.min,
+            DeactivationDate=date.max,
+            DepartmentNameIndicator=False,
+            UUIDIndicator=True,
+            PostalAddressIndicator=False,
+        ),
+    )
+    departments.Department.sort(key=sort_NY_levels, reverse=True)
+
+    return OrderedSet(
+        d.DepartmentUUIDIdentifier
+        for d in departments.Department
+        if d.DepartmentUUIDIdentifier
+    )
 
 
 async def get_department_timeline(

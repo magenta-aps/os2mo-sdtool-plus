@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
 from datetime import date
+from datetime import datetime
 
 import structlog.stdlib
 from more_itertools import one
@@ -13,12 +14,42 @@ from sdtoolplus.models import Person
 logger = structlog.stdlib.get_logger()
 
 
+async def get_all_sd_persons(
+    sd_client: SDClient,
+    institution_identifier: str,
+    effective_date: date = datetime.today(),
+    contact_information: bool = False,
+    postal_address: bool = False,
+) -> list[Person]:
+    sd_response = await asyncio.to_thread(
+        sd_client.get_person,
+        GetPersonRequest(
+            InstitutionIdentifier=institution_identifier,
+            PersonCivilRegistrationIdentifier=None,
+            EffectiveDate=effective_date,
+            ContactInformationIndicator=contact_information,
+            PostalAddressIndicator=postal_address,
+        ),
+    )
+    return [
+        Person(
+            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
+            given_name=sd_response_person.PersonGivenName,
+            surname=sd_response_person.PersonSurnameName,
+            emails=[],
+            phone_numbers=[],
+            addresses=[],
+        )
+        for sd_response_person in sd_response.Person
+    ]
+
+
 # Persons in SD has no timeline and can only be queried at a specific date
 async def get_sd_person(
     sd_client: SDClient,
     institution_identifier: str,
     cpr: str,
-    effective_date: date,
+    effective_date: date = datetime.today(),
     contact_information: bool = True,
     postal_address: bool = True,
 ) -> Person:
