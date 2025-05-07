@@ -227,7 +227,7 @@ async def _sync_eng_intervals(
             )
             continue
 
-        if not desired_eng_timeline.has_value(start):
+        if not desired_eng_timeline.has_required_mo_values(start):
             logger.error("Cannot create/update engagement due to missing timeline data")
             continue
 

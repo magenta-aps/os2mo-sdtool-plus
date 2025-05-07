@@ -223,7 +223,7 @@ class Timeline(GenericModel, Generic[T], frozen=True):
 
 
 class BaseTimeline(BaseModel, frozen=True):
-    def has_value(self, timestamp: datetime) -> bool:
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
         # TODO: unit test
         fields = [field for _, field in iter(self)]
         try:
