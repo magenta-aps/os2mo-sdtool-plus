@@ -224,14 +224,11 @@ class Timeline(GenericModel, Generic[T], frozen=True):
 
 class BaseTimeline(BaseModel, frozen=True):
     def has_required_mo_values(self, timestamp: datetime) -> bool:
-        # TODO: unit test
-        fields = [field for _, field in iter(self)]
-        try:
-            for field in fields:
-                field.entity_at(timestamp)
-            return True
-        except NoValueError:
-            return False
+        """
+        Check if the timeline has the sufficient fields in order for the code to be able
+        to write to MO.
+        """
+        raise NotImplementedError()
 
     def equal_at(self, timestamp: datetime, other: Self) -> bool:
         # TODO: unit test <-- maybe we should do this anytime soon now...
@@ -266,6 +263,18 @@ class UnitTimeline(BaseTimeline):
     unit_level: Timeline[UnitLevel] = Timeline[UnitLevel]()
     parent: Timeline[UnitParent] = Timeline[UnitParent]()
 
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
+        try:
+            # Note: not all fields should be included here (e.g. address fields)
+            self.active.entity_at(timestamp)
+            self.name.entity_at(timestamp)
+            self.unit_id.entity_at(timestamp)
+            self.unit_level.entity_at(timestamp)
+            self.parent.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
 
 class EngagementTimeline(BaseTimeline):
     eng_active: Timeline[Active] = Timeline[Active]()
@@ -275,6 +284,25 @@ class EngagementTimeline(BaseTimeline):
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
+        try:
+            self.eng_active.entity_at(timestamp)
+            self.eng_key.entity_at(timestamp)
+            self.eng_name.entity_at(timestamp)
+            self.eng_unit.entity_at(timestamp)
+            self.eng_unit_id.entity_at(timestamp)
+            self.eng_type.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
 
 class LeaveTimeline(BaseTimeline):
     leave_active: Timeline[Active] = Timeline[Active]()
+
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
+        try:
+            self.leave_active.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
