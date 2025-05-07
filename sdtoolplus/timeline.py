@@ -207,56 +207,52 @@ async def _sync_eng_intervals(
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
 
+        if desired_eng_timeline.equal_at(start, mo_eng_timeline):
+            logger.debug("SD and MO equal")
+            continue
+
         try:
             is_active = desired_eng_timeline.eng_active.entity_at(start).value
         except NoValueError:
             is_active = False  # type: ignore
 
-        if desired_eng_timeline.equal_at(start, mo_eng_timeline):
-            logger.debug("SD and MO equal")
-            continue
-        elif is_active:
-            logger.debug("SD value available")
-
-            # TODO: further refactorings in the neext commits
-            if not desired_eng_timeline.has_value(start):
-                logger.error(
-                    "Cannot create/update engagement due to missing timeline data"
-                )
-                continue
-
-            mo_eng = await gql_client.get_engagement_timeline(
-                person=person, user_key=user_key, from_date=None, to_date=None
-            )
-            if mo_eng.objects:
-                await update_engagement(
-                    gql_client=gql_client,
-                    person=person,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    desired_eng_timeline=desired_eng_timeline,
-                    eng_types=eng_types,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_engagement(
-                    gql_client=gql_client,
-                    person=person,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    desired_eng_timeline=desired_eng_timeline,
-                    eng_types=eng_types,
-                    dry_run=dry_run,
-                )
-        else:
+        if not is_active:
             await terminate_engagement(
                 gql_client=gql_client,
                 person=person,
                 user_key=user_key,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+
+        if not desired_eng_timeline.has_value(start):
+            logger.error("Cannot create/update engagement due to missing timeline data")
+            continue
+
+        mo_eng = await gql_client.get_engagement_timeline(
+            person=person, user_key=user_key, from_date=None, to_date=None
+        )
+        if mo_eng.objects:
+            await update_engagement(
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                start=start,
+                end=end,
+                desired_eng_timeline=desired_eng_timeline,
+                eng_types=eng_types,
+                dry_run=dry_run,
+            )
+        else:
+            await create_engagement(
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                start=start,
+                end=end,
+                desired_eng_timeline=desired_eng_timeline,
+                eng_types=eng_types,
                 dry_run=dry_run,
             )
 
