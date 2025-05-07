@@ -206,10 +206,16 @@ async def _sync_eng_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
+        try:
+            is_active = desired_eng_timeline.eng_active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
         if desired_eng_timeline.equal_at(start, mo_eng_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif desired_eng_timeline.has_value(start):
+        elif is_active:
             logger.debug("SD value available")
             mo_eng = await gql_client.get_engagement_timeline(
                 person=person, user_key=user_key, from_date=None, to_date=None
