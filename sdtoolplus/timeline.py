@@ -317,9 +317,7 @@ async def _sync_leave_intervals(
             )
             continue
 
-        try:
-            sd_leave_timeline.leave_active.entity_at(start)
-        except NoValueError:
+        if not sd_leave_timeline.has_required_mo_values(start):
             logger.error("Cannot create/update leave due to missing timeline data")
             continue
 
@@ -395,12 +393,7 @@ async def _sync_ou_intervals(
             )
             continue
 
-        try:
-            desired_unit_timeline.unit_level.entity_at(start)
-            desired_unit_timeline.name.entity_at(start).value
-            desired_unit_timeline.unit_id.entity_at(start).value
-            desired_unit_timeline.parent.entity_at(start).value
-        except NoValueError:
+        if not desired_unit_timeline.has_required_mo_values(start):
             logger.error("Cannot update OU due to missing timeline data")
             continue
 
