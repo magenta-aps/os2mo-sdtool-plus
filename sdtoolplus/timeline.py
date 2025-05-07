@@ -217,6 +217,14 @@ async def _sync_eng_intervals(
             continue
         elif is_active:
             logger.debug("SD value available")
+
+            # TODO: further refactorings in the neext commits
+            if not desired_eng_timeline.has_value(start):
+                logger.error(
+                    "Cannot create/update engagement due to missing timeline data"
+                )
+                continue
+
             mo_eng = await gql_client.get_engagement_timeline(
                 person=person, user_key=user_key, from_date=None, to_date=None
             )

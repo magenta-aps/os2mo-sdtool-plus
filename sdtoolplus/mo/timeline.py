@@ -539,10 +539,6 @@ async def create_engagement(
         desired_eng_timeline=desired_eng_timeline.dict(),
     )
 
-    if not desired_eng_timeline.has_value(start):
-        logger.error("Cannot update engagement due to missing timeline data")
-        return
-
     # Get the job_function
     r_job_function = await gql_client.get_class(
         ClassFilter(
@@ -659,10 +655,6 @@ async def update_engagement(
         end=end,
         desired_eng_timeline=desired_eng_timeline.dict(),
     )
-
-    if not desired_eng_timeline.has_value(start):
-        logger.error("Cannot update engagement due to missing timeline data")
-        return
 
     # Get the job_function
     r_job_function = await gql_client.get_class(
