@@ -849,6 +849,118 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
+async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_missing(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  --------t1---------------------------------------------------------------->
+
+    MO (engagement does not exist)
+
+    SD (name)                                MISSING!
+    SD (key)                                 MISSING!
+    SD (unit)     |-----------------------------dep1---------------------------------
+    SD (unit ID)  |-----------------------------dep1---------------------------------
+    SD (active)   |------------------------------1-----------------------------------
+    SD (eng_type) |-----------------------------full---------------------------------
+    """
+    # Arrange
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_eng = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+    )
+    assert mo_eng.objects == []
+
+
+@pytest.mark.integration_test
 @pytest.mark.envvar(
     {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
 )
