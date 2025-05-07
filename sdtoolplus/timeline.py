@@ -285,10 +285,16 @@ async def _sync_leave_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
+        try:
+            is_active = sd_leave_timeline.leave_active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
         if sd_leave_timeline.equal_at(start, mo_leave_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif sd_leave_timeline.has_value(start):
+        elif is_active:
             logger.debug("SD value available")
             mo_leave = await gql_client.get_leave(
                 LeaveFilter(
