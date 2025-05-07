@@ -225,6 +225,7 @@ async def _sync_eng_intervals(
                 end=end,
                 dry_run=dry_run,
             )
+            continue
 
         if not desired_eng_timeline.has_value(start):
             logger.error("Cannot create/update engagement due to missing timeline data")
@@ -296,55 +297,62 @@ async def _sync_leave_intervals(
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
 
+        if sd_leave_timeline.equal_at(start, mo_leave_timeline):
+            logger.debug("SD and MO equal")
+            continue
+
         try:
             is_active = sd_leave_timeline.leave_active.entity_at(start).value
         except NoValueError:
             is_active = False  # type: ignore
 
-        if sd_leave_timeline.equal_at(start, mo_leave_timeline):
-            logger.debug("SD and MO equal")
-            continue
-        elif is_active:
-            logger.debug("SD value available")
-            mo_leave = await gql_client.get_leave(
-                LeaveFilter(
-                    employee=EmployeeFilter(uuids=[person]),
-                    user_keys=[user_key],
-                    from_date=None,
-                    to_date=None,
-                )
-            )
-            if mo_leave.objects:
-                await update_leave(
-                    gql_client=gql_client,
-                    person=person,
-                    eng_uuid=eng_uuid,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    sd_leave_timeline=sd_leave_timeline,
-                    leave_type=leave_type,
-                    dry_run=dry_run,
-                )
-            else:
-                await create_leave(
-                    gql_client=gql_client,
-                    person=person,
-                    eng_uuid=eng_uuid,
-                    user_key=user_key,
-                    start=start,
-                    end=end,
-                    sd_leave_timeline=sd_leave_timeline,
-                    leave_type=leave_type,
-                    dry_run=dry_run,
-                )
-        else:
+        if not is_active:
             await terminate_leave(
                 gql_client=gql_client,
                 person=person,
                 user_key=user_key,
                 start=start,
                 end=end,
+                dry_run=dry_run,
+            )
+            continue
+
+        try:
+            sd_leave_timeline.leave_active.entity_at(start)
+        except NoValueError:
+            logger.error("Cannot create/update leave due to missing timeline data")
+            continue
+
+        mo_leave = await gql_client.get_leave(
+            LeaveFilter(
+                employee=EmployeeFilter(uuids=[person]),
+                user_keys=[user_key],
+                from_date=None,
+                to_date=None,
+            )
+        )
+        if mo_leave.objects:
+            await update_leave(
+                gql_client=gql_client,
+                person=person,
+                eng_uuid=eng_uuid,
+                user_key=user_key,
+                start=start,
+                end=end,
+                sd_leave_timeline=sd_leave_timeline,
+                leave_type=leave_type,
+                dry_run=dry_run,
+            )
+        else:
+            await create_leave(
+                gql_client=gql_client,
+                person=person,
+                eng_uuid=eng_uuid,
+                user_key=user_key,
+                start=start,
+                end=end,
+                sd_leave_timeline=sd_leave_timeline,
+                leave_type=leave_type,
                 dry_run=dry_run,
             )
 
