@@ -351,10 +351,16 @@ async def _sync_ou_intervals(
 
     for start, end in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
+
+        try:
+            is_active = desired_unit_timeline.active.entity_at(start).value
+        except NoValueError:
+            is_active = False  # type: ignore
+
         if desired_unit_timeline.equal_at(start, mo_unit_timeline):
             logger.debug("SD and MO equal")
             continue
-        elif desired_unit_timeline.has_value(start):
+        elif is_active:
             ou = await gql_client.get_org_unit_timeline(
                 unit_uuid=org_unit, from_date=None, to_date=None
             )
