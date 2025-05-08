@@ -26,9 +26,9 @@ from tests.conftest import UNKNOWN_UNIT
 @pytest.mark.envvar(
     {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
 )
-async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
+async def test_ou_timeline_http_triggered_sync(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -204,7 +204,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -277,7 +277,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 )
 async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -356,7 +356,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -405,7 +405,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 )
 async def test_ou_timeline_create_new_unit(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -466,7 +466,7 @@ async def test_ou_timeline_create_new_unit(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -519,7 +519,7 @@ async def test_ou_timeline_create_new_unit(
 )
 async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -572,7 +572,7 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     """
 
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -595,6 +595,3 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
 
     mo_org_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
     assert mo_org_unit.objects == []
-
-
-# TODO: add test with two successive intervals to be termination intervals
