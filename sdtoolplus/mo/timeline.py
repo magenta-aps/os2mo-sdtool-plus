@@ -271,10 +271,12 @@ async def get_ou_timeline(
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
         postal_address_intervals=Timeline[UnitPostalAddress](
-            intervals=postal_address_intervals
+            intervals=combine_intervals(postal_address_intervals)
         ),
-        phone=Timeline[UnitPhoneNumber](intervals=phone_number_intervals),
-        p_number=Timeline[UnitPNumber](intervals=p_number_intervals),
+        phone=Timeline[UnitPhoneNumber](
+            intervals=combine_intervals(phone_number_intervals)
+        ),
+        p_number=Timeline[UnitPNumber](intervals=combine_intervals(p_number_intervals)),
     )
     logger.debug("MO OU timeline", timeline=timeline.dict())
 
