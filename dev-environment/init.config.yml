@@ -41,6 +41,15 @@ facets:
     AddressMailUnit:
       title: "Postadresse"
       scope: "DAR"
+    AdresseAPOSOrgUnit:
+      title: "Postadresse fra SD"
+      scope: "TEXT"
+    lokation_telefon_lokal:
+      title: "Telefon lokal"
+      scope: "PHONE"
+    P-nummer:
+      title: "P-nummer"
+      scope: "PNUMBER"
   engagement_type:
     TestAnsat:
       title: "TestAnsat"
