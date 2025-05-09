@@ -23,7 +23,7 @@ another-sd-client = "^1"
 uvicorn = "^0.23"
 sentry-sdk = "^1"
 structlog = "^24"
-fastramqpi = "^10.1.5"
+fastramqpi = "^11"
 alembic = "^1"
 psycopg2 = "^2"
 websockets = "^13" # for ariadne
@@ -34,6 +34,7 @@ starlette = "^0.41"
 tenacity = "^8"
 ramodels = "^39"
 graphql-core = "^3"
+aio-pika = "^9"
 
 [tool.poetry.group.pre-commit.dependencies]
 pre-commit = "^3"
