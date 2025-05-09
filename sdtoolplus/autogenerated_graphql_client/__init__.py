@@ -273,6 +273,7 @@ from .input_types import UuidsBoundITUserFilter
 from .input_types import UuidsBoundLeaveFilter
 from .input_types import UuidsBoundOrganisationUnitFilter
 from .input_types import ValidityInput
+from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
 from .terminate_engagement import TerminateEngagement
@@ -514,6 +515,7 @@ __all__ = [
     "RoleBindingTerminateInput",
     "RoleBindingUpdateInput",
     "RoleRegistrationFilter",
+    "SendEvent",
     "TerminateAddress",
     "TerminateAddressAddressTerminate",
     "TerminateEngagement",
