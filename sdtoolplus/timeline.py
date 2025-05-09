@@ -141,7 +141,7 @@ async def sync_person(
     gql_client: GraphQLClient,
     institution_identifier: str,
     cpr: str,
-    dry_run: bool,
+    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Sync person",
