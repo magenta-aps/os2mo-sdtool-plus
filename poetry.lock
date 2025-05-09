@@ -881,13 +881,13 @@ standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "htt
 
 [[package]]
 name = "fastramqpi"
-version = "12.0.0"
+version = "12.0.1"
 description = "Rammearkitektur integrations framework"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "fastramqpi-12.0.0-py3-none-any.whl", hash = "sha256:4b2865641c5b5ce4d660c9a4562c452cef531593db00c15926acde6acfbf53e3"},
-    {file = "fastramqpi-12.0.0.tar.gz", hash = "sha256:b26c0b052f609646c61e052c9398cf56bd96668e8730b3bf20a45088c4d815f5"},
+    {file = "fastramqpi-12.0.1-py3-none-any.whl", hash = "sha256:1a0930591e9a5076b4c9c2a3b1fb1a11d8441cb1e2917533f2867564574b7717"},
+    {file = "fastramqpi-12.0.1.tar.gz", hash = "sha256:92416659ca328ad14a9e0caf61a0dd267a366219bd4e3e4317c46c1fdd95bf58"},
 ]
 
 [package.dependencies]
@@ -3173,4 +3173,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "c2e86ae86839e68f99b97c4bca8c1bfb196691ccb3fa952c93a87de105a29bf1"
+content-hash = "5207f1a485c0f7da685874986551cb2a43933843bcc7ef54dfa739cd238f7b3f"
