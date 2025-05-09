@@ -18,7 +18,6 @@ from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import Depends
 from fastapi import FastAPI
-from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
@@ -145,7 +144,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
     @fastapi_router.get("/tree/mo")
-    async def print_mo_tree(request: Request) -> str:
+    async def print_mo_tree(settings: depends.Settings) -> str:
         """
         For debugging problems. Prints the part of the MO tree that
         should be compared to the SD tree.
@@ -155,7 +154,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         return tree_as_string(mo_tree)
 
     @fastapi_router.get("/tree/sd")
-    async def print_sd_tree(request: Request) -> str:
+    async def print_sd_tree(settings: depends.Settings) -> str:
         """
         For debugging problems. Prints the SD tree.
         """
@@ -195,6 +194,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         org_unit: UUID | None = None,
@@ -234,6 +234,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
     async def trigger_all_inst_ids(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         background_tasks: BackgroundTasks,
@@ -263,6 +264,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         gql_client: depends.GraphQLClient,
@@ -327,6 +329,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
+        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: EngagementSyncPayload,
