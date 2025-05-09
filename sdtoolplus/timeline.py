@@ -33,6 +33,7 @@ from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import create_person
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
+from sdtoolplus.mo.timeline import get_ou_timeline
 from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
@@ -51,6 +52,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_persons
+from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
 from .config import Mode
@@ -494,6 +496,43 @@ async def _sync_ou_intervals(
                 org_unit_type_user_key=settings.org_unit_type,
                 dry_run=dry_run,
             )
+
+
+async def sync_ou(
+    sd_client: SDClient,
+    gql_client: GraphQLClient,
+    institution_identifier: str,
+    org_unit: OrgUnitUUID,
+    settings: SDToolPlusSettings,
+    dry_run: bool = False,
+) -> None:
+    """Sync the entire org unit timeline for the given unit."""
+    logger.info(
+        "Sync OU timeline",
+        institution_identifier=institution_identifier,
+        org_uuid=str(org_unit),
+        dry_run=dry_run,
+    )
+
+    sd_unit_timeline = await get_department_timeline(
+        sd_client=sd_client,
+        inst_id=institution_identifier,
+        unit_uuid=org_unit,
+    )
+    desired_unit_timeline = prefix_unit_id_with_inst_id(
+        settings, sd_unit_timeline, institution_identifier
+    )
+
+    mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
+
+    await _sync_ou_intervals(
+        gql_client=gql_client,
+        settings=settings,
+        org_unit=org_unit,
+        desired_unit_timeline=desired_unit_timeline,
+        mo_unit_timeline=mo_unit_timeline,
+        dry_run=dry_run,
+    )
 
 
 async def engagement_ou_strategy_ny_logic(
