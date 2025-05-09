@@ -68,6 +68,7 @@ from .input_types import EmployeeUpdateInput
 from .input_types import EngagementCreateInput
 from .input_types import EngagementTerminateInput
 from .input_types import EngagementUpdateInput
+from .input_types import EventSendInput
 from .input_types import LeaveCreateInput
 from .input_types import LeaveFilter
 from .input_types import LeaveTerminateInput
@@ -78,6 +79,7 @@ from .input_types import OrganisationUnitTerminateInput
 from .input_types import OrganisationUnitUpdateInput
 from .input_types import RelatedUnitFilter
 from .input_types import RelatedUnitsUpdateInput
+from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
 from .terminate_engagement import TerminateEngagement
@@ -765,6 +767,19 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetRelatedUnits.parse_obj(data).related_units
+
+    async def send_event(self, input: EventSendInput) -> bool:
+        query = gql(
+            """
+            mutation SendEvent($input: EventSendInput!) {
+              event_send(input: $input)
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return SendEvent.parse_obj(data).event_send
 
     async def _testing__update_related_units(
         self, input: RelatedUnitsUpdateInput
