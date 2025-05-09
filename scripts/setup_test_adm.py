@@ -50,6 +50,7 @@ query GetAdmUnits {
   }
 }
 """
+BASE_START_DATE = datetime(1970, 1, 1)
 
 related_units_mutation = """mutation UpdateRelatedUnits(
   $destination: [UUID!]
@@ -144,7 +145,7 @@ def main(
                     user_key=current["user_key"],
                     parent=current["parent"]["uuid"] if current["parent"] else None,
                     org_unit_type=org_type_uuid,
-                    validity=RAValidityInput(from_=datetime.now()),
+                    validity=RAValidityInput(from_=BASE_START_DATE),
                 )
             )
             unit_uuids = []
@@ -185,7 +186,7 @@ def main(
                     variables={
                         "origin": current["uuid"],
                         "destination": unit_uuids,
-                        "from": datetime.today(),
+                        "from": BASE_START_DATE,
                     },
                 )
                 assert rel.json()["data"]
