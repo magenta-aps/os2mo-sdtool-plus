@@ -1,19 +1,19 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
-import ssl
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import partial
 from functools import wraps
-from tempfile import NamedTemporaryFile
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import Coroutine
+from urllib.parse import urlencode
 
 import aio_pika
 import structlog
 from aio_pika.abc import AbstractIncomingMessage
-from aio_pika.abc import SSLOptions
 from fastapi import APIRouter
 from fastapi import Depends
 from fastramqpi.context import Context
@@ -40,30 +40,25 @@ async def sd_amqp_lifespan(
     settings: SDAMQPSettings, context: Context
 ) -> AsyncIterator[None]:
     logger.info("Connecting to SD AMQP")
-    try:
-        if settings.tls is None:
-            connection = await aio_pika.connect_robust(url=settings.url)
-        else:
-            with (
-                NamedTemporaryFile() as ca,
-                NamedTemporaryFile() as cert,
-                NamedTemporaryFile() as key,
-            ):
-                ca.write(settings.tls.ca)
-                cert.write(settings.tls.cert)
-                key.write(settings.tls.key)
-                connection = await aio_pika.connect_robust(
-                    url=settings.url,
-                    ssl=True,
-                    ssl_options=SSLOptions(
-                        cafile=ca.name,
-                        certfile=cert.name,
-                        keyfile=key.name,
-                        no_verify_ssl=ssl.CERT_REQUIRED,
-                    ),
-                )
-    except Exception as e:
-        raise ConnectionError("Failed to connect to SD AMQP") from e
+
+    with TemporaryDirectory() as dir:
+        # TLS
+        # https://www.rabbitmq.com/docs/uri-query-parameters#tls
+        # https://docs.aio-pika.com/index.html#amqp-url-parameters
+        url = str(settings.url)
+        if settings.tls is not None:
+            ca = Path(dir, "ca.pem")
+            cert = Path(dir, "client.pem")
+            key = Path(dir, "client.key")
+            ca.write_bytes(settings.tls.ca)
+            cert.write_bytes(settings.tls.cert)
+            key.write_bytes(settings.tls.key)
+            url += "?" + urlencode({"cafile": ca, "certfile": cert, "keyfile": key})
+        try:
+            connection = await aio_pika.connect_robust(url)
+        except Exception as e:
+            raise ConnectionError("Failed to connect to SD AMQP") from e
+
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=10)
 
