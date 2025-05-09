@@ -43,15 +43,12 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .minisync.api import minisync_router
-from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
 from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
-from .sd.timeline import get_department_timeline
-from .timeline import _sync_ou_intervals
-from .timeline import prefix_unit_id_with_inst_id
 from .timeline import sync_engagement
+from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
 
@@ -348,39 +345,20 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
+        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: OrgUnitSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        """Sync the entire org unit timeline for the given unit."""
-        logger.info(
-            "Sync OU timeline",
-            institution_identifier=payload.institution_identifier,
-            org_uuid=str(payload.org_unit),
-            dry_run=dry_run,
-        )
-
-        sd_unit_timeline = await get_department_timeline(
+        await sync_ou(
             sd_client=sd_client,
-            inst_id=payload.institution_identifier,
-            unit_uuid=payload.org_unit,
-        )
-        desired_unit_timeline = prefix_unit_id_with_inst_id(
-            settings, sd_unit_timeline, payload.institution_identifier
-        )
-
-        mo_unit_timeline = await get_ou_timeline(gql_client, payload.org_unit)
-
-        await _sync_ou_intervals(
             gql_client=gql_client,
-            settings=settings,
+            institution_identifier=payload.institution_identifier,
             org_unit=payload.org_unit,
-            desired_unit_timeline=desired_unit_timeline,
-            mo_unit_timeline=mo_unit_timeline,
+            settings=settings,
             dry_run=dry_run,
         )
-
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
