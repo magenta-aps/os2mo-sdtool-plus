@@ -19,6 +19,9 @@ from fastapi import BackgroundTasks
 from fastapi import Depends
 from fastapi import FastAPI
 from fastapi import Response
+from fastramqpi.events import GraphQLEvents
+from fastramqpi.events import Listener
+from fastramqpi.events import Namespace
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
@@ -41,6 +44,7 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .events import sd_amqp_lifespan
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
@@ -128,6 +132,31 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         settings=settings.fastramqpi,
         graphql_client_cls=GraphQLClient,
         graphql_version=25,
+        graphql_events=GraphQLEvents(
+            declare_namespaces=[
+                Namespace(name="sd"),
+            ],
+            declare_listeners=[
+                Listener(
+                    namespace="sd",
+                    user_key="employment",
+                    routing_key="employment",
+                    path="/events/sd/employment",
+                ),
+                Listener(
+                    namespace="sd",
+                    user_key="org",
+                    routing_key="org",
+                    path="/events/sd/org",
+                ),
+                Listener(
+                    namespace="sd",
+                    user_key="person",
+                    routing_key="person",
+                    path="/events/sd/person",
+                ),
+            ],
+        ),
     )
     fastramqpi.add_context(settings=settings)
 
@@ -140,6 +169,14 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         use_test_env=settings.sd_use_test_env,
     )
     fastramqpi.add_context(sd_client=sd_client)
+
+    if settings.sd_amqp is not None:
+        fastramqpi.add_lifespan_manager(
+            sd_amqp_lifespan(
+                settings=settings.sd_amqp, context=fastramqpi.get_context()
+            ),
+            priority=1200,
+        )
 
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
