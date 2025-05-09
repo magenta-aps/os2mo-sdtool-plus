@@ -92,6 +92,9 @@ def prefix_unit_id_with_inst_id(
         unit_id=Timeline[UnitId](intervals=unit_id_intervals),
         unit_level=unit_timeline.unit_level,
         parent=unit_timeline.parent,
+        postal_address=unit_timeline.postal_address,
+        phone=unit_timeline.phone,
+        p_number=unit_timeline.p_number,
     )
     logger.debug(
         "SD timeline with prefixed unit_id", timeline=prefixed_unit_timeline.dict()
