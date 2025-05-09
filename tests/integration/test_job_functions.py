@@ -74,7 +74,7 @@ async def test_sync_job_positions(
               <JobPositionLevelCode>1</JobPositionLevelCode>
               <Profession>
                 <JobPositionIdentifier>foofoo</JobPositionIdentifier>
-                <JobPositionName>foofoo</JobPositionName>
+                <JobPositionName/>
                 <JobPositionLevelCode>2</JobPositionLevelCode>
                 <Profession>
                   <JobPositionIdentifier>foofoofoo</JobPositionIdentifier>
@@ -125,7 +125,7 @@ async def test_sync_job_positions(
             current=ClassCurrent.construct(
                 uuid=ANY,
                 user_key="foofoo",
-                name="foofoo (2)",
+                name="NAME MISSING IN SD",
                 scope=None,
                 parent=Parent.construct(
                     uuid=foo.uuid,

@@ -93,7 +93,7 @@ async def get_desired(
     return Class(
         uuid=uuid4(),  # UUIDs are not imported from SD
         user_key=sd_profession.JobPositionIdentifier,
-        name=f"{sd_profession.JobPositionName} ({sd_profession.JobPositionLevelCode})",
+        name=f"{sd_profession.JobPositionName or 'NAME MISSING IN SD'} ({sd_profession.JobPositionLevelCode})",
         parent=mo_parent_uuid,
     )
 
