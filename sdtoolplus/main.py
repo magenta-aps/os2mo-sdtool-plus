@@ -44,6 +44,7 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
@@ -404,6 +405,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
     app.include_router(minisync_router)
+    app.include_router(events_router)
 
     return fastramqpi
 
