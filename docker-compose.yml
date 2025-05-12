@@ -54,6 +54,7 @@ services:
     volumes:
       - ./sdtoolplus/:/app/sdtoolplus/:ro
       - ./tests/:/app/tests/:ro
+      - ./scripts:/app/scripts:ro
     depends_on:
       sd-db-init:
         condition: service_completed_successfully
