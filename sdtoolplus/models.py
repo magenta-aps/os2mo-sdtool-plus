@@ -135,7 +135,7 @@ class EngagementKey(Interval[str]):
     pass
 
 
-class EngagementName(Interval[str]):
+class EngagementName(Interval[Optional[str]]):
     pass
 
 
