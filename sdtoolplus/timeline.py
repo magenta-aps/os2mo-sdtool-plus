@@ -369,6 +369,11 @@ async def _sync_ou_intervals(
 ) -> None:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
+    # Temporary mega hack! Skip 7N
+    if str(org_unit) == "cbba31fe-3188-4c00-9800-000001aa0001":
+        logger.debug("Skipping sync of 7N")
+        return
+
     sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
 
