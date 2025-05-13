@@ -175,6 +175,7 @@ async def get_ou_timeline(
     objects = gql_timelime.objects
 
     if not objects:
+        logger.debug("MO OU timeline is empty")
         return UnitTimeline(
             active=Timeline[Active](),
             name=Timeline[UnitName](),
