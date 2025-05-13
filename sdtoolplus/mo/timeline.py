@@ -175,6 +175,7 @@ async def get_ou_timeline(
     objects = gql_timelime.objects
 
     if not objects:
+        logger.debug("MO OU timeline is empty")
         return UnitTimeline(
             active=Timeline[Active](),
             name=Timeline[UnitName](),
@@ -677,6 +678,7 @@ async def update_engagement(
     if obj:
         # The engagement already exists in this validity period
         for validity in one(eng.objects).validities:
+            eng_name = desired_eng_timeline.eng_name.entity_at(start).value
             payload = EngagementUpdateInput(
                 uuid=obj.uuid,
                 user_key=user_key,
@@ -685,7 +687,9 @@ async def update_engagement(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
                 # TODO: introduce extention_1 strategy
-                extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
+                # The empty string will be converted to null in the LoRa DB. Update
+                # logic when https://redmine.magenta.dk/issues/65028 has been fixed.
+                extension_1=eng_name if eng_name is not None else "",
                 extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
                 extension_3=validity.extension_3,
                 extension_4=validity.extension_4,
