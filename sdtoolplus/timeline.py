@@ -361,8 +361,8 @@ async def _sync_leave_intervals(
 
 async def _sync_ou_intervals(
     gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
     org_unit: OrgUnitUUID,
-    org_unit_type_user_key: str,
     desired_unit_timeline: UnitTimeline,
     mo_unit_timeline: UnitTimeline,
     dry_run: bool,
@@ -416,7 +416,7 @@ async def _sync_ou_intervals(
                 start=start,
                 end=end,
                 desired_unit_timeline=desired_unit_timeline,
-                org_unit_type_user_key=org_unit_type_user_key,
+                org_unit_type_user_key=settings.org_unit_type,
                 dry_run=dry_run,
             )
         else:
@@ -426,7 +426,7 @@ async def _sync_ou_intervals(
                 start=start,
                 end=end,
                 desired_unit_timeline=desired_unit_timeline,
-                org_unit_type_user_key=org_unit_type_user_key,
+                org_unit_type_user_key=settings.org_unit_type,
                 dry_run=dry_run,
             )
 
