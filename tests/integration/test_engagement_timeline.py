@@ -57,7 +57,7 @@ async def test_eng_timeline_http_triggered_sync(
 
     "Arrange" intervals     |-----1----|---2---|---3--|---4--|---------5-------------
 
-    SD (name)     |-------name1--------|----name2-----|-------name3------------------
+    SD (name)     |-------name1--------|----name2-----|
     SD (key)      |------------------------ 9000 ------------------------------------
     SD (unit)     |---dep1--|-------------------dep2---------------------------------
     SD (unit ID)  |---dep1--|-------------------dep2---------------------------------
@@ -236,7 +236,6 @@ async def test_eng_timeline_http_triggered_sync(
                 <ActivationDate>2005-01-01</ActivationDate>
                 <DeactivationDate>9999-12-31</DeactivationDate>
                 <JobPositionIdentifier>9000</JobPositionIdentifier>
-                <EmploymentName>name3</EmploymentName>
                 <AppointmentCode>0</AppointmentCode>
               </Profession>
               <EmploymentStatus>
@@ -359,7 +358,7 @@ async def test_eng_timeline_http_triggered_sync(
     interval_5 = validities[4]
     assert interval_5.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t7
-    assert interval_5.extension_1 == "name3"
+    assert interval_5.extension_1 is None
     assert interval_5.extension_2 == "dep2"
     assert interval_5.user_key == emp_id
     assert interval_5.job_function.uuid == job_function_9000
