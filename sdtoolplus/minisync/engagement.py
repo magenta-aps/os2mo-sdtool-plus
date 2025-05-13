@@ -35,7 +35,7 @@ def _is_active_in_entire_interval(
     end: datetime | None,
 ) -> bool:
     end_ = mo_end_to_datetime(end)
-    assert start < end_
+    assert start <= end_
 
     if not validities:
         return False
@@ -80,6 +80,9 @@ async def move_engagement(
 
     user_key = f"{payload.institution_identifier}-{payload.employment_identifier}"
 
+    mo_lookup_start = sd_start_to_timeline_start(payload.start)
+    mo_lookup_end = sd_end_to_timeline_end(payload.end)
+
     payload_validity = timeline_interval_to_mo_validity(
         start=sd_start_to_timeline_start(payload.start),
         end=sd_end_to_timeline_end(payload.end),
@@ -96,8 +99,8 @@ async def move_engagement(
     eng = await gql_client.get_engagement_timeline(
         person=person.uuid,
         user_key=user_key,
-        from_date=payload_validity.from_,
-        to_date=payload_validity.to,
+        from_date=mo_lookup_start,
+        to_date=mo_lookup_end,
     )
     obj = only(eng.objects)
     if obj is None:
