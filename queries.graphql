@@ -128,6 +128,14 @@ query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: Date
   }
 }
 
+query GetParentRoots($input: OrganisationUnitFilter!) {
+  org_units(filter: $input) {
+    objects {
+      uuid
+    }
+  }
+}
+
 mutation CreateOrgUnit($input: OrganisationUnitCreateInput!) {
   org_unit_create(input: $input) {
     uuid
