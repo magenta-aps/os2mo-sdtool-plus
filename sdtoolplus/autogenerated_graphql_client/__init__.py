@@ -109,6 +109,9 @@ from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesUn
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesValidity
 from .get_organization import GetOrganization
 from .get_organization import GetOrganizationOrg
+from .get_parent_roots import GetParentRoots
+from .get_parent_roots import GetParentRootsOrgUnits
+from .get_parent_roots import GetParentRootsOrgUnitsObjects
 from .get_person import GetPerson
 from .get_person import GetPersonEmployees
 from .get_person import GetPersonEmployeesObjects
@@ -388,6 +391,9 @@ __all__ = [
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesValidity",
     "GetOrganization",
     "GetOrganizationOrg",
+    "GetParentRoots",
+    "GetParentRootsOrgUnits",
+    "GetParentRootsOrgUnitsObjects",
     "GetPerson",
     "GetPersonEmployees",
     "GetPersonEmployeesObjects",
