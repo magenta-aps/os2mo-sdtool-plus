@@ -146,6 +146,9 @@ class SDToolPlusSettings(BaseSettings):
             raise ValueError("Unknown unit must be set when running in region mode")
         if values["apply_ny_logic"] is True:
             raise ValueError("Apply NY logic not allowed to be enabled in region mode")
+        if values["mo_subtree_paths_for_root"] is None:
+            raise ValueError("MO_SUBTREE_PATHS_FOR_ROOT must be set in region mode")
+
         return values
 
 

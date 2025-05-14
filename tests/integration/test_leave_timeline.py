@@ -26,7 +26,12 @@ from tests.conftest import UNKNOWN_UNIT
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
-    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
 )
 async def test_leave_timeline(
     test_client: AsyncClient,

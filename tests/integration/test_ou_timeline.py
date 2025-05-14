@@ -24,7 +24,12 @@ from tests.conftest import UNKNOWN_UNIT
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
-    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
 )
 async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     test_client: AsyncClient,
@@ -273,7 +278,12 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
-    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
 )
 async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     test_client: AsyncClient,
@@ -401,7 +411,12 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
-    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
 )
 async def test_ou_timeline_create_new_unit(
     test_client: AsyncClient,
@@ -515,7 +530,12 @@ async def test_ou_timeline_create_new_unit(
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
-    {"MODE": "region", "UNKNOWN_UNIT": str(UNKNOWN_UNIT), "APPLY_NY_LOGIC": "false"}
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
 )
 async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     test_client: AsyncClient,
