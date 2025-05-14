@@ -47,13 +47,6 @@ class SDToolPlusSettings(BaseSettings):
         default_factory=FastRAMQPISettings, description="FastRAMQPI settings"
     )
 
-    # Credentials, etc. for authenticating against MO and performing GraphQL queries
-    mora_base: str = "http://mo:5000"
-    client_id: str = "integration_sdtool_plus"
-    client_secret: SecretStr
-    auth_realm: str = "mo"
-    auth_server: str = "http://keycloak:8080/auth"
-
     apply_ny_logic: bool = True
     httpx_timeout_ny_logic: PositiveInt = 120
 

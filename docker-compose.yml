@@ -56,6 +56,7 @@ services:
       - ./sdtoolplus/:/app/sdtoolplus/:ro
       - ./tests/:/app/tests/:ro
       - ./scripts:/app/scripts:ro
+      - ../FastRAMQPI/fastramqpi/:/venv/lib/python3.11/site-packages/fastramqpi/:ro
     depends_on:
       sd-db-init:
         condition: service_completed_successfully
