@@ -374,10 +374,10 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
         await _sync_ou_intervals(
             gql_client=gql_client,
+            settings=settings,
             org_unit=payload.org_unit,
             desired_unit_timeline=desired_unit_timeline,
             mo_unit_timeline=mo_unit_timeline,
-            org_unit_type_user_key=settings.org_unit_type,
             dry_run=dry_run,
         )
 

@@ -45,6 +45,8 @@ from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_organization import GetOrganization
 from .get_organization import GetOrganizationOrg
+from .get_parent_roots import GetParentRoots
+from .get_parent_roots import GetParentRootsOrgUnits
 from .get_person import GetPerson
 from .get_person import GetPersonEmployees
 from .get_person_timeline import GetPersonTimeline
@@ -67,6 +69,7 @@ from .input_types import LeaveFilter
 from .input_types import LeaveTerminateInput
 from .input_types import LeaveUpdateInput
 from .input_types import OrganisationUnitCreateInput
+from .input_types import OrganisationUnitFilter
 from .input_types import OrganisationUnitTerminateInput
 from .input_types import OrganisationUnitUpdateInput
 from .input_types import RelatedUnitFilter
@@ -314,6 +317,25 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrgUnitTimeline.parse_obj(data).org_units
+
+    async def get_parent_roots(
+        self, input: OrganisationUnitFilter
+    ) -> GetParentRootsOrgUnits:
+        query = gql(
+            """
+            query GetParentRoots($input: OrganisationUnitFilter!) {
+              org_units(filter: $input) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetParentRoots.parse_obj(data).org_units
 
     async def create_org_unit(
         self, input: OrganisationUnitCreateInput
