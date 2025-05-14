@@ -617,4 +617,65 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     assert mo_org_unit.objects == []
 
 
-# TODO: add test with two successive intervals to be termination intervals
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_ou_timeline_sync_filter(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,  # Maybe switch
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: list[dict[str, str]],
+    respx_mock: MockRouter,
+):
+    """
+    We are testing that the OU sync filter skips units which are not placed in the
+    right part of the OU tree. We try to sync the "Unknown" unit which is outside the
+    path provided by MO_SUBTREE_PATHS_FOR_ROOT. The unit should be skipped and we
+    assert that it is still found in MO.
+    """
+
+    # Arrange
+    sd_dep_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <Envelope>
+          <Body>
+            <Fault>
+              <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+              <faultstring>DepartmentUUIDIdentifier  was not found.</faultstring>
+              <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
+              <detail>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier  was not found."</string>
+              </detail>
+            </Fault>
+          </Body>
+        </Envelope>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(UNKNOWN_UNIT)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=False&DepartmentNameIndicator=True&PostalAddressIndicator=False&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_unit = await graphql_client.get_org_unit_timeline(UNKNOWN_UNIT, None, None)
+    validities = one(updated_unit.objects).validities
+
+    # We assert that the unit still exists
+    assert len(validities) == 1
