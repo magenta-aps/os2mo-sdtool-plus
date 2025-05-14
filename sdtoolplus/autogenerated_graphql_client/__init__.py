@@ -53,6 +53,14 @@ from .exceptions import GraphQLClientGraphQLError
 from .exceptions import GraphQLClientGraphQLMultiError
 from .exceptions import GraphQLClientHttpError
 from .exceptions import GraphQlClientInvalidResponseError
+from .get_address_timeline import GetAddressTimeline
+from .get_address_timeline import GetAddressTimelineAddresses
+from .get_address_timeline import GetAddressTimelineAddressesObjects
+from .get_address_timeline import GetAddressTimelineAddressesObjectsValidities
+from .get_address_timeline import (
+    GetAddressTimelineAddressesObjectsValiditiesAddressType,
+)
+from .get_address_timeline import GetAddressTimelineAddressesObjectsValiditiesValidity
 from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_class import GetClassClassesObjects
@@ -95,6 +103,13 @@ from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjects
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValidities
+from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses
+from .get_org_unit_timeline import (
+    GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType,
+)
+from .get_org_unit_timeline import (
+    GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility,
+)
 from .get_org_unit_timeline import (
     GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel,
 )
@@ -258,6 +273,8 @@ from .input_types import UuidsBoundITUserFilter
 from .input_types import UuidsBoundLeaveFilter
 from .input_types import UuidsBoundOrganisationUnitFilter
 from .input_types import ValidityInput
+from .terminate_address import TerminateAddress
+from .terminate_address import TerminateAddressAddressTerminate
 from .terminate_engagement import TerminateEngagement
 from .terminate_engagement import TerminateEngagementEngagementTerminate
 from .terminate_leave import TerminateLeave
@@ -353,6 +370,12 @@ __all__ = [
     "FileFilter",
     "FileStore",
     "FullEventFilter",
+    "GetAddressTimeline",
+    "GetAddressTimelineAddresses",
+    "GetAddressTimelineAddressesObjects",
+    "GetAddressTimelineAddressesObjectsValidities",
+    "GetAddressTimelineAddressesObjectsValiditiesAddressType",
+    "GetAddressTimelineAddressesObjectsValiditiesValidity",
     "GetClass",
     "GetClassClasses",
     "GetClassClassesObjects",
@@ -383,6 +406,9 @@ __all__ = [
     "GetOrgUnitTimelineOrgUnits",
     "GetOrgUnitTimelineOrgUnitsObjects",
     "GetOrgUnitTimelineOrgUnitsObjectsValidities",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType",
+    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitLevel",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent",
@@ -488,6 +514,8 @@ __all__ = [
     "RoleBindingTerminateInput",
     "RoleBindingUpdateInput",
     "RoleRegistrationFilter",
+    "TerminateAddress",
+    "TerminateAddressAddressTerminate",
     "TerminateEngagement",
     "TerminateEngagementEngagementTerminate",
     "TerminateLeave",

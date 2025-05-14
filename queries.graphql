@@ -7,6 +7,29 @@ query GetOrganization {
   }
 }
 
+query GetAddressTimeline($input: AddressFilter!) {
+  addresses(
+    filter: $input
+  ) {
+    objects {
+      validities {
+        address_type {
+          uuid
+          name
+          user_key
+        }
+        user_key
+        value
+        uuid
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 query AddressTypes {
   facets(filter: {user_keys: "org_unit_address_type"}) {
     objects {
@@ -56,6 +79,12 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
         user_key
       }
     }
+  }
+}
+
+mutation TerminateAddress($input: AddressTerminateInput!) {
+  address_terminate(input: $input) {
+    uuid
   }
 }
 
@@ -122,6 +151,19 @@ query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: Date
         }
         parent {
           uuid
+        }
+        addresses {
+          uuid
+          name
+          user_key
+          value
+          address_type {
+            user_key
+            name
+          }
+          visibility {
+            uuid
+          }
         }
       }
     }

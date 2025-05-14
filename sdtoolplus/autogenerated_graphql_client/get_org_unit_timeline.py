@@ -32,6 +32,7 @@ class GetOrgUnitTimelineOrgUnitsObjectsValidities(BaseModel):
     ]
     time_planning: Optional["GetOrgUnitTimelineOrgUnitsObjectsValiditiesTimePlanning"]
     parent: Optional["GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent"]
+    addresses: List["GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses"]
 
 
 class GetOrgUnitTimelineOrgUnitsObjectsValiditiesValidity(BaseModel):
@@ -59,6 +60,26 @@ class GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent(BaseModel):
     uuid: UUID
 
 
+class GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses(BaseModel):
+    uuid: UUID
+    name: Optional[str]
+    user_key: str
+    value: str
+    address_type: "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType"
+    visibility: Optional[
+        "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility"
+    ]
+
+
+class GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType(BaseModel):
+    user_key: str
+    name: str
+
+
+class GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility(BaseModel):
+    uuid: UUID
+
+
 GetOrgUnitTimeline.update_forward_refs()
 GetOrgUnitTimelineOrgUnits.update_forward_refs()
 GetOrgUnitTimelineOrgUnitsObjects.update_forward_refs()
@@ -69,3 +90,6 @@ GetOrgUnitTimelineOrgUnitsObjectsValiditiesUnitType.update_forward_refs()
 GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel.update_forward_refs()
 GetOrgUnitTimelineOrgUnitsObjectsValiditiesTimePlanning.update_forward_refs()
 GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent.update_forward_refs()
+GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses.update_forward_refs()
+GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType.update_forward_refs()
+GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility.update_forward_refs()

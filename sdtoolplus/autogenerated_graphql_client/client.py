@@ -33,6 +33,8 @@ from .create_org_unit import CreateOrgUnit
 from .create_org_unit import CreateOrgUnitOrgUnitCreate
 from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
+from .get_address_timeline import GetAddressTimeline
+from .get_address_timeline import GetAddressTimelineAddresses
 from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_engagement_timeline import GetEngagementTimeline
@@ -54,6 +56,8 @@ from .get_person_timeline import GetPersonTimelineEmployees
 from .get_related_units import GetRelatedUnits
 from .get_related_units import GetRelatedUnitsRelatedUnits
 from .input_types import AddressCreateInput
+from .input_types import AddressFilter
+from .input_types import AddressTerminateInput
 from .input_types import AddressUpdateInput
 from .input_types import ClassCreateInput
 from .input_types import ClassFilter
@@ -74,6 +78,8 @@ from .input_types import OrganisationUnitTerminateInput
 from .input_types import OrganisationUnitUpdateInput
 from .input_types import RelatedUnitFilter
 from .input_types import RelatedUnitsUpdateInput
+from .terminate_address import TerminateAddress
+from .terminate_address import TerminateAddressAddressTerminate
 from .terminate_engagement import TerminateEngagement
 from .terminate_engagement import TerminateEngagementEngagementTerminate
 from .terminate_leave import TerminateLeave
@@ -113,6 +119,38 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrganization.parse_obj(data).org
+
+    async def get_address_timeline(
+        self, input: AddressFilter
+    ) -> GetAddressTimelineAddresses:
+        query = gql(
+            """
+            query GetAddressTimeline($input: AddressFilter!) {
+              addresses(filter: $input) {
+                objects {
+                  validities {
+                    address_type {
+                      uuid
+                      name
+                      user_key
+                    }
+                    user_key
+                    value
+                    uuid
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetAddressTimeline.parse_obj(data).addresses
 
     async def address_types(self) -> AddressTypesFacets:
         query = gql(
@@ -192,6 +230,23 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return UpdateAddress.parse_obj(data).address_update
+
+    async def terminate_address(
+        self, input: AddressTerminateInput
+    ) -> TerminateAddressAddressTerminate:
+        query = gql(
+            """
+            mutation TerminateAddress($input: AddressTerminateInput!) {
+              address_terminate(input: $input) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TerminateAddress.parse_obj(data).address_terminate
 
     async def get_facet_uuid(self, user_key: str) -> GetFacetUuidFacets:
         query = gql(
@@ -302,6 +357,19 @@ class GraphQLClient(AsyncBaseClient):
                     }
                     parent {
                       uuid
+                    }
+                    addresses {
+                      uuid
+                      name
+                      user_key
+                      value
+                      address_type {
+                        user_key
+                        name
+                      }
+                      visibility {
+                        uuid
+                      }
                     }
                   }
                 }
