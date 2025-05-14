@@ -139,9 +139,12 @@ class SDToolPlusSettings(BaseSettings):
 
     @root_validator
     def check_region_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if values["mode"] == Mode.REGION and values["unknown_unit"] is None:
+        if not values["mode"] == Mode.REGION:
+            return values
+
+        if values["unknown_unit"] is None:
             raise ValueError("Unknown unit must be set when running in region mode")
-        if values["mode"] == Mode.REGION and values["apply_ny_logic"] is True:
+        if values["apply_ny_logic"] is True:
             raise ValueError("Apply NY logic not allowed to be enabled in region mode")
         return values
 
