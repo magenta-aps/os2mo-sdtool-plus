@@ -595,3 +595,104 @@ async def test_move_engagement_where_engagement_not_active_in_entire_period(
 
     # Assert
     assert r.status_code == 500
+
+
+@pytest.mark.integration_test
+async def test_move_engagement_only_valid_for_a_day(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+):
+    """
+    Test this "move engagement" scenario, i.e. the engagement is only valid for a single
+    day (t1):
+
+    Time  -------------------------t1--------t1+1------------------------------------->
+
+    MO (name)                      |--name4--|
+    MO (key)                       |--1234---|
+    MO (unit)                      |--dep3---|
+    MO (unit ID)                   |--dep3---|
+    MO (active)                    |---------|
+    MO (eng_type)                  |--full---|
+
+    "Arrange"                      |----1----|
+     intervals
+
+    Trigger payload (unit)         |--dep2---|
+
+    "Assert"                       |----1----|
+    intervals
+    """
+
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t1_plus_one = t1 + timedelta(days=1)
+
+    # Units
+    dep2_uuid = UUID("20000000-0000-0000-0000-000000000000")
+    dep3_uuid = UUID("30000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    user_key = f"II-{emp_id}"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange intervals 1)
+    await graphql_client.create_engagement(
+        EngagementCreateInput(
+            user_key=user_key,
+            validity=timeline_interval_to_mo_validity(t1, t1_plus_one),
+            extension_1="name4",
+            extension_2="dep3",
+            person=person_uuid,
+            org_unit=dep3_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # Act
+    r = await test_client.post(
+        "/minisync/move-employment",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+            "start": "2001-01-01",
+            "end": "2001-01-01",
+            "org_unit_uuid": str(dep2_uuid),
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=user_key, from_date=None, to_date=None
+    )
+    validities = one(updated_eng.objects).validities
+
+    interval_1 = one(validities)
+    assert interval_1.validity.from_ == t1
+    assert _mo_end_to_timeline_end(interval_1.validity.to) == t1_plus_one
+    assert interval_1.extension_1 == "name4"
+    assert interval_1.extension_2 == "dep3"
+    assert interval_1.user_key == user_key
+    assert interval_1.job_function.uuid == job_function_1234
+    assert one(interval_1.org_unit).uuid == dep2_uuid
+    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
