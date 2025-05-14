@@ -44,11 +44,11 @@ UPDATE_ORG_UNIT = gql(
 
 def get_graphql_client(settings: SDToolPlusSettings) -> PersistentGraphQLClient:
     return PersistentGraphQLClient(
-        url=f"{settings.mora_base}/graphql/v21",
-        client_id=settings.client_id,
-        client_secret=settings.client_secret.get_secret_value(),
-        auth_realm=settings.auth_realm,
-        auth_server=settings.auth_server,  # type: ignore
+        url=f"{settings.fastramqpi.mo_url}/graphql/v21",
+        client_id=settings.fastramqpi.client_id,
+        client_secret=settings.fastramqpi.client_secret.get_secret_value(),
+        auth_realm=settings.fastramqpi.auth_realm,
+        auth_server=settings.fastramqpi.auth_server,
         sync=True,
         httpx_client_kwargs={"timeout": None},
         fetch_schema_from_transport=True,
