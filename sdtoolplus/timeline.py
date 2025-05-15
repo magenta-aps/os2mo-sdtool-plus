@@ -366,6 +366,7 @@ async def _skip_ou_sync(
     settings: SDToolPlusSettings,
     org_unit: OrgUnitUUID,
     desired_unit_timeline: UnitTimeline,
+    mo_unit_timeline: UnitTimeline,
 ) -> bool:
     """
     Check if the org unit should be processed. Skip the unit if:
@@ -386,8 +387,7 @@ async def _skip_ou_sync(
 
     # Check 2)
     if any(
-        parent.value == payroll_root
-        for parent in desired_unit_timeline.parent.intervals
+        parent.value == payroll_root for parent in mo_unit_timeline.parent.intervals
     ):
         return True
 
@@ -433,9 +433,10 @@ async def _sync_ou_intervals(
         settings=settings,
         org_unit=org_unit,
         desired_unit_timeline=desired_unit_timeline,
+        mo_unit_timeline=mo_unit_timeline,
     )
     if skip_ou:
-        logger.debug("Skipping sync of OU ")
+        logger.debug("Skipping sync of OU")
         return
 
     sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
