@@ -363,68 +363,6 @@ async def _sync_leave_intervals(
             )
 
 
-async def _skip_ou_sync(
-    gql_client: GraphQLClient,
-    settings: SDToolPlusSettings,
-    org_unit: OrgUnitUUID,
-    desired_unit_timeline: UnitTimeline,
-    mo_unit_timeline: UnitTimeline,
-) -> bool:
-    """
-    Check if the org unit should be processed. Skip the unit if:
-    1) The unit is the root unit of the payroll organization.
-    2) The unit has the root payroll unit as its parent (at any time).
-    3) The parents of the unit do *not* have root payroll unit as its GraphQL "root".
-       We need to check the parents instead of the unit since the unit itself may not
-       exist yet.
-    """
-    # TODO: Handle municipality mode
-
-    assert settings.mo_subtree_paths_for_root is not None
-    payroll_root = first(first(settings.mo_subtree_paths_for_root.values()))
-
-    # Check 1)
-    if org_unit == payroll_root:
-        logger.debug("OU sync filter: unit is payroll root")
-        return True
-
-    # Check 2)
-    # if not mo_unit_timeline == UnitTimeline() and any(
-    if any(
-        parent.value == payroll_root for parent in mo_unit_timeline.parent.intervals
-    ):
-        logger.debug("OU sync filter: unit is immediately below payroll root")
-        return True
-
-    # Check 3)
-    parent_roots = await gql_client.get_parent_roots(
-        OrganisationUnitFilter(
-            parents=None,
-            descendant=OrganisationUnitFilter(
-                uuids=[
-                    parent.value
-                    for parent in desired_unit_timeline.parent.intervals
-                    if parent.value is not None
-                ],
-                from_date=None,
-                to_date=None,
-            ),
-            from_date=None,
-            to_date=None,
-        )
-    )
-    try:
-        parent_root = one(parent_roots.objects).uuid
-    except ValueError:
-        logger.debug("OU sync filter: unit has been placed below multiple root units")
-        return True
-    if not parent_root == payroll_root:
-        logger.debug("OU sync filter: unit root is not payroll root")
-        return True
-
-    return False
-
-
 async def _sync_ou_intervals(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
@@ -435,14 +373,11 @@ async def _sync_ou_intervals(
 ) -> None:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
-    skip_ou = await _skip_ou_sync(
-        gql_client=gql_client,
-        settings=settings,
-        org_unit=org_unit,
-        desired_unit_timeline=desired_unit_timeline,
-        mo_unit_timeline=mo_unit_timeline,
-    )
-    if skip_ou:
+    # Skip synchronisation if OU was never in SD. This ensures we don't delete
+    # org-units unrelated to SD in MO. Note that is *is* technically possible
+    # to delete OUs in SD, but in that case we don't receive an AMQP event
+    # anyway due to limitations in SD.
+    if desired_unit_timeline == UnitTimeline():
         logger.debug("Skipping sync of OU")
         return
 
