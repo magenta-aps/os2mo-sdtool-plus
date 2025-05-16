@@ -385,12 +385,15 @@ async def _skip_ou_sync(
 
     # Check 1)
     if org_unit == payroll_root:
+        logger.debug("OU sync filter: unit is payroll root")
         return True
 
     # Check 2)
+    # if not mo_unit_timeline == UnitTimeline() and any(
     if any(
         parent.value == payroll_root for parent in mo_unit_timeline.parent.intervals
     ):
+        logger.debug("OU sync filter: unit is immediately below payroll root")
         return True
 
     # Check 3)
@@ -413,8 +416,10 @@ async def _skip_ou_sync(
     try:
         parent_root = one(parent_roots.objects).uuid
     except ValueError:
+        logger.debug("OU sync filter: unit has been placed below multiple root units")
         return True
     if not parent_root == payroll_root:
+        logger.debug("OU sync filter: unit root is not payroll root")
         return True
 
     return False
