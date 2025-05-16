@@ -396,31 +396,57 @@ async def _skip_ou_sync(
         logger.debug("OU sync filter: unit is immediately below payroll root")
         return True
 
+    # # Check 3)
+    # parent_roots = await gql_client.get_parent_roots(
+    #     OrganisationUnitFilter(
+    #         parents=None,
+    #         descendant=OrganisationUnitFilter(
+    #             uuids=[
+    #                 parent.value
+    #                 for parent in desired_unit_timeline.parent.intervals
+    #                 if parent.value is not None
+    #             ],
+    #             from_date=None,
+    #             to_date=None,
+    #         ),
+    #         from_date=None,
+    #         to_date=None,
+    #     )
+    # )
+    # try:
+    #     logger.debug("parent roots", parent_roots=parent_roots.dict())
+    #     parent_root = one(parent_roots.objects).uuid
+    # except ValueError:
+    #     logger.debug("OU sync filter: unit has been placed below multiple root units")
+    #     return True
+    # if not parent_root == payroll_root:
+    #     logger.debug("OU sync filter: unit root is not payroll root")
+    #     return True
+
     # Check 3)
     parent_roots = await gql_client.get_parent_roots(
         OrganisationUnitFilter(
-            parents=None,
-            descendant=OrganisationUnitFilter(
-                uuids=[
-                    parent.value
-                    for parent in desired_unit_timeline.parent.intervals
-                    if parent.value is not None
-                ],
-                from_date=None,
-                to_date=None,
-            ),
+            uuids=[parent.value for parent in desired_unit_timeline.parent.intervals],
             from_date=None,
             to_date=None,
         )
     )
-    try:
-        parent_root = one(parent_roots.objects).uuid
-    except ValueError:
-        logger.debug("OU sync filter: unit has been placed below multiple root units")
-        return True
-    if not parent_root == payroll_root:
-        logger.debug("OU sync filter: unit root is not payroll root")
-        return True
+    # parent_root_uuids = []
+    for obj in parent_roots.objects:
+        for validity in obj.validities:
+            if validity.root is not None:
+                for root in validity.root:
+                    if not root.uuid == payroll_root:
+                        logger.debug("OU sync filter: unit root is not payroll root")
+                        return True
+                        # parent_root_uuids.append(root.uuid)
+
+    # if not all(
+    #     parent_root_uuid == payroll_root for parent_root_uuid in parent_root_uuids
+    # ):
+    #     return True
+
+    logger.debug("Ok to sync unit")
 
     return False
 
