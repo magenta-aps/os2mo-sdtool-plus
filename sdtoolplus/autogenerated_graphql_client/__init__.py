@@ -127,6 +127,10 @@ from .get_organization import GetOrganizationOrg
 from .get_parent_roots import GetParentRoots
 from .get_parent_roots import GetParentRootsOrgUnits
 from .get_parent_roots import GetParentRootsOrgUnitsObjects
+from .get_parent_roots import GetParentRootsOrgUnitsObjectsValidities
+from .get_parent_roots import GetParentRootsOrgUnitsObjectsValiditiesRoot
+from .get_parent_roots import GetParentRootsOrgUnitsObjectsValiditiesRootValidity
+from .get_parent_roots import GetParentRootsOrgUnitsObjectsValiditiesValidity
 from .get_person import GetPerson
 from .get_person import GetPersonEmployees
 from .get_person import GetPersonEmployeesObjects
@@ -421,6 +425,10 @@ __all__ = [
     "GetParentRoots",
     "GetParentRootsOrgUnits",
     "GetParentRootsOrgUnitsObjects",
+    "GetParentRootsOrgUnitsObjectsValidities",
+    "GetParentRootsOrgUnitsObjectsValiditiesRoot",
+    "GetParentRootsOrgUnitsObjectsValiditiesRootValidity",
+    "GetParentRootsOrgUnitsObjectsValiditiesValidity",
     "GetPerson",
     "GetPersonEmployees",
     "GetPersonEmployeesObjects",

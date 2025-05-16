@@ -396,7 +396,21 @@ class GraphQLClient(AsyncBaseClient):
             query GetParentRoots($input: OrganisationUnitFilter!) {
               org_units(filter: $input) {
                 objects {
-                  uuid
+                  validities {
+                    validity {
+                      from
+                      to
+                    }
+                    root(filter: {from_date: null, to_date: null}) {
+                      name
+                      uuid
+                      user_key
+                      validity {
+                        from
+                        to
+                      }
+                    }
+                  }
                 }
               }
             }
