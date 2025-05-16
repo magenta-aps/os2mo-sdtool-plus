@@ -173,7 +173,21 @@ query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: Date
 query GetParentRoots($input: OrganisationUnitFilter!) {
   org_units(filter: $input) {
     objects {
-      uuid
+      validities {
+        validity {
+          from
+          to
+        }
+        root(filter: { from_date: null, to_date: null }) {
+          name
+          uuid
+          user_key
+          validity {
+            from
+            to
+          }
+        }
+      }
     }
   }
 }
