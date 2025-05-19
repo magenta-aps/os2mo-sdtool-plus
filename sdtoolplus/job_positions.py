@@ -73,8 +73,19 @@ async def get_desired(
     mo_engagement_job_function_uuid: UUID,
     sd_parent: ProfessionObj | None,
     sd_profession: ProfessionObj,
-) -> Class:
+) -> Class | None:
     """Construct desired class based on SD profession."""
+    # The JobPositionIdentifier is guaranteed unique *within* each level, not
+    # across levels. An employment always refers to a profession on level 0.
+    # Level 1-3 are groupings of codes that can be used for statistics or
+    # budgeting, e.g. "all nurses" or "all doctors", i.e. unused in OS2mo and
+    # therefore skipped.
+    if sd_profession.JobPositionLevelCode != "0":
+        return None
+
+    # A name is required at level 0. It can be empty at other levels.
+    assert sd_profession.JobPositionName is not None
+
     if sd_parent is None:
         mo_parent_uuid = None
     else:
@@ -93,7 +104,7 @@ async def get_desired(
     return Class(
         uuid=uuid4(),  # UUIDs are not imported from SD
         user_key=sd_profession.JobPositionIdentifier,
-        name=f"{sd_profession.JobPositionName} ({sd_profession.JobPositionLevelCode})",
+        name=sd_profession.JobPositionName,
         parent=mo_parent_uuid,
     )
 
@@ -129,8 +140,15 @@ async def sync(
     now = datetime.now(tz=TIMEZONE)
     now = datetime.combine(now, time.min, now.tzinfo)
 
-    # Create if missing
+    # Class is in excess; terminate
+    if desired is None:
+        assert actual is not None  # otherwise actual == desired
+        logger.warning("Job function not terminated", class_=actual.uuid)  # TODO?
+        return
+
+    # Class is missing; create
     if actual is None:
+        assert desired is not None  # otherwise actual == desired
         create_input = ClassCreateInput(
             uuid=desired.uuid,
             facet_uuid=mo_engagement_job_function_uuid,
@@ -143,7 +161,7 @@ async def sync(
         await graphql_client.create_class(create_input)
         return
 
-    # Class is incorrect, update
+    # Class is incorrect; update
     update_input = ClassUpdateInput(
         uuid=actual.uuid,
         facet_uuid=mo_engagement_job_function_uuid,

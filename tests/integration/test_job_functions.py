@@ -71,27 +71,27 @@ async def test_sync_job_positions(
             <Profession>
               <JobPositionIdentifier>foo</JobPositionIdentifier>
               <JobPositionName>foo</JobPositionName>
-              <JobPositionLevelCode>1</JobPositionLevelCode>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
               <Profession>
                 <JobPositionIdentifier>foofoo</JobPositionIdentifier>
                 <JobPositionName>foofoo</JobPositionName>
-                <JobPositionLevelCode>2</JobPositionLevelCode>
+                <JobPositionLevelCode>0</JobPositionLevelCode>
                 <Profession>
                   <JobPositionIdentifier>foofoofoo</JobPositionIdentifier>
                   <JobPositionName>foofoofoo</JobPositionName>
-                  <JobPositionLevelCode>3</JobPositionLevelCode>
+                  <JobPositionLevelCode>0</JobPositionLevelCode>
                 </Profession>
                 <Profession>
                   <JobPositionIdentifier>foofoobar</JobPositionIdentifier>
                   <JobPositionName>foofoobar</JobPositionName>
-                  <JobPositionLevelCode>3</JobPositionLevelCode>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
                 </Profession>
               </Profession>
             </Profession>
             <Profession>
               <JobPositionIdentifier>bar</JobPositionIdentifier>
               <JobPositionName>bar</JobPositionName>
-              <JobPositionLevelCode>1</JobPositionLevelCode>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
             </Profession>
           </GetProfession20080201>
         """,
@@ -115,7 +115,7 @@ async def test_sync_job_positions(
             current=ClassCurrent.construct(
                 uuid=foo.uuid,
                 user_key="foo",
-                name="foo (1)",
+                name="foo",
                 scope=None,
                 parent=None,
             ),
@@ -125,7 +125,7 @@ async def test_sync_job_positions(
             current=ClassCurrent.construct(
                 uuid=ANY,
                 user_key="foofoo",
-                name="foofoo (2)",
+                name="foofoo",
                 scope=None,
                 parent=Parent.construct(
                     uuid=foo.uuid,
@@ -138,20 +138,7 @@ async def test_sync_job_positions(
             current=ClassCurrent.construct(
                 uuid=ANY,
                 user_key="foofoofoo",
-                name="foofoofoo (3)",
-                scope=None,
-                parent=Parent.construct(
-                    uuid=ANY,
-                    user_key="foofoo",
-                ),
-            ),
-        ),
-        Class.construct(
-            uuid=ANY,
-            current=ClassCurrent.construct(
-                uuid=ANY,
-                user_key="foofoobar",
-                name="foofoobar (3)",
+                name="foofoofoo",
                 scope=None,
                 parent=Parent.construct(
                     uuid=ANY,
@@ -164,7 +151,7 @@ async def test_sync_job_positions(
             current=ClassCurrent.construct(
                 uuid=bar.uuid,
                 user_key="bar",
-                name="bar (1)",
+                name="bar",
                 scope=None,
                 parent=None,
             ),
