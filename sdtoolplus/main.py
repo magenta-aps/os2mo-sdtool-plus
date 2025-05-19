@@ -1,15 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-"""
-To run:
-
-    $ cd os2mo-sdtool-plus
-    $ export MORA_BASE=http://localhost:5000
-    $ export AUTH_SERVER=...
-    $ export CLIENT_SECRET=...
-    $ poetry run docker/start.sh
-"""
-
 from typing import Any
 from uuid import UUID
 

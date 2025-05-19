@@ -10,11 +10,6 @@ services:
       FASTRAMQPI__LOG_LEVEL: "DEBUG"
       FASTRAMQPI__JSON_LOGS: "true"
 
-      MORA_BASE: "http://mo:5000"
-      CLIENT_ID: "dipex"
-      CLIENT_SECRET: "603f1c82-d012-4d04-9382-dbe659c533fb"
-      AUTH_SERVER: "http://keycloak:8080/auth"
-
       SD_USERNAME: "username"
       SD_PASSWORD: "password"
       SD_INSTITUTION_IDENTIFIER: "XY"
