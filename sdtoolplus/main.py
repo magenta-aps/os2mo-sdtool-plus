@@ -18,7 +18,6 @@ from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import Depends
 from fastapi import FastAPI
-from fastapi import Request
 from fastapi import Response
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
@@ -43,15 +42,12 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .minisync.api import minisync_router
-from .mo.timeline import get_ou_timeline
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
 from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
-from .sd.timeline import get_department_timeline
-from .timeline import _sync_ou_intervals
-from .timeline import prefix_unit_id_with_inst_id
 from .timeline import sync_engagement
+from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
 
@@ -148,7 +144,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     fastapi_router = APIRouter(dependencies=[Depends(request_id)])
 
     @fastapi_router.get("/tree/mo")
-    async def print_mo_tree(request: Request) -> str:
+    async def print_mo_tree(settings: depends.Settings) -> str:
         """
         For debugging problems. Prints the part of the MO tree that
         should be compared to the SD tree.
@@ -158,7 +154,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
         return tree_as_string(mo_tree)
 
     @fastapi_router.get("/tree/sd")
-    async def print_sd_tree(request: Request) -> str:
+    async def print_sd_tree(settings: depends.Settings) -> str:
         """
         For debugging problems. Prints the SD tree.
         """
@@ -198,6 +194,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         org_unit: UUID | None = None,
@@ -237,6 +234,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
     async def trigger_all_inst_ids(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         background_tasks: BackgroundTasks,
@@ -266,6 +264,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
+        settings: depends.Settings,
         engine: depends.Engine,
         response: Response,
         gql_client: depends.GraphQLClient,
@@ -330,6 +329,7 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
+        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: EngagementSyncPayload,
@@ -348,39 +348,20 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
+        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: OrgUnitSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        """Sync the entire org unit timeline for the given unit."""
-        logger.info(
-            "Sync OU timeline",
-            institution_identifier=payload.institution_identifier,
-            org_uuid=str(payload.org_unit),
-            dry_run=dry_run,
-        )
-
-        sd_unit_timeline = await get_department_timeline(
+        await sync_ou(
             sd_client=sd_client,
-            inst_id=payload.institution_identifier,
-            unit_uuid=payload.org_unit,
-        )
-        desired_unit_timeline = prefix_unit_id_with_inst_id(
-            settings, sd_unit_timeline, payload.institution_identifier
-        )
-
-        mo_unit_timeline = await get_ou_timeline(gql_client, payload.org_unit)
-
-        await _sync_ou_intervals(
             gql_client=gql_client,
-            settings=settings,
+            institution_identifier=payload.institution_identifier,
             org_unit=payload.org_unit,
-            desired_unit_timeline=desired_unit_timeline,
-            mo_unit_timeline=mo_unit_timeline,
+            settings=settings,
             dry_run=dry_run,
         )
-
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
