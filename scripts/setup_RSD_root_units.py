@@ -92,7 +92,7 @@ def main(
 
     async def run_script(gql_client: GraphQLClient):
         org_unit_type = await gql_client.get_class(
-            ClassFilter(facet_user_keys=["org_unit_type"], user_keys=["Enhed"])
+            ClassFilter(facet_user_keys=["org_unit_type"], user_keys=["enhed"])
         )
         org_type_uuid = one(org_unit_type.objects).uuid
         facet_query = """
