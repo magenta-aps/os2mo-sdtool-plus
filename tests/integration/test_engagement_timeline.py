@@ -29,7 +29,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
-from tests.conftest import UNKNOWN_UNIT
+from tests.integration.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test

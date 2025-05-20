@@ -21,7 +21,7 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.mo.timeline import _mo_end_to_timeline_end
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.models import EngType
-from tests.conftest import UNKNOWN_UNIT
+from tests.integration.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
