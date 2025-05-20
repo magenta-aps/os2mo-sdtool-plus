@@ -25,7 +25,6 @@ BASE_START_DATE = datetime(1970, 1, 1)
     "--auth-server",
     "auth_server",
     type=click.STRING,
-    envvar="AUTH_SERVER",
     default="http://keycloak-service:8080/auth",
     help="Keycloak auth server URL",
 )
@@ -33,7 +32,6 @@ BASE_START_DATE = datetime(1970, 1, 1)
     "--client-id",
     "client_id",
     type=click.STRING,
-    envvar="CLIENT_ID",
     default="developer",
     help="Keycloak client id",
 )
@@ -41,7 +39,6 @@ BASE_START_DATE = datetime(1970, 1, 1)
     "--client-secret",
     "client_secret",
     type=click.STRING,
-    envvar="CLIENT_SECRET",
     required=True,
     help="Keycloak client secret",
 )
@@ -50,7 +47,6 @@ BASE_START_DATE = datetime(1970, 1, 1)
     "mo_base_url",
     type=click.STRING,
     default="http://mo-service:5000",
-    envvar="MORA_BASE",
     help="Base URL for calling MO",
 )
 def main(

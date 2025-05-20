@@ -1,16 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-"""
-To run:
-
-    $ cd os2mo-sdtool-plus
-    $ export MORA_BASE=http://localhost:5000
-    $ export AUTH_SERVER=...
-    $ export CLIENT_SECRET=...
-    $ poetry run docker/start.sh
-"""
-
-from typing import Any
 from uuid import UUID
 
 import structlog
@@ -120,8 +109,8 @@ async def background_run(
     logger.info("Run completed!")
 
 
-def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
-    settings = kwargs.get("settings") or SDToolPlusSettings()
+def create_fastramqpi() -> FastRAMQPI:
+    settings = SDToolPlusSettings()
 
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
@@ -371,6 +360,6 @@ def create_fastramqpi(**kwargs: Any) -> FastRAMQPI:
     return fastramqpi
 
 
-def create_app(**kwargs: Any) -> FastAPI:
-    fastramqpi = create_fastramqpi(**kwargs)
+def create_app() -> FastAPI:
+    fastramqpi = create_fastramqpi()
     return fastramqpi.get_app()

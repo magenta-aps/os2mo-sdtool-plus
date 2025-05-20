@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import re
+from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import call
 from unittest.mock import patch
@@ -24,17 +25,14 @@ class TestFastAPIApp:
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
     def test_post_trigger(
-        self,
-        mock_get_status: MagicMock,
-        mock_persist_status: MagicMock,
-        sdtoolplus_settings: SDToolPlusSettings,
+        self, mock_get_status: MagicMock, mock_persist_status: MagicMock
     ) -> None:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Arrange
             last_run_val_before: float = self._get_last_run_metric(client)
@@ -72,6 +70,11 @@ class TestFastAPIApp:
                 == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
             )
 
+    @pytest.mark.envvar(
+        {
+            "MO_SUBTREE_PATHS_FOR_ROOT": '{"AB": [], "CD": []}',
+        }
+    )
     @patch("sdtoolplus.main.get_engine")
     @patch("sdtoolplus.main.background_run")
     @patch("sdtoolplus.main.persist_status")
@@ -82,14 +85,8 @@ class TestFastAPIApp:
         mock_persist_status: MagicMock,
         mock_background_run: MagicMock,
         mock_get_engine: MagicMock,
-        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
-        sdtoolplus_settings.mo_subtree_paths_for_root = {
-            "AB": [],
-            "CD": [],
-        }
-
         mock_sdtoolplus_app = MagicMock(spec=App)
 
         mock_engine = MagicMock()
@@ -97,7 +94,7 @@ class TestFastAPIApp:
 
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response: Response = client.post("/trigger-all-inst-ids")
@@ -105,10 +102,15 @@ class TestFastAPIApp:
             # Assert
             mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
             mock_background_run.assert_called_once_with(
-                sdtoolplus_settings, mock_engine, ["AB", "CD"], None, False
+                ANY, mock_engine, ["AB", "CD"], None, False
             )
             assert response.json() == {"msg": "Org tree sync started in background"}
 
+    @pytest.mark.envvar(
+        {
+            "MO_SUBTREE_PATHS_FOR_ROOT": '{"AB": [], "CD": []}',
+        }
+    )
     @pytest.mark.parametrize(
         "org_unit, inst_id, dry_run, expected_inst_id_list",
         [
@@ -130,14 +132,8 @@ class TestFastAPIApp:
         inst_id: str | None,
         dry_run: bool,
         expected_inst_id_list: list[str],
-        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
-        sdtoolplus_settings.mo_subtree_paths_for_root = {
-            "AB": [],
-            "CD": [],
-        }
-
         mock_sdtoolplus_app = MagicMock(spec=App)
 
         mock_engine = MagicMock()
@@ -145,7 +141,7 @@ class TestFastAPIApp:
 
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response: Response = client.post(
@@ -161,7 +157,7 @@ class TestFastAPIApp:
             if not dry_run:
                 mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
             mock_background_run.assert_called_once_with(
-                sdtoolplus_settings,
+                ANY,
                 mock_engine,
                 expected_inst_id_list,
                 org_unit,
@@ -175,14 +171,13 @@ class TestFastAPIApp:
         self,
         mock_get_status: MagicMock,
         mock_persist_status: MagicMock,
-        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         """Test that 'POST /trigger' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response: Response = client.post("/trigger")
@@ -201,13 +196,12 @@ class TestFastAPIApp:
         self,
         mock_get_status: MagicMock,
         mock_persist_status: MagicMock,
-        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             client.post("/trigger?org_unit=70000000-0000-0000-0000-000000000000")
@@ -223,14 +217,13 @@ class TestFastAPIApp:
         self,
         mock_get_status: MagicMock,
         mock_persist_status: MagicMock,
-        sdtoolplus_settings: SDToolPlusSettings,
     ) -> None:
         """Test that 'POST /trigger/dry' calls the expected methods on `App`, etc."""
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
             patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response: Response = client.post("/trigger?dry_run=true")
@@ -260,12 +253,11 @@ class TestFastAPIApp:
         self,
         rundb_status: Status,
         endpoint_response_status: int,
-        sdtoolplus_settings: SDToolPlusSettings,
     ):
         # Arrange
         with (
             patch("sdtoolplus.main.get_status", return_value=rundb_status),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response = client.get("/rundb/status")
@@ -274,11 +266,11 @@ class TestFastAPIApp:
             assert response.status_code == 200
             assert response.text == str(endpoint_response_status)
 
-    def test_rundb_get_status_on_error(self, sdtoolplus_settings: SDToolPlusSettings):
+    def test_rundb_get_status_on_error(self):
         # Arrange
         with (
             patch("sdtoolplus.main.get_status", side_effect=SQLAlchemyError()),
-            TestClient(create_app(settings=sdtoolplus_settings)) as client,
+            TestClient(create_app()) as client,
         ):
             # Act
             response = client.get("/rundb/status")
@@ -305,6 +297,7 @@ class TestFastAPIApp:
         return val
 
 
+@pytest.mark.integration_test
 @pytest.mark.parametrize(
     "org_unit, dry_run",
     [
@@ -317,7 +310,6 @@ class TestFastAPIApp:
 @patch("sdtoolplus.main.persist_status")
 async def test_background_run(
     mock_persist_status: MagicMock,
-    sdtoolplus_settings: SDToolPlusSettings,
     org_unit: UUID | None,
     dry_run: bool,
 ):
@@ -327,16 +319,15 @@ async def test_background_run(
 
     with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app) as m_app:
         # Act
-        await background_run(
-            sdtoolplus_settings, mock_engine, ["AB", "CD"], org_unit, dry_run
-        )
+        settings = SDToolPlusSettings()
+        await background_run(settings, mock_engine, ["AB", "CD"], org_unit, dry_run)
 
         # Assert
 
         # Make sure the constructor is called once with the correct args
         assert m_app.call_count == 1
         call1 = m_app.call_args_list[0]
-        assert call1 == call(sdtoolplus_settings, "AB")
+        assert call1 == call(settings, "AB")
 
         call1, call2 = mock_sdtoolplus_app.set_inst_id.call_args_list
         assert call1 == call("AB")
