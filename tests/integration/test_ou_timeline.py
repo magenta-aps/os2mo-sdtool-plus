@@ -23,7 +23,7 @@ from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
-from tests.conftest import UNKNOWN_UNIT
+from tests.integration.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
