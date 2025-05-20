@@ -13,15 +13,13 @@ import pytest
 from anytree import Resolver  # type: ignore
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
-from fastramqpi.config import Settings as FastRAMQPISettings
-from fastramqpi.ramqp.config import AMQPConnectionSettings
 from graphql import GraphQLSchema
 from graphql import build_schema as build_graphql_schema
 from graphql.language.ast import DocumentNode
 from httpx import ASGITransport
 from httpx import AsyncClient
 from more_itertools import one
-from pydantic import SecretStr
+from pytest import MonkeyPatch
 from ramodels.mo import Validity
 from sdclient.requests import GetDepartmentParentRequest
 from sdclient.responses import DepartmentParent
@@ -1059,21 +1057,17 @@ def expected_units_to_update(
 
 
 @pytest.fixture()
-def sdtoolplus_settings() -> SDToolPlusSettings:
-    return SDToolPlusSettings(
-        fastramqpi=FastRAMQPISettings(
-            client_id="client_id",
-            client_secret=SecretStr("top_secret"),
-            amqp=AMQPConnectionSettings(url="amqp://guest:guest@msg-broker"),
-        ),
-        client_secret=SecretStr(""),
-        sd_username="sd_username",
-        sd_institution_identifier="sd_institution_identifier",
-        sd_password=SecretStr(""),
-        db_password=SecretStr("secret"),
-        mo_subtree_path_for_root=[],
-        obsolete_unit_roots=[uuid.uuid4()],
-    )
+def sdtoolplus_settings(monkeypatch: MonkeyPatch) -> SDToolPlusSettings:
+    monkeypatch.setenv("FASTRAMQPI__CLIENT_ID", "unused")
+    monkeypatch.setenv("FASTRAMQPI__CLIENT_SECRET", "unused")
+    monkeypatch.setenv("FASTRAMQPI__AMQP__URL", "amqp://unused")
+    monkeypatch.setenv("SD_USERNAME", "sd_username")
+    monkeypatch.setenv("SD_INSTITUTION_IDENTIFIER", "sd_institution_identifier")
+    monkeypatch.setenv("SD_PASSWORD", "")
+    monkeypatch.setenv("DB_PASSWORD", "secret")
+    monkeypatch.setenv("MO_SUBTREE_PATH_FOR_ROOT", "[]")
+    monkeypatch.setenv("OBSOLETE_UNIT_ROOTS", f'["{uuid.uuid4()}"]')
+    return SDToolPlusSettings()
 
 
 @pytest.fixture()
