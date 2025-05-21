@@ -6,7 +6,9 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from fastramqpi.config import Settings as FastRAMQPISettings
+from pydantic import AmqpDsn
 from pydantic import AnyHttpUrl
+from pydantic import BaseModel
 from pydantic import BaseSettings
 from pydantic import EmailStr
 from pydantic import Field
@@ -24,6 +26,20 @@ TIMEZONE = ZoneInfo("Europe/Copenhagen")
 class Mode(Enum):
     MUNICIPALITY = "municipality"
     REGION = "region"
+
+
+class AMQPTLS(BaseModel):
+    ca: bytes
+    cert: bytes
+    key: bytes
+
+
+class SDAMQPSettings(BaseModel):
+    url: AmqpDsn
+    tls: AMQPTLS | None = None
+
+    class Config:
+        env_nested_delimiter = "__"
 
 
 class SDToolPlusSettings(BaseSettings):
@@ -64,6 +80,9 @@ class SDToolPlusSettings(BaseSettings):
     # 2) Prefix unitIDs with the SD institution identifier
     # 3) Apply the special engagement OU strategy for the regions.
     mode: Mode = Mode.MUNICIPALITY
+
+    # SD AMQP
+    sd_amqp: SDAMQPSettings | None = None
 
     # Specifies the 'user_key' of the `org_unit_type` class to use when creating new
     # org units in MO. The default value matches the existing setup at SD customers.
