@@ -107,6 +107,14 @@ services:
     ports:
       - "127.0.0.1:15673:15672"  # management port (guest/guest)
     restart: unless-stopped
+    post_start:
+      # Wait for RabbitMQ to be ready
+      - command: /bin/sh -c 'while ! rabbitmqadmin list connections; do sleep 1; done'
+      # Declare the queues. This is normally done by SD (we don't have
+      # permission), which is why the integration doesn't do so itself.
+      - command: rabbitmqadmin declare queue name=employment-events
+      - command: rabbitmqadmin declare queue name=org-events
+      - command: rabbitmqadmin declare queue name=person-events
 
   mo-init:
     image: magentaaps/os2mo-init:2
