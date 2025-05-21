@@ -59,12 +59,13 @@ def main(
     # Fixed uuids to enable the same script to be run twice without creating duplicates
     hierarchy_facet_uuid = "2d4059fa-3660-4945-944a-1ecc92ac91b7"
     adm_hierarchy_uuid = "ac085f9f-d611-4bae-8606-55972a4d1f69"
-    pay_heirarchy_uuid = "55d5a67c-a87c-43c6-a9a5-d515298bc054"
+    pay_hierarchy_uuid = "55d5a67c-a87c-43c6-a9a5-d515298bc054"
 
     # RSD units to create:
     pay_8S_uuid = "58b543b9-1ed8-4800-ae00-0000012a0002"
-    pay_PS_uuid = "30a642bc-1ed8-4800-8600-000001290002"
+    pay_7N_uuid = "cbba31fe-3188-4c00-9800-000001aa0001"
     adm_org_uuid = "00923955-db6e-49fc-a191-ec36ff151ec7"
+    unknown = "bbefafe9-d765-4bd4-a116-2e107a3c9404"
 
     units = [
         {
@@ -72,12 +73,12 @@ def main(
             "name": "8S",
             "user_key": "-",
             "parent": None,
-            "org_unit_hierarchy": pay_heirarchy_uuid,
+            "org_unit_hierarchy": pay_hierarchy_uuid,
         },
         {
-            "uuid": pay_PS_uuid,
-            "name": "Psykiatrien i Region Syddanmark (PS)",
-            "user_key": "-",
+            "uuid": pay_7N_uuid,
+            "name": "Psykiatrien i Region Syddanmark (7N)",
+            "user_key": "7N",
             "parent": pay_8S_uuid,
             "org_unit_hierarchy": None,
         },
@@ -87,6 +88,13 @@ def main(
             "user_key": "-",
             "parent": None,
             "org_unit_hierarchy": adm_hierarchy_uuid,
+        },
+        {
+            "uuid": unknown,
+            "name": "Ukendt",
+            "user_key": "-",
+            "parent": None,
+            "org_unit_hierarchy": None,
         },
     ]
 
@@ -150,7 +158,7 @@ def main(
             variables={
                 "name": "Lønorganisation",
                 "user_key": "PAY_org",
-                "uuid": pay_heirarchy_uuid,
+                "uuid": pay_hierarchy_uuid,
                 "facet_uuid": hierarchy_facet_uuid,
             },
         )

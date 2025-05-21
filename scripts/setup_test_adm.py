@@ -3,6 +3,7 @@
 import asyncio
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import click
 from fastramqpi.raclients.auth import AuthenticatedAsyncHTTPXClient
@@ -50,7 +51,7 @@ query GetAdmUnits {
   }
 }
 """
-BASE_START_DATE = datetime(1970, 1, 1)
+BASE_START_DATE = datetime(2024, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
 
 related_units_mutation = """mutation UpdateRelatedUnits(
   $destination: [UUID!]
@@ -77,6 +78,7 @@ query FindUnitUUID($user_key: String!) {
         org_unit_level {
           name
         }
+        validity{from}
       }
     }
   }
@@ -124,7 +126,7 @@ def main(
 
     async def run_script(gql_client: GraphQLClient):
         org_unit_type = await gql_client.get_class(
-            ClassFilter(facet_user_keys=["org_unit_type"], user_keys=["enhed"])
+            ClassFilter(facet_user_keys=["org_unit_type"], user_keys=["Enhed"])
         )
         org_type_uuid = one(org_unit_type.objects).uuid
         # Sort by amount of ancestors to create the top units first.
@@ -144,9 +146,10 @@ def main(
                     validity=RAValidityInput(from_=BASE_START_DATE),
                 )
             )
-            unit_uuids = []
+            unit_uuids = set()
             for r in current["related_units"]:
                 user_key = one(r["org_units"])["user_key"]
+                user_key = "7N" + user_key[2:]
                 if user_key not in pay_unit_cache:
                     resp = await gql_client.execute(
                         find_unit_query, variables={"user_key": user_key}
@@ -160,22 +163,26 @@ def main(
                         case 1:
                             pay_org_uuid = one(pay_org)["uuid"]
                             pay_unit_cache[user_key] = pay_org_uuid
+
                         case _:
-                            pay_org_uuid = one(
+                            pay_org = one(
                                 [
                                     p
                                     for p in pay_org
                                     if p["current"]["org_unit_level"]["name"]
                                     == "Afdelings-niveau"
                                 ]
-                            )["uuid"]
+                            )
+                            pay_org_uuid = pay_org["uuid"]
+
                             pay_unit_cache[user_key] = pay_org_uuid
+
                 else:
                     pay_org_uuid = pay_unit_cache[user_key]
                     if pay_org_uuid is None:
                         continue
 
-                unit_uuids.append(pay_org_uuid)
+                unit_uuids.add(pay_org_uuid)
             if unit_uuids:
                 rel = await gql_client.execute(
                     related_units_mutation,
