@@ -49,7 +49,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
-from sdtoolplus.sd.person import get_sd_persons
+from sdtoolplus.sd.person import get_sd_person
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
@@ -148,7 +148,7 @@ async def sync_person(
         dry_run=dry_run,
     )
     try:
-        sd_person = await get_sd_persons(
+        sd_person = await get_sd_person(
             sd_client=sd_client,
             institution_identifier=institution_identifier,
             cpr=cpr,
