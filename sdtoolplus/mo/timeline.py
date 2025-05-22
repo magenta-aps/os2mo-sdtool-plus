@@ -578,6 +578,9 @@ async def create_engagement(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
             user_keys=[str(desired_eng_timeline.eng_key.entity_at(start).value)],
+            # The scope is the JobPositionLevelCode, and employments in SD
+            # always refer to JobPositions at level 0.
+            scope=["0"],
         )
     )
     current_job_function = one(r_job_function.objects).current
@@ -695,6 +698,9 @@ async def update_engagement(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
             user_keys=[str(desired_eng_timeline.eng_key.entity_at(start).value)],
+            # The scope is the JobPositionLevelCode, and employments in SD
+            # always refer to JobPositions at level 0.
+            scope=["0"],
         )
     )
     current_job_function = one(r_job_function.objects).current
