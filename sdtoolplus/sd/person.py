@@ -46,3 +46,34 @@ async def get_sd_person(
     logger.debug("SD person", person=person.dict())
 
     return person
+
+
+async def get_all_sd_persons(
+    sd_client: SDClient,
+    institution_identifier: str,
+    effective_date: date,
+    contact_information: bool = False,
+    postal_address: bool = False,
+) -> list[Person]:
+    # TODO: handle SD call errors
+    sd_response = await asyncio.to_thread(
+        sd_client.get_person,
+        GetPersonRequest(
+            InstitutionIdentifier=institution_identifier,
+            PersonCivilRegistrationIdentifier=None,
+            EffectiveDate=effective_date,
+            ContactInformationIndicator=contact_information,
+            PostalAddressIndicator=postal_address,
+        ),
+    )
+    return [
+        Person(
+            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
+            given_name=sd_response_person.PersonGivenName,
+            surname=sd_response_person.PersonSurnameName,
+            emails=[],
+            phone_numbers=[],
+            addresses=[],
+        )
+        for sd_response_person in sd_response.Person
+    ]
