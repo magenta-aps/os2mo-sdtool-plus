@@ -38,7 +38,8 @@ async def test_sync_job_positions(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
             user_key="foo",
-            name="foo (1)",
+            name="foo",
+            scope="0",
             parent_uuid=None,
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
@@ -51,6 +52,7 @@ async def test_sync_job_positions(
             facet_uuid=engagement_job_function_uuid,
             user_key="bar",
             name="wrong name",
+            scope="1",
             parent_uuid=foo.uuid,  # wrong parent
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
@@ -75,23 +77,23 @@ async def test_sync_job_positions(
               <Profession>
                 <JobPositionIdentifier>foofoo</JobPositionIdentifier>
                 <JobPositionName>foofoo</JobPositionName>
-                <JobPositionLevelCode>0</JobPositionLevelCode>
+                <JobPositionLevelCode>2</JobPositionLevelCode>
                 <Profession>
                   <JobPositionIdentifier>foofoofoo</JobPositionIdentifier>
                   <JobPositionName>foofoofoo</JobPositionName>
-                  <JobPositionLevelCode>0</JobPositionLevelCode>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
                 </Profession>
                 <Profession>
                   <JobPositionIdentifier>foofoobar</JobPositionIdentifier>
                   <JobPositionName>foofoobar</JobPositionName>
-                  <JobPositionLevelCode>1</JobPositionLevelCode>
+                  <JobPositionLevelCode>3</JobPositionLevelCode>
                 </Profession>
               </Profession>
             </Profession>
             <Profession>
               <JobPositionIdentifier>bar</JobPositionIdentifier>
               <JobPositionName>bar</JobPositionName>
-              <JobPositionLevelCode>0</JobPositionLevelCode>
+              <JobPositionLevelCode>1</JobPositionLevelCode>
             </Profession>
           </GetProfession20080201>
         """,
@@ -116,7 +118,7 @@ async def test_sync_job_positions(
                 uuid=foo.uuid,
                 user_key="foo",
                 name="foo",
-                scope=None,
+                scope="0",
                 parent=None,
             ),
         ),
@@ -126,7 +128,7 @@ async def test_sync_job_positions(
                 uuid=ANY,
                 user_key="foofoo",
                 name="foofoo",
-                scope=None,
+                scope="2",
                 parent=Parent.construct(
                     uuid=foo.uuid,
                     user_key="foo",
@@ -139,7 +141,20 @@ async def test_sync_job_positions(
                 uuid=ANY,
                 user_key="foofoofoo",
                 name="foofoofoo",
-                scope=None,
+                scope="1",
+                parent=Parent.construct(
+                    uuid=ANY,
+                    user_key="foofoo",
+                ),
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="foofoobar",
+                name="foofoobar",
+                scope="3",
                 parent=Parent.construct(
                     uuid=ANY,
                     user_key="foofoo",
@@ -152,7 +167,7 @@ async def test_sync_job_positions(
                 uuid=bar.uuid,
                 user_key="bar",
                 name="bar",
-                scope=None,
+                scope="1",
                 parent=None,
             ),
         ),
