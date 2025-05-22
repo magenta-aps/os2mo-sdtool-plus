@@ -70,16 +70,16 @@ facets:
   engagement_job_function:
     Ninja:
       title: "Ninja"
-      scope: "TEXT"
+      scope: "0"
     1234:
       title: "Kung Fu Master"
-      scope: "TEXT"
+      scope: "0"
     5678:
       title: "Shogun"
-      scope: "TEXT"
+      scope: "0"
     9000:
       title: "Karate Coach"
-      scope: "TEXT"
+      scope: "0"
   leave_type:
     Orlov:
       title: "Orlov"
