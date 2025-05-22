@@ -36,6 +36,7 @@ class Class:
     )
     user_key: str
     name: str
+    scope: str | None
     parent: UUID | None
 
 
@@ -48,10 +49,11 @@ async def get_actual(
     mo_classes = await graphql_client.get_class(
         ClassFilter(
             facet=FacetFilter(uuids=[mo_engagement_job_function_uuid]),
+            scope=[sd_profession.JobPositionLevelCode],
             user_keys=[sd_profession.JobPositionIdentifier],
         )
     )
-    # User keys are assumed unique
+    # (scope, user_key) is assumed unique (and stable)
     mo_class = only(mo_classes.objects)
     if mo_class is None:
         return None
@@ -60,6 +62,7 @@ async def get_actual(
         uuid=mo_class.uuid,
         user_key=mo_class.current.user_key,
         name=mo_class.current.name,
+        scope=mo_class.current.scope,
         parent=(
             mo_class.current.parent.uuid
             if mo_class.current.parent is not None
@@ -73,16 +76,8 @@ async def get_desired(
     mo_engagement_job_function_uuid: UUID,
     sd_parent: ProfessionObj | None,
     sd_profession: ProfessionObj,
-) -> Class | None:
+) -> Class:
     """Construct desired class based on SD profession."""
-    # The JobPositionIdentifier is guaranteed unique *within* each level, not
-    # across levels. An employment always refers to a profession on level 0.
-    # Level 1-3 are groupings of codes that can be used for statistics or
-    # budgeting, e.g. "all nurses" or "all doctors", i.e. unused in OS2mo and
-    # therefore skipped.
-    if sd_profession.JobPositionLevelCode != "0":
-        return None
-
     # A name is required at level 0. It can be empty at other levels.
     assert sd_profession.JobPositionName is not None
 
@@ -101,10 +96,18 @@ async def get_desired(
         assert mo_parent.current is not None
         mo_parent_uuid = mo_parent.current.uuid
 
+    # The JobPositionIdentifier is guaranteed unique *within* each level, not
+    # across levels. An employment always refers to a profession on level 0 in
+    # SD. Level 1-3 are groupings of codes that can be used for statistics or
+    # budgeting, e.g. "all nurses" or "all doctors".
+    # We set user_key=JobPositionIdentifier, scope=JobPositionLevelCode in MO
+    # for a (scope, user_key) compound primary key. Engagements should refer to
+    # the (0, JobPositionIdentifier) class.
     return Class(
         uuid=uuid4(),  # UUIDs are not imported from SD
         user_key=sd_profession.JobPositionIdentifier,
         name=sd_profession.JobPositionName,
+        scope=sd_profession.JobPositionLevelCode,
         parent=mo_parent_uuid,
     )
 
@@ -140,15 +143,8 @@ async def sync(
     now = datetime.now(tz=TIMEZONE)
     now = datetime.combine(now, time.min, now.tzinfo)
 
-    # Class is in excess; terminate
-    if desired is None:
-        assert actual is not None  # otherwise actual == desired
-        logger.warning("Job function not terminated", class_=actual.uuid)  # TODO?
-        return
-
     # Class is missing; create
     if actual is None:
-        assert desired is not None  # otherwise actual == desired
         create_input = ClassCreateInput(
             uuid=desired.uuid,
             facet_uuid=mo_engagement_job_function_uuid,
