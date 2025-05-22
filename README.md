@@ -18,7 +18,8 @@ After starting the project, tests can be run using
 [pytest](https://pytest.org), for example:
 
 ```sh
-podman compose run sdtool-plus pytest tests/integration/test_engagement_timeline.py
+podman compose stop sdtool-plus
+podman compose run --rm sdtool-plus pytest tests/integration/test_engagement_timeline.py
 ```
 
 All tests should be runnable both locally and in CI -- it is considered a bug
