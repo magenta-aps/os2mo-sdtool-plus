@@ -147,6 +147,10 @@ class EngagementUnitId(Interval[Optional[str]]):
     pass
 
 
+class EngagementSDUnit(Interval[Optional[OrgUnitUUID]]):
+    pass
+
+
 class EngagementType(Interval[EngType]):
     pass
 
@@ -281,6 +285,7 @@ class EngagementTimeline(BaseTimeline):
     eng_key: Timeline[EngagementKey] = Timeline[EngagementKey]()
     eng_name: Timeline[EngagementName] = Timeline[EngagementName]()
     eng_unit: Timeline[EngagementUnit] = Timeline[EngagementUnit]()
+    eng_sd_unit: Timeline[EngagementSDUnit] = Timeline[EngagementSDUnit]()
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
 
@@ -290,6 +295,7 @@ class EngagementTimeline(BaseTimeline):
             self.eng_key.entity_at(timestamp)
             self.eng_name.entity_at(timestamp)
             self.eng_unit.entity_at(timestamp)
+            self.eng_sd_unit.entity_at(timestamp)
             self.eng_unit_id.entity_at(timestamp)
             self.eng_type.entity_at(timestamp)
             return True
