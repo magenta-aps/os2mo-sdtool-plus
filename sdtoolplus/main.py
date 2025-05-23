@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
 import datetime
+import re
 from uuid import UUID
 
 import structlog
@@ -17,7 +19,10 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import Department
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
@@ -37,6 +42,7 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .events import OrgGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
@@ -465,6 +471,60 @@ def create_fastramqpi() -> FastRAMQPI:
         )
 
         return {"msg": "Sync started in background"}
+    @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
+    async def full_timeline_sync_ous(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
+        gql_client: depends.GraphQLClient,
+        institution_identifier: str,
+        dry_run: bool = False,
+    ) -> dict:
+        # TODO: This only works when all unit_levels are integers
+        ny_regex = re.compile(r"NY(\d)-niveau")
+        # Set priority on org_unit events such that top-level units are imported first.
+        default_priority = 10_000
+
+        def priority_from_level(department: Department) -> int:
+            if department.DepartmentLevelIdentifier == "Afdelings-niveau":
+                return default_priority
+            match = ny_regex.match(department.DepartmentLevelIdentifier)
+            assert match
+            priority = default_priority - int(one(match.groups()))
+            return priority
+
+        departments = await asyncio.to_thread(
+            sd_client.get_department,
+            GetDepartmentRequest(
+                InstitutionIdentifier=institution_identifier,
+                ActivationDate=datetime.datetime.min,
+                DeactivationDate=datetime.datetime.max,
+                DepartmentNameIndicator=False,
+                UUIDIndicator=True,
+                PostalAddressIndicator=False,
+            ),
+        )
+        if dry_run:
+            logger.info(
+                f"Dry-run. Would create {len(departments.Department)} org_unit events"
+            )
+            return {"msg": "success"}
+
+        events = [
+            EventSendInput(
+                namespace="sd",
+                routing_key="org_unit",
+                subject=OrgGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    org_unit=d.DepartmentUUIDIdentifier,
+                ).json(),
+                priority=priority_from_level(d),
+            )
+            for d in departments.Department
+        ]
+
+        await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
+
+        return {"msg": "success"}
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
