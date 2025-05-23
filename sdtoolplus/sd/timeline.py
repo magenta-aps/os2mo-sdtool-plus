@@ -243,6 +243,9 @@ async def get_employment_timeline(
         eng_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
         ),
+        eng_sd_unit=Timeline[EngagementUnit](
+            intervals=combine_intervals(eng_unit_intervals)
+        ),
         eng_unit_id=Timeline[EngagementUnitId](
             intervals=combine_intervals(eng_unit_id_intervals)
         ),
