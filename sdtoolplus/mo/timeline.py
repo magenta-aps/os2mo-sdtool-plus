@@ -39,6 +39,7 @@ from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementSDUnit
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
@@ -469,6 +470,15 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
+    sd_unit_intervals = tuple(
+        EngagementSDUnit(
+            start=obj.validity.from_,
+            end=_mo_end_to_timeline_end(obj.validity.to),
+            value=obj.extension_3,
+        )
+        for obj in validities
+    )
+
     unit_id_intervals = tuple(
         EngagementUnitId(
             start=obj.validity.from_,
@@ -492,6 +502,9 @@ async def get_engagement_timeline(
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=combine_intervals(sd_unit_intervals)
+        ),
         eng_unit_id=Timeline[EngagementUnitId](
             intervals=combine_intervals(unit_id_intervals)
         ),
