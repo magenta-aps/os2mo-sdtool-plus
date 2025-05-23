@@ -227,12 +227,12 @@ def create_fastramqpi() -> FastRAMQPI:
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
-    @fastapi_router.post("/persons/sync")
+    @fastapi_router.post("/timeline/sync/person/all")
     async def sync_all_persons(
         sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
-    ) -> None:
+    ) -> dict:
         """
         Sync all persons in SD
         """
@@ -261,7 +261,7 @@ def create_fastramqpi() -> FastRAMQPI:
                 )
             )
 
-        logger.info("Done syncing all SD persons")
+        return {"msg": "success"}
 
     @fastapi_router.post("/job-functions/sync")
     async def sync_job_functions(
