@@ -22,8 +22,10 @@ from more_itertools import first
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
+from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
 from sdclient.responses import Department
+from sdclient.responses import GetEmploymentChangedResponse
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
@@ -436,7 +438,6 @@ def create_fastramqpi() -> FastRAMQPI:
         institution_identifier: str,
         dry_run: bool = False,
     ) -> dict:
-        # TODO: This only fetches the current engagements. To find past and future engagements we should look up engagements for each person
         sd_persons = await asyncio.to_thread(
             sd_client.get_person,
             GetPersonRequest(
@@ -446,18 +447,43 @@ def create_fastramqpi() -> FastRAMQPI:
             ),
         )
 
+        async def get_sd_person_engagements(
+            institution_identifier: str, cpr: str
+        ) -> GetEmploymentChangedResponse:
+            return await asyncio.to_thread(
+                sd_client.get_employment_changed,
+                GetEmploymentChangedRequest(
+                    InstitutionIdentifier=institution_identifier,
+                    PersonCivilRegistrationIdentifier=cpr,
+                    EmploymentIdentifier=None,
+                    ActivationDate=datetime.date.min,
+                    DeactivationDate=datetime.date.max,
+                ),
+            )
+
+        sd_employments = await asyncio.gather(
+            *[
+                get_sd_person_engagements(
+                    institution_identifier=institution_identifier,
+                    cpr=person.PersonCivilRegistrationIdentifier,
+                )
+                for person in sd_persons.Person
+            ]
+        )
+
         events = [
             EventSendInput(
                 namespace="sd",
                 routing_key="employment",
                 subject=EmploymentGraphQLEvent(
                     institution_identifier=institution_identifier,
-                    cpr=sd_person.PersonCivilRegistrationIdentifier,
+                    cpr=employments.PersonCivilRegistrationIdentifier,
                     employment_identifier=e.EmploymentIdentifier,
                 ).json(),
             )
-            for sd_person in sd_persons.Person
-            for e in sd_person.Employment
+            for person in sd_employments
+            for employments in person.Person
+            for e in employments.Employment
         ]
 
         if dry_run:
