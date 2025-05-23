@@ -22,6 +22,7 @@ from more_itertools import first
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
+from sdclient.requests import GetPersonRequest
 from sdclient.responses import Department
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
@@ -42,6 +43,7 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .events import EmploymentGraphQLEvent
 from .events import OrgGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
@@ -424,6 +426,45 @@ def create_fastramqpi() -> FastRAMQPI:
             settings=settings,
             dry_run=dry_run,
         )
+        return {"msg": "success"}
+
+    @fastapi_router.post("/timeline/sync/engagement/all", status_code=HTTP_200_OK)
+    async def full_timeline_sync_engagements(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
+        gql_client: depends.GraphQLClient,
+        institution_identifier: str,
+        dry_run: bool = False,
+    ) -> dict:
+        # TODO: This only fetches the current engagements. To find past and future engagements we should look up engagements for each person
+        sd_persons = await asyncio.to_thread(
+            sd_client.get_person,
+            GetPersonRequest(
+                InstitutionIdentifier=institution_identifier,
+                PersonCivilRegistrationIdentifier=None,
+                EffectiveDate=datetime.datetime.now(),
+            ),
+        )
+
+        events = [
+            EventSendInput(
+                namespace="sd",
+                routing_key="employment",
+                subject=EmploymentGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    cpr=sd_person.PersonCivilRegistrationIdentifier,
+                    employment_identifier=e.EmploymentIdentifier,
+                ).json(),
+            )
+            for sd_person in sd_persons.Person
+            for e in sd_person.Employment
+        ]
+
+        if dry_run:
+            logger.info(f"Dry-run. Would create {len(events)} engagement events")
+            return {"msg": "success"}
+        await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
+
         return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
