@@ -227,42 +227,6 @@ def create_fastramqpi() -> FastRAMQPI:
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
-    @fastapi_router.post("/timeline/sync/person/all")
-    async def sync_all_persons(
-        sd_client: depends.SDClient,
-        graphql_client: depends.GraphQLClient,
-        institution_identifier: str,
-    ) -> dict:
-        """
-        Sync all persons in SD
-        """
-        logger.info("Syncing all SD persons")
-
-        sd_persons = await get_all_sd_persons(
-            sd_client=sd_client,
-            institution_identifier=institution_identifier,
-            effective_date=datetime.date.today(),
-        )
-
-        for person in sd_persons:
-            logger.debug(
-                "Syncing person",
-                cpr=person.cpr,
-                name=f"{person.given_name} {person.surname}",
-            )
-            await graphql_client.send_event(
-                input=EventSendInput(
-                    namespace="sd",
-                    routing_key="person",
-                    subject=PersonGraphQLEvent(
-                        institution_identifier=institution_identifier,
-                        cpr=person.cpr,
-                    ).json(),
-                )
-            )
-
-        return {"msg": "success"}
-
     @fastapi_router.post("/job-functions/sync")
     async def sync_job_functions(
         sd_client: depends.SDClient,
@@ -403,6 +367,42 @@ def create_fastramqpi() -> FastRAMQPI:
             cpr=payload.cpr,
             dry_run=dry_run,
         )
+
+        return {"msg": "success"}
+
+    @fastapi_router.post("/timeline/sync/person/all")
+    async def sync_all_persons(
+        sd_client: depends.SDClient,
+        graphql_client: depends.GraphQLClient,
+        institution_identifier: str,
+    ) -> dict:
+        """
+        Sync all persons in SD
+        """
+        logger.info("Syncing all SD persons")
+
+        sd_persons = await get_all_sd_persons(
+            sd_client=sd_client,
+            institution_identifier=institution_identifier,
+            effective_date=datetime.date.today(),
+        )
+
+        for person in sd_persons:
+            logger.debug(
+                "Syncing person",
+                cpr=person.cpr,
+                name=f"{person.given_name} {person.surname}",
+            )
+            await graphql_client.send_event(
+                input=EventSendInput(
+                    namespace="sd",
+                    routing_key="person",
+                    subject=PersonGraphQLEvent(
+                        institution_identifier=institution_identifier,
+                        cpr=person.cpr,
+                    ).json(),
+                )
+            )
 
         return {"msg": "success"}
 
