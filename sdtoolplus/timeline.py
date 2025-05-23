@@ -501,6 +501,23 @@ async def engagement_ou_strategy_region(
        engagement will stay in the MO unit for the given interval.
     2) If the engagement is placed in "Unknown" in MO, we will attempt to place the
        engagement in a (random) related unit in the given interval.
+
+    These two rules apply apart from the following exception. If the engagement SD unit
+    UUID value changes (stored in MOs engagement attribute "extension_3"), we will
+    re-calculate the engagement placement according to 2) above. As a consequence, *any*
+    manual engagement changes in MO are overwritten in the given interval! This happens
+    when the engagement is placed in a new department in SD. The following ASCII
+    illustrates this latter scenario (the unit strings in the drawing actually
+    represents unit UUIDs, but are written as strings in the drawing for better
+    readability):
+
+    MO (unit)     |------adm1-------|--------adm2---------|-------------adm3----------|
+    MO (SD unit)  |------sd1--------|--------sd2----------|-------------sd3-----------|
+
+    SD (unit)     |------sd1--------|------sd2----|------------sd4-----------|---sd3--|
+
+    Re-calc       |------ok---------|------ok-----|--fix--|--------fix-------|---ok---|
+    intervals
     """
     logger.info("Applying OU region strategy")
     assert settings.unknown_unit is not None
