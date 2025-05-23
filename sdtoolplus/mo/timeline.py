@@ -425,12 +425,7 @@ async def get_engagement_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        return EngagementTimeline(
-            eng_active=Timeline[Active](),
-            eng_key=Timeline[EngagementKey](),
-            eng_name=Timeline[EngagementName](),
-            eng_unit=Timeline[EngagementUnit](),
-        )
+        return EngagementTimeline()
 
     object_ = one(objects)
     validities = object_.validities
