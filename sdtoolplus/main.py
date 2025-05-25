@@ -22,7 +22,6 @@ from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
 from sdclient.requests import GetEmploymentChangedRequest
-from sdclient.requests import GetPersonRequest
 from sdclient.responses import Department
 from sdclient.responses import GetEmploymentChangedResponse
 from sqlalchemy import Engine
@@ -433,13 +432,10 @@ def create_fastramqpi() -> FastRAMQPI:
         institution_identifier: str,
         dry_run: bool = False,
     ) -> dict:
-        sd_persons = await asyncio.to_thread(
-            sd_client.get_person,
-            GetPersonRequest(
-                InstitutionIdentifier=institution_identifier,
-                PersonCivilRegistrationIdentifier=None,
-                EffectiveDate=datetime.datetime.now(),
-            ),
+        sd_persons = await get_all_sd_persons(
+            sd_client=sd_client,
+            institution_identifier=institution_identifier,
+            effective_date=datetime.date.today(),
         )
 
         async def get_sd_person_engagements(
@@ -460,9 +456,9 @@ def create_fastramqpi() -> FastRAMQPI:
             *[
                 get_sd_person_engagements(
                     institution_identifier=institution_identifier,
-                    cpr=person.PersonCivilRegistrationIdentifier,
+                    cpr=person.cpr,
                 )
-                for person in sd_persons.Person
+                for person in sd_persons
             ]
         )
 
