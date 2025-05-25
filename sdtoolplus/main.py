@@ -548,15 +548,15 @@ def create_fastramqpi() -> FastRAMQPI:
     ) -> dict:
         # TODO: This only works when all unit_levels are integers
         ny_regex = re.compile(r"NY(\d)-niveau")
-        # Set priority on org_unit events such that top-level units are imported first.
-        default_priority = 10_000
 
         def priority_from_level(department: Department) -> int:
+            # Set priority on org_unit events such that top-level units are imported first.
+            DEFAULT_PRIORITY = 10_000
             if department.DepartmentLevelIdentifier == "Afdelings-niveau":
-                return default_priority
+                return DEFAULT_PRIORITY
             match = ny_regex.match(department.DepartmentLevelIdentifier)
             assert match
-            priority = default_priority - int(one(match.groups()))
+            priority = DEFAULT_PRIORITY - int(one(match.groups()))
             return priority
 
         departments = await asyncio.to_thread(
