@@ -389,22 +389,24 @@ def create_fastramqpi() -> FastRAMQPI:
             effective_date=datetime.date.today(),
         )
 
-        for person in sd_persons:
-            logger.debug(
-                "Syncing person",
-                cpr=person.cpr,
-                name=f"{person.given_name} {person.surname}",
+        events = [
+            EventSendInput(
+                namespace="sd",
+                routing_key="person",
+                subject=PersonGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    cpr=person.cpr,
+                ).json(),
             )
-            await graphql_client.send_event(
-                input=EventSendInput(
-                    namespace="sd",
-                    routing_key="person",
-                    subject=PersonGraphQLEvent(
-                        institution_identifier=institution_identifier,
-                        cpr=person.cpr,
-                    ).json(),
-                )
-            )
+            for person in sd_persons
+        ]
+        logger.debug(
+            "Syncing persons",
+            events=events,
+        )
+        await asyncio.gather(*[graphql_client.send_event(input=e) for e in events])
+
+        logger.info(f"Done queueing sync all SD persons in {institution_identifier}")
 
         return {"msg": "success"}
 
