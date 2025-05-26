@@ -39,6 +39,8 @@ from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_engagement_timeline import GetEngagementTimeline
 from .get_engagement_timeline import GetEngagementTimelineEngagements
+from .get_engagements import GetEngagements
+from .get_engagements import GetEngagementsEngagements
 from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
@@ -66,6 +68,7 @@ from .input_types import EmployeeCreateInput
 from .input_types import EmployeeFilter
 from .input_types import EmployeeUpdateInput
 from .input_types import EngagementCreateInput
+from .input_types import EngagementFilter
 from .input_types import EngagementTerminateInput
 from .input_types import EngagementUpdateInput
 from .input_types import EventSendInput
@@ -553,6 +556,35 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return CreateEngagement.parse_obj(data).engagement_create
+
+    async def get_engagements(
+        self, input: EngagementFilter
+    ) -> GetEngagementsEngagements:
+        query = gql(
+            """
+            query GetEngagements($input: EngagementFilter!) {
+              engagements(filter: $input) {
+                objects {
+                  uuid
+                  validities {
+                    user_key
+                    validity {
+                      from
+                      to
+                    }
+                    person {
+                      cpr_number
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetEngagements.parse_obj(data).engagements
 
     async def get_engagement_timeline(
         self,
