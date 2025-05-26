@@ -241,6 +241,24 @@ mutation CreateEngagement($input: EngagementCreateInput!) {
   }
 }
 
+query GetEngagements($input: EngagementFilter!) {
+  engagements(filter: $input) {
+    objects {
+      uuid
+      validities {
+        user_key
+        validity {
+          from
+          to
+        }
+        person {
+          cpr_number
+        }
+      }
+    }
+  }
+}
+
 query GetEngagementTimeline(
   $person: UUID!,
   $user_key: String!,
