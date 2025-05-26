@@ -8,6 +8,7 @@ from fastapi import APIRouter
 from fastapi import BackgroundTasks
 from fastapi import Depends
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi import Response
 from fastramqpi.events import GraphQLEvents
 from fastramqpi.events import Listener
@@ -19,6 +20,7 @@ from more_itertools import first
 from sdclient.client import SDClient
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
+from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
@@ -45,6 +47,7 @@ from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .timeline import sync_engagement
+from .timeline import sync_mo_engagement_sd_units
 from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
@@ -430,6 +433,34 @@ def create_fastramqpi() -> FastRAMQPI:
             dry_run=dry_run,
         )
         return {"msg": "success"}
+
+    @fastapi_router.post(
+        "/timeline/sync/engagement/mo-sd-units", status_code=HTTP_200_OK
+    )
+    async def timeline_sync_engagement_mo_sd_unit(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
+        gql_client: depends.GraphQLClient,
+        background_tasks: BackgroundTasks,
+        cpr: str | None = None,
+        dry_run: bool = False,
+    ) -> dict:
+        if settings.recalc_mo_unit_when_sd_employment_moved:
+            raise HTTPException(
+                status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="MO SD unit sync not allowed when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is true",
+            )
+
+        background_tasks.add_task(
+            sync_mo_engagement_sd_units,
+            sd_client=sd_client,
+            gql_client=gql_client,
+            settings=settings,
+            cpr=cpr,
+            dry_run=dry_run,
+        )
+
+        return {"msg": "Sync started in background"}
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
