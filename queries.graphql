@@ -107,6 +107,7 @@ query GetClass($class_filter: ClassFilter!) {
         parent {
           uuid
           user_key
+          scope
         }
       }
     }
