@@ -1063,6 +1063,7 @@ async def test_eng_timeline_related_units(
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name4",
                 extension_2="dep1",
+                extension_3=str(dep1_uuid),
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=A_uuid,
@@ -1080,6 +1081,7 @@ async def test_eng_timeline_related_units(
             validity=RAValidityInput(from_=t2, to=t9),
             extension_1="name4",
             extension_2="ukendt",
+            extension_3="",
             extension_7="v1",
             person=person_uuid,
             org_unit=UNKNOWN_UNIT,
@@ -1096,6 +1098,7 @@ async def test_eng_timeline_related_units(
             validity=RAValidityInput(from_=t9, to=None),
             extension_1="name4",
             extension_2="dep2",
+            extension_3=str(dep2_uuid),
             extension_7="v1",
             person=person_uuid,
             org_unit=C_uuid,
@@ -1160,8 +1163,6 @@ async def test_eng_timeline_related_units(
             validity=timeline_interval_to_mo_validity(t7, POSITIVE_INFINITY),
         )
     )
-
-    # await asyncio.sleep(300)
 
     sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
         <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
@@ -1257,6 +1258,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t3
     assert interval_1.extension_1 == "name4"
     assert interval_1.extension_2 == "dep1"
+    assert interval_1.extension_3 == str(dep1_uuid)
     assert interval_1.user_key == user_key
     assert interval_1.job_function.uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
@@ -1268,6 +1270,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t5
     assert interval_2.extension_1 == "name4"
     assert interval_2.extension_2 == "dep3"
+    assert interval_2.extension_3 == str(dep3_uuid)
     assert interval_2.user_key == user_key
     assert interval_2.job_function.uuid == job_function_1234
     assert one(interval_2.org_unit).uuid == C_uuid
@@ -1279,6 +1282,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t6
     assert interval_3.extension_1 == "name4"
     assert interval_3.extension_2 == "dep3"
+    assert interval_3.extension_3 == str(dep3_uuid)
     assert interval_3.user_key == user_key
     assert interval_3.job_function.uuid == job_function_1234
     assert one(interval_3.org_unit).uuid == D_uuid
@@ -1290,6 +1294,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_4.validity.to) == t7
     assert interval_4.extension_1 == "name4"
     assert interval_4.extension_2 == "dep3"
+    assert interval_4.extension_3 == str(dep3_uuid)
     assert interval_4.user_key == user_key
     assert interval_4.job_function.uuid == job_function_1234
     assert one(interval_4.org_unit).uuid == E_uuid
@@ -1301,6 +1306,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t8
     assert interval_5.extension_1 == "name4"
     assert interval_5.extension_2 == "dep3"
+    assert interval_5.extension_3 == str(dep3_uuid)
     assert interval_5.user_key == user_key
     assert interval_5.job_function.uuid == job_function_1234
     assert one(interval_5.org_unit).uuid == UNKNOWN_UNIT
@@ -1312,6 +1318,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_6.validity.to) == t9
     assert interval_6.extension_1 == "name4"
     assert interval_6.extension_2 == "dep2"
+    assert interval_6.extension_3 == str(dep2_uuid)
     assert interval_6.user_key == user_key
     assert interval_6.job_function.uuid == job_function_1234
     assert one(interval_6.org_unit).uuid == B_uuid
@@ -1323,6 +1330,7 @@ async def test_eng_timeline_related_units(
     assert _mo_end_to_timeline_end(interval_7.validity.to) == POSITIVE_INFINITY
     assert interval_7.extension_1 == "name4"
     assert interval_7.extension_2 == "dep2"
+    assert interval_7.extension_3 == str(dep2_uuid)
     assert interval_7.user_key == user_key
     assert interval_7.job_function.uuid == job_function_1234
     assert one(interval_7.org_unit).uuid == C_uuid
