@@ -21,9 +21,7 @@ from more_itertools import first
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.requests import GetDepartmentRequest
-from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.responses import Department
-from sdclient.responses import GetEmploymentChangedResponse
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
@@ -53,6 +51,7 @@ from .models import EngagementSyncPayload
 from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
+from .sd.person import get_sd_person_engagements
 from .timeline import sync_engagement
 from .timeline import sync_ou
 from .timeline import sync_person
@@ -440,23 +439,10 @@ def create_fastramqpi() -> FastRAMQPI:
             effective_date=datetime.date.today(),
         )
 
-        async def get_sd_person_engagements(
-            institution_identifier: str, cpr: str
-        ) -> GetEmploymentChangedResponse:
-            return await asyncio.to_thread(
-                sd_client.get_employment_changed,
-                GetEmploymentChangedRequest(
-                    InstitutionIdentifier=institution_identifier,
-                    PersonCivilRegistrationIdentifier=cpr,
-                    EmploymentIdentifier=None,
-                    ActivationDate=datetime.date.min,
-                    DeactivationDate=datetime.date.max,
-                ),
-            )
-
         sd_employments = await asyncio.gather(
             *[
                 get_sd_person_engagements(
+                    sd_client=sd_client,
                     institution_identifier=institution_identifier,
                     cpr=person.cpr,
                 )
