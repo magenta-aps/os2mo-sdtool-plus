@@ -401,7 +401,7 @@ def create_fastramqpi() -> FastRAMQPI:
         ]
         logger.debug(
             "Syncing persons",
-            events=events,
+            events=len(events),
         )
         await asyncio.gather(*[graphql_client.send_event(input=e) for e in events])
 
@@ -439,6 +439,8 @@ def create_fastramqpi() -> FastRAMQPI:
         institution_identifier: str,
         dry_run: bool = False,
     ) -> dict:
+        logger.info(f"Syncing all SD employments in {institution_identifier}")
+
         sd_persons = await get_all_sd_persons(
             sd_client=sd_client,
             institution_identifier=institution_identifier,
@@ -487,8 +489,12 @@ def create_fastramqpi() -> FastRAMQPI:
         if dry_run:
             logger.info(f"Dry-run. Would create {len(events)} engagement events")
             return {"msg": "success"}
+        logger.debug("Syncing engagements", events=len(events))
         await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
 
+        logger.info(
+            f"Done queueing sync for all SD employments in {institution_identifier}"
+        )
         return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
@@ -544,6 +550,7 @@ def create_fastramqpi() -> FastRAMQPI:
         institution_identifier: str,
         dry_run: bool = False,
     ) -> dict:
+        logger.info(f"Syncing all SD units in {institution_identifier}")
         # TODO: This only works when all unit_levels are integers
         ny_regex = re.compile(r"NY(\d)-niveau")
 
@@ -587,8 +594,10 @@ def create_fastramqpi() -> FastRAMQPI:
             for d in departments.Department
         ]
 
+        logger.debug("Syncing units", events=len(events))
         await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
 
+        logger.info(f"Done queueing sync all SD units in {institution_identifier}")
         return {"msg": "success"}
 
     app = fastramqpi.get_app()
