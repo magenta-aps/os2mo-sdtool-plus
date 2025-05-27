@@ -590,6 +590,8 @@ async def create_engagement(
         # TODO: introduce extension_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
         extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        # TODO: introduce extension_3 strategy
+        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[
@@ -727,7 +729,10 @@ async def update_engagement(
                 # logic when https://redmine.magenta.dk/issues/65028 has been fixed.
                 extension_1=eng_name if eng_name is not None else "",
                 extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-                extension_3=validity.extension_3,
+                # TODO: introduce extension_3 strategy
+                extension_3=str(
+                    desired_eng_timeline.eng_sd_unit.entity_at(start).value
+                ),
                 extension_4=validity.extension_4,
                 extension_5=validity.extension_5,
                 extension_6=validity.extension_6,
@@ -762,6 +767,8 @@ async def update_engagement(
         # TODO: introduce extention_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
         extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        # TODO: introduce extension_3 strategy
+        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[desired_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
