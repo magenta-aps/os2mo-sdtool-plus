@@ -282,6 +282,7 @@ class GraphQLClient(AsyncBaseClient):
                     parent {
                       uuid
                       user_key
+                      scope
                     }
                   }
                 }

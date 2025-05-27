@@ -34,12 +34,12 @@ async def test_sync_job_positions(
         (await graphql_client.get_facet_uuid("engagement_job_function")).objects
     ).uuid
 
-    foo = await graphql_client.create_class(
+    doctors_9001_3 = await graphql_client.create_class(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
-            user_key="foo",
-            name="foo",
-            scope="0",
+            user_key="9001",
+            name="wrong name",
+            scope="3",
             parent_uuid=None,
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
@@ -47,13 +47,13 @@ async def test_sync_job_positions(
             ),
         )
     )
-    bar = await graphql_client.create_class(
+    unions_95_0 = await graphql_client.create_class(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
-            user_key="bar",
-            name="wrong name",
-            scope="1",
-            parent_uuid=foo.uuid,  # wrong parent
+            user_key="95",
+            name="3F, SL, FOA",
+            scope="0",
+            parent_uuid=doctors_9001_3.uuid,  # wrong parent
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
                 to=None,
@@ -71,29 +71,34 @@ async def test_sync_job_positions(
               <InstitutionIdentifier>II</InstitutionIdentifier>
             </RequestKey>
             <Profession>
-              <JobPositionIdentifier>foo</JobPositionIdentifier>
-              <JobPositionName>foo</JobPositionName>
+              <JobPositionIdentifier>9001</JobPositionIdentifier>
+              <JobPositionName>Lægepersonale</JobPositionName>
               <JobPositionLevelCode>0</JobPositionLevelCode>
+            </Profession>
+            <Profession>
+              <JobPositionIdentifier>9001</JobPositionIdentifier>
+              <JobPositionName>Lægepersonale</JobPositionName>
+              <JobPositionLevelCode>3</JobPositionLevelCode>
               <Profession>
-                <JobPositionIdentifier>foofoo</JobPositionIdentifier>
-                <JobPositionName>foofoo</JobPositionName>
+                <JobPositionIdentifier>9020</JobPositionIdentifier>
+                <JobPositionName>Lægepersonale</JobPositionName>
                 <JobPositionLevelCode>2</JobPositionLevelCode>
                 <Profession>
-                  <JobPositionIdentifier>foofoofoo</JobPositionIdentifier>
-                  <JobPositionName>foofoofoo</JobPositionName>
+                  <JobPositionIdentifier>6030</JobPositionIdentifier>
+                  <JobPositionName>Lægevagt</JobPositionName>
                   <JobPositionLevelCode>1</JobPositionLevelCode>
                 </Profession>
                 <Profession>
-                  <JobPositionIdentifier>foofoobar</JobPositionIdentifier>
-                  <JobPositionName>foofoobar</JobPositionName>
-                  <JobPositionLevelCode>3</JobPositionLevelCode>
+                  <JobPositionIdentifier>9021</JobPositionIdentifier>
+                  <JobPositionName>Lægelig chef</JobPositionName>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
                 </Profession>
               </Profession>
             </Profession>
             <Profession>
-              <JobPositionIdentifier>bar</JobPositionIdentifier>
-              <JobPositionName>bar</JobPositionName>
-              <JobPositionLevelCode>1</JobPositionLevelCode>
+              <JobPositionIdentifier>95</JobPositionIdentifier>
+              <JobPositionName>3F, SL, FOA</JobPositionName>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
             </Profession>
           </GetProfession20080201>
         """,
@@ -108,17 +113,27 @@ async def test_sync_job_positions(
     actual = await graphql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=["foo", "foofoo", "foofoofoo", "foofoobar", "bar"],
+            user_keys=["9001", "9020", "9021", "6030", "95"],
         )
     )
     expected = [
         Class.construct(
-            uuid=foo.uuid,
+            uuid=ANY,
             current=ClassCurrent.construct(
-                uuid=foo.uuid,
-                user_key="foo",
-                name="foo",
+                uuid=ANY,
+                user_key="9001",
+                name="Lægepersonale",
                 scope="0",
+                parent=None,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9001_3.uuid,
+            current=ClassCurrent.construct(
+                uuid=doctors_9001_3.uuid,
+                user_key="9001",
+                name="Lægepersonale",
+                scope="3",
                 parent=None,
             ),
         ),
@@ -126,12 +141,13 @@ async def test_sync_job_positions(
             uuid=ANY,
             current=ClassCurrent.construct(
                 uuid=ANY,
-                user_key="foofoo",
-                name="foofoo",
+                user_key="9020",
+                name="Lægepersonale",
                 scope="2",
                 parent=Parent.construct(
-                    uuid=foo.uuid,
-                    user_key="foo",
+                    uuid=doctors_9001_3.uuid,
+                    user_key="9001",
+                    scope="3",
                 ),
             ),
         ),
@@ -139,12 +155,13 @@ async def test_sync_job_positions(
             uuid=ANY,
             current=ClassCurrent.construct(
                 uuid=ANY,
-                user_key="foofoofoo",
-                name="foofoofoo",
+                user_key="6030",
+                name="Lægevagt",
                 scope="1",
                 parent=Parent.construct(
                     uuid=ANY,
-                    user_key="foofoo",
+                    user_key="9020",
+                    scope="2",
                 ),
             ),
         ),
@@ -152,22 +169,23 @@ async def test_sync_job_positions(
             uuid=ANY,
             current=ClassCurrent.construct(
                 uuid=ANY,
-                user_key="foofoobar",
-                name="foofoobar",
-                scope="3",
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
                 parent=Parent.construct(
                     uuid=ANY,
-                    user_key="foofoo",
+                    user_key="9020",
+                    scope="2",
                 ),
             ),
         ),
         Class.construct(
-            uuid=bar.uuid,
+            uuid=unions_95_0.uuid,
             current=ClassCurrent.construct(
-                uuid=bar.uuid,
-                user_key="bar",
-                name="bar",
-                scope="1",
+                uuid=unions_95_0.uuid,
+                user_key="95",
+                name="3F, SL, FOA",
+                scope="0",
                 parent=None,
             ),
         ),

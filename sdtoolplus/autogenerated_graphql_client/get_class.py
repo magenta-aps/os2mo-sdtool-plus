@@ -29,6 +29,7 @@ class GetClassClassesObjectsCurrent(BaseModel):
 class GetClassClassesObjectsCurrentParent(BaseModel):
     uuid: UUID
     user_key: str
+    scope: Optional[str]
 
 
 GetClass.update_forward_refs()
