@@ -87,6 +87,7 @@ async def get_desired(
         mo_parents = await graphql_client.get_class(
             ClassFilter(
                 facet=FacetFilter(uuids=[mo_engagement_job_function_uuid]),
+                scope=[sd_parent.JobPositionLevelCode],
                 user_keys=[sd_parent.JobPositionIdentifier],
             )
         )
@@ -119,7 +120,9 @@ async def sync(
     sd_profession: ProfessionObj,
 ) -> None:
     logger.info(
-        "Synchronising job function", sd_parent=sd_parent, sd_profession=sd_profession
+        "Synchronising job function",
+        sd_parent=sd_parent.dict() if sd_parent is not None else None,
+        sd_profession=sd_profession.dict(),
     )
 
     actual = await get_actual(
