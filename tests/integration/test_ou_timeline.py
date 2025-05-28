@@ -246,8 +246,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
 
     validity = validities[1]
     assert validity.validity.from_ == t2
@@ -256,8 +255,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
 
     validity = validities[2]
     assert validity.validity.from_ == t3
@@ -266,8 +264,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
     validity = validities[3]
     assert validity.validity.from_ == t5
@@ -276,8 +273,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     assert validity.user_key == "II-EFGH"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY1-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
 
 @pytest.mark.integration_test
@@ -409,8 +405,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
 
 @pytest.mark.integration_test
@@ -611,8 +606,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
     # Check the addresses in "assert interval 1"
     postal_address_validity = postal_address_validities[0]
@@ -630,8 +624,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
     # Check the addresses in "assert interval 2"
     postal_address_validity = postal_address_validities[1]
@@ -750,8 +743,7 @@ async def test_ou_timeline_create_new_unit(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("30000000-0000-0000-0000-000000000000")
 
     validity = validities[1]
     assert validity.validity.from_ == t3
@@ -760,8 +752,7 @@ async def test_ou_timeline_create_new_unit(
     assert validity.user_key == "II-ABCD"
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "NY0-niveau"
-    assert validity.parent is not None
-    assert validity.parent.uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
+    assert validity.parent_uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
 
 @pytest.mark.integration_test

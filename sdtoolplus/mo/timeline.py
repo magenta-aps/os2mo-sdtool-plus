@@ -229,7 +229,7 @@ async def get_ou_timeline(
         UnitParent(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=obj.parent.uuid if obj.parent is not None else None,
+            value=obj.parent_uuid,
         )
         for obj in validities
     )
@@ -318,17 +318,6 @@ async def update_ou(
     if ou.objects:
         # The OU already exists in this validity period
         for validity in one(ou.objects).validities:
-            org_unit_hierarchy = (
-                validity.org_unit_hierarchy_model.uuid
-                if validity.org_unit_hierarchy_model is not None
-                else None
-            )
-            time_planning = (
-                validity.time_planning.uuid
-                if validity.time_planning is not None
-                else None
-            )
-
             payload = OrganisationUnitUpdateInput(
                 uuid=org_unit,
                 validity=get_patch_validity(
@@ -339,8 +328,8 @@ async def update_ou(
                 parent=desired_unit_timeline.parent.entity_at(start).value,
                 org_unit_type=ou_type_uuid,
                 org_unit_level=ou_level_uuid,
-                org_unit_hierarchy=org_unit_hierarchy,
-                time_planning=time_planning,
+                org_unit_hierarchy=validity.org_unit_hierarchy,
+                time_planning=validity.time_planning_uuid,
             )
             logger.debug("OU update payload", payload=payload.dict())
             if not dry_run:
