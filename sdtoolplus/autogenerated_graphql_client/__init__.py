@@ -111,16 +111,8 @@ from .get_org_unit_timeline import (
     GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility,
 )
 from .get_org_unit_timeline import (
-    GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel,
-)
-from .get_org_unit_timeline import (
     GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitLevel,
 )
-from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent
-from .get_org_unit_timeline import (
-    GetOrgUnitTimelineOrgUnitsObjectsValiditiesTimePlanning,
-)
-from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesUnitType
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjectsValiditiesValidity
 from .get_organization import GetOrganization
 from .get_organization import GetOrganizationOrg
@@ -410,11 +402,7 @@ __all__ = [
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddresses",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesAddressType",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesAddressesVisibility",
-    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitHierarchyModel",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesOrgUnitLevel",
-    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesParent",
-    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesTimePlanning",
-    "GetOrgUnitTimelineOrgUnitsObjectsValiditiesUnitType",
     "GetOrgUnitTimelineOrgUnitsObjectsValiditiesValidity",
     "GetOrganization",
     "GetOrganizationOrg",
