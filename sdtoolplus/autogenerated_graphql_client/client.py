@@ -349,18 +349,10 @@ class GraphQLClient(AsyncBaseClient):
                     org_unit_level {
                       name
                     }
-                    unit_type {
-                      uuid
-                    }
-                    org_unit_hierarchy_model {
-                      uuid
-                    }
-                    time_planning {
-                      uuid
-                    }
-                    parent {
-                      uuid
-                    }
+                    unit_type_uuid
+                    org_unit_hierarchy
+                    time_planning_uuid
+                    parent_uuid
                     addresses {
                       uuid
                       name
