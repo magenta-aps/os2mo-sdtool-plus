@@ -17,6 +17,7 @@ class GetAddressTimelineAddresses(BaseModel):
 
 
 class GetAddressTimelineAddressesObjects(BaseModel):
+    uuid: UUID
     validities: List["GetAddressTimelineAddressesObjectsValidities"]
 
 

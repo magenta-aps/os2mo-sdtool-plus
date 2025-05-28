@@ -130,6 +130,7 @@ class GraphQLClient(AsyncBaseClient):
             query GetAddressTimeline($input: AddressFilter!) {
               addresses(filter: $input) {
                 objects {
+                  uuid
                   validities {
                     address_type {
                       uuid
