@@ -283,6 +283,7 @@ async def create_ou(
     logger.debug("OU create payload", payload=payload.dict())
     if not dry_run:
         await gql_client.create_org_unit(payload)
+    logger.debug("OU created", uuid=str(org_unit))
 
 
 async def update_ou(
@@ -346,6 +347,7 @@ async def update_ou(
             logger.debug("OU update payload", payload=payload.dict())
             if not dry_run:
                 await gql_client.update_org_unit(payload)
+            logger.debug("OU updated", uuid=str(org_unit))
         return
 
     # The OU does not already exist in this validity period
@@ -361,6 +363,7 @@ async def update_ou(
     logger.debug("OU update payload", payload=payload.dict())
     if not dry_run:
         await gql_client.update_org_unit(payload)
+    logger.debug("OU updated", uuid=str(org_unit))
 
 
 async def terminate_ou(
@@ -422,6 +425,7 @@ async def terminate_ou(
         for addr_term_payload in addr_term_payloads:
             await gql_client.terminate_address(addr_term_payload)
         await gql_client.terminate_org_unit(payload)
+    logger.debug("OU terminated", org_unit=str(org_unit))
 
 
 async def get_engagement_timeline(
@@ -614,6 +618,7 @@ async def create_engagement(
     logger.debug("Create engagement payload", payload=payload.dict())
     if not dry_run:
         await gql_client.create_engagement(payload)
+    logger.debug("Engagement created", person=str(person), emp_id=user_key)
 
 
 async def create_person(
@@ -633,6 +638,7 @@ async def create_person(
     logger.debug("Create person payload", payload=employee_input.dict())
     if not dry_run:
         await gql_client.create_person(input=employee_input)
+    logger.debug("Person created", cpr=cpr)
 
 
 async def update_person(
@@ -654,6 +660,7 @@ async def update_person(
     logger.debug("Update person payload", payload=payload.dict())
     if not dry_run:
         await gql_client.update_person(payload)
+    logger.debug("Person updated", cpr=person.cpr)
 
 
 async def create_leave(
@@ -683,6 +690,7 @@ async def create_leave(
 
     if not dry_run:
         await gql_client.create_leave(payload)
+    logger.debug("Leave created", person=str(person), user_key=user_key)
 
 
 async def update_engagement(
@@ -765,6 +773,7 @@ async def update_engagement(
             )
             if not dry_run:
                 await gql_client.update_engagement(payload)
+            logger.debug("Engagement updated", person=str(person), emp_id=user_key)
         return
 
     # The engagement does not already exist in this validity period
@@ -790,6 +799,7 @@ async def update_engagement(
     )
     if not dry_run:
         await gql_client.update_engagement(payload)
+    logger.debug("Engagement updated", person=str(person), emp_id=user_key)
 
 
 async def update_leave(
@@ -837,6 +847,7 @@ async def update_leave(
             logger.debug("Update leave", payload=payload.dict())
             if not dry_run:
                 await gql_client.update_leave(payload)
+            logger.debug("Leave updated", person=str(person), user_key=user_key)
         return
 
     # The leave does not already exist in this validity period
@@ -860,6 +871,7 @@ async def update_leave(
 
     if not dry_run:
         await gql_client.update_leave(payload)
+    logger.debug("Leave updated", person=str(person), user_key=user_key)
 
 
 async def terminate_engagement(
@@ -871,7 +883,7 @@ async def terminate_engagement(
     dry_run: bool = False,
 ) -> None:
     logger.info(
-        "(Re-)terminate engagement",
+        "Terminate engagement",
         person=str(person),
         user_key=user_key,
         start=start,
@@ -899,6 +911,7 @@ async def terminate_engagement(
 
     if not dry_run:
         await gql_client.terminate_engagement(payload)
+    logger.debug("Engagement terminated", person=str(person), user_key=user_key)
 
 
 async def terminate_leave(
@@ -910,7 +923,7 @@ async def terminate_leave(
     dry_run: bool = False,
 ) -> None:
     logger.info(
-        "(Re-)terminate leave",
+        "Terminate leave",
         person=str(person),
         user_key=user_key,
         start=start,
@@ -943,6 +956,7 @@ async def terminate_leave(
 
     if not dry_run:
         await gql_client.terminate_leave(payload)
+    logger.debug("Leave terminated", person=str(person), user_key=user_key)
 
 
 def _get_related_units_endpoints(
