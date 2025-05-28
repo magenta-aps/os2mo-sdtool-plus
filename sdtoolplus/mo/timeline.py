@@ -711,7 +711,7 @@ async def create_person(
     givenname: str,
     lastname: str,
     dry_run: bool = False,
-) -> None:
+) -> UUID:
     logger.info("Create new person", cpr=cpr, givenname=givenname, lastname=lastname)
 
     employee_input = EmployeeCreateInput(
@@ -720,9 +720,11 @@ async def create_person(
         surname=lastname,
     )
     logger.debug("Create person payload", payload=employee_input.dict())
-    if not dry_run:
-        await gql_client.create_person(input=employee_input)
-    logger.debug("Person created", cpr=cpr)
+    if dry_run:
+        return uuid4()
+    else:
+        person = await gql_client.create_person(input=employee_input)
+        return person.uuid
 
 
 async def update_person(

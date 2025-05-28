@@ -77,7 +77,7 @@ class Person(BaseModel):
     surname: str
     emails: list[str]
     phone_numbers: list[str]
-    addresses: list[str]
+    address: str | None
 
 
 class Interval(GenericModel, Generic[V], frozen=True):

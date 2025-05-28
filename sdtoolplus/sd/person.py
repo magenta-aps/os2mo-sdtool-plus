@@ -42,9 +42,15 @@ async def get_sd_person(
         cpr=sd_response_person.PersonCivilRegistrationIdentifier,
         given_name=sd_response_person.PersonGivenName,
         surname=sd_response_person.PersonSurnameName,
-        emails=[],
-        phone_numbers=[],
-        addresses=[],
+        emails=sd_response_person.ContactInformation.EmailAddressIdentifier
+        if sd_response_person.ContactInformation
+        else [],
+        phone_numbers=sd_response_person.ContactInformation.TelephoneNumberIdentifier
+        if sd_response_person.ContactInformation
+        else [],
+        address=f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
+        if sd_response_person.PostalAddress
+        else None,
     )
     logger.debug("SD person", person=person.dict())
 
@@ -76,7 +82,7 @@ async def get_all_sd_persons(
             surname=sd_response_person.PersonSurnameName,
             emails=[],
             phone_numbers=[],
-            addresses=[],
+            address=None,
         )
         for sd_response_person in sd_response.Person
     ]
