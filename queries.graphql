@@ -12,6 +12,7 @@ query GetAddressTimeline($input: AddressFilter!) {
     filter: $input
   ) {
     objects {
+      uuid
       validities {
         address_type {
           uuid
