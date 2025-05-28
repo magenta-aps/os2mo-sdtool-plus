@@ -262,6 +262,12 @@ async def _sync_eng_intervals(
                 dry_run=dry_run,
             )
 
+    logger.info(
+        "Finished syncing engagement in MO",
+        person=str(person),
+        user_key=user_key,
+    )
+
 
 async def _sync_leave_intervals(
     gql_client: GraphQLClient,
@@ -362,6 +368,12 @@ async def _sync_leave_intervals(
                 leave_type=leave_type,
                 dry_run=dry_run,
             )
+
+    logger.info(
+        "Finished syncing leave in MO",
+        person=str(person),
+        user_key=user_key,
+    )
 
 
 async def _sync_ou_intervals(
