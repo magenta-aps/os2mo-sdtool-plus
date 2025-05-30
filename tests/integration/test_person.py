@@ -324,7 +324,7 @@ async def test_person_timeline_email_create(
             employee=EmployeeFilter(cpr_numbers=[CPR]), from_date=None, to_date=None
         )
     )
-    assert len(mo_addresses.objects) == 4
+    assert len(mo_addresses.objects) == 3
 
 
 @pytest.mark.integration_test
@@ -347,6 +347,7 @@ async def test_person_timeline_addresses_update(
     SD (emails)                |--------chuck@example.com----------------------------
     SD (phones)                |--------12345678-------------------------------------
                                |--------00000000-------------------------------------
+                                        (ignored)
 
     "Assert"          |----1---|---------2-------------------------------------------
     intervals
@@ -458,4 +459,4 @@ async def test_person_timeline_addresses_update(
         )
     )
 
-    assert len(mo_addresses.objects) == 4
+    assert len(mo_addresses.objects) == 3
