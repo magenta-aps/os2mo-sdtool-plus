@@ -54,6 +54,7 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
             <TelephoneNumberIdentifier>12345678</TelephoneNumberIdentifier>
             <TelephoneNumberIdentifier>00000000</TelephoneNumberIdentifier>
             <EmailAddressIdentifier>chuck@example.com</EmailAddressIdentifier>
+            <EmailAddressIdentifier>chucknorris@example.com</EmailAddressIdentifier>
             </ContactInformation>
             <Employment>
                 <EmploymentIdentifier>{EMP_ID}</EmploymentIdentifier>
@@ -279,7 +280,12 @@ async def test_person_timeline_email_create(
 
     MO (emails)
 
-    SD (emails)                  |--------chuck@example.com---------------------------
+    SD (address)               |--------"Ninjavej 6, 8888, Norring"------------------
+    SD (emails)                |--------chuck@example.com----------------------------
+                               |--------chucknorris@example.com----------------------
+    SD (phones)                |--------12345678-------------------------------------
+                               |--------00000000-------------------------------------
+                                        (ignored)
 
     "Assert"          |----1-----|--------2------------------------------------------
     intervals
@@ -324,7 +330,13 @@ async def test_person_timeline_email_create(
             employee=EmployeeFilter(cpr_numbers=[CPR]), from_date=None, to_date=None
         )
     )
-    assert len(mo_addresses.objects) == 3
+    assert len(mo_addresses.objects) == 4
+    assert {one(a.validities).value for a in mo_addresses.objects} == {
+        "Ninjavej 6, 8888, Norring",
+        "chuck@example.com",
+        "chucknorris@example.com",
+        "12345678",
+    }
 
 
 @pytest.mark.integration_test
@@ -344,7 +356,9 @@ async def test_person_timeline_addresses_update(
     MO (phones)        |------11111111------------------------------------------------
                        |-----22222222-------------|---33333333------------------------
 
+    SD (address)               |--------"Ninjavej 6, 8888, Norring"------------------
     SD (emails)                |--------chuck@example.com----------------------------
+                               |--------chucknorris@example.com----------------------
     SD (phones)                |--------12345678-------------------------------------
                                |--------00000000-------------------------------------
                                         (ignored)
@@ -458,5 +472,10 @@ async def test_person_timeline_addresses_update(
             employee=EmployeeFilter(uuids=[person_uuid], from_date=None, to_date=None)
         )
     )
-
-    assert len(mo_addresses.objects) == 3
+    assert len(mo_addresses.objects) == 4
+    assert {one(a.validities).value for a in mo_addresses.objects} == {
+        "Ninjavej 6, 8888, Norring",
+        "chuck@example.com",
+        "chucknorris@example.com",
+        "12345678",
+    }
