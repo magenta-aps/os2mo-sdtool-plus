@@ -38,6 +38,13 @@ facets:
     Intern:
       title: "Må vises internt"
       scope: "INTERNAL"
+  employee_address_type:
+    engagement_email:
+      title: "E-mail"
+      scope: "EMAIL"
+    engagement_telefon:
+      title: "Telefon"
+      scope: "PHONE"
   org_unit_address_type:
     Pnummer:
       title: "P-nummer"
