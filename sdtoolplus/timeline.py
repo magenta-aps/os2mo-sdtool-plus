@@ -172,12 +172,12 @@ async def sync_person_addresses(
     """Persons are not temporal objects in SD and are handled differently than orgunits and engagements.
     In stead of the full timeline checks we only check the data from `now` to infinity.
     """
-
-    email_address_type = await gql_client.get_class(
+    # TODO: Cache this result as it rarely changes
+    address_types_res = await gql_client.get_class(
         class_filter=ClassFilter(facet_user_keys=["employee_address_type"])
     )
     address_types = bucket(
-        email_address_type.objects, key=lambda x: x.current.scope if x.current else None
+        address_types_res.objects, key=lambda x: x.current.scope if x.current else None
     )
 
     desired_emails = sd_person.emails.copy()
@@ -248,15 +248,33 @@ async def handle_address(
             terminate=terminate,
         )
         return
+    # TODO: cache this as it _never_ changes.
+    visibilities_res = await gql_client.get_class(
+        class_filter=ClassFilter(facet_user_keys=["visibility"])
+    )
+    visibilities = bucket(
+        visibilities_res.objects, key=lambda x: x.current.scope if x.current else None
+    )
+
+    # breakpoint()
+
     # Check for new emails:
     for value in desired_addresses:
-        logger.info("Create new email", value=value, person=person_uuid)
+        logger.info(
+            "Create new address",
+            value=value,
+            person=person_uuid,
+            address_type_uuid=address_type_uuid,
+            visibility=visibilities,
+        )
+        visibility = one(visibilities["INTERNAL"]).uuid
         await gql_client.create_address(
             input=AddressCreateInput(
                 person=person_uuid,
                 validity={"from": datetime.today(), "to": None},
                 value=value,
                 address_type=address_type_uuid,
+                visibility=visibility,
             )
         )
     # Check for removed emails
