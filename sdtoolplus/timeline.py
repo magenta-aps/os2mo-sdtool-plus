@@ -249,12 +249,10 @@ async def handle_address(
         )
         return
     # TODO: cache this as it _never_ changes.
-    visibilities_res = await gql_client.get_class(
-        class_filter=ClassFilter(facet_user_keys=["visibility"])
+    visibility_internal = await gql_client.get_class(
+        class_filter=ClassFilter(facet_user_keys=["visibility"], scope="INTERNAL")
     )
-    visibilities = bucket(
-        visibilities_res.objects, key=lambda x: x.current.scope if x.current else None
-    )
+    visibility_uuid = one(visibility_internal.objects).uuid
 
     # breakpoint()
 
@@ -265,16 +263,14 @@ async def handle_address(
             value=value,
             person=person_uuid,
             address_type_uuid=address_type_uuid,
-            visibility=visibilities,
         )
-        visibility = one(visibilities["INTERNAL"]).uuid
         await gql_client.create_address(
             input=AddressCreateInput(
                 person=person_uuid,
                 validity={"from": datetime.today(), "to": None},
                 value=value,
                 address_type=address_type_uuid,
-                visibility=visibility,
+                visibility=visibility_uuid,
             )
         )
     # Check for removed emails
