@@ -50,6 +50,8 @@ async def get_sd_person(
         else [],
         address=f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
         if sd_response_person.PostalAddress
+        and sd_response_person.PostalAddress.StandardAddressIdentifier
+        != "**ADRESSEBESKYTTELSE**"
         else None,
     )
     logger.debug("SD person", person=person.dict())
