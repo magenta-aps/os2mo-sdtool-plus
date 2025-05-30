@@ -10,6 +10,7 @@ from uuid import UUID
 import structlog
 from fastapi import HTTPException
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
+from more_itertools import bucket
 from more_itertools import first
 from more_itertools import one
 from more_itertools import only
@@ -171,50 +172,87 @@ async def sync_person_addresses(
     """Persons are not temporal objects in SD and are handled differently than orgunits and engagements.
     In stead of the full timeline checks we only check the data from `now` to infinity.
     """
+
+    email_address_type = await gql_client.get_class(
+        class_filter=ClassFilter(facet_user_keys=["employee_address_type"])
+    )
+    address_types = bucket(
+        email_address_type.objects, key=lambda x: x.current.scope if x.current else None
+    )
+
+    desired_emails = sd_person.emails.copy()
+    await handle_address(
+        gql_client,
+        desired_emails,
+        person_uuid,
+        one(address_types["EMAIL"]).uuid,
+        dry_run,
+    )
+    desired_phone_numbers = sd_person.phone_numbers.copy()
+    await handle_address(
+        gql_client,
+        desired_phone_numbers,
+        person_uuid,
+        one(address_types["PHONE"]).uuid,
+        dry_run,
+    )
+    desired_post_adresses = [sd_person.address] if sd_person.address else []
+    # TODO: Addresses should have the scope DAR, but this is not the case everywhere right now.
+    await handle_address(
+        gql_client,
+        desired_post_adresses,
+        person_uuid,
+        one(address_types["TEXT"]).uuid,
+        dry_run,
+    )
+
+
+async def handle_address(
+    gql_client: GraphQLClient,
+    desired_addresses: list[str],
+    person_uuid: UUID,
+    address_type_uuid: UUID,
+    dry_run: bool,
+):
     mo_person_addresses = await gql_client.get_address_timeline(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[address_type_uuid]),
             from_date=datetime.now(),
             to_date=None,
         )
     )
-
-    email_address_type = await gql_client.get_class(
-        class_filter=ClassFilter(scope=["EMAIL"], user_keys=["EmailEmployee"])
-    )
-    email_address_type_uuid = one(email_address_type.objects).uuid
     mo_values = {
         f.uuid: [v.value for v in f.validities]
         for f in (o for o in mo_person_addresses.objects)
     }
     terminate = []
-    desired_emails = sd_person.emails.copy()
-    # For each email check that there are only one validity and that the wanted value exists in MO
+    # For each address check that there are only one validity and that the wanted value exists in MO
     # If so remove from "desired"
     for uuid, emails in mo_values.items():
         if len(set(emails)) == 1:
-            if one(set(emails)) in desired_emails:
-                desired_emails.pop(desired_emails.index(one(set(emails))))
+            if one(set(emails)) in desired_addresses:
+                desired_addresses.pop(desired_addresses.index(one(set(emails))))
             else:
                 terminate.append(uuid)
         elif len(set(emails)) > 1:
             terminate.append(uuid)
     if dry_run:
         logger.info(
-            "Dry-run - Would have performed theese actions",
-            new_emails=desired_emails,
+            "Dry-run - Would have performed these actions",
+            new_emails=desired_addresses,
             terminate=terminate,
         )
         return
     # Check for new emails:
-    for value in desired_emails:
+    for value in desired_addresses:
         logger.info("Create new email", value=value, person=person_uuid)
         await gql_client.create_address(
             input=AddressCreateInput(
                 person=person_uuid,
                 validity={"from": datetime.today(), "to": None},
                 value=value,
-                address_type=email_address_type_uuid,
+                address_type=address_type_uuid,
             )
         )
     # Check for removed emails
