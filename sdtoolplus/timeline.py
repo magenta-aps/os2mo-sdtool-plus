@@ -188,7 +188,11 @@ async def sync_person_addresses(
         one(address_types["EMAIL"]).uuid,
         dry_run,
     )
-    desired_phone_numbers = sd_person.phone_numbers.copy()
+    desired_phone_numbers = [
+        phone_number
+        for phone_number in sd_person.phone_numbers.copy()
+        if phone_number != "00000000"
+    ]
     await handle_address(
         gql_client,
         desired_phone_numbers,
