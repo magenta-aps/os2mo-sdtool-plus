@@ -402,7 +402,8 @@ def create_fastramqpi() -> FastRAMQPI:
             "Syncing persons",
             events=len(events),
         )
-        await asyncio.gather(*[graphql_client.send_event(input=e) for e in events])
+        for e in events:
+            await graphql_client.send_event(input=e)
 
         logger.info(f"Done queueing sync all SD persons in {institution_identifier}")
 
@@ -446,37 +447,29 @@ def create_fastramqpi() -> FastRAMQPI:
             effective_date=datetime.date.today(),
         )
 
-        sd_employments = await asyncio.gather(
-            *[
-                get_sd_person_engagements(
-                    sd_client=sd_client,
-                    institution_identifier=institution_identifier,
-                    cpr=person.cpr,
-                )
-                for person in sd_persons
-            ]
-        )
-
-        events = [
-            EventSendInput(
-                namespace="sd",
-                routing_key="employment",
-                subject=EmploymentGraphQLEvent(
-                    institution_identifier=institution_identifier,
-                    cpr=employments.PersonCivilRegistrationIdentifier,
-                    employment_identifier=e.EmploymentIdentifier,
-                ).json(),
-            )
-            for person in sd_employments
-            for employments in person.Person
-            for e in employments.Employment
-        ]
-
         if dry_run:
-            logger.info(f"Dry-run. Would create {len(events)} engagement events")
+            logger.info(
+                f"Dry-run. Would create engagement events for {len(sd_persons)} persons"
+            )
             return {"msg": "success"}
-        logger.debug("Syncing engagements", events=len(events))
-        await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
+
+        for person in sd_persons:
+            employments = await get_sd_person_engagements(
+                sd_client=sd_client,
+                institution_identifier=institution_identifier,
+                cpr=person.cpr,
+            )
+            for e in one(employments.Person).Employment:
+                event = EventSendInput(
+                    namespace="sd",
+                    routing_key="employment",
+                    subject=EmploymentGraphQLEvent(
+                        institution_identifier=institution_identifier,
+                        cpr=person.cpr,
+                        employment_identifier=e.EmploymentIdentifier,
+                    ).json(),
+                )
+                await gql_client.send_event(input=event)
 
         logger.info(
             f"Done queueing sync for all SD employments in {institution_identifier}"
@@ -528,6 +521,7 @@ def create_fastramqpi() -> FastRAMQPI:
         )
 
         return {"msg": "Sync started in background"}
+
     @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
     async def full_timeline_sync_ous(
         settings: depends.Settings,
@@ -581,7 +575,8 @@ def create_fastramqpi() -> FastRAMQPI:
         ]
 
         logger.debug("Syncing units", events=len(events))
-        await asyncio.gather(*[gql_client.send_event(input=e) for e in events])
+        for e in events:
+            await gql_client.send_event(input=e)
 
         logger.info(f"Done queueing sync all SD units in {institution_identifier}")
         return {"msg": "success"}
