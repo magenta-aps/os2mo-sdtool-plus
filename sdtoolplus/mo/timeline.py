@@ -39,6 +39,7 @@ from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementSDUnit
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
@@ -282,6 +283,7 @@ async def create_ou(
     logger.debug("OU create payload", payload=payload.dict())
     if not dry_run:
         await gql_client.create_org_unit(payload)
+    logger.debug("OU created", uuid=str(org_unit))
 
 
 async def update_ou(
@@ -334,6 +336,7 @@ async def update_ou(
             logger.debug("OU update payload", payload=payload.dict())
             if not dry_run:
                 await gql_client.update_org_unit(payload)
+            logger.debug("OU updated", uuid=str(org_unit))
         return
 
     # The OU does not already exist in this validity period
@@ -349,6 +352,7 @@ async def update_ou(
     logger.debug("OU update payload", payload=payload.dict())
     if not dry_run:
         await gql_client.update_org_unit(payload)
+    logger.debug("OU updated", uuid=str(org_unit))
 
 
 async def terminate_ou(
@@ -410,6 +414,7 @@ async def terminate_ou(
         for addr_term_payload in addr_term_payloads:
             await gql_client.terminate_address(addr_term_payload)
         await gql_client.terminate_org_unit(payload)
+    logger.debug("OU terminated", org_unit=str(org_unit))
 
 
 async def get_engagement_timeline(
@@ -425,12 +430,7 @@ async def get_engagement_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        return EngagementTimeline(
-            eng_active=Timeline[Active](),
-            eng_key=Timeline[EngagementKey](),
-            eng_name=Timeline[EngagementName](),
-            eng_unit=Timeline[EngagementUnit](),
-        )
+        return EngagementTimeline()
 
     object_ = one(objects)
     validities = object_.validities
@@ -474,6 +474,15 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
+    sd_unit_intervals = tuple(
+        EngagementSDUnit(
+            start=obj.validity.from_,
+            end=_mo_end_to_timeline_end(obj.validity.to),
+            value=obj.extension_3,
+        )
+        for obj in validities
+    )
+
     unit_id_intervals = tuple(
         EngagementUnitId(
             start=obj.validity.from_,
@@ -497,6 +506,9 @@ async def get_engagement_timeline(
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=combine_intervals(sd_unit_intervals)
+        ),
         eng_unit_id=Timeline[EngagementUnitId](
             intervals=combine_intervals(unit_id_intervals)
         ),
@@ -582,6 +594,8 @@ async def create_engagement(
         # TODO: introduce extension_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
         extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        # TODO: introduce extension_3 strategy
+        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[
@@ -593,6 +607,7 @@ async def create_engagement(
     logger.debug("Create engagement payload", payload=payload.dict())
     if not dry_run:
         await gql_client.create_engagement(payload)
+    logger.debug("Engagement created", person=str(person), emp_id=user_key)
 
 
 async def create_person(
@@ -612,6 +627,7 @@ async def create_person(
     logger.debug("Create person payload", payload=employee_input.dict())
     if not dry_run:
         await gql_client.create_person(input=employee_input)
+    logger.debug("Person created", cpr=cpr)
 
 
 async def update_person(
@@ -633,6 +649,7 @@ async def update_person(
     logger.debug("Update person payload", payload=payload.dict())
     if not dry_run:
         await gql_client.update_person(payload)
+    logger.debug("Person updated", cpr=person.cpr)
 
 
 async def create_leave(
@@ -662,6 +679,7 @@ async def create_leave(
 
     if not dry_run:
         await gql_client.create_leave(payload)
+    logger.debug("Leave created", person=str(person), user_key=user_key)
 
 
 async def update_engagement(
@@ -719,7 +737,10 @@ async def update_engagement(
                 # logic when https://redmine.magenta.dk/issues/65028 has been fixed.
                 extension_1=eng_name if eng_name is not None else "",
                 extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-                extension_3=validity.extension_3,
+                # TODO: introduce extension_3 strategy
+                extension_3=str(
+                    desired_eng_timeline.eng_sd_unit.entity_at(start).value
+                ),
                 extension_4=validity.extension_4,
                 extension_5=validity.extension_5,
                 extension_6=validity.extension_6,
@@ -741,6 +762,7 @@ async def update_engagement(
             )
             if not dry_run:
                 await gql_client.update_engagement(payload)
+            logger.debug("Engagement updated", person=str(person), emp_id=user_key)
         return
 
     # The engagement does not already exist in this validity period
@@ -754,6 +776,8 @@ async def update_engagement(
         # TODO: introduce extention_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
         extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        # TODO: introduce extension_3 strategy
+        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[desired_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
@@ -764,6 +788,7 @@ async def update_engagement(
     )
     if not dry_run:
         await gql_client.update_engagement(payload)
+    logger.debug("Engagement updated", person=str(person), emp_id=user_key)
 
 
 async def update_leave(
@@ -811,6 +836,7 @@ async def update_leave(
             logger.debug("Update leave", payload=payload.dict())
             if not dry_run:
                 await gql_client.update_leave(payload)
+            logger.debug("Leave updated", person=str(person), user_key=user_key)
         return
 
     # The leave does not already exist in this validity period
@@ -834,6 +860,7 @@ async def update_leave(
 
     if not dry_run:
         await gql_client.update_leave(payload)
+    logger.debug("Leave updated", person=str(person), user_key=user_key)
 
 
 async def terminate_engagement(
@@ -845,7 +872,7 @@ async def terminate_engagement(
     dry_run: bool = False,
 ) -> None:
     logger.info(
-        "(Re-)terminate engagement",
+        "Terminate engagement",
         person=str(person),
         user_key=user_key,
         start=start,
@@ -873,6 +900,7 @@ async def terminate_engagement(
 
     if not dry_run:
         await gql_client.terminate_engagement(payload)
+    logger.debug("Engagement terminated", person=str(person), user_key=user_key)
 
 
 async def terminate_leave(
@@ -884,7 +912,7 @@ async def terminate_leave(
     dry_run: bool = False,
 ) -> None:
     logger.info(
-        "(Re-)terminate leave",
+        "Terminate leave",
         person=str(person),
         user_key=user_key,
         start=start,
@@ -917,6 +945,7 @@ async def terminate_leave(
 
     if not dry_run:
         await gql_client.terminate_leave(payload)
+    logger.debug("Leave terminated", person=str(person), user_key=user_key)
 
 
 def _get_related_units_endpoints(
