@@ -59,6 +59,7 @@ from sdtoolplus.sd.timeline import get_employment_timeline
 from .config import Mode
 from .config import SDToolPlusSettings
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
+from .sd.timeline import get_department_info
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 
 logger = structlog.stdlib.get_logger()
@@ -468,9 +469,14 @@ async def sync_ou(
         org_uuid=str(org_unit),
         dry_run=dry_run,
     )
-
-    sd_unit_timeline = await get_department_timeline(
+    department, parent = await get_department_info(
         sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        org_unit=org_unit,
+    )
+    sd_unit_timeline = await get_department_timeline(
+        department=department,
+        parents=parent,
         inst_id=institution_identifier,
         unit_uuid=org_unit,
     )

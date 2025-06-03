@@ -9,9 +9,9 @@ from datetime import timedelta
 import structlog
 from more_itertools import only
 from sdclient.client import SDClient
-from sdclient.exceptions import SDParentNotFound
-from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import DepartmentParentHistoryObj
+from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -62,29 +62,33 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     return EngType.MONTHLY_PART_TIME
 
 
+async def get_department_info(
+    sd_client: SDClient, institution_identifier: str, org_unit: OrgUnitUUID
+) -> tuple[GetDepartmentResponse, list[DepartmentParentHistoryObj]]:
+    department = await asyncio.to_thread(
+        sd_client.get_department,
+        GetDepartmentRequest(
+            InstitutionIdentifier=institution_identifier,
+            DepartmentUUIDIdentifier=org_unit,
+            ActivationDate=date.min,
+            DeactivationDate=date.max,
+            DepartmentNameIndicator=True,
+            UUIDIndicator=True,
+            PostalAddressIndicator=True,
+            ContactInformationIndicator=True,
+        ),
+    )
+    parents = sd_client.get_department_parent_history(org_unit)
+    return department, parents
+
+
 async def get_department_timeline(
-    sd_client: SDClient,
+    department: GetDepartmentResponse,
+    parents: list[DepartmentParentHistoryObj],
     inst_id: str,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
-
-    try:
-        department = await asyncio.to_thread(
-            sd_client.get_department,
-            GetDepartmentRequest(
-                InstitutionIdentifier=inst_id,
-                DepartmentUUIDIdentifier=unit_uuid,
-                ActivationDate=date.min,
-                DeactivationDate=date.max,
-                DepartmentNameIndicator=True,
-                UUIDIndicator=True,
-            ),
-        )
-        parents = sd_client.get_department_parent_history(unit_uuid)
-    except (SDRootElementNotFound, SDParentNotFound) as error:
-        logger.debug("Error getting department from SD", error=error)
-        return UnitTimeline()
 
     active_intervals = tuple(
         Active(
