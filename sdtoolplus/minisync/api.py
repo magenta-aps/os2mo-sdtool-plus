@@ -13,6 +13,7 @@ from .. import depends
 from ..exceptions import DepartmentTimelineNotFound
 from ..exceptions import EngagementNotActiveError
 from ..exceptions import EngagementNotFoundError
+from ..exceptions import EngagementSyncTemporarilyDisabled
 from ..exceptions import PersonNotFoundError
 from ..timeline import sync_engagement
 from ..timeline import sync_person
@@ -72,6 +73,8 @@ async def sync_person_and_engagement(
     Returns:
         Dictionary with status
     """
+    if not settings.recalc_mo_unit_when_sd_employment_moved:
+        raise EngagementSyncTemporarilyDisabled()
 
     # TODO: add integration test when endpoint fully implemented.
 
