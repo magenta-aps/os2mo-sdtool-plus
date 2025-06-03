@@ -59,6 +59,7 @@ from sdtoolplus.sd.timeline import get_employment_timeline
 from .config import Mode
 from .config import SDToolPlusSettings
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
+from .sd.timeline import get_department_address_timelines
 from .sd.timeline import get_department_info
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
 
@@ -493,6 +494,10 @@ async def sync_ou(
         desired_unit_timeline=desired_unit_timeline,
         mo_unit_timeline=mo_unit_timeline,
         dry_run=dry_run,
+    )
+    # Handle addresses
+    await get_department_address_timelines(
+        department=department, inst_id=institution_identifier, unit_uuid=org_unit
     )
 
 

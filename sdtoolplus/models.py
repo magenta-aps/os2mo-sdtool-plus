@@ -260,6 +260,21 @@ class BaseTimeline(BaseModel, frozen=True):
         return set(collapse((i.start, i.end) for i in chain(*intervals)))
 
 
+class Address(Interval[Optional[str]]):
+    pass
+
+
+class ListAddress(Interval[list[str]]):
+    pass
+
+
+class UnitAddressTimeline(BaseTimeline):
+    pnumbers: Timeline[Address] = Timeline[Address]()
+    postal_address: Timeline[Address] = Timeline[Address]()
+    emails: Timeline[ListAddress] = Timeline[ListAddress]()
+    phone_numbers: Timeline[ListAddress] = Timeline[ListAddress]()
+
+
 class UnitTimeline(BaseTimeline):
     active: Timeline[Active] = Timeline[Active]()
     name: Timeline[UnitName] = Timeline[UnitName]()

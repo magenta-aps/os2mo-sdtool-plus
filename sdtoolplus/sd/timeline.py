@@ -18,6 +18,7 @@ from sdclient.responses import WorkingTime
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import Address
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -26,7 +27,9 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import ListAddress
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitAddressTimeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
@@ -143,8 +146,44 @@ async def get_department_timeline(
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline.dict())
-
     return timeline
+
+
+async def get_department_address_timelines(
+    department: GetDepartmentResponse,
+    inst_id: str,
+    unit_uuid: OrgUnitUUID,
+) -> UnitAddressTimeline:
+    logger.info(
+        "Get SD department address timelines", inst_id=inst_id, unit_uuid=str(unit_uuid)
+    )
+
+    pnumber = tuple(
+        Address(
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
+            value=dep.ProductionUnitIdentifier,
+        )
+        for dep in department.Department
+        if dep.ProductionUnitIdentifier
+    )
+    emails = tuple(
+        ListAddress(
+            start=sd_start_to_timeline_start(dep.ActivationDate),
+            end=sd_end_to_timeline_end(dep.DeactivationDate),
+            value=dep.ContactInformation.EmailAddressIdentifier,
+        )
+        for dep in department.Department
+        if dep.ContactInformation and dep.ContactInformation.EmailAddressIdentifier
+    )
+
+    addresses = UnitAddressTimeline(
+        pnumber=Timeline[Address](intervals=combine_intervals(pnumber)),
+        emails=Timeline[ListAddress](intervals=combine_intervals(emails)),
+    )
+
+    logger.debug("SD OU timeline", timeline=addresses.dict())
+    return addresses
 
 
 async def get_employment_timeline(
@@ -245,9 +284,6 @@ async def get_employment_timeline(
             intervals=combine_intervals(eng_name_intervals)
         ),
         eng_unit=Timeline[EngagementUnit](
-            intervals=combine_intervals(eng_unit_intervals)
-        ),
-        eng_sd_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
         ),
         eng_unit_id=Timeline[EngagementUnitId](
