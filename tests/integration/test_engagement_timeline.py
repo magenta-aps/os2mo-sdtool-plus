@@ -1789,6 +1789,72 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED": "false",
+    }
+)
+async def test_eng_timeline_sync_temporarily_blocked(
+    test_client: AsyncClient,
+):
+    """
+    Make sure we cannot perform normal engagement syncs while
+    RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is false.
+    """
+    # Act
+    r_sync_eng = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": "0101011234",
+            "employment_identifier": "12345",
+        },
+    )
+
+    r_sync_person_and_eng = await test_client.post(
+        "/minisync/sync-person-and-employment",
+        json={
+            "institution_identifier": "II",
+            "cpr": "0101011234",
+            "employment_identifier": "12345",
+        },
+    )
+
+    # Assert
+    assert r_sync_eng.status_code == 500
+    assert r_sync_person_and_eng.status_code == 500
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_sync_eng_sd_unit_returns_http_422(
+    test_client: AsyncClient,
+):
+    """
+    Make sure we cannot call /timeline/sync/engagement/mo-sd-units when
+    RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is true.
+    """
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement/mo-sd-units", params={"cpr": "0101011234"}
+    )
+
+    # Assert
+    assert r.status_code == 422
+
+
+@pytest.mark.integration_test
 async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
