@@ -20,3 +20,12 @@ class PersonNotFoundError(Exception):
 
 class DepartmentTimelineNotFound(Exception):
     pass
+
+
+class EngagementSyncTemporarilyDisabled(Exception):
+    """
+    Only raised when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is set to False
+    (see comment about this setting in config.py)
+    """
+
+    pass

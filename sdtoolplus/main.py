@@ -40,6 +40,7 @@ from .depends import request_id
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
+from .exceptions import EngagementSyncTemporarilyDisabled
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
@@ -405,6 +406,9 @@ def create_fastramqpi() -> FastRAMQPI:
         payload: EngagementSyncPayload,
         dry_run: bool = False,
     ) -> dict:
+        if not settings.recalc_mo_unit_when_sd_employment_moved:
+            raise EngagementSyncTemporarilyDisabled()
+
         await sync_engagement(
             sd_client=sd_client,
             gql_client=gql_client,
