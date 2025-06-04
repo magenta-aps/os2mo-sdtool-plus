@@ -54,6 +54,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_person
+from sdtoolplus.sd.timeline import get_department
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
@@ -481,7 +482,14 @@ async def sync_ou(
         dry_run=dry_run,
     )
 
+    department = await get_department(
+        sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        unit_uuid=org_unit,
+    )
+
     sd_unit_timeline = await get_department_timeline(
+        department=department,
         sd_client=sd_client,
         inst_id=institution_identifier,
         unit_uuid=org_unit,

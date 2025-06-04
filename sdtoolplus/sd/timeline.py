@@ -12,6 +12,7 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -62,18 +63,16 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     return EngType.MONTHLY_PART_TIME
 
 
-async def get_department_timeline(
+async def get_department(
     sd_client: SDClient,
-    inst_id: str,
+    institution_identifier: str,
     unit_uuid: OrgUnitUUID,
-) -> UnitTimeline:
-    logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
-
+) -> GetDepartmentResponse | None:
     try:
         department = await asyncio.to_thread(
             sd_client.get_department,
             GetDepartmentRequest(
-                InstitutionIdentifier=inst_id,
+                InstitutionIdentifier=institution_identifier,
                 DepartmentUUIDIdentifier=unit_uuid,
                 ActivationDate=date.min,
                 DeactivationDate=date.max,
@@ -81,9 +80,27 @@ async def get_department_timeline(
                 UUIDIndicator=True,
             ),
         )
-        parents = sd_client.get_department_parent_history(unit_uuid)
-    except (SDRootElementNotFound, SDParentNotFound) as error:
+        return department
+    except SDRootElementNotFound as error:
         logger.debug("Error getting department from SD", error=error)
+        return None
+
+
+async def get_department_timeline(
+    department: GetDepartmentResponse | None,
+    sd_client: SDClient,
+    inst_id: str,
+    unit_uuid: OrgUnitUUID,
+) -> UnitTimeline:
+    logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
+
+    if department is None:
+        return UnitTimeline()
+
+    try:
+        parents = sd_client.get_department_parent_history(unit_uuid)
+    except SDParentNotFound as error:
+        logger.debug("Error getting department parent from SD", error=error)
         return UnitTimeline()
 
     active_intervals = tuple(
