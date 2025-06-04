@@ -30,38 +30,38 @@ TODAY_URL_FORMAT = date.strftime(date.today(), "%d.%m.%Y")
 GETPERSON_URL = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
 
 SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
-    <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
-        <RequestStructure>
-            <InstitutionIdentifier>II</InstitutionIdentifier>
-            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
-            <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
-            <StatusActiveIndicator>true</StatusActiveIndicator>
-            <StatusPassiveIndicator>false</StatusPassiveIndicator>
-            <ContactInformationIndicator>True</ContactInformationIndicator>
-            <PostalAddressIndicator>True</PostalAddressIndicator>
-        </RequestStructure>
-        <Person>
-            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
-            <PersonGivenName>Chuck</PersonGivenName>
-            <PersonSurnameName>Norris</PersonSurnameName>
-            <PostalAddress>
+<GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+    <RequestStructure>
+        <InstitutionIdentifier>II</InstitutionIdentifier>
+        <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+        <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
+        <StatusActiveIndicator>true</StatusActiveIndicator>
+        <StatusPassiveIndicator>false</StatusPassiveIndicator>
+        <ContactInformationIndicator>True</ContactInformationIndicator>
+        <PostalAddressIndicator>True</PostalAddressIndicator>
+    </RequestStructure>
+    <Person>
+        <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+        <PersonGivenName>Chuck</PersonGivenName>
+        <PersonSurnameName>Norris</PersonSurnameName>
+        <PostalAddress>
             <StandardAddressIdentifier>Ninjavej 6</StandardAddressIdentifier>
             <PostalCode>8888</PostalCode>
             <DistrictName>Norring</DistrictName>
             <MunicipalityCode>0461</MunicipalityCode>
             <CountryIdentificationCode scheme="iso3166-alpha2">DK</CountryIdentificationCode>
-            </PostalAddress>
-            <ContactInformation>
+        </PostalAddress>
+        <ContactInformation>
             <TelephoneNumberIdentifier>12345678</TelephoneNumberIdentifier>
             <TelephoneNumberIdentifier>00000000</TelephoneNumberIdentifier>
             <EmailAddressIdentifier>chuck@example.com</EmailAddressIdentifier>
             <EmailAddressIdentifier>chucknorris@example.com</EmailAddressIdentifier>
-            </ContactInformation>
-            <Employment>
-                <EmploymentIdentifier>{EMP_ID}</EmploymentIdentifier>
-            </Employment>
-        </Person>
-    </GetPerson20111201>
+        </ContactInformation>
+        <Employment>
+            <EmploymentIdentifier>{EMP_ID}</EmploymentIdentifier>
+        </Employment>
+    </Person>
+</GetPerson20111201>
 """
 
 

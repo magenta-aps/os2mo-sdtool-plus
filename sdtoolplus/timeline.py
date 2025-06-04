@@ -135,7 +135,7 @@ async def _sync_person(
 ) -> None:
     mo_objects = only(mo_person.objects)
     if mo_objects is None:
-        uuid = await create_person(
+        person_uuid = await create_person(
             gql_client=gql_client,
             cpr=sd_person.cpr,
             givenname=sd_person.given_name,
@@ -148,19 +148,22 @@ async def _sync_person(
         or one(mo_objects.validities).given_name != sd_person.given_name
         or one(mo_objects.validities).surname != sd_person.surname
     ):
-        uuid = one(mo_person.objects).uuid
+        person_uuid = one(mo_person.objects).uuid
         await update_person(
             gql_client=gql_client,
-            uuid=uuid,
+            uuid=person_uuid,
             start=datetime.today(),
             person=sd_person,
             dry_run=dry_run,
         )
     else:
         # No changes to person, now check addresses
-        uuid = one(mo_person.objects).uuid
+        person_uuid = one(mo_person.objects).uuid
     await sync_person_addresses(
-        gql_client=gql_client, person_uuid=uuid, sd_person=sd_person, dry_run=dry_run
+        gql_client=gql_client,
+        person_uuid=person_uuid,
+        sd_person=sd_person,
+        dry_run=dry_run,
     )
 
 
@@ -232,8 +235,8 @@ async def handle_address(
         )
     )
     mo_values = {
-        f.uuid: [v.value for v in f.validities]
-        for f in (o for o in mo_person_addresses.objects)
+        obj.uuid: [v.value for v in obj.validities]
+        for obj in mo_person_addresses.objects
     }
     terminate = []
     # For each address check that there are only one validity and that the wanted value exists in MO
