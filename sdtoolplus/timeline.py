@@ -219,6 +219,22 @@ async def sync_person_addresses(
     )
 
 
+def find_address_actions(mo_values, desired_addresses: list[str]):
+    terminate = []
+    # For each address check that there are only one validity and that the wanted value exists in MO
+    # If so remove from "desired"
+    for uuid, addresses in mo_values.items():
+        address_set = set(addresses)
+        if len(address_set) == 1:
+            if one(address_set) in desired_addresses:
+                desired_addresses.pop(desired_addresses.index(one(address_set)))
+            else:
+                terminate.append(uuid)
+        elif len(address_set) > 1:
+            terminate.append(uuid)
+    return desired_addresses, terminate
+
+
 async def handle_address(
     gql_client: GraphQLClient,
     desired_addresses: list[str],
@@ -238,21 +254,11 @@ async def handle_address(
         obj.uuid: [v.value for v in obj.validities]
         for obj in mo_person_addresses.objects
     }
-    terminate = []
-    # For each address check that there are only one validity and that the wanted value exists in MO
-    # If so remove from "desired"
-    for uuid, emails in mo_values.items():
-        if len(set(emails)) == 1:
-            if one(set(emails)) in desired_addresses:
-                desired_addresses.pop(desired_addresses.index(one(set(emails))))
-            else:
-                terminate.append(uuid)
-        elif len(set(emails)) > 1:
-            terminate.append(uuid)
+    create, terminate = find_address_actions(mo_values, desired_addresses)
     if dry_run:
         logger.info(
             "Dry-run - Would have performed these actions",
-            new_emails=desired_addresses,
+            new_emails=create,
             terminate=terminate,
         )
         return
@@ -264,10 +270,8 @@ async def handle_address(
     )
     visibility_uuid = one(visibility_internal.objects).uuid
 
-    # breakpoint()
-
     # Check for new emails:
-    for value in desired_addresses:
+    for value in create:
         logger.info(
             "Create new address",
             value=value,
