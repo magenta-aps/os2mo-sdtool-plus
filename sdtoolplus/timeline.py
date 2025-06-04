@@ -181,7 +181,7 @@ async def sync_person_addresses(
         address_types_res.objects, key=lambda x: x.current.scope if x.current else None
     )
 
-    desired_emails = sd_person.emails.copy()
+    desired_emails = sd_person.emails.copy() if sd_person.emails else []
     await handle_address(
         gql_client,
         desired_emails,
@@ -189,11 +189,15 @@ async def sync_person_addresses(
         one(address_types["EMAIL"]).uuid,
         dry_run,
     )
-    desired_phone_numbers = [
-        phone_number
-        for phone_number in sd_person.phone_numbers.copy()
-        if phone_number != "00000000"
-    ]
+    desired_phone_numbers = (
+        [
+            phone_number
+            for phone_number in sd_person.phone_numbers.copy()
+            if phone_number != "00000000"
+        ]
+        if sd_person.phone_numbers
+        else []
+    )
     await handle_address(
         gql_client,
         desired_phone_numbers,
