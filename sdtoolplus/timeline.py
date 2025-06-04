@@ -8,6 +8,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import HTTPException
+from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
 from more_itertools import one
 from more_itertools import only
@@ -137,6 +138,9 @@ async def _sync_person(
         )
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client, gql_client, institution_identifier, cpr, dry_run: cpr
+)
 async def sync_person(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -453,6 +457,14 @@ async def _sync_ou_intervals(
         logger.info("Finished updating unit", org_unit=str(org_unit))
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client,
+    gql_client,
+    institution_identifier,
+    org_unit,
+    settings,
+    dry_run: org_unit
+)
 async def sync_ou(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -630,6 +642,15 @@ async def engagement_ou_strategy(
     )
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client,
+    gql_client,
+    institution_identifier,
+    cpr,
+    employment_identifier,
+    settings,
+    dry_run: (institution_identifier, cpr, employment_identifier)
+)
 async def sync_engagement(
     sd_client: SDClient,
     gql_client: GraphQLClient,
