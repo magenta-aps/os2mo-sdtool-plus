@@ -44,10 +44,10 @@ async def get_sd_person(
         surname=sd_response_person.PersonSurnameName,
         emails=sd_response_person.ContactInformation.EmailAddressIdentifier
         if sd_response_person.ContactInformation
-        else [],
+        else None,
         phone_numbers=sd_response_person.ContactInformation.TelephoneNumberIdentifier
         if sd_response_person.ContactInformation
-        else [],
+        else None,
         address=f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
         if sd_response_person.PostalAddress
         and sd_response_person.PostalAddress.StandardAddressIdentifier
