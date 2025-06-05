@@ -255,13 +255,6 @@ async def handle_address(
         for obj in mo_person_addresses.objects
     }
     create, terminate = find_address_actions(mo_values, desired_addresses)
-    if dry_run:
-        logger.info(
-            "Dry-run - Would have performed these actions",
-            new_emails=create,
-            terminate=terminate,
-        )
-        return
     # TODO: cache this as it _never_ changes.
     visibility_internal = await gql_client.get_class(
         class_filter=ClassFilter(
@@ -277,26 +270,29 @@ async def handle_address(
             value=value,
             person=person_uuid,
             address_type_uuid=address_type_uuid,
+            dry_run=dry_run,
         )
-        await gql_client.create_address(
-            input=AddressCreateInput(
-                person=person_uuid,
-                validity={"from": datetime.today(), "to": None},
-                value=value,
-                address_type=address_type_uuid,
-                visibility=visibility_uuid,
+        if not dry_run:
+            await gql_client.create_address(
+                input=AddressCreateInput(
+                    person=person_uuid,
+                    validity={"from": datetime.today(), "to": None},
+                    value=value,
+                    address_type=address_type_uuid,
+                    visibility=visibility_uuid,
+                )
             )
-        )
     # Check for removed emails
     for address_uuid in terminate:
-        logger.info("terminate address")
-        await gql_client.terminate_address(
-            AddressTerminateInput(
-                uuid=address_uuid,
-                to=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                - timedelta(days=1),
+        logger.info("terminate address", person=person_uuid, dry_run=dry_run)
+        if not dry_run:
+            await gql_client.terminate_address(
+                AddressTerminateInput(
+                    uuid=address_uuid,
+                    to=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                    - timedelta(days=1),
+                )
             )
-        )
 
 
 @handle_exclusively_decorator(
