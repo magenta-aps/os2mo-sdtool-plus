@@ -12,6 +12,7 @@ class CreateAddress(BaseModel):
 
 
 class CreateAddressAddressCreate(BaseModel):
+    uuid: UUID
     current: Optional["CreateAddressAddressCreateCurrent"]
 
 

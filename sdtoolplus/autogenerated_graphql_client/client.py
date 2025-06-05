@@ -33,6 +33,8 @@ from .create_org_unit import CreateOrgUnit
 from .create_org_unit import CreateOrgUnitOrgUnitCreate
 from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
+from .delete_address import DeleteAddress
+from .delete_address import DeleteAddressAddressDelete
 from .get_address_timeline import GetAddressTimeline
 from .get_address_timeline import GetAddressTimelineAddresses
 from .get_class import GetClass
@@ -133,12 +135,14 @@ class GraphQLClient(AsyncBaseClient):
             query GetAddressTimeline($input: AddressFilter!) {
               addresses(filter: $input) {
                 objects {
+                  uuid
                   validities {
                     address_type {
                       uuid
                       name
                       user_key
                     }
+                    visibility_uuid
                     user_key
                     value
                     uuid
@@ -189,6 +193,7 @@ class GraphQLClient(AsyncBaseClient):
             """
             mutation CreateAddress($input: AddressCreateInput!) {
               address_create(input: $input) {
+                uuid
                 current {
                   validity {
                     from
@@ -216,6 +221,7 @@ class GraphQLClient(AsyncBaseClient):
             """
             mutation UpdateAddress($input: AddressUpdateInput!) {
               address_update(input: $input) {
+                uuid
                 current {
                   validity {
                     from
@@ -252,6 +258,21 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateAddress.parse_obj(data).address_terminate
+
+    async def delete_address(self, addr_uuid: UUID) -> DeleteAddressAddressDelete:
+        query = gql(
+            """
+            mutation DeleteAddress($addr_uuid: UUID!) {
+              address_delete(uuid: $addr_uuid) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"addr_uuid": addr_uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return DeleteAddress.parse_obj(data).address_delete
 
     async def get_facet_uuid(self, user_key: str) -> GetFacetUuidFacets:
         query = gql(
