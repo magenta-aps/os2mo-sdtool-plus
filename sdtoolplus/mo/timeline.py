@@ -161,13 +161,7 @@ async def get_ou_timeline(
 
     if not objects:
         logger.debug("MO OU timeline is empty")
-        return UnitTimeline(
-            active=Timeline[Active](),
-            name=Timeline[UnitName](),
-            unit_id=Timeline[UnitId](),
-            unit_level=Timeline[UnitLevel](),
-            parent=Timeline[UnitParent](),
-        )
+        return UnitTimeline()
 
     validities = one(objects).validities
 

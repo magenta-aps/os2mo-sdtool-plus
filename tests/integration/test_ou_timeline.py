@@ -37,7 +37,7 @@ from tests.integration.conftest import UNKNOWN_UNIT
 )
 async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -287,7 +287,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 )
 async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -419,7 +419,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 )
 async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -436,8 +436,6 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     MO (level)              |-----------------------NY0--------------------------------
     MO (parent)             |-----------------------dep1-------------------------------
     MO (postal addr)        |-------------Kung FU Street, 1000, Andeby-----------------
-    MO (phone)              |---------------------12345678-----------------------------
-    MO (P-number)           |--------------------1234567890----------------------------
 
     "Arrange" intervals     |------------------------1---------------------------------
 
@@ -649,7 +647,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
 )
 async def test_ou_timeline_create_new_unit(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -766,7 +764,7 @@ async def test_ou_timeline_create_new_unit(
 )
 async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -855,7 +853,7 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
 )
 async def test_ou_timeline_sync_filter(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -919,7 +917,7 @@ async def test_ou_timeline_sync_filter(
 )
 async def test_ou_timeline_sync_filter_unit_below_payroll_root(
     test_client: AsyncClient,
-    graphql_client: GraphQLClient,  # Maybe switch
+    graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
     org_unit_levels: dict[str, OrgUnitLevelUUID],
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
