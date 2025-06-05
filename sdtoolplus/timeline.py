@@ -184,7 +184,7 @@ async def sync_person_addresses(
         address_types_res.objects, key=lambda x: x.current.scope if x.current else None
     )
 
-    desired_emails = sd_person.emails.copy() if sd_person.emails else []
+    desired_emails = sd_person.emails if sd_person.emails else []
     await handle_address(
         gql_client,
         desired_emails,
@@ -195,7 +195,7 @@ async def sync_person_addresses(
     desired_phone_numbers = (
         [
             phone_number
-            for phone_number in sd_person.phone_numbers.copy()
+            for phone_number in sd_person.phone_numbers
             if phone_number != "00000000"
         ]
         if sd_person.phone_numbers
@@ -221,18 +221,20 @@ async def sync_person_addresses(
 
 def find_address_actions(mo_values, desired_addresses: list[str]):
     terminate = []
+    create = []
     # For each address check that there are only one validity and that the wanted value exists in MO
     # If so remove from "desired"
+    create = desired_addresses.copy()
     for uuid, addresses in mo_values.items():
         address_set = set(addresses)
         if len(address_set) == 1:
-            if one(address_set) in desired_addresses:
-                desired_addresses.pop(desired_addresses.index(one(address_set)))
+            if one(address_set) in create:
+                create.pop(create.index(one(address_set)))
             else:
                 terminate.append(uuid)
         elif len(address_set) > 1:
             terminate.append(uuid)
-    return desired_addresses, terminate
+    return create, terminate
 
 
 async def handle_address(
