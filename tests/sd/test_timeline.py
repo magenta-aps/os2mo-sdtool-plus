@@ -8,10 +8,8 @@ from uuid import UUID
 from uuid import uuid4
 
 import pytest
-from more_itertools import one
 from pydantic import parse_obj_as
 from sdclient.exceptions import SDParentNotFound
-from sdclient.exceptions import SDRootElementNotFound
 from sdclient.responses import DepartmentParentHistoryObj
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
@@ -100,27 +98,19 @@ async def test_get_department_timeline():
     ]
 
     mock_sd_client = MagicMock()
-    mock_sd_client.get_department.return_value = GetDepartmentResponse.parse_obj(
-        sd_dep_resp_dict
-    )
     mock_sd_client.get_department_parent_history.return_value = parse_obj_as(
         list[DepartmentParentHistoryObj], sd_parent_history_resp
     )
 
     # Act
     department_timeline = await get_department_timeline(
-        sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
+        department=GetDepartmentResponse.parse_obj(sd_dep_resp_dict),
+        sd_client=mock_sd_client,
+        inst_id="II",
+        unit_uuid=dep_uuid,
     )
 
     # Assert
-    query_params = one(one(mock_sd_client.get_department.call_args_list).args)
-    assert query_params.InstitutionIdentifier == "II"
-    assert query_params.DepartmentUUIDIdentifier == dep_uuid
-    assert query_params.ActivationDate == date.min
-    assert query_params.DeactivationDate == date.max
-    assert query_params.DepartmentNameIndicator is True
-    assert query_params.UUIDIndicator is True
-
     mock_sd_client.get_department_parent_history.assert_called_once_with(dep_uuid)
 
     assert department_timeline.active == Timeline[Active](
@@ -214,23 +204,14 @@ async def test_get_department_timeline_department_not_found():
     dep_uuid = uuid4()
 
     mock_sd_client = MagicMock()
-    mock_sd_client.get_department.side_effect = SDRootElementNotFound(
-        "Could not find XML root element"
-    )
 
     # Act
     department_timeline = await get_department_timeline(
-        sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
+        department=None, sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
     )
 
     # Assert
-    assert department_timeline == UnitTimeline(
-        active=Timeline[Active](),
-        name=Timeline[UnitName](),
-        unit_id=Timeline[UnitId](),
-        unit_level=Timeline[UnitLevel](),
-        parent=Timeline[UnitParent](),
-    )
+    assert department_timeline == UnitTimeline()
 
 
 async def test_get_department_timeline_parent_not_found():
@@ -255,16 +236,16 @@ async def test_get_department_timeline_parent_not_found():
     }
 
     mock_sd_client = MagicMock()
-    mock_sd_client.get_department.return_value = GetDepartmentResponse.parse_obj(
-        sd_dep_resp_dict
-    )
     mock_sd_client.get_department_parent_history.side_effect = SDParentNotFound(
         "Parent history not found!"
     )
 
     # Act
     department_timeline = await get_department_timeline(
-        sd_client=mock_sd_client, inst_id="II", unit_uuid=dep_uuid
+        department=GetDepartmentResponse.parse_obj(sd_dep_resp_dict),
+        sd_client=mock_sd_client,
+        inst_id="II",
+        unit_uuid=dep_uuid,
     )
 
     # Assert
