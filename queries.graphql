@@ -12,12 +12,14 @@ query GetAddressTimeline($input: AddressFilter!) {
     filter: $input
   ) {
     objects {
+      uuid
       validities {
         address_type {
           uuid
           name
           user_key
         }
+        visibility_uuid
         user_key
         value
         uuid
@@ -50,6 +52,7 @@ mutation CreateAddress($input: AddressCreateInput!) {
   address_create(
     input: $input
   ) {
+    uuid
     current {
       validity {
         from
@@ -68,6 +71,7 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
   address_update(
     input: $input
   ) {
+    uuid
     current {
       validity {
         from
@@ -84,6 +88,12 @@ mutation UpdateAddress($input: AddressUpdateInput!) {
 
 mutation TerminateAddress($input: AddressTerminateInput!) {
   address_terminate(input: $input) {
+    uuid
+  }
+}
+
+mutation DeleteAddress($addr_uuid: UUID!) {
+  address_delete(uuid: $addr_uuid) {
     uuid
   }
 }
