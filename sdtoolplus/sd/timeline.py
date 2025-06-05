@@ -32,6 +32,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
@@ -77,6 +78,9 @@ async def get_department(
                 ActivationDate=date.min,
                 DeactivationDate=date.max,
                 DepartmentNameIndicator=True,
+                PostalAddressIndicator=True,
+                ProductionUnitIndicator=True,
+                ContactInformationIndicator=True,
                 UUIDIndicator=True,
             ),
         )
@@ -156,6 +160,23 @@ async def get_department_timeline(
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNumber]:
+    timeline = Timeline[UnitPNumber](
+        intervals=tuple(
+            UnitPNumber(
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
+                value=dep.ProductionUnitIdentifier,
+            )
+            for dep in department.Department
+            if dep.ProductionUnitIdentifier is not None
+        )
+    )
+    logger.debug("SD P-number timeline", timeline=timeline.dict())
 
     return timeline
 
