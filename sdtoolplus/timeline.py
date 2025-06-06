@@ -35,11 +35,15 @@ from sdtoolplus.mo.timeline import create_leave
 from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import create_person
 from sdtoolplus.mo.timeline import create_pnumber_address
+from sdtoolplus.mo.timeline import create_postal_address
 from sdtoolplus.mo.timeline import delete_address
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import get_ou_timeline
 from sdtoolplus.mo.timeline import get_pnumber_timeline as get_mo_pnumber_timeline
+from sdtoolplus.mo.timeline import (
+    get_postal_address_timeline as get_mo_postal_address_timeline,
+)
 from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
@@ -56,6 +60,7 @@ from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_person
@@ -63,6 +68,9 @@ from sdtoolplus.sd.timeline import get_department
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.timeline import get_pnumber_timeline as get_sd_pnumber_timeline
+from sdtoolplus.sd.timeline import (
+    get_postal_address_timeline as get_sd_postal_address_timeline,
+)
 
 from .config import Mode
 from .config import SDToolPlusSettings
@@ -501,6 +509,43 @@ async def _sync_ou_pnumber(
     )
 
 
+async def _sync_ou_postal_address(
+    gql_client: GraphQLClient,
+    department: GetDepartmentResponse,
+    org_unit: OrgUnitUUID,
+    dry_run: bool,
+) -> None:
+    logger.info("Sync postal address timeline", org_unit=str(org_unit))
+
+    sd_postal_address_timeline = get_sd_postal_address_timeline(department)
+    mo_postal_address_timeline_obj = await get_mo_postal_address_timeline(
+        gql_client=gql_client,
+        unit_uuid=org_unit,
+    )
+
+    if sd_postal_address_timeline == mo_postal_address_timeline_obj.postal_address:
+        logger.debug("Postal address timelines identical")
+        return
+
+    if mo_postal_address_timeline_obj.uuid is not None:
+        await delete_address(
+            gql_client=gql_client,
+            address_uuid=mo_postal_address_timeline_obj.uuid,
+            dry_run=dry_run,
+        )
+
+    if sd_postal_address_timeline == Timeline[UnitPostalAddress]():
+        return
+
+    await create_postal_address(
+        gql_client=gql_client,
+        org_unit=org_unit,
+        address_uuid=mo_postal_address_timeline_obj.uuid,
+        sd_postal_address_timeline=sd_postal_address_timeline,
+        dry_run=dry_run,
+    )
+
+
 @handle_exclusively_decorator(
     key=lambda sd_client,
     gql_client,
@@ -554,6 +599,13 @@ async def sync_ou(
 
     if department is not None:
         await _sync_ou_pnumber(
+            gql_client=gql_client,
+            department=department,
+            org_unit=org_unit,
+            dry_run=dry_run,
+        )
+
+        await _sync_ou_postal_address(
             gql_client=gql_client,
             department=department,
             org_unit=org_unit,
