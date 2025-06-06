@@ -181,7 +181,8 @@ async def sync_person_addresses(
         class_filter=ClassFilter(facet_user_keys=["employee_address_type"])
     )
     address_types = bucket(
-        address_types_res.objects, key=lambda x: x.current.scope if x.current else None
+        address_types_res.objects,
+        key=lambda x: x.current.user_key if x.current else None,
     )
 
     desired_emails = sd_person.emails if sd_person.emails else []
@@ -189,7 +190,7 @@ async def sync_person_addresses(
         gql_client,
         desired_emails,
         person_uuid,
-        one(address_types["EMAIL"]).uuid,
+        one(address_types["engagement_email"]).uuid,
         dry_run,
     )
     desired_phone_numbers = (
@@ -205,7 +206,7 @@ async def sync_person_addresses(
         gql_client,
         desired_phone_numbers,
         person_uuid,
-        one(address_types["PHONE"]).uuid,
+        one(address_types["engagement_telefon"]).uuid,
         dry_run,
     )
     desired_post_adresses = [sd_person.address] if sd_person.address else []
@@ -214,7 +215,7 @@ async def sync_person_addresses(
         gql_client,
         desired_post_adresses,
         person_uuid,
-        one(address_types["TEXT"]).uuid,
+        one(address_types["AdresseAPOSOrgUnit"]).uuid,
         dry_run,
     )
 

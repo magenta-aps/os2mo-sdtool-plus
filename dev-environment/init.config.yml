@@ -42,13 +42,16 @@ facets:
       title: "Må vises eksternt"
       scope: "PUBLIC"
   employee_address_type:
-    EmailEmployee:
+    engagement_email:
       title: "E-mail"
       scope: "EMAIL"
-    PhoneEmployee:
+    engagement_telefon:
       title: "Telefon"
       scope: "PHONE"
-    PostEmployee:
+    engagement_telefon_anden:
+      title: "Anden Telefon"
+      scope: "PHONE"
+    AdresseAPOSOrgUnit:
       title: "Postadresse fra SD"
       scope: "TEXT"
   org_unit_address_type:
