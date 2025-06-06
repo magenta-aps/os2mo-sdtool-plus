@@ -32,6 +32,7 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
+from sdtoolplus.sd.timeline import get_department
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.timeline import get_leave_timeline
@@ -428,3 +429,21 @@ def test__sd_employment_type(
 
     # Assert
     assert eng_type == expected_eng_type
+
+
+async def test_get_department_empty_department_list():
+    # Arrange
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_department = MagicMock(
+        return_value=GetDepartmentResponse(
+            RegionIdentifier="RI", InstitutionIdentifier="II", Department=[]
+        )
+    )
+
+    # Act
+    response = await get_department(
+        sd_client=mock_sd_client, institution_identifier="II", unit_uuid=uuid4()
+    )
+
+    # Assert
+    assert response is None
