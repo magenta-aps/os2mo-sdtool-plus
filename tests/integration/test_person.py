@@ -360,13 +360,13 @@ async def test_person_timeline_addresses_create(
         )
     )
     email_address_type = AddressType.construct(
-        uuid=ANY, user_key="EmailEmployee", name="E-mail"
+        uuid=ANY, user_key="engagement_email", name="E-mail"
     )
     phone_address_type = AddressType.construct(
-        uuid=ANY, user_key="PhoneEmployee", name="Telefon"
+        uuid=ANY, user_key="engagement_telefon", name="Telefon"
     )
     post_address_type = AddressType.construct(
-        uuid=ANY, user_key="PostEmployee", name="Postadresse fra SD"
+        uuid=ANY, user_key="AdresseAPOSOrgUnit", name="Postadresse fra SD"
     )
     validity = Validity(
         from_=datetime.now(tz=TIMEZONE).replace(
@@ -499,11 +499,11 @@ async def test_person_timeline_addresses_update(
     # Create mo addresses
 
     email_address_type = await graphql_client.get_class(
-        class_filter=ClassFilter(scope=["EMAIL"], user_keys=["EmailEmployee"])
+        class_filter=ClassFilter(scope=["EMAIL"], user_keys=["engagement_email"])
     )
     email_address_type_uuid = one(email_address_type.objects).uuid
     phone_address_type = await graphql_client.get_class(
-        class_filter=ClassFilter(scope=["PHONE"], user_keys=["PhoneEmployee"])
+        class_filter=ClassFilter(scope=["PHONE"], user_keys=["engagement_telefon"])
     )
     phone_address_type_uuid = one(phone_address_type.objects).uuid
     visibility_internal = await graphql_client.get_class(
@@ -596,13 +596,13 @@ async def test_person_timeline_addresses_update(
         - timedelta(days=1),
     )
     email_address_type_class = AddressType.construct(
-        uuid=ANY, user_key="EmailEmployee", name="E-mail"
+        uuid=ANY, user_key="engagement_email", name="E-mail"
     )
     phone_address_type_class = AddressType.construct(
-        uuid=ANY, user_key="PhoneEmployee", name="Telefon"
+        uuid=ANY, user_key="engagement_telefon", name="Telefon"
     )
     post_address_type_class = AddressType.construct(
-        uuid=ANY, user_key="PostEmployee", name="Postadresse fra SD"
+        uuid=ANY, user_key="AdresseAPOSOrgUnit", name="Postadresse fra SD"
     )
     expected_before = [
         Address.construct(
@@ -811,7 +811,8 @@ async def test_person_timeline_address_protection(
 
     post_address_type = await graphql_client.get_class(
         class_filter=ClassFilter(
-            scope=["TEXT"], facet=FacetFilter(user_keys=["employee_address_type"])
+            user_keys=["AdresseAPOSOrgUnit"],
+            facet=FacetFilter(user_keys=["employee_address_type"]),
         )
     )
     post_address_type_uuid = one(post_address_type.objects).uuid
