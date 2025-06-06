@@ -33,6 +33,7 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
@@ -177,6 +178,25 @@ def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNum
         )
     )
     logger.debug("SD P-number timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+def get_postal_address_timeline(
+    department: GetDepartmentResponse,
+) -> Timeline[UnitPostalAddress]:
+    timeline = Timeline[UnitPostalAddress](
+        intervals=tuple(
+            UnitPostalAddress(
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
+                value=f"{dep.PostalAddress.StandardAddressIdentifier}, {dep.PostalAddress.PostalCode}, {dep.PostalAddress.DistrictName}",
+            )
+            for dep in department.Department
+            if dep.PostalAddress is not None
+        )
+    )
+    logger.debug("SD postal address timeline", timeline=timeline.dict())
 
     return timeline
 
