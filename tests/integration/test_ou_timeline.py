@@ -438,7 +438,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     MO (id)                 |---------------------II-ABCD------------------------------
     MO (level)              |-----------------------NY0--------------------------------
     MO (parent)             |-----------------------dep1-------------------------------
-    MO (postal addr)        |-------------Kung FU Street, 1000, Andeby-----------------
+    MO (postal addr)        |-------------Kung FU Street 1, 1000, Andeby---------------
 
     "Arrange" intervals     |------------------------1---------------------------------
 
@@ -447,6 +447,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     SD (id)                 |-------ABCD-------|             |-------ABCD---------|
     SD (level)              |-------NY0--------|             |-------name4--------|
     SD (parent)             |-------dep1-------|             |-------dep1---------|
+    SD (Postal addr)        |---Kung Fu St. 1--|             |----Kung Fu St. 1---|
 
     "Assert"                |---------1--------|             |----------2---------|
     intervals
@@ -542,6 +543,12 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
             <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
             <DepartmentName>name4</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Kung Fu Street 1</StandardAddressIdentifier>
+              <PostalCode>1000</PostalCode>
+              <DistrictName>Andeby</DistrictName>
+              <MunicipalityCode>1000</MunicipalityCode>
+            </PostalAddress>
           </Department>
           <Department>
             <ActivationDate>2003-01-01</ActivationDate>
@@ -550,6 +557,12 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
             <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
             <DepartmentName>name4</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Kung Fu Street 1</StandardAddressIdentifier>
+              <PostalCode>1000</PostalCode>
+              <DistrictName>Andeby</DistrictName>
+              <MunicipalityCode>1000</MunicipalityCode>
+            </PostalAddress>
           </Department>
         </GetDepartment20111201>
     """
@@ -613,8 +626,8 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     postal_address_validity = postal_address_validities[0]
     assert postal_address_validity.validity.from_ == t1
     assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t2
-    assert postal_address_validity.user_key == "AdresseAPOSOrgUnit"
-    assert postal_address_validity.value == "Kung FU Street, 1000, Andeby"
+    assert postal_address_validity.user_key == "Kung Fu Street 1, 1000, Andeby"
+    assert postal_address_validity.value == "Kung Fu Street 1, 1000, Andeby"
     assert postal_address_validity.address_type.uuid == postal_address_type_uuid
 
     # Check the unit in "assert interval 2"
@@ -631,8 +644,8 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     postal_address_validity = postal_address_validities[1]
     assert postal_address_validity.validity.from_ == t3
     assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t4
-    assert postal_address_validity.user_key == "AdresseAPOSOrgUnit"
-    assert postal_address_validity.value == "Kung FU Street, 1000, Andeby"
+    assert postal_address_validity.user_key == "Kung Fu Street 1, 1000, Andeby"
+    assert postal_address_validity.value == "Kung Fu Street 1, 1000, Andeby"
     assert postal_address_validity.address_type.uuid == postal_address_type_uuid
 
     assert len(validities) == 2
@@ -648,7 +661,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
     }
 )
-async def test_ou_timeline_create_new_unit_with_pnumber(
+async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -668,6 +681,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
     SD (id)       |-------------------------ABCD---------------------------|
     SD (level)    |-------------------------NY0----------------------------|
     SD (PNumber)  |----------------------1234567890------------------------|
+    SD (postal)   |---------------Kung Fu Street 1, 1000, Andeby ----------|
     SD (parent)   |--------dep3--------|-------------dep4------------------|
 
     "Assert"      |---------1----------|--------------2--------------------|
@@ -696,6 +710,13 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
         class_user_key="P-nummer",
     )
 
+    # Get the postal address type
+    postal_address_type_uuid = await _get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="AdresseAPOSOrgUnit",
+    )
+
     sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
         <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
           <RequestStructure>
@@ -722,6 +743,12 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
             <DepartmentName>name1</DepartmentName>
             <ProductionUnitIdentifier>1234567890</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Kung Fu Street 1</StandardAddressIdentifier>
+              <PostalCode>1000</PostalCode>
+              <DistrictName>Andeby</DistrictName>
+              <MunicipalityCode>1000</MunicipalityCode>
+            </PostalAddress>
           </Department>
         </GetDepartment20111201>
     """
@@ -772,7 +799,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
     assert validity.org_unit_level.name == "NY0-niveau"
     assert validity.parent_uuid == OrgUnitUUID("40000000-0000-0000-0000-000000000000")
 
-    # Check the addresses
+    # Check the P-number
     addresses = await graphql_client.get_address_timeline(
         AddressFilter(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
@@ -793,6 +820,27 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
     assert pnumber_validity.value == "1234567890"
     assert pnumber_validity.address_type.uuid == p_number_address_type_uuid
 
+    # Check the postal address
+    addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["AdresseAPOSOrgUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    postal_address_validity = one(one(addresses.objects).validities)
+    assert postal_address_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t7
+    assert postal_address_validity.visibility_uuid == visibility_class_uuid
+    assert postal_address_validity.user_key == "Kung Fu Street 1, 1000, Andeby"
+    assert postal_address_validity.value == "Kung Fu Street 1, 1000, Andeby"
+    assert postal_address_validity.address_type.uuid == postal_address_type_uuid
+
 
 @pytest.mark.integration_test
 @pytest.mark.envvar(
@@ -803,7 +851,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber(
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
     }
 )
-async def test_ou_timeline_update_pnumber(
+async def test_ou_timeline_update_pnumber_and_postal_addr(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -822,6 +870,7 @@ async def test_ou_timeline_update_pnumber(
     MO (level)              |-----------------------NY0--------------------------------
     MO (parent)             |-----------------------dep1-------------------------------
     MO (PNumber)            |---------------------1234567890---------------------------
+    MO (postal)             |---------------Kung Fu Street 1, 1000, Andeby ------------
 
     "Arrange" intervals     |------------------------1---------------------------------
 
@@ -831,6 +880,7 @@ async def test_ou_timeline_update_pnumber(
     SD (level)              |-------NY0--------|             |-------name4--------|
     SD (parent)             |-------dep1-------|             |-------dep1---------|
     SD (PNumber)            |-----2345678901---|             |-----3456789012-----|
+    SD (Postal addr)        |---Karate Street--|             |----Judo Street-----|
 
     "Assert"                |---------1--------|             |----------2---------|
     intervals
@@ -873,7 +923,14 @@ async def test_ou_timeline_update_pnumber(
         class_user_key="P-nummer",
     )
 
-    # Create postal addresses
+    # Get the postal address type
+    postal_address_type_uuid = await _get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="AdresseAPOSOrgUnit",
+    )
+
+    # Create P-number address
     await graphql_client.create_address(
         AddressCreateInput(
             org_unit=unit_uuid,
@@ -882,6 +939,18 @@ async def test_ou_timeline_update_pnumber(
             user_key="1234567890",
             value="1234567890",
             address_type=p_number_address_type_uuid,
+        )
+    )
+
+    # Create postal address
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            user_key="Kung Fu Street 1, 1000, Andeby",
+            value="Kung Fu Street 1, 1000, Andeby",
+            address_type=postal_address_type_uuid,
         )
     )
 
@@ -911,6 +980,12 @@ async def test_ou_timeline_update_pnumber(
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
             <DepartmentName>name4</DepartmentName>
             <ProductionUnitIdentifier>2345678901</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Karate Street 1</StandardAddressIdentifier>
+              <PostalCode>2000</PostalCode>
+              <DistrictName>Gåserød</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
           </Department>
           <Department>
             <ActivationDate>2003-01-01</ActivationDate>
@@ -920,6 +995,12 @@ async def test_ou_timeline_update_pnumber(
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
             <DepartmentName>name4</DepartmentName>
             <ProductionUnitIdentifier>3456789012</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Judo Street 1</StandardAddressIdentifier>
+              <PostalCode>3000</PostalCode>
+              <DistrictName>Fasankøbing</DistrictName>
+              <MunicipalityCode>5000</MunicipalityCode>
+            </PostalAddress>
           </Department>
         </GetDepartment20111201>
     """
@@ -971,14 +1052,14 @@ async def test_ou_timeline_update_pnumber(
 
     pnumber_address_validities = one(pnumber_addresses.objects).validities
 
-    # Check the addresses in "assert interval 1"
+    # Check the P-number in "assert interval 1"
     pnumber_address_validity = pnumber_address_validities[0]
     assert pnumber_address_validity.validity.from_ == t1
     assert _mo_end_to_timeline_end(pnumber_address_validity.validity.to) == t2
     assert pnumber_address_validity.user_key == "2345678901"
     assert pnumber_address_validity.value == "2345678901"
 
-    # Check the addresses in "assert interval 2"
+    # Check the P-number in "assert interval 2"
     pnumber_address_validity = pnumber_address_validities[1]
     assert pnumber_address_validity.validity.from_ == t3
     assert _mo_end_to_timeline_end(pnumber_address_validity.validity.to) == t4
@@ -986,6 +1067,36 @@ async def test_ou_timeline_update_pnumber(
     assert pnumber_address_validity.value == "3456789012"
 
     assert len(pnumber_address_validities) == 2
+
+    postal_addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["AdresseAPOSOrgUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    postal_address_validities = one(postal_addresses.objects).validities
+
+    # Check the postal address in "assert interval 1"
+    postal_address_validity = postal_address_validities[0]
+    assert postal_address_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t2
+    assert postal_address_validity.user_key == "Karate Street 1, 2000, Gåserød"
+    assert postal_address_validity.value == "Karate Street 1, 2000, Gåserød"
+
+    # Check the postal address in "assert interval 2"
+    postal_address_validity = postal_address_validities[1]
+    assert postal_address_validity.validity.from_ == t3
+    assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t4
+    assert postal_address_validity.user_key == "Judo Street 1, 3000, Fasankøbing"
+    assert postal_address_validity.value == "Judo Street 1, 3000, Fasankøbing"
+
+    assert len(postal_address_validities) == 2
 
 
 @pytest.mark.integration_test
@@ -997,7 +1108,7 @@ async def test_ou_timeline_update_pnumber(
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
     }
 )
-async def test_ou_timeline_remove_pnumber(
+async def test_ou_timeline_remove_pnumber_and_postal_addr(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -1016,6 +1127,7 @@ async def test_ou_timeline_remove_pnumber(
     MO (level)              |---------------NY0--------------|
     MO (parent)             |--------------dep1--------------|
     MO (PNumber)            |------------1234567890----------|
+    MO (Postal addr)        |-Kung Fu Street 1, 1000, Andeby-|
 
     "Arrange" intervals     |----------------1---------------|
 
@@ -1024,6 +1136,7 @@ async def test_ou_timeline_remove_pnumber(
     MO (level)              |---------------NY0--------------|
     MO (parent)             |--------------dep1--------------|
     MO (PNumber)                          (empty)
+    MO (Postal addr)                      (empty)
 
     "Assert"                |----------------1---------------|
     intervals
@@ -1064,6 +1177,13 @@ async def test_ou_timeline_remove_pnumber(
         class_user_key="P-nummer",
     )
 
+    # Get the postal address type
+    postal_address_type_uuid = await _get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="AdresseAPOSOrgUnit",
+    )
+
     await graphql_client.create_address(
         AddressCreateInput(
             uuid=address_uuid,
@@ -1076,7 +1196,19 @@ async def test_ou_timeline_remove_pnumber(
         )
     )
 
-    # PNumber not set below in the <Department>
+    # Create postal address
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, t2),
+            user_key="Kung Fu Street 1, 1000, Andeby",
+            value="Kung Fu Street 1, 1000, Andeby",
+            address_type=postal_address_type_uuid,
+        )
+    )
+
+    # PNumber and postal address not set below in the <Department>
     sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
         <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
           <RequestStructure>
@@ -1139,7 +1271,7 @@ async def test_ou_timeline_remove_pnumber(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["P-nummer"],
+                user_keys=["P-nummer", "AdresseAPOSOrgUnit"],
             ),
             from_date=None,
             to_date=None,

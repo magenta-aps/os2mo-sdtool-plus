@@ -49,6 +49,7 @@ from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import MOPNumberTimelineObj
+from sdtoolplus.models import MOPostalAddressTimelineObj
 from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -56,6 +57,7 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
@@ -271,6 +273,55 @@ async def get_pnumber_timeline(
         ),
     )
     logger.debug("MO P-number timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+async def get_postal_address_timeline(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+) -> MOPostalAddressTimelineObj:
+    logger.info("Get MO postal address timeline", org_unit=str(unit_uuid))
+
+    gql_timeline = await gql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                # TODO: use both keys for now as it has changed in the APOS importer?
+                # TODO: handle the municipality case
+                user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    objects = gql_timeline.objects
+
+    if not objects:
+        logger.debug("MO postal address timeline is empty")
+        return MOPostalAddressTimelineObj(
+            uuid=None, pnumber=Timeline[UnitPostalAddress]()
+        )
+
+    # TODO: catch ValueError exception
+    object = one(objects)
+
+    timeline = MOPostalAddressTimelineObj(
+        uuid=object.uuid,
+        postal_address=Timeline[UnitPostalAddress](
+            intervals=tuple(
+                UnitPostalAddress(
+                    start=obj.validity.from_,
+                    end=_mo_end_to_timeline_end(obj.validity.to),
+                    value=obj.value,
+                )
+                for obj in object.validities
+            )
+        ),
+    )
+    logger.debug("MO postal address timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -1154,6 +1205,86 @@ async def create_pnumber_address(
             user_key=sd_pnumber.value,
             value=sd_pnumber.value,
             address_type=p_number_address_type_uuid,
+        )
+        logger.debug("Update address", payload=update_address_payload.dict())
+        if not dry_run:
+            await gql_client.update_address(update_address_payload)
+
+
+async def create_postal_address(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    address_uuid: UUID | None,
+    sd_postal_address_timeline: Timeline[UnitPostalAddress],
+    dry_run: bool,
+) -> None:
+    logger.debug(
+        "Create postal address in MO",
+        pnumber_timeline=sd_postal_address_timeline.dict(),
+    )
+
+    # TODO: move these class calls to application start up for better performance
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="visibility",
+        # TODO: handle required variability in municipality mode
+        class_user_key="Public",
+    )
+
+    # Get the postal address type
+
+    # postal_address_type_uuid = await _get_class(
+    #     gql_client=gql_client,
+    #     facet_user_key="org_unit_address_type",
+    #     # TODO: use correct class user_key in municipality mode
+    #     class_user_key="AdresseSDOrgUnit",
+    # )
+
+    # TODO: replace this code block with the one just above when the postal address
+    #       user_key has converged
+    ou_type_classes = await gql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["org_unit_address_type"]),
+            user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+        )
+    )
+    current = one(ou_type_classes.objects).current
+    assert current is not None
+    postal_address_type_uuid = current.uuid
+
+    first_sd_postal_address = first(sd_postal_address_timeline.intervals)
+    create_address_payload = AddressCreateInput(
+        uuid=address_uuid,
+        org_unit=org_unit,
+        visibility=visibility_class_uuid,
+        validity=timeline_interval_to_mo_validity(
+            first_sd_postal_address.start, first_sd_postal_address.end
+        ),
+        user_key=first_sd_postal_address.value,
+        value=first_sd_postal_address.value,
+        address_type=postal_address_type_uuid,
+    )
+    logger.debug("Create address", payload=create_address_payload.dict())
+    if not dry_run:
+        created_address_uuid = (
+            await gql_client.create_address(create_address_payload)
+        ).uuid
+    else:
+        created_address_uuid = uuid4()
+
+    for sd_postal_address in sd_postal_address_timeline.intervals[1:]:
+        update_address_payload = AddressUpdateInput(
+            uuid=created_address_uuid,
+            org_unit=org_unit,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(
+                sd_postal_address.start, sd_postal_address.end
+            ),
+            user_key=sd_postal_address.value,
+            value=sd_postal_address.value,
+            address_type=postal_address_type_uuid,
         )
         logger.debug("Update address", payload=update_address_payload.dict())
         if not dry_run:
