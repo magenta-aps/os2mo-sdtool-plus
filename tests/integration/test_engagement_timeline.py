@@ -1583,7 +1583,8 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
     respx_mock: MockRouter,
 ):
     """
-    We are testing this scenario. The focus of the test is the unit part.
+    We are testing this scenario. The focus of the test is the MO SD unit part, i.e.
+    MOs extension_3.
 
     Time  --------t1-----------------------------------------t2--------------------->
 
