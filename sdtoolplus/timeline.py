@@ -154,7 +154,7 @@ async def _sync_person(
 
 
 @handle_exclusively_decorator(
-    key=lambda sd_client, gql_client, institution_identifier, cpr, dry_run: cpr
+    key=lambda sd_client, gql_client, institution_identifier, cpr, dry_run=False: cpr
 )
 async def sync_person(
     sd_client: SDClient,
@@ -552,7 +552,7 @@ async def _sync_ou_postal_address(
     institution_identifier,
     org_unit,
     settings,
-    dry_run: org_unit
+    dry_run=False: org_unit
 )
 async def sync_ou(
     sd_client: SDClient,
@@ -760,7 +760,7 @@ async def engagement_ou_strategy(
     cpr,
     employment_identifier,
     settings,
-    dry_run: (institution_identifier, cpr, employment_identifier)
+    dry_run=False: (institution_identifier, cpr, employment_identifier)
 )
 async def sync_engagement(
     sd_client: SDClient,
