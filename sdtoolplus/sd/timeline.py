@@ -85,7 +85,7 @@ async def get_department(
                 UUIDIndicator=True,
             ),
         )
-        if len(department.Department) == 0:
+        if not department.Department:
             logger.debug("Empty department response from SD!")
             return None
         return department
