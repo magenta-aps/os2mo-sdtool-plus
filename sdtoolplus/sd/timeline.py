@@ -12,6 +12,7 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -31,6 +32,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
@@ -62,28 +64,47 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     return EngType.MONTHLY_PART_TIME
 
 
+async def get_department(
+    sd_client: SDClient,
+    institution_identifier: str,
+    unit_uuid: OrgUnitUUID,
+) -> GetDepartmentResponse | None:
+    try:
+        department = await asyncio.to_thread(
+            sd_client.get_department,
+            GetDepartmentRequest(
+                InstitutionIdentifier=institution_identifier,
+                DepartmentUUIDIdentifier=unit_uuid,
+                ActivationDate=date.min,
+                DeactivationDate=date.max,
+                DepartmentNameIndicator=True,
+                PostalAddressIndicator=True,
+                ProductionUnitIndicator=True,
+                ContactInformationIndicator=True,
+                UUIDIndicator=True,
+            ),
+        )
+        return department
+    except SDRootElementNotFound as error:
+        logger.debug("Error getting department from SD", error=error)
+        return None
+
+
 async def get_department_timeline(
+    department: GetDepartmentResponse | None,
     sd_client: SDClient,
     inst_id: str,
     unit_uuid: OrgUnitUUID,
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
 
+    if department is None:
+        return UnitTimeline()
+
     try:
-        department = await asyncio.to_thread(
-            sd_client.get_department,
-            GetDepartmentRequest(
-                InstitutionIdentifier=inst_id,
-                DepartmentUUIDIdentifier=unit_uuid,
-                ActivationDate=date.min,
-                DeactivationDate=date.max,
-                DepartmentNameIndicator=True,
-                UUIDIndicator=True,
-            ),
-        )
         parents = sd_client.get_department_parent_history(unit_uuid)
-    except (SDRootElementNotFound, SDParentNotFound) as error:
-        logger.debug("Error getting department from SD", error=error)
+    except SDParentNotFound as error:
+        logger.debug("Error getting department parent from SD", error=error)
         return UnitTimeline()
 
     active_intervals = tuple(
@@ -139,6 +160,23 @@ async def get_department_timeline(
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
     logger.debug("SD OU timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNumber]:
+    timeline = Timeline[UnitPNumber](
+        intervals=tuple(
+            UnitPNumber(
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
+                value=dep.ProductionUnitIdentifier,
+            )
+            for dep in department.Department
+            if dep.ProductionUnitIdentifier is not None
+        )
+    )
+    logger.debug("SD P-number timeline", timeline=timeline.dict())
 
     return timeline
 

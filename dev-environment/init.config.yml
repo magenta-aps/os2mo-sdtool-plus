@@ -38,6 +38,9 @@ facets:
     Intern:
       title: "Må vises internt"
       scope: "INTERNAL"
+    Public:
+      title: "Må vises eksternt"
+      scope: "PUBLIC"
   org_unit_address_type:
     Pnummer:
       title: "P-nummer"

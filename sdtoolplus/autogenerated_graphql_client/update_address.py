@@ -12,6 +12,7 @@ class UpdateAddress(BaseModel):
 
 
 class UpdateAddressAddressUpdate(BaseModel):
+    uuid: UUID
     current: Optional["UpdateAddressAddressUpdateCurrent"]
 
 

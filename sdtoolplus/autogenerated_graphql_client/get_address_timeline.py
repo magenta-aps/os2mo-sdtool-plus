@@ -17,11 +17,13 @@ class GetAddressTimelineAddresses(BaseModel):
 
 
 class GetAddressTimelineAddressesObjects(BaseModel):
+    uuid: UUID
     validities: List["GetAddressTimelineAddressesObjectsValidities"]
 
 
 class GetAddressTimelineAddressesObjectsValidities(BaseModel):
     address_type: "GetAddressTimelineAddressesObjectsValiditiesAddressType"
+    visibility_uuid: Optional[UUID]
     user_key: str
     value: str
     uuid: UUID

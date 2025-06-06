@@ -10,6 +10,7 @@ from typing import Optional
 from typing import Self
 from typing import TypeVar
 from typing import cast
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import structlog.stdlib
@@ -124,6 +125,10 @@ class UnitName(Interval[str]):
 
 
 class UnitParent(Interval[Optional[OrgUnitUUID]]):
+    pass
+
+
+class UnitPNumber(Interval[Optional[str]]):
     pass
 
 
@@ -312,3 +317,9 @@ class LeaveTimeline(BaseTimeline):
             return True
         except NoValueError:
             return False
+
+
+class MOPNumberTimelineObj(BaseTimeline):
+    # MO P-number address UUID
+    uuid: UUID | None
+    pnumber: Timeline[UnitPNumber] = Timeline[UnitPNumber]()

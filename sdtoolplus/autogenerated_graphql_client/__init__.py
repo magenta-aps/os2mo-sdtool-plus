@@ -45,6 +45,8 @@ from .create_org_unit import CreateOrgUnit
 from .create_org_unit import CreateOrgUnitOrgUnitCreate
 from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
+from .delete_address import DeleteAddress
+from .delete_address import DeleteAddressAddressDelete
 from .enums import AccessLogModel
 from .enums import FileStore
 from .enums import OwnerInferencePriority
@@ -338,6 +340,8 @@ __all__ = [
     "CreateOrgUnitOrgUnitCreate",
     "CreatePerson",
     "CreatePersonEmployeeCreate",
+    "DeleteAddress",
+    "DeleteAddressAddressDelete",
     "DescendantParentBoundOrganisationUnitFilter",
     "EmployeeCreateInput",
     "EmployeeFilter",

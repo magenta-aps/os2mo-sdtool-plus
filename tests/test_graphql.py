@@ -100,6 +100,7 @@ async def test_add_address():
 
     mock_gql_client = AsyncMock()
     mock_gql_client.create_address.return_value = CreateAddressAddressCreate(
+        uuid=addr_uuid,
         current=CreateAddressAddressCreateCurrent(
             validity=CreateAddressAddressCreateCurrentValidity(
                 from_=from_date, to=to_date
@@ -109,7 +110,7 @@ async def test_add_address():
             address_type=CreateAddressAddressCreateCurrentAddressType(
                 user_key=AddressTypeUserKey.POSTAL_ADDR.value
             ),
-        )
+        ),
     )
 
     # Act
