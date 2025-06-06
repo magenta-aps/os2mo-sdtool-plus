@@ -333,4 +333,5 @@ def test_truncate_start_date(
     _truncate_start_date(random_org_unit_node, datetime(2000, 1, 1, tzinfo=TIMEZONE))
 
     # Assert
+    assert random_org_unit_node.validity is not None
     assert random_org_unit_node.validity.from_date == expected
