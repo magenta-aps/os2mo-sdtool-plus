@@ -49,6 +49,7 @@ from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import MOPNumberTimelineObj
+from sdtoolplus.models import MOPostalAddressTimelineObj
 from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitId
@@ -56,6 +57,7 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 
@@ -271,6 +273,55 @@ async def get_pnumber_timeline(
         ),
     )
     logger.debug("MO P-number timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+async def get_postal_address_timeline(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+) -> MOPostalAddressTimelineObj:
+    logger.info("Get MO postal address timeline", org_unit=str(unit_uuid))
+
+    gql_timeline = await gql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                # TODO: use both keys for now as it has changed in the APOS importer?
+                # TODO: handle the municipality case
+                user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    objects = gql_timeline.objects
+
+    if not objects:
+        logger.debug("MO postal address timeline is empty")
+        return MOPostalAddressTimelineObj(
+            uuid=None, pnumber=Timeline[UnitPostalAddress]()
+        )
+
+    # TODO: catch ValueError exception
+    object = one(objects)
+
+    timeline = MOPostalAddressTimelineObj(
+        uuid=object.uuid,
+        postal_address=Timeline[UnitPostalAddress](
+            intervals=tuple(
+                UnitPostalAddress(
+                    start=obj.validity.from_,
+                    end=_mo_end_to_timeline_end(obj.validity.to),
+                    value=obj.value,
+                )
+                for obj in object.validities
+            )
+        ),
+    )
+    logger.debug("MO postal address timeline", timeline=timeline.dict())
 
     return timeline
 
