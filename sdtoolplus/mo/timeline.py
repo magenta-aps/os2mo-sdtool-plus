@@ -1209,3 +1209,83 @@ async def create_pnumber_address(
         logger.debug("Update address", payload=update_address_payload.dict())
         if not dry_run:
             await gql_client.update_address(update_address_payload)
+
+
+async def create_postal_address(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    address_uuid: UUID | None,
+    sd_postal_address_timeline: Timeline[UnitPostalAddress],
+    dry_run: bool,
+) -> None:
+    logger.debug(
+        "Create postal address in MO",
+        pnumber_timeline=sd_postal_address_timeline.dict(),
+    )
+
+    # TODO: move these class calls to application start up for better performance
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="visibility",
+        # TODO: handle required variability in municipality mode
+        class_user_key="Public",
+    )
+
+    # Get the postal address type
+
+    # postal_address_type_uuid = await _get_class(
+    #     gql_client=gql_client,
+    #     facet_user_key="org_unit_address_type",
+    #     # TODO: use correct class user_key in municipality mode
+    #     class_user_key="AdresseSDOrgUnit",
+    # )
+
+    # TODO: replace this code block with the one just above when the postal address
+    #       user_key has converged
+    ou_type_classes = await gql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["org_unit_address_type"]),
+            user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+        )
+    )
+    current = one(ou_type_classes.objects).current
+    assert current is not None
+    postal_address_type_uuid = current.uuid
+
+    first_sd_postal_address = first(sd_postal_address_timeline.intervals)
+    create_address_payload = AddressCreateInput(
+        uuid=address_uuid,
+        org_unit=org_unit,
+        visibility=visibility_class_uuid,
+        validity=timeline_interval_to_mo_validity(
+            first_sd_postal_address.start, first_sd_postal_address.end
+        ),
+        user_key=first_sd_postal_address.value,
+        value=first_sd_postal_address.value,
+        address_type=postal_address_type_uuid,
+    )
+    logger.debug("Create address", payload=create_address_payload.dict())
+    if not dry_run:
+        created_address_uuid = (
+            await gql_client.create_address(create_address_payload)
+        ).uuid
+    else:
+        created_address_uuid = uuid4()
+
+    for sd_postal_address in sd_postal_address_timeline.intervals[1:]:
+        update_address_payload = AddressUpdateInput(
+            uuid=created_address_uuid,
+            org_unit=org_unit,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(
+                sd_postal_address.start, sd_postal_address.end
+            ),
+            user_key=sd_postal_address.value,
+            value=sd_postal_address.value,
+            address_type=postal_address_type_uuid,
+        )
+        logger.debug("Update address", payload=update_address_payload.dict())
+        if not dry_run:
+            await gql_client.update_address(update_address_payload)
