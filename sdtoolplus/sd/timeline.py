@@ -85,6 +85,9 @@ async def get_department(
                 UUIDIndicator=True,
             ),
         )
+        if len(department.Department) == 0:
+            logger.debug("Empty department response from SD!")
+            return None
         return department
     except SDRootElementNotFound as error:
         logger.debug("Error getting department from SD", error=error)
