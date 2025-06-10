@@ -42,6 +42,9 @@ async def sd_amqp_lifespan(
 ) -> AsyncIterator[None]:
     logger.info("Connecting to SD AMQP")
 
+    # The certificates need to exist not only on first connect, but until the
+    # lifespan is shut down (this function returns) to ensure they are
+    # available for reconnection.
     with TemporaryDirectory() as dir:
         # TLS
         # https://www.rabbitmq.com/docs/uri-query-parameters#tls
@@ -60,34 +63,34 @@ async def sd_amqp_lifespan(
         except Exception as e:
             raise ConnectionError("Failed to connect to SD AMQP") from e
 
-    channel = await connection.channel()
-    await channel.set_qos(prefetch_count=10)
+        channel = await connection.channel()
+        await channel.set_qos(prefetch_count=10)
 
-    # Queues
-    graphql_client: GraphQLClient = context["graphql_client"]
-    queues = {
-        "employment-events": partial(
-            process_employment_amqp_event,
-            graphql_client=graphql_client,
-        ),
-        "org-events": partial(
-            process_org_amqp_event,
-            graphql_client=graphql_client,
-        ),
-        "person-events": partial(
-            process_person_amqp_event,
-            graphql_client=graphql_client,
-        ),
-    }
-    for name, callback in queues.items():
-        queue = await channel.get_queue(name)
-        await queue.consume(process_message(callback), timeout=5)
+        # Queues
+        graphql_client: GraphQLClient = context["graphql_client"]
+        queues = {
+            "employment-events": partial(
+                process_employment_amqp_event,
+                graphql_client=graphql_client,
+            ),
+            "org-events": partial(
+                process_org_amqp_event,
+                graphql_client=graphql_client,
+            ),
+            "person-events": partial(
+                process_person_amqp_event,
+                graphql_client=graphql_client,
+            ),
+        }
+        for name, callback in queues.items():
+            queue = await channel.get_queue(name)
+            await queue.consume(process_message(callback), timeout=5)
 
-    try:
-        yield  # wait until terminate
-    finally:
-        logger.info("Disconnecting from SD AMQP")
-        await connection.close()
+        try:
+            yield  # wait until terminate
+        finally:
+            logger.info("Disconnecting from SD AMQP")
+            await connection.close()
 
 
 def process_message(
