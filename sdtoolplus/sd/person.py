@@ -37,6 +37,15 @@ async def get_sd_person(
     )
 
     sd_response_person = one(sd_response.Person)
+    if (
+        sd_response_person.ContactInformation
+        and sd_response_person.ContactInformation.TelephoneNumberIdentifier
+    ):
+        phone_numbers = [
+            p
+            for p in sd_response_person.ContactInformation.TelephoneNumberIdentifier
+            if p != "00000000"
+        ]
 
     person = Person(
         cpr=sd_response_person.PersonCivilRegistrationIdentifier,
@@ -45,9 +54,7 @@ async def get_sd_person(
         emails=sd_response_person.ContactInformation.EmailAddressIdentifier
         if sd_response_person.ContactInformation
         else None,
-        phone_numbers=sd_response_person.ContactInformation.TelephoneNumberIdentifier
-        if sd_response_person.ContactInformation
-        else None,
+        phone_numbers=phone_numbers if sd_response_person.ContactInformation else None,
         address=f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
         if sd_response_person.PostalAddress
         and sd_response_person.PostalAddress.StandardAddressIdentifier
