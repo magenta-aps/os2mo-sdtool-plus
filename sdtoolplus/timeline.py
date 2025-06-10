@@ -194,11 +194,7 @@ async def sync_person_addresses(
         dry_run,
     )
     desired_phone_numbers = (
-        [
-            phone_number
-            for phone_number in sd_person.phone_numbers
-            if phone_number != "00000000"
-        ]
+        [phone_number for phone_number in sd_person.phone_numbers]
         if sd_person.phone_numbers
         else []
     )
