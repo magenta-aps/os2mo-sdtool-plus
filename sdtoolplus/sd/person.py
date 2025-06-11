@@ -1,12 +1,15 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import datetime
 from datetime import date
 
 import structlog.stdlib
 from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
+from sdclient.responses import GetEmploymentChangedResponse
 
 from sdtoolplus.models import Person
 
@@ -77,3 +80,17 @@ async def get_all_sd_persons(
         )
         for sd_response_person in sd_response.Person
     ]
+
+
+async def get_sd_person_engagements(
+    sd_client: SDClient, institution_identifier: str, cpr: str
+) -> GetEmploymentChangedResponse:
+    return await asyncio.to_thread(
+        sd_client.get_employment_changed,
+        GetEmploymentChangedRequest(
+            InstitutionIdentifier=institution_identifier,
+            PersonCivilRegistrationIdentifier=cpr,
+            ActivationDate=datetime.date.min,
+            DeactivationDate=datetime.date.max,
+        ),
+    )

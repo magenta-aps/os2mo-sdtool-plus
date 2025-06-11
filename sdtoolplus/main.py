@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
 import datetime
+import re
 from uuid import UUID
 
 import structlog
@@ -17,7 +19,10 @@ from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
+from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.requests import GetDepartmentRequest
+from sdclient.responses import Department
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
@@ -37,6 +42,8 @@ from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
+from .events import EmploymentGraphQLEvent
+from .events import OrgGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
@@ -47,6 +54,7 @@ from .models import EngagementSyncPayload
 from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
+from .sd.person import get_sd_person_engagements
 from .timeline import sync_engagement
 from .timeline import sync_mo_engagement_sd_units
 from .timeline import sync_ou
@@ -219,42 +227,6 @@ def create_fastramqpi() -> FastRAMQPI:
         await delete_last_run(engine)
         return {"msg": "Last run deleted"}
 
-    @fastapi_router.post("/persons/sync")
-    async def sync_all_persons(
-        sd_client: depends.SDClient,
-        graphql_client: depends.GraphQLClient,
-        institution_identifier: str,
-    ) -> None:
-        """
-        Sync all persons in SD
-        """
-        logger.info("Syncing all SD persons")
-
-        sd_persons = await get_all_sd_persons(
-            sd_client=sd_client,
-            institution_identifier=institution_identifier,
-            effective_date=datetime.date.today(),
-        )
-
-        for person in sd_persons:
-            logger.debug(
-                "Syncing person",
-                cpr=person.cpr,
-                name=f"{person.given_name} {person.surname}",
-            )
-            await graphql_client.send_event(
-                input=EventSendInput(
-                    namespace="sd",
-                    routing_key="person",
-                    subject=PersonGraphQLEvent(
-                        institution_identifier=institution_identifier,
-                        cpr=person.cpr,
-                    ).json(),
-                )
-            )
-
-        logger.info("Done syncing all SD persons")
-
     @fastapi_router.post("/job-functions/sync")
     async def sync_job_functions(
         sd_client: depends.SDClient,
@@ -398,6 +370,45 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return {"msg": "success"}
 
+    @fastapi_router.post("/timeline/sync/person/all")
+    async def sync_all_persons(
+        sd_client: depends.SDClient,
+        graphql_client: depends.GraphQLClient,
+        institution_identifier: str,
+    ) -> dict:
+        """
+        Sync all persons in SD
+        """
+        logger.info("Syncing all SD persons")
+
+        sd_persons = await get_all_sd_persons(
+            sd_client=sd_client,
+            institution_identifier=institution_identifier,
+            effective_date=datetime.date.today(),
+        )
+
+        events = [
+            EventSendInput(
+                namespace="sd",
+                routing_key="person",
+                subject=PersonGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    cpr=person.cpr,
+                ).json(),
+            )
+            for person in sd_persons
+        ]
+        logger.debug(
+            "Syncing persons",
+            events=len(events),
+        )
+        for e in events:
+            await graphql_client.send_event(input=e)
+
+        logger.info(f"Done queueing sync all SD persons in {institution_identifier}")
+
+        return {"msg": "success"}
+
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
         settings: depends.Settings,
@@ -417,6 +428,51 @@ def create_fastramqpi() -> FastRAMQPI:
             employment_identifier=payload.employment_identifier,
             settings=settings,
             dry_run=dry_run,
+        )
+        return {"msg": "success"}
+
+    @fastapi_router.post("/timeline/sync/engagement/all", status_code=HTTP_200_OK)
+    async def full_timeline_sync_engagements(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
+        gql_client: depends.GraphQLClient,
+        institution_identifier: str,
+        dry_run: bool = False,
+    ) -> dict:
+        logger.info(f"Syncing all SD employments in {institution_identifier}")
+
+        sd_persons = await get_all_sd_persons(
+            sd_client=sd_client,
+            institution_identifier=institution_identifier,
+            effective_date=datetime.date.today(),
+        )
+
+        if dry_run:
+            logger.info(
+                f"Dry-run. Would create engagement events for {len(sd_persons)} persons"
+            )
+            return {"msg": "success"}
+
+        for person in sd_persons:
+            employments = await get_sd_person_engagements(
+                sd_client=sd_client,
+                institution_identifier=institution_identifier,
+                cpr=person.cpr,
+            )
+            for e in one(employments.Person).Employment:
+                event = EventSendInput(
+                    namespace="sd",
+                    routing_key="employment",
+                    subject=EmploymentGraphQLEvent(
+                        institution_identifier=institution_identifier,
+                        cpr=person.cpr,
+                        employment_identifier=e.EmploymentIdentifier,
+                    ).json(),
+                )
+                await gql_client.send_event(input=event)
+
+        logger.info(
+            f"Done queueing sync for all SD employments in {institution_identifier}"
         )
         return {"msg": "success"}
 
@@ -465,6 +521,65 @@ def create_fastramqpi() -> FastRAMQPI:
         )
 
         return {"msg": "Sync started in background"}
+
+    @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
+    async def full_timeline_sync_ous(
+        settings: depends.Settings,
+        sd_client: depends.SDClient,
+        gql_client: depends.GraphQLClient,
+        institution_identifier: str,
+        dry_run: bool = False,
+    ) -> dict:
+        logger.info(f"Syncing all SD units in {institution_identifier}")
+        # TODO: This only works when all unit_levels are integers
+        ny_regex = re.compile(r"NY(\d)-niveau")
+
+        def priority_from_level(department: Department) -> int:
+            # Set priority on org_unit events such that top-level units are imported first.
+            DEFAULT_PRIORITY = 10_000
+            if department.DepartmentLevelIdentifier == "Afdelings-niveau":
+                return DEFAULT_PRIORITY
+            match = ny_regex.match(department.DepartmentLevelIdentifier)
+            assert match
+            priority = DEFAULT_PRIORITY - int(one(match.groups()))
+            return priority
+
+        departments = await asyncio.to_thread(
+            sd_client.get_department,
+            GetDepartmentRequest(
+                InstitutionIdentifier=institution_identifier,
+                ActivationDate=datetime.datetime.min,
+                DeactivationDate=datetime.datetime.max,
+                DepartmentNameIndicator=False,
+                UUIDIndicator=True,
+                PostalAddressIndicator=False,
+            ),
+        )
+        if dry_run:
+            logger.info(
+                f"Dry-run. Would create {len(departments.Department)} org_unit events"
+            )
+            return {"msg": "success"}
+
+        events = [
+            EventSendInput(
+                namespace="sd",
+                routing_key="org_unit",
+                subject=OrgGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    org_unit=d.DepartmentUUIDIdentifier,
+                ).json(),
+                priority=priority_from_level(d),
+            )
+            for d in departments.Department
+        ]
+
+        logger.debug("Syncing units", events=len(events))
+        for e in events:
+            await gql_client.send_event(input=e)
+
+        logger.info(f"Done queueing sync all SD units in {institution_identifier}")
+        return {"msg": "success"}
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
