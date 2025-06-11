@@ -5,7 +5,6 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
 from starlette.status import HTTP_200_OK
-from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -13,7 +12,6 @@ from .. import depends
 from ..exceptions import DepartmentTimelineNotFound
 from ..exceptions import EngagementNotActiveError
 from ..exceptions import EngagementSyncTemporarilyDisabled
-from ..exceptions import PersonNotFoundError
 from ..timeline import sync_engagement
 from ..timeline import sync_person
 from .engagement import move_engagement
@@ -34,9 +32,6 @@ async def engagement_move(
 ) -> dict:
     try:
         await move_engagement(gql_client, payload, dry_run)
-    except PersonNotFoundError:
-        response.status_code = HTTP_404_NOT_FOUND
-        return {"msg": "The person could not be found i MO"}
     except EngagementNotActiveError:
         response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
         return {"msg": "The engagement is not active in the entire move interval"}

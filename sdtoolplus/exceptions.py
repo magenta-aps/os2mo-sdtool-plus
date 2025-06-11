@@ -21,7 +21,11 @@ class EngagementNotActiveError(Exception):
     pass
 
 
-class PersonNotFoundError(Exception):
+class PersonNotFoundError(HTTPException):
+    pass
+
+
+class MoreThanOnePersonError(HTTPException):
     pass
 
 
@@ -47,4 +51,15 @@ engagement_not_found_error = EngagementNotFoundError(
 more_than_one_engagement_error = MoreThanOneEngagementError(
     status_code=HTTP_422_UNPROCESSABLE_ENTITY,
     detail="More than one engagement found for the provided person and user key (EmploymentIdentifier)",
+)
+
+
+person_not_found_error = PersonNotFoundError(
+    status_code=HTTP_404_NOT_FOUND, detail="Could not find person in MO"
+)
+
+
+more_than_one_person_error = MoreThanOneEngagementError(
+    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+    detail="More than one person found in MO",
 )
