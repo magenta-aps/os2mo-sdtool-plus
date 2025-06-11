@@ -3,6 +3,7 @@
 from fastapi import HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
+from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 
 class NoValueError(Exception):
@@ -33,7 +34,7 @@ class DepartmentTimelineNotFound(HTTPException):
     pass
 
 
-class EngagementSyncTemporarilyDisabled(Exception):
+class EngagementSyncTemporarilyDisabled(HTTPException):
     """
     Only raised when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is set to False
     (see comment about this setting in config.py)
@@ -69,4 +70,9 @@ more_than_one_person_error = MoreThanOneEngagementError(
 department_timeline_not_found = DepartmentTimelineNotFound(
     status_code=HTTP_422_UNPROCESSABLE_ENTITY,
     detail="Empty department timeline for employment found in SD",
+)
+
+engagement_sync_temporarily_disabled = EngagementSyncTemporarilyDisabled(
+    status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+    detail="Engagement sync temporarily disabled!",
 )
