@@ -5,12 +5,8 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
 from starlette.status import HTTP_200_OK
-from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from .. import depends
-from ..exceptions import DepartmentTimelineNotFound
-from ..exceptions import EngagementNotActiveError
 from ..exceptions import EngagementSyncTemporarilyDisabled
 from ..timeline import sync_engagement
 from ..timeline import sync_person
@@ -30,11 +26,7 @@ async def engagement_move(
     payload: EngagementMovePayload,
     dry_run: bool = False,
 ) -> dict:
-    try:
-        await move_engagement(gql_client, payload, dry_run)
-    except EngagementNotActiveError:
-        response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
-        return {"msg": "The engagement is not active in the entire move interval"}
+    await move_engagement(gql_client, payload, dry_run)
     return {"msg": "success"}
 
 
@@ -77,24 +69,14 @@ async def sync_person_and_engagement(
         dry_run=dry_run,
     )
 
-    try:
-        await sync_engagement(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            employment_identifier=payload.employment_identifier,
-            settings=settings,
-            dry_run=dry_run,
-        )
-    except DepartmentTimelineNotFound:
-        logger.error(
-            "Empty department timeline for employment found in SD",
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            employment_identifier=payload.employment_identifier,
-        )
-        response.status_code = HTTP_422_UNPROCESSABLE_ENTITY
-        return {"msg": "Empty department timeline for employment found in SD"}
+    await sync_engagement(
+        sd_client=sd_client,
+        gql_client=gql_client,
+        institution_identifier=payload.institution_identifier,
+        cpr=payload.cpr,
+        employment_identifier=payload.employment_identifier,
+        settings=settings,
+        dry_run=dry_run,
+    )
 
     return {"msg": "success"}
