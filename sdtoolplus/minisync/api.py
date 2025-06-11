@@ -12,7 +12,6 @@ from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from .. import depends
 from ..exceptions import DepartmentTimelineNotFound
 from ..exceptions import EngagementNotActiveError
-from ..exceptions import EngagementNotFoundError
 from ..exceptions import EngagementSyncTemporarilyDisabled
 from ..exceptions import PersonNotFoundError
 from ..timeline import sync_engagement
@@ -38,9 +37,6 @@ async def engagement_move(
     except PersonNotFoundError:
         response.status_code = HTTP_404_NOT_FOUND
         return {"msg": "The person could not be found i MO"}
-    except EngagementNotFoundError:
-        response.status_code = HTTP_404_NOT_FOUND
-        return {"msg": "The engagement could not be found i MO"}
     except EngagementNotActiveError:
         response.status_code = HTTP_500_INTERNAL_SERVER_ERROR
         return {"msg": "The engagement is not active in the entire move interval"}
