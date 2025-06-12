@@ -61,13 +61,13 @@ facets:
     TestAnsat:
       title: "TestAnsat"
       scope: "TEXT"
-    SDbe3edd69-16c1-4dcb-a8c1-16b4db611b9b:
+    fuldtid:
       title: "Månedslønnet, fuldtid"
       scope: "TEXT"
-    SD609dc578-65cc-47b3-8811-ffd1cad5b981:
+    deltid:
       title: "Månedslønnet, deltid"
       scope: "TEXT"
-    SD266921e5-c58b-4ded-92c5-61b30ba9bfb0:
+    timelønnet:
       title: "Timelønnet"
       scope: "TEXT"
   engagement_job_function:

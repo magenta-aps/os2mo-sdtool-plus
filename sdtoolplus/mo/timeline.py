@@ -150,10 +150,10 @@ async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]
         obj.current
         for obj in r_eng_types.objects
         if obj.current is not None
-        and obj.current.name in (eng_type.value for eng_type in EngType)
+        and obj.current.user_key in (eng_type.value for eng_type in EngType)
     )
 
-    return {EngType(clazz.name): clazz.uuid for clazz in relevant_classes}
+    return {EngType(clazz.user_key): clazz.uuid for clazz in relevant_classes}
 
 
 async def get_ou_timeline(
@@ -591,7 +591,7 @@ async def get_engagement_timeline(
         EngagementType(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=EngType(obj.engagement_type.name),
+            value=EngType(obj.engagement_type.user_key),
         )
         for obj in validities
     )
