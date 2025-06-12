@@ -43,9 +43,9 @@ class AddressTypeUserKey(Enum):
 
 
 class EngType(Enum):
-    MONTHLY_FULL_TIME = "Månedslønnet, fuldtid"
-    MONTHLY_PART_TIME = "Månedslønnet, deltid"
-    HOURLY = "Timelønnet"
+    MONTHLY_FULL_TIME = "fuldtid"
+    MONTHLY_PART_TIME = "deltid"
+    HOURLY = "timelønnet"
 
 
 class PersonSyncPayload(BaseModel):
