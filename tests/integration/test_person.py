@@ -292,7 +292,7 @@ async def test_person_timeline_addresses_create(
 ):
     """
     We are testing this scenario:
-    A person exists in MO but needs to update email-address
+    A person exists in MO but has no addresses
 
     Time  ------------t1--------t2---------------------------------------------------->
 
@@ -327,10 +327,11 @@ async def test_person_timeline_addresses_create(
         content=SD_RESP,
     )
 
-    mo_addresses = await graphql_client.get_address_timeline(
+    mo_addresses_before = await graphql_client.get_address_timeline(
         AddressFilter(employee=EmployeeFilter(cpr_numbers=[CPR]))
     )
-    assert not mo_addresses.objects
+    assert not mo_addresses_before.objects
+
     # Act
     r = await test_client.post(
         "/timeline/sync/person",
@@ -343,23 +344,14 @@ async def test_person_timeline_addresses_create(
     # Assert
     assert r.status_code == 200
 
-    past_addresses = await graphql_client.get_address_timeline(
-        AddressFilter(
-            employee=EmployeeFilter(cpr_numbers=[CPR]),
-            from_date=None,
-            to_date=datetime.now(tz=TIMEZONE) - timedelta(days=1),
-        )
-    )
-
-    assert past_addresses.objects == []
-
     mo_addresses = await graphql_client.get_address_timeline(
         AddressFilter(
             employee=EmployeeFilter(cpr_numbers=[CPR]),
-            from_date=datetime.now(tz=TIMEZONE),
+            from_date=None,
             to_date=None,
         )
     )
+
     email_address_type = AddressType.construct(
         uuid=ANY, user_key="engagement_email", name="E-mail"
     )
@@ -591,16 +583,15 @@ async def test_person_timeline_addresses_update(
     # Assert
     assert r.status_code == 200
 
-    # Check addresses in MO before to ensure the history is preserved.
-    mo_addresses_before = await graphql_client.get_address_timeline(
+    mo_addresses = await graphql_client.get_address_timeline(
         AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
             from_date=None,
-            to_date=datetime.now(tz=TIMEZONE) - timedelta(days=1),
+            to_date=None,
         )
     )
 
-    validity = Validity(
+    validity_1 = Validity(
         from_=t1,
         to=datetime.now(tz=TIMEZONE).replace(hour=0, minute=0, second=0, microsecond=0)
         - timedelta(days=1),
@@ -614,14 +605,14 @@ async def test_person_timeline_addresses_update(
     post_address_type_class = AddressType.construct(
         uuid=ANY, user_key="AdresseAPOSOrgUnit", name="Postadresse fra SD"
     )
-    expected_before = [
+    expected = [
         Address.construct(
             uuid=ANY,
             validities=[
                 AddressValidity.construct(
                     uuid=ANY,
                     user_key="1@example.com",
-                    validity=validity,
+                    validity=validity_1,
                     address_type=email_address_type_class,
                     value="1@example.com",
                     visibility_uuid=visibility_uuid,
@@ -634,7 +625,7 @@ async def test_person_timeline_addresses_update(
                 AddressValidity.construct(
                     uuid=ANY,
                     user_key="2@example.com",
-                    validity=validity,
+                    validity=validity_1,
                     address_type=email_address_type_class,
                     value="2@example.com",
                     visibility_uuid=visibility_uuid,
@@ -647,7 +638,7 @@ async def test_person_timeline_addresses_update(
                 AddressValidity.construct(
                     uuid=ANY,
                     user_key="11111111",
-                    validity=validity,
+                    validity=validity_1,
                     address_type=phone_address_type_class,
                     value="11111111",
                     visibility_uuid=visibility_uuid,
@@ -660,7 +651,7 @@ async def test_person_timeline_addresses_update(
                 AddressValidity.construct(
                     uuid=ANY,
                     user_key="22222222",
-                    validity=validity,
+                    validity=validity_1,
                     address_type=phone_address_type_class,
                     value="22222222",
                     visibility_uuid=visibility_uuid,
@@ -669,79 +660,68 @@ async def test_person_timeline_addresses_update(
         ),
     ]
 
-    TestCase().assertCountEqual(mo_addresses_before.objects, expected_before)
-
-    # Check current addresses to ensure only those in SD are preserved.
-
-    mo_addresses = await graphql_client.get_address_timeline(
-        AddressFilter(
-            employee=EmployeeFilter(uuids=[person_uuid]),
-            from_date=datetime.now(tz=TIMEZONE),
-            to_date=None,
-        )
-    )
-    assert len(mo_addresses.objects) == 4
-
-    validity = Validity(
+    validity_2 = Validity(
         from_=datetime.now(tz=TIMEZONE).replace(
             hour=0, minute=0, second=0, microsecond=0
         ),
         to=None,
     )
-    expected = [
-        Address.construct(
-            uuid=ANY,
-            validities=[
-                AddressValidity.construct(
-                    uuid=ANY,
-                    user_key="chuck@example.com",
-                    validity=validity,
-                    address_type=email_address_type_class,
-                    value="chuck@example.com",
-                    visibility_uuid=visibility_uuid,
-                )
-            ],
-        ),
-        Address.construct(
-            uuid=ANY,
-            validities=[
-                AddressValidity.construct(
-                    uuid=ANY,
-                    user_key="chucknorris@example.com",
-                    validity=validity,
-                    address_type=email_address_type_class,
-                    value="chucknorris@example.com",
-                    visibility_uuid=visibility_uuid,
-                )
-            ],
-        ),
-        Address.construct(
-            uuid=ANY,
-            validities=[
-                AddressValidity.construct(
-                    uuid=ANY,
-                    user_key="12345678",
-                    validity=validity,
-                    address_type=phone_address_type_class,
-                    value="12345678",
-                    visibility_uuid=visibility_uuid,
-                )
-            ],
-        ),
-        Address.construct(
-            uuid=ANY,
-            validities=[
-                AddressValidity.construct(
-                    uuid=ANY,
-                    user_key="Ninjavej 6, 8888, Norring",
-                    validity=validity,
-                    address_type=post_address_type_class,
-                    value="Ninjavej 6, 8888, Norring",
-                    visibility_uuid=visibility_uuid,
-                )
-            ],
-        ),
-    ]
+    expected.extend(
+        [
+            Address.construct(
+                uuid=ANY,
+                validities=[
+                    AddressValidity.construct(
+                        uuid=ANY,
+                        user_key="chuck@example.com",
+                        validity=validity_2,
+                        address_type=email_address_type_class,
+                        value="chuck@example.com",
+                        visibility_uuid=visibility_uuid,
+                    )
+                ],
+            ),
+            Address.construct(
+                uuid=ANY,
+                validities=[
+                    AddressValidity.construct(
+                        uuid=ANY,
+                        user_key="chucknorris@example.com",
+                        validity=validity_2,
+                        address_type=email_address_type_class,
+                        value="chucknorris@example.com",
+                        visibility_uuid=visibility_uuid,
+                    )
+                ],
+            ),
+            Address.construct(
+                uuid=ANY,
+                validities=[
+                    AddressValidity.construct(
+                        uuid=ANY,
+                        user_key="12345678",
+                        validity=validity_2,
+                        address_type=phone_address_type_class,
+                        value="12345678",
+                        visibility_uuid=visibility_uuid,
+                    )
+                ],
+            ),
+            Address.construct(
+                uuid=ANY,
+                validities=[
+                    AddressValidity.construct(
+                        uuid=ANY,
+                        user_key="Ninjavej 6, 8888, Norring",
+                        validity=validity_2,
+                        address_type=post_address_type_class,
+                        value="Ninjavej 6, 8888, Norring",
+                        visibility_uuid=visibility_uuid,
+                    )
+                ],
+            ),
+        ]
+    )
 
     TestCase().assertCountEqual(mo_addresses.objects, expected)
 
