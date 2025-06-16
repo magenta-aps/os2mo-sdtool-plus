@@ -11,35 +11,65 @@ class NoValueError(Exception):
 
 
 class ClassNotFoundError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Class not found in MO!"
+        )
 
 
 class MoreThanOneClassError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="More than one class found in MO!",
+        )
 
 
 class EngagementNotFoundError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_404_NOT_FOUND,
+            detail="Engagement not found for the provided person and user key (EmploymentIdentifier)",
+        )
 
 
 class MoreThanOneEngagementError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one engagement found for the provided person and user key (EmploymentIdentifier)",
+        )
 
 
 class EngagementNotActiveError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="The engagement is not active in the entire move interval",
+        )
 
 
 class PersonNotFoundError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_404_NOT_FOUND, detail="Could not find person in MO"
+        )
 
 
 class MoreThanOnePersonError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one person found in MO",
+        )
 
 
-class DepartmentTimelineNotFound(HTTPException):
-    pass
+class DepartmentTimelineNotFoundError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Empty department timeline for employment found in SD",
+        )
 
 
 class EngagementSyncTemporarilyDisabled(HTTPException):
@@ -48,91 +78,47 @@ class EngagementSyncTemporarilyDisabled(HTTPException):
     (see comment about this setting in config.py)
     """
 
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Engagement sync temporarily disabled!",
+        )
 
 
 class OrgUnitNotFoundError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_404_NOT_FOUND, detail="Org unit not found in MO!"
+        )
 
 
 class MoreThanOneOrgUnitError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one org unit found in MO!",
+        )
 
 
 class MoreThanOnePNumberError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one P-number found for unit in MO!",
+        )
 
 
 class MoreThanOnePostalAddressError(HTTPException):
-    pass
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one postal address found in MO!",
+        )
 
 
 class MoreThanOneLeaveError(HTTPException):
-    pass
-
-
-class_not_found_error = ClassNotFoundError(
-    status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Class not found in MO!"
-)
-
-more_than_one_class_error = MoreThanOneClassError(
-    status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-    detail="More than one class found in MO!",
-)
-
-engagement_not_found_error = EngagementNotFoundError(
-    status_code=HTTP_404_NOT_FOUND,
-    detail="Engagement not found for the provided person and user key (EmploymentIdentifier)",
-)
-
-more_than_one_engagement_error = MoreThanOneEngagementError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="More than one engagement found for the provided person and user key (EmploymentIdentifier)",
-)
-
-engagement_not_active_error = EngagementNotActiveError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="The engagement is not active in the entire move interval",
-)
-
-person_not_found_error = PersonNotFoundError(
-    status_code=HTTP_404_NOT_FOUND, detail="Could not find person in MO"
-)
-
-more_than_one_person_error = MoreThanOneEngagementError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="More than one person found in MO",
-)
-
-department_timeline_not_found = DepartmentTimelineNotFound(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="Empty department timeline for employment found in SD",
-)
-
-engagement_sync_temporarily_disabled = EngagementSyncTemporarilyDisabled(
-    status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-    detail="Engagement sync temporarily disabled!",
-)
-
-org_unit_not_found_error = OrgUnitNotFoundError(
-    status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Org unit not found in MO!"
-)
-
-more_than_one_org_unit_error = MoreThanOneOrgUnitError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="More than one org unit found in MO!",
-)
-
-more_than_one_pnumber_error = MoreThanOnePNumberError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="More than one P-number found for unit in MO!",
-)
-
-more_than_one_postal_address_error = MoreThanOnePostalAddressError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-    detail="More than one postal address found in MO!",
-)
-
-more_than_one_leave_error = MoreThanOneLeaveError(
-    status_code=HTTP_422_UNPROCESSABLE_ENTITY, detail="More than one leave found in MO"
-)
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one leave found in MO",
+        )

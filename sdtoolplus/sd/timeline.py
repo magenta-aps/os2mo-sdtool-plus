@@ -16,8 +16,8 @@ from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
-from sdtoolplus.exceptions import more_than_one_engagement_error
-from sdtoolplus.exceptions import more_than_one_person_error
+from sdtoolplus.exceptions import MoreThanOneEngagementError
+from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
@@ -212,11 +212,11 @@ async def get_employment_timeline(
     logger.info("Get SD employment timeline")
 
     person = only(
-        sd_get_employment_changed_resp.Person, too_long=more_than_one_person_error
+        sd_get_employment_changed_resp.Person, too_long=MoreThanOnePersonError
     )
     if not person:
         return EngagementTimeline()
-    employment = only(person.Employment, too_long=more_than_one_engagement_error)
+    employment = only(person.Employment, too_long=MoreThanOneEngagementError)
     if not employment:
         return EngagementTimeline()
 
@@ -329,11 +329,11 @@ async def get_leave_timeline(
     logger.info("Get SD leave timeline")
 
     person = only(
-        sd_get_employment_changed_resp.Person, too_long=more_than_one_person_error
+        sd_get_employment_changed_resp.Person, too_long=MoreThanOnePersonError
     )
     if not person:
         return LeaveTimeline()
-    employment = only(person.Employment, too_long=more_than_one_engagement_error)
+    employment = only(person.Employment, too_long=MoreThanOneEngagementError)
     if not employment:
         return LeaveTimeline()
 
