@@ -11,6 +11,8 @@ from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
 from sdclient.responses import GetEmploymentChangedResponse
 
+from sdtoolplus.exceptions import MoreThanOnePersonError
+from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.models import Person
 
 logger = structlog.stdlib.get_logger()
@@ -36,7 +38,11 @@ async def get_sd_person(
         ),
     )
 
-    sd_response_person = one(sd_response.Person)
+    sd_response_person = one(
+        sd_response.Person,
+        too_short=PersonNotFoundError,
+        too_long=MoreThanOnePersonError,
+    )
 
     person = Person(
         cpr=sd_response_person.PersonCivilRegistrationIdentifier,
