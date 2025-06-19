@@ -41,6 +41,7 @@ from sdtoolplus.exceptions import MoreThanOneClassError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOneLeaveError
 from sdtoolplus.exceptions import MoreThanOneOrgUnitError
+from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
 from sdtoolplus.exceptions import MoreThanOnePostalAddressError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
@@ -56,6 +57,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import MOPhoneNumberTimelineObj
 from sdtoolplus.models import MOPNumberTimelineObj
 from sdtoolplus.models import MOPostalAddressTimelineObj
 from sdtoolplus.models import Person
@@ -64,6 +66,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
@@ -336,6 +339,51 @@ async def get_postal_address_timeline(
         ),
     )
     logger.debug("MO postal address timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+async def get_phone_number_timeline(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+) -> MOPhoneNumberTimelineObj:
+    logger.info("Get MO phone number timeline", org_unit=str(unit_uuid))
+
+    gql_timeline = await gql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                # TODO: handle the municipality case
+                user_keys=["lokation_telefon_lokal"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    objects = gql_timeline.objects
+
+    if not objects:
+        logger.debug("MO phone number timeline is empty")
+        return MOPhoneNumberTimelineObj(uuid=None, pnumber=Timeline[UnitPhoneNumber]())
+
+    object_ = one(objects, too_long=MoreThanOnePhoneNumberError)
+
+    timeline = MOPhoneNumberTimelineObj(
+        uuid=object_.uuid,
+        phone_number=Timeline[UnitPhoneNumber](
+            intervals=tuple(
+                UnitPhoneNumber(
+                    start=obj.validity.from_,
+                    end=_mo_end_to_timeline_end(obj.validity.to),
+                    value=obj.value,
+                )
+                for obj in object_.validities
+            )
+        ),
+    )
+    logger.debug("MO phone number timeline", timeline=timeline.dict())
 
     return timeline
 

@@ -116,6 +116,14 @@ class MoreThanOnePostalAddressError(HTTPException):
         )
 
 
+class MoreThanOnePhoneNumberError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one phone number found in MO!",
+        )
+
+
 class MoreThanOneLeaveError(HTTPException):
     def __init__(self) -> None:
         super().__init__(
