@@ -1363,3 +1363,71 @@ async def create_postal_address(
         logger.debug("Update address", payload=update_address_payload.dict())
         if not dry_run:
             await gql_client.update_address(update_address_payload)
+
+
+async def create_phone_number(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    address_uuid: UUID | None,
+    sd_phone_number_timeline: Timeline[UnitPhoneNumber],
+    dry_run: bool,
+) -> None:
+    logger.debug(
+        "Create phone number in MO",
+        phone_number_timeline=sd_phone_number_timeline.dict(),
+    )
+
+    # TODO: move these class calls to application start up for better performance
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="visibility",
+        # TODO: handle required variability in municipality mode
+        class_user_key="Public",
+    )
+
+    # Get the phone number address type
+
+    phone_number_type_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_address_type",
+        # TODO: use correct class user_key in municipality mode
+        class_user_key="lokation_telefon_lokal",
+    )
+
+    first_sd_phone_number = first(sd_phone_number_timeline.intervals)
+    create_address_payload = AddressCreateInput(
+        uuid=address_uuid,
+        org_unit=org_unit,
+        visibility=visibility_class_uuid,
+        validity=timeline_interval_to_mo_validity(
+            first_sd_phone_number.start, first_sd_phone_number.end
+        ),
+        user_key=first_sd_phone_number.value,
+        value=first_sd_phone_number.value,
+        address_type=phone_number_type_uuid,
+    )
+    logger.debug("Create address", payload=create_address_payload.dict())
+    if not dry_run:
+        created_address_uuid = (
+            await gql_client.create_address(create_address_payload)
+        ).uuid
+    else:
+        created_address_uuid = uuid4()
+
+    for sd_phone_number in sd_phone_number_timeline.intervals[1:]:
+        update_address_payload = AddressUpdateInput(
+            uuid=created_address_uuid,
+            org_unit=org_unit,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(
+                sd_phone_number.start, sd_phone_number.end
+            ),
+            user_key=sd_phone_number.value,
+            value=sd_phone_number.value,
+            address_type=phone_number_type_uuid,
+        )
+        logger.debug("Update address", payload=update_address_payload.dict())
+        if not dry_run:
+            await gql_client.update_address(update_address_payload)
