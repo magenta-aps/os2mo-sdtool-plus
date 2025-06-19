@@ -1290,7 +1290,7 @@ async def create_postal_address(
 ) -> None:
     logger.debug(
         "Create postal address in MO",
-        pnumber_timeline=sd_postal_address_timeline.dict(),
+        postal_address_timeline=sd_postal_address_timeline.dict(),
     )
 
     # TODO: move these class calls to application start up for better performance
