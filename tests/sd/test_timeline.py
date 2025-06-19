@@ -3,6 +3,7 @@
 from datetime import date
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from unittest.mock import MagicMock
 from uuid import UUID
 from uuid import uuid4
@@ -30,12 +31,14 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
 from sdtoolplus.sd.timeline import get_department
 from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.timeline import get_leave_timeline
+from sdtoolplus.sd.timeline import get_phone_number_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
@@ -447,3 +450,78 @@ async def test_get_department_empty_department_list():
 
     # Assert
     assert response is None
+
+
+@pytest.mark.parametrize(
+    "phone_numbers",
+    [
+        ["12345678", "23456789"],
+        ["12345678"],
+    ],
+)
+def test_get_phone_number_timeline(phone_numbers: list[str]):
+    # Arrange
+    department = GetDepartmentResponse.parse_obj(
+        {
+            "RegionIdentifier": "RI",
+            "InstitutionIdentifier": "II",
+            "Department": [
+                {
+                    "ActivationDate": "2000-01-01",
+                    "DeactivationDate": "2000-12-31",
+                    "DepartmentIdentifier": "ABCD",
+                    "DepartmentLevelIdentifier": "Afdelings-niveau",
+                    "ContactInformation": {"TelephoneNumberIdentifier": phone_numbers},
+                }
+            ],
+        }
+    )
+
+    # Act
+    timeline = get_phone_number_timeline(department)
+
+    # Assert
+    assert timeline == Timeline[UnitPhoneNumber](
+        intervals=(
+            UnitPhoneNumber(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                value="12345678",
+            ),
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "contact_information",
+    [
+        None,
+        {"TelephoneNumberIdentifier": None},
+        {"TelephoneNumberIdentifier": ["00000000", "23456789"]},
+    ],
+)
+def test_get_phone_number_should_return_empty_timeline(
+    contact_information: dict[str, Any] | None,
+):
+    # Arrange
+    department = GetDepartmentResponse.parse_obj(
+        {
+            "RegionIdentifier": "RI",
+            "InstitutionIdentifier": "II",
+            "Department": [
+                {
+                    "ActivationDate": "2000-01-01",
+                    "DeactivationDate": "2000-12-31",
+                    "DepartmentIdentifier": "ABCD",
+                    "DepartmentLevelIdentifier": "Afdelings-niveau",
+                    "ContactInformation": contact_information,
+                }
+            ],
+        }
+    )
+
+    # Act
+    timeline = get_phone_number_timeline(department)
+
+    # Assert
+    assert timeline == Timeline[UnitPhoneNumber]()
