@@ -4,7 +4,6 @@ from datetime import datetime
 from datetime import timedelta
 from itertools import pairwise
 from uuid import UUID
-from uuid import uuid4
 
 import structlog
 from more_itertools import one
@@ -1262,7 +1261,7 @@ async def create_pnumber_address(
             await gql_client.create_address(create_address_payload)
         ).uuid
     else:
-        created_address_uuid = uuid4()
+        created_address_uuid = UUID(int=0)
 
     for sd_pnumber in sd_pnumber_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -1342,7 +1341,7 @@ async def create_postal_address(
             await gql_client.create_address(create_address_payload)
         ).uuid
     else:
-        created_address_uuid = uuid4()
+        created_address_uuid = UUID(int=0)
 
     for sd_postal_address in sd_postal_address_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -1408,7 +1407,7 @@ async def create_phone_number(
             await gql_client.create_address(create_address_payload)
         ).uuid
     else:
-        created_address_uuid = uuid4()
+        created_address_uuid = UUID(int=0)
 
     for sd_phone_number in sd_phone_number_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
