@@ -211,6 +211,8 @@ def get_postal_address_timeline(
 def get_phone_number_timeline(
     department: GetDepartmentResponse,
 ) -> Timeline[UnitPhoneNumber]:
+    # According to the spec we will always only sync the *first* phone number in the
+    # SD response (unless it equals "00000000" which means that it has not been set)
     timeline = Timeline[UnitPhoneNumber](
         intervals=tuple(
             UnitPhoneNumber(
