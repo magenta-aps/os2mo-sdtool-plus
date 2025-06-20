@@ -1228,8 +1228,6 @@ async def create_pnumber_address(
 ) -> None:
     logger.debug("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
 
-    # TODO: move these class calls to application start up for better performance
-
     # Get the address visibility UUID
     visibility_class_uuid = await _get_class(
         gql_client=gql_client,
@@ -1292,8 +1290,6 @@ async def create_postal_address(
         "Create postal address in MO",
         postal_address_timeline=sd_postal_address_timeline.dict(),
     )
-
-    # TODO: move these class calls to application start up for better performance
 
     # Get the address visibility UUID
     visibility_class_uuid = await _get_class(
@@ -1376,8 +1372,6 @@ async def create_phone_number(
         "Create phone number in MO",
         phone_number_timeline=sd_phone_number_timeline.dict(),
     )
-
-    # TODO: move these class calls to application start up for better performance
 
     # Get the address visibility UUID
     visibility_class_uuid = await _get_class(
