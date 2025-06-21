@@ -5,6 +5,8 @@ from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+
 
 class NoValueError(Exception):
     pass
@@ -121,4 +123,12 @@ class MoreThanOneLeaveError(HTTPException):
         super().__init__(
             status_code=HTTP_422_UNPROCESSABLE_ENTITY,
             detail="More than one leave found in MO",
+        )
+
+
+class DepartmentParentsNotFoundError(HTTPException):
+    def __init__(self, org_unit: OrgUnitUUID) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Department parent(s) not found in SD for unit {str(org_unit)}",
         )
