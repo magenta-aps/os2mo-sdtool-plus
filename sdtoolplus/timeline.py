@@ -673,7 +673,7 @@ async def sync_ou(
         )
 
 
-async def engagement_ou_strategy_ny_logic(
+async def engagement_ou_strategy_elevate_to_ny_level(
     sd_client: SDClient,
     settings: SDToolPlusSettings,
     sd_eng_timeline: EngagementTimeline,
@@ -801,7 +801,7 @@ async def engagement_ou_strategy(
     """
     if settings.mode == Mode.MUNICIPALITY:
         if settings.apply_ny_logic:
-            return await engagement_ou_strategy_ny_logic(
+            return await engagement_ou_strategy_elevate_to_ny_level(
                 sd_client, settings, sd_eng_timeline
             )
         return sd_eng_timeline
