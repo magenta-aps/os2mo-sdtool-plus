@@ -143,6 +143,10 @@ class UnitPostalAddress(Interval[Optional[str]]):
     pass
 
 
+class UnitPhoneNumber(Interval[Optional[str]]):
+    pass
+
+
 class EngagementKey(Interval[str]):
     """
     The SD JobPositionIdentifier corresponding to MOs job_function user_key
@@ -340,3 +344,9 @@ class MOPostalAddressTimelineObj(BaseModel, frozen=True):
     # MO postal address UUID
     uuid: UUID | None
     postal_address: Timeline[UnitPostalAddress] = Timeline[UnitPostalAddress]()
+
+
+class MOPhoneNumberTimelineObj(BaseModel, frozen=True):
+    # MO phone number address UUID
+    uuid: UUID | None
+    phone_number: Timeline[UnitPhoneNumber] = Timeline[UnitPhoneNumber]()

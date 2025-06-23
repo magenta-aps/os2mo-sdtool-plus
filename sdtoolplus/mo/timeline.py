@@ -4,7 +4,6 @@ from datetime import datetime
 from datetime import timedelta
 from itertools import pairwise
 from uuid import UUID
-from uuid import uuid4
 
 import structlog
 from more_itertools import one
@@ -41,6 +40,7 @@ from sdtoolplus.exceptions import MoreThanOneClassError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOneLeaveError
 from sdtoolplus.exceptions import MoreThanOneOrgUnitError
+from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
 from sdtoolplus.exceptions import MoreThanOnePostalAddressError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
@@ -56,6 +56,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import MOPhoneNumberTimelineObj
 from sdtoolplus.models import MOPNumberTimelineObj
 from sdtoolplus.models import MOPostalAddressTimelineObj
 from sdtoolplus.models import Person
@@ -64,6 +65,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
@@ -336,6 +338,51 @@ async def get_postal_address_timeline(
         ),
     )
     logger.debug("MO postal address timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+async def get_phone_number_timeline(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+) -> MOPhoneNumberTimelineObj:
+    logger.info("Get MO phone number timeline", org_unit=str(unit_uuid))
+
+    gql_timeline = await gql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                # TODO: handle the municipality case
+                user_keys=["lokation_telefon_lokal"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    objects = gql_timeline.objects
+
+    if not objects:
+        logger.debug("MO phone number timeline is empty")
+        return MOPhoneNumberTimelineObj(uuid=None, pnumber=Timeline[UnitPhoneNumber]())
+
+    object_ = one(objects, too_long=MoreThanOnePhoneNumberError)
+
+    timeline = MOPhoneNumberTimelineObj(
+        uuid=object_.uuid,
+        phone_number=Timeline[UnitPhoneNumber](
+            intervals=tuple(
+                UnitPhoneNumber(
+                    start=obj.validity.from_,
+                    end=_mo_end_to_timeline_end(obj.validity.to),
+                    value=obj.value,
+                )
+                for obj in object_.validities
+            )
+        ),
+    )
+    logger.debug("MO phone number timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -1180,8 +1227,6 @@ async def create_pnumber_address(
 ) -> None:
     logger.debug("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
 
-    # TODO: move these class calls to application start up for better performance
-
     # Get the address visibility UUID
     visibility_class_uuid = await _get_class(
         gql_client=gql_client,
@@ -1216,7 +1261,7 @@ async def create_pnumber_address(
             await gql_client.create_address(create_address_payload)
         ).uuid
     else:
-        created_address_uuid = uuid4()
+        created_address_uuid = UUID(int=0)
 
     for sd_pnumber in sd_pnumber_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -1242,10 +1287,8 @@ async def create_postal_address(
 ) -> None:
     logger.debug(
         "Create postal address in MO",
-        pnumber_timeline=sd_postal_address_timeline.dict(),
+        postal_address_timeline=sd_postal_address_timeline.dict(),
     )
-
-    # TODO: move these class calls to application start up for better performance
 
     # Get the address visibility UUID
     visibility_class_uuid = await _get_class(
@@ -1298,7 +1341,7 @@ async def create_postal_address(
             await gql_client.create_address(create_address_payload)
         ).uuid
     else:
-        created_address_uuid = uuid4()
+        created_address_uuid = UUID(int=0)
 
     for sd_postal_address in sd_postal_address_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -1311,6 +1354,72 @@ async def create_postal_address(
             user_key=sd_postal_address.value,
             value=sd_postal_address.value,
             address_type=postal_address_type_uuid,
+        )
+        logger.debug("Update address", payload=update_address_payload.dict())
+        if not dry_run:
+            await gql_client.update_address(update_address_payload)
+
+
+async def create_phone_number(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    address_uuid: UUID | None,
+    sd_phone_number_timeline: Timeline[UnitPhoneNumber],
+    dry_run: bool,
+) -> None:
+    logger.debug(
+        "Create phone number in MO",
+        phone_number_timeline=sd_phone_number_timeline.dict(),
+    )
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="visibility",
+        # TODO: handle required variability in municipality mode
+        class_user_key="Public",
+    )
+
+    # Get the phone number address type
+
+    phone_number_type_uuid = await _get_class(
+        gql_client=gql_client,
+        facet_user_key="org_unit_address_type",
+        # TODO: use correct class user_key in municipality mode
+        class_user_key="lokation_telefon_lokal",
+    )
+
+    first_sd_phone_number = first(sd_phone_number_timeline.intervals)
+    create_address_payload = AddressCreateInput(
+        uuid=address_uuid,
+        org_unit=org_unit,
+        visibility=visibility_class_uuid,
+        validity=timeline_interval_to_mo_validity(
+            first_sd_phone_number.start, first_sd_phone_number.end
+        ),
+        user_key=first_sd_phone_number.value,
+        value=first_sd_phone_number.value,
+        address_type=phone_number_type_uuid,
+    )
+    logger.debug("Create address", payload=create_address_payload.dict())
+    if not dry_run:
+        created_address_uuid = (
+            await gql_client.create_address(create_address_payload)
+        ).uuid
+    else:
+        created_address_uuid = UUID(int=0)
+
+    for sd_phone_number in sd_phone_number_timeline.intervals[1:]:
+        update_address_payload = AddressUpdateInput(
+            uuid=created_address_uuid,
+            org_unit=org_unit,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(
+                sd_phone_number.start, sd_phone_number.end
+            ),
+            user_key=sd_phone_number.value,
+            value=sd_phone_number.value,
+            address_type=phone_number_type_uuid,
         )
         logger.debug("Update address", payload=update_address_payload.dict())
         if not dry_run:

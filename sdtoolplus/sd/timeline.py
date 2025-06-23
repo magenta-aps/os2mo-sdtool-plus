@@ -7,6 +7,7 @@ from datetime import time
 from datetime import timedelta
 
 import structlog
+from more_itertools import first
 from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
@@ -34,6 +35,7 @@ from sdtoolplus.models import UnitId
 from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
@@ -202,6 +204,29 @@ def get_postal_address_timeline(
         )
     )
     logger.debug("SD postal address timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+def get_phone_number_timeline(
+    department: GetDepartmentResponse,
+) -> Timeline[UnitPhoneNumber]:
+    # According to the spec we will always only sync the *first* phone number in the
+    # SD response (unless it equals "00000000" which means that it has not been set)
+    timeline = Timeline[UnitPhoneNumber](
+        intervals=tuple(
+            UnitPhoneNumber(
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
+                value=first(dep.ContactInformation.TelephoneNumberIdentifier),
+            )
+            for dep in department.Department
+            if dep.ContactInformation is not None
+            and dep.ContactInformation.TelephoneNumberIdentifier is not None
+            and first(dep.ContactInformation.TelephoneNumberIdentifier) != "00000000"
+        )
+    )
+    logger.debug("SD phone number timeline", timeline=timeline.dict())
 
     return timeline
 
