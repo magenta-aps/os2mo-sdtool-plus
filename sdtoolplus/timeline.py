@@ -880,7 +880,7 @@ async def engagement_ou_strategy_region(
         "Updated engagement units", related_unit_intervals=related_unit_intervals
     )
 
-    updated_timeline = EngagementTimeline(
+    desired_timeline = EngagementTimeline(
         eng_active=sd_eng_timeline.eng_active,
         eng_key=sd_eng_timeline.eng_key,
         eng_name=sd_eng_timeline.eng_name,
@@ -892,12 +892,12 @@ async def engagement_ou_strategy_region(
         eng_type=sd_eng_timeline.eng_type,
     )
     logger.debug(
-        "Desired engagement timeline", desired_timeline=updated_timeline.dict()
+        "Desired engagement timeline", desired_timeline=desired_timeline.dict()
     )
 
     logger.info("Done applying OU region strategy")
 
-    return updated_timeline
+    return desired_timeline
 
 
 async def engagement_ou_strategy(
