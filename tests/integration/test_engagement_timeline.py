@@ -34,6 +34,11 @@ from tests.integration.conftest import UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
 async def test_eng_timeline_http_triggered_sync(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -369,6 +374,11 @@ async def test_eng_timeline_http_triggered_sync(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
 async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -626,6 +636,11 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
 async def test_eng_timeline_create_new_engagement(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -1051,6 +1066,11 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
 async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_missing(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
