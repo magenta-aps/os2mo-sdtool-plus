@@ -245,6 +245,9 @@ class Timeline(GenericModel, Generic[T], frozen=True):
             )
         return entity
 
+    def get_interval_endpoints(self) -> set[datetime]:
+        return set(collapse((i.start, i.end) for i in self.intervals))
+
 
 class BaseTimeline(BaseModel, frozen=True):
     def has_required_mo_values(self, timestamp: datetime) -> bool:
