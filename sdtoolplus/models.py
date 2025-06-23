@@ -248,6 +248,15 @@ class Timeline(GenericModel, Generic[T], frozen=True):
     def get_interval_endpoints(self) -> set[datetime]:
         return set(collapse((i.start, i.end) for i in self.intervals))
 
+    def has_holes(self) -> bool:
+        """
+        Check if there are holes in the timeline.
+
+        Returns:
+            True if there are holes in the timeline and False if not.
+        """
+        return not all(i1.end == i2.start for i1, i2 in pairwise(self.intervals))
+
 
 class BaseTimeline(BaseModel, frozen=True):
     def has_required_mo_values(self, timestamp: datetime) -> bool:
