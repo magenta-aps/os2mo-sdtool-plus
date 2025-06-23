@@ -110,9 +110,11 @@ async def get_department_timeline(
         return UnitTimeline()
 
     try:
-        parents = sd_client.get_department_parent_history(unit_uuid)
+        parents = await asyncio.to_thread(
+            sd_client.get_department_parent_history, unit_uuid
+        )
     except SDParentNotFound as error:
-        logger.debug("Error getting department parent from SD", error=error)
+        logger.debug("Error getting department parent(s) from SD", error=error)
         return UnitTimeline()
 
     active_intervals = tuple(
