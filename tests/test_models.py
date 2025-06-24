@@ -226,6 +226,43 @@ def test_timeline_entity_at_no_value():
         timeline.entity_at(YESTERDAY_START - timedelta(hours=12))
 
 
+def test_timeline_get_interval_endpoints():
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=TZ)
+    t2 = datetime(2002, 1, 1, tzinfo=TZ)
+    t3 = datetime(2003, 1, 1, tzinfo=TZ)
+    t4 = datetime(2004, 1, 1, tzinfo=TZ)
+
+    # Arrange
+    timeline = Timeline[Active](
+        intervals=(
+            Active(start=t1, end=t2, value=True),
+            Active(start=t2, end=t3, value=False),
+            Active(start=t3, end=t4, value=True),
+        )
+    )
+
+    # Act
+    endpoints = timeline.get_interval_endpoints()
+
+    # Assert
+    assert endpoints == {t1, t2, t3, t4}
+
+
+def test_timeline_has_holes():
+    # Arrange
+    active1 = Active(start=YESTERDAY_START, end=TODAY_START, value=True)
+    active2 = Active(start=TODAY_START, end=TOMORROW_START, value=False)
+    active3 = Active(start=DAY_AFTER_TOMORROW_START, end=INFINITY, value=True)
+
+    timeline_without_holes = Timeline[Active](intervals=(active1, active2))
+    timeline_with_holes = Timeline[Active](intervals=(active1, active2, active3))
+
+    # Act + Assert
+    assert not timeline_without_holes.has_holes()
+    assert timeline_with_holes.has_holes()
+
+
 def test_unit_timeline_can_be_instantiated_with_empty_values():
     assert UnitTimeline() == UnitTimeline(
         active=Timeline[Active](),
