@@ -864,11 +864,6 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
-@pytest.mark.envvar(
-    {
-        "APPLY_NY_LOGIC": "true",
-    }
-)
 async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
@@ -894,7 +889,7 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     SD Parent     |---------dep2-------|-----dep3-----|-------------dep4-------------
     (dep1)
 
-    "Assert"      |----------------------------1-------------------------------------
+    "Assert"                |----------------------------1---------------------------
     intervals
 
     In SD: name = EmploymentName, key = JobPositionIdentifier
