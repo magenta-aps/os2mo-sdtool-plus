@@ -22,6 +22,7 @@ from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import AssociationTimeline
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -382,5 +383,17 @@ async def get_leave_timeline(
         leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
     )
     logger.debug("SD leave timeline", timeline=timeline.dict())
+
+    return timeline
+
+
+def get_association_timeline(
+    desired_eng_timeline: EngagementTimeline,
+) -> AssociationTimeline:
+    timeline = AssociationTimeline(
+        association_active=desired_eng_timeline.eng_active,
+        association_unit=desired_eng_timeline.eng_sd_unit,
+    )
+    logger.debug("SD association timeline", timeline=timeline.dict())
 
     return timeline
