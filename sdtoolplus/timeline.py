@@ -39,7 +39,6 @@ from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.exceptions import PersonNotFoundError
-from sdtoolplus.mo.timeline import _get_class
 from sdtoolplus.mo.timeline import create_association
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_leave
@@ -52,6 +51,7 @@ from sdtoolplus.mo.timeline import delete_address
 from sdtoolplus.mo.timeline import (
     get_association_timeline as get_mo_association_timeline,
 )
+from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import get_ou_timeline
@@ -523,7 +523,7 @@ async def _sync_association_intervals(
     )
 
     # Get the association type (assuming for now that there is only one)
-    association_type_uuid = await _get_class(
+    association_type_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="association_type",
         # TODO: check if class_user_keys is municipality dependent

@@ -139,7 +139,7 @@ def get_patch_validity(
     )
 
 
-async def _get_class(
+async def get_class(
     gql_client: GraphQLClient,
     facet_user_key: str,
     class_user_key: str,
@@ -413,7 +413,7 @@ async def create_ou(
     )
 
     # Get the OU type UUID
-    ou_type_uuid = await _get_class(
+    ou_type_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_type",
         class_user_key=org_unit_type_user_key,
@@ -421,7 +421,7 @@ async def create_ou(
 
     # Get the OU level UUID
     unit_level = desired_unit_timeline.unit_level.entity_at(start)
-    ou_level_uuid = await _get_class(
+    ou_level_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_level",
         class_user_key=unit_level.value,  # type: ignore
@@ -467,7 +467,7 @@ async def update_ou(
     )
 
     # Get the OU type UUID
-    ou_type_uuid = await _get_class(
+    ou_type_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_type",
         class_user_key=org_unit_type_user_key,
@@ -475,7 +475,7 @@ async def update_ou(
 
     # Get the OU level UUID
     unit_level = desired_unit_timeline.unit_level.entity_at(start)
-    ou_level_uuid = await _get_class(
+    ou_level_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_level",
         class_user_key=unit_level.value,  # type: ignore
@@ -1291,7 +1291,7 @@ async def create_pnumber_address(
     logger.debug("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
 
     # Get the address visibility UUID
-    visibility_class_uuid = await _get_class(
+    visibility_class_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="visibility",
         # TODO: handle required variability in municipality mode
@@ -1299,7 +1299,7 @@ async def create_pnumber_address(
     )
 
     # Get the P-number address type
-    p_number_address_type_uuid = await _get_class(
+    p_number_address_type_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_address_type",
         # TODO: use correct class user_key in municipality mode
@@ -1354,7 +1354,7 @@ async def create_postal_address(
     )
 
     # Get the address visibility UUID
-    visibility_class_uuid = await _get_class(
+    visibility_class_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="visibility",
         # TODO: handle required variability in municipality mode
@@ -1436,7 +1436,7 @@ async def create_phone_number(
     )
 
     # Get the address visibility UUID
-    visibility_class_uuid = await _get_class(
+    visibility_class_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="visibility",
         # TODO: handle required variability in municipality mode
@@ -1445,7 +1445,7 @@ async def create_phone_number(
 
     # Get the phone number address type
 
-    phone_number_type_uuid = await _get_class(
+    phone_number_type_uuid = await get_class(
         gql_client=gql_client,
         facet_user_key="org_unit_address_type",
         # TODO: use correct class user_key in municipality mode
