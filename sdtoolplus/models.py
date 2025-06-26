@@ -346,6 +346,19 @@ class LeaveTimeline(BaseTimeline):
             return False
 
 
+class AssociationTimeline(BaseTimeline):
+    association_active: Timeline[Active] = Timeline[Active]()
+    association_unit: Timeline[EngagementSDUnit] = Timeline[EngagementSDUnit]()
+
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
+        try:
+            self.association_active.entity_at(timestamp)
+            self.association_unit.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+
 class MOPNumberTimelineObj(BaseModel, frozen=True):
     # MO P-number address UUID
     uuid: UUID | None
