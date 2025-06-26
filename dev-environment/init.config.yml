@@ -4,6 +4,10 @@ root_organisation:
   municipality_code: null
 
 facets:
+  association_type:
+    SD-medarbejder:
+      title: "SD-medarbejder"
+      scope: "TEXT"
   org_unit_type:
     Enhed:
       title: "Enhed"
