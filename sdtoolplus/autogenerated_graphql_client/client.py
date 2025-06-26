@@ -23,6 +23,8 @@ from .base_model import UNSET
 from .base_model import UnsetType
 from .create_address import CreateAddress
 from .create_address import CreateAddressAddressCreate
+from .create_association import CreateAssociation
+from .create_association import CreateAssociationAssociationCreate
 from .create_class import CreateClass
 from .create_class import CreateClassClassCreate
 from .create_engagement import CreateEngagement
@@ -37,6 +39,8 @@ from .delete_address import DeleteAddress
 from .delete_address import DeleteAddressAddressDelete
 from .get_address_timeline import GetAddressTimeline
 from .get_address_timeline import GetAddressTimelineAddresses
+from .get_association_timeline import GetAssociationTimeline
+from .get_association_timeline import GetAssociationTimelineAssociations
 from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_engagement_timeline import GetEngagementTimeline
@@ -63,6 +67,10 @@ from .input_types import AddressCreateInput
 from .input_types import AddressFilter
 from .input_types import AddressTerminateInput
 from .input_types import AddressUpdateInput
+from .input_types import AssociationCreateInput
+from .input_types import AssociationFilter
+from .input_types import AssociationTerminateInput
+from .input_types import AssociationUpdateInput
 from .input_types import ClassCreateInput
 from .input_types import ClassFilter
 from .input_types import ClassUpdateInput
@@ -87,6 +95,8 @@ from .input_types import RelatedUnitsUpdateInput
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
+from .terminate_association import TerminateAssociation
+from .terminate_association import TerminateAssociationAssociationTerminate
 from .terminate_engagement import TerminateEngagement
 from .terminate_engagement import TerminateEngagementEngagementTerminate
 from .terminate_leave import TerminateLeave
@@ -95,6 +105,8 @@ from .terminate_org_unit import TerminateOrgUnit
 from .terminate_org_unit import TerminateOrgUnitOrgUnitTerminate
 from .update_address import UpdateAddress
 from .update_address import UpdateAddressAddressUpdate
+from .update_association import UpdateAssociation
+from .update_association import UpdateAssociationAssociationUpdate
 from .update_class import UpdateClass
 from .update_class import UpdateClassClassUpdate
 from .update_engagement import UpdateEngagement
@@ -785,6 +797,85 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateLeave.parse_obj(data).leave_terminate
+
+    async def get_association_timeline(
+        self, input: AssociationFilter
+    ) -> GetAssociationTimelineAssociations:
+        query = gql(
+            """
+            query GetAssociationTimeline($input: AssociationFilter!) {
+              associations(filter: $input) {
+                objects {
+                  uuid
+                  validities {
+                    user_key
+                    employee_uuid
+                    org_unit_uuid
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetAssociationTimeline.parse_obj(data).associations
+
+    async def create_association(
+        self, input: AssociationCreateInput
+    ) -> CreateAssociationAssociationCreate:
+        query = gql(
+            """
+            mutation CreateAssociation($input: AssociationCreateInput!) {
+              association_create(input: $input) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return CreateAssociation.parse_obj(data).association_create
+
+    async def update_association(
+        self, input: AssociationUpdateInput
+    ) -> UpdateAssociationAssociationUpdate:
+        query = gql(
+            """
+            mutation UpdateAssociation($input: AssociationUpdateInput!) {
+              association_update(input: $input) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return UpdateAssociation.parse_obj(data).association_update
+
+    async def terminate_association(
+        self, input: AssociationTerminateInput
+    ) -> TerminateAssociationAssociationTerminate:
+        query = gql(
+            """
+            mutation TerminateAssociation($input: AssociationTerminateInput!) {
+              association_terminate(input: $input) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TerminateAssociation.parse_obj(data).association_terminate
 
     async def get_related_units(
         self, filter: RelatedUnitFilter

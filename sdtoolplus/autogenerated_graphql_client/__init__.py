@@ -35,6 +35,8 @@ from .create_address import CreateAddressAddressCreate
 from .create_address import CreateAddressAddressCreateCurrent
 from .create_address import CreateAddressAddressCreateCurrentAddressType
 from .create_address import CreateAddressAddressCreateCurrentValidity
+from .create_association import CreateAssociation
+from .create_association import CreateAssociationAssociationCreate
 from .create_class import CreateClass
 from .create_class import CreateClassClassCreate
 from .create_engagement import CreateEngagement
@@ -63,6 +65,15 @@ from .get_address_timeline import (
     GetAddressTimelineAddressesObjectsValiditiesAddressType,
 )
 from .get_address_timeline import GetAddressTimelineAddressesObjectsValiditiesValidity
+from .get_association_timeline import GetAssociationTimeline
+from .get_association_timeline import GetAssociationTimelineAssociations
+from .get_association_timeline import GetAssociationTimelineAssociationsObjects
+from .get_association_timeline import (
+    GetAssociationTimelineAssociationsObjectsValidities,
+)
+from .get_association_timeline import (
+    GetAssociationTimelineAssociationsObjectsValiditiesValidity,
+)
 from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_class import GetClassClassesObjects
@@ -276,6 +287,8 @@ from .input_types import ValidityInput
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
+from .terminate_association import TerminateAssociation
+from .terminate_association import TerminateAssociationAssociationTerminate
 from .terminate_engagement import TerminateEngagement
 from .terminate_engagement import TerminateEngagementEngagementTerminate
 from .terminate_leave import TerminateLeave
@@ -287,6 +300,8 @@ from .update_address import UpdateAddressAddressUpdate
 from .update_address import UpdateAddressAddressUpdateCurrent
 from .update_address import UpdateAddressAddressUpdateCurrentAddressType
 from .update_address import UpdateAddressAddressUpdateCurrentValidity
+from .update_association import UpdateAssociation
+from .update_association import UpdateAssociationAssociationUpdate
 from .update_class import UpdateClass
 from .update_class import UpdateClassClassUpdate
 from .update_engagement import UpdateEngagement
@@ -330,6 +345,8 @@ __all__ = [
     "CreateAddressAddressCreateCurrent",
     "CreateAddressAddressCreateCurrentAddressType",
     "CreateAddressAddressCreateCurrentValidity",
+    "CreateAssociation",
+    "CreateAssociationAssociationCreate",
     "CreateClass",
     "CreateClassClassCreate",
     "CreateEngagement",
@@ -379,6 +396,11 @@ __all__ = [
     "GetAddressTimelineAddressesObjectsValidities",
     "GetAddressTimelineAddressesObjectsValiditiesAddressType",
     "GetAddressTimelineAddressesObjectsValiditiesValidity",
+    "GetAssociationTimeline",
+    "GetAssociationTimelineAssociations",
+    "GetAssociationTimelineAssociationsObjects",
+    "GetAssociationTimelineAssociationsObjectsValidities",
+    "GetAssociationTimelineAssociationsObjectsValiditiesValidity",
     "GetClass",
     "GetClassClasses",
     "GetClassClassesObjects",
@@ -522,6 +544,8 @@ __all__ = [
     "SendEvent",
     "TerminateAddress",
     "TerminateAddressAddressTerminate",
+    "TerminateAssociation",
+    "TerminateAssociationAssociationTerminate",
     "TerminateEngagement",
     "TerminateEngagementEngagementTerminate",
     "TerminateLeave",
@@ -553,6 +577,8 @@ __all__ = [
     "UpdateAddressAddressUpdateCurrent",
     "UpdateAddressAddressUpdateCurrentAddressType",
     "UpdateAddressAddressUpdateCurrentValidity",
+    "UpdateAssociation",
+    "UpdateAssociationAssociationUpdate",
     "UpdateClass",
     "UpdateClassClassUpdate",
     "UpdateEngagement",
