@@ -730,6 +730,10 @@ async def get_association_timeline(
             # TODO: check if association_type_user_keys is municipality dependent
             association_type_user_keys=["SD-medarbejder"],
             employee=EmployeeFilter(uuids=[person]),
+            # NOTE: users keys are assumed unique and static. If they change we will
+            # risk creating duplicate associations. Ideally, we should attach the
+            # association to the engagement UUID, but in order to be backwards
+            # compatible with the old SD-integration, we will use the user_key.
             user_keys=[user_key],
             from_date=None,
             to_date=None,
