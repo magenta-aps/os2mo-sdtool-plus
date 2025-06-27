@@ -134,6 +134,14 @@ class MoreThanOneLeaveError(HTTPException):
         )
 
 
+class MoreThanOneAssociationError(HTTPException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="More than one association found in MO",
+        )
+
+
 class DepartmentParentsNotFoundError(HTTPException):
     def __init__(self, org_unit: OrgUnitUUID) -> None:
         super().__init__(

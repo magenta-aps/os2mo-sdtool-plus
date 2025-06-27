@@ -378,6 +378,41 @@ mutation TerminateLeave($input: LeaveTerminateInput!) {
   }
 }
 
+query GetAssociationTimeline($input: AssociationFilter!) {
+  associations(filter: $input) {
+    objects {
+      uuid
+      validities {
+        user_key
+        employee_uuid
+        org_unit_uuid
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
+mutation CreateAssociation($input: AssociationCreateInput!) {
+  association_create(input: $input) {
+    uuid
+  }
+}
+
+mutation UpdateAssociation($input: AssociationUpdateInput!) {
+  association_update(input: $input) {
+    uuid
+  }
+}
+
+mutation TerminateAssociation($input: AssociationTerminateInput!) {
+  association_terminate(input: $input) {
+    uuid
+  }
+}
+
 query GetRelatedUnits($filter: RelatedUnitFilter!) {
   related_units(filter: $filter) {
     objects {
