@@ -178,6 +178,23 @@ async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]
     return {EngType(clazz.user_key): clazz.uuid for clazz in relevant_classes}
 
 
+def get_association_filter(
+    person: UUID, user_key: str, from_date: datetime | None, to_date: datetime | None
+) -> AssociationFilter:
+    return AssociationFilter(
+        # TODO: check if association_type_user_keys is municipality dependent
+        association_type_user_keys=["SD-medarbejder"],
+        employee=EmployeeFilter(uuids=[person]),
+        # NOTE: users keys are assumed unique and static. If they change we will
+        # risk creating duplicate associations. Ideally, we should attach the
+        # association to the engagement UUID, but in order to be backwards
+        # compatible with the old SD-integration, we will use the user_key.
+        user_keys=[user_key],
+        from_date=from_date,
+        to_date=to_date,
+    )
+
+
 async def get_ou_timeline(
     gql_client: GraphQLClient,
     unit_uuid: OrgUnitUUID,
@@ -726,17 +743,8 @@ async def get_association_timeline(
     user_key: str,
 ) -> AssociationTimeline:
     gql_timeline = await gql_client.get_association_timeline(
-        AssociationFilter(
-            # TODO: check if association_type_user_keys is municipality dependent
-            association_type_user_keys=["SD-medarbejder"],
-            employee=EmployeeFilter(uuids=[person]),
-            # NOTE: users keys are assumed unique and static. If they change we will
-            # risk creating duplicate associations. Ideally, we should attach the
-            # association to the engagement UUID, but in order to be backwards
-            # compatible with the old SD-integration, we will use the user_key.
-            user_keys=[user_key],
-            from_date=None,
-            to_date=None,
+        get_association_filter(
+            person=person, user_key=user_key, from_date=None, to_date=None
         )
     )
 
@@ -1547,13 +1555,8 @@ async def update_association(
     logger.debug("mo_validity", mo_validity=mo_validity)
 
     association = await gql_client.get_association_timeline(
-        AssociationFilter(
-            # TODO: check if association_type_user_keys is municipality dependent
-            association_type_user_keys=["SD-medarbejder"],
-            employee=EmployeeFilter(uuids=[person]),
-            user_keys=[user_key],
-            from_date=start,
-            to_date=end,
+        get_association_filter(
+            person=person, user_key=user_key, from_date=start, to_date=end
         )
     )
     objects = association.objects
@@ -1583,13 +1586,8 @@ async def update_association(
 
     # The association does not already exist in this validity period
     association = await gql_client.get_association_timeline(
-        AssociationFilter(
-            # TODO: check if association_type_user_keys is municipality dependent
-            association_type_user_keys=["SD-medarbejder"],
-            employee=EmployeeFilter(uuids=[person]),
-            user_keys=[user_key],
-            from_date=None,
-            to_date=None,
+        get_association_filter(
+            person=person, user_key=user_key, from_date=None, to_date=None
         )
     )
     payload = AssociationUpdateInput(
@@ -1626,13 +1624,8 @@ async def terminate_association(
     mo_validity = timeline_interval_to_mo_validity(start, end)
 
     association = await gql_client.get_association_timeline(
-        AssociationFilter(
-            # TODO: check if association_type_user_keys is municipality dependent
-            association_type_user_keys=["SD-medarbejder"],
-            employee=EmployeeFilter(uuids=[person]),
-            user_keys=[user_key],
-            from_date=None,
-            to_date=None,
+        get_association_filter(
+            person=person, user_key=user_key, from_date=None, to_date=None
         )
     )
     association_uuid = one(association.objects).uuid
