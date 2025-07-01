@@ -435,6 +435,7 @@ async def _sync_ou_intervals(
     org_unit: OrgUnitUUID,
     desired_unit_timeline: UnitTimeline,
     mo_unit_timeline: UnitTimeline,
+    institution_identifier: str,
     priority: int,
     dry_run: bool,
 ) -> bool:
@@ -472,6 +473,7 @@ async def _sync_ou_intervals(
                 org_unit=org_unit,
                 start=start,
                 end=end,
+                institution_identifier=institution_identifier,
                 priority=priority,
                 dry_run=dry_run,
             )
@@ -798,6 +800,7 @@ async def sync_ou(
         org_unit=org_unit,
         desired_unit_timeline=desired_unit_timeline,
         mo_unit_timeline=mo_unit_timeline,
+        institution_identifier=institution_identifier,
         priority=priority,
         dry_run=dry_run,
     )
