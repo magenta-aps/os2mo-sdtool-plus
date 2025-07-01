@@ -490,6 +490,7 @@ def create_fastramqpi() -> FastRAMQPI:
             institution_identifier=payload.institution_identifier,
             org_unit=payload.org_unit,
             settings=settings,
+            priority=9000,
             dry_run=dry_run,
         )
         return {"msg": "success"}

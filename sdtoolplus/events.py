@@ -230,6 +230,7 @@ async def _sd_org(
         institution_identifier=org.institution_identifier,
         org_unit=org.org_unit,
         settings=settings,
+        priority=event.priority,
     )
 
 
