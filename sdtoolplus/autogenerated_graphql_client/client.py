@@ -51,6 +51,8 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_org_unit_children import GetOrgUnitChildren
+from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_organization import GetOrganization
@@ -486,6 +488,34 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateOrgUnit.parse_obj(data).org_unit_terminate
+
+    async def get_org_unit_children(
+        self,
+        org_unit: UUID,
+        from_date: datetime,
+        to_date: Union[Optional[datetime], UnsetType] = UNSET,
+    ) -> GetOrgUnitChildrenOrgUnits:
+        query = gql(
+            """
+            query GetOrgUnitChildren($org_unit: UUID!, $from_date: DateTime!, $to_date: DateTime) {
+              org_units(
+                filter: {parent: {uuids: [$org_unit], from_date: $from_date, to_date: $to_date}, from_date: $from_date, to_date: $to_date}
+              ) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {
+            "org_unit": org_unit,
+            "from_date": from_date,
+            "to_date": to_date,
+        }
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetOrgUnitChildren.parse_obj(data).org_units
 
     async def get_person(self, cpr: Any) -> GetPersonEmployees:
         query = gql(
