@@ -10,6 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import Callable
 from typing import Coroutine
 from urllib.parse import urlencode
+from uuid import UUID
 
 import aio_pika
 import structlog
@@ -234,4 +235,18 @@ async def _sd_person(
     )
 
 
-# TODO: /events/mo/person
+@router.post("/events/mo/person")
+async def _mo_person(
+    sd_client: depends.SDClient,
+    gql_client: depends.GraphQLClient,
+    event: Event[UUID],
+) -> None:
+    person_uuid = event.subject
+    mo_person = gql_client.get_person_from_uuid(person_uuid)
+    mo_person_cpr = mo_person.cpr
+    await sync_person(
+        sd_client=sd_client,
+        gql_client=gql_client,
+        institution_identifier=TODO,  # ????????????
+        cpr=mo_person_cpr,
+    )

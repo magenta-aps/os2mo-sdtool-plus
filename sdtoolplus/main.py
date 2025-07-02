@@ -143,6 +143,14 @@ def create_fastramqpi() -> FastRAMQPI:
                 Namespace(name="sd"),
             ],
             declare_listeners=[
+                # MO
+                Listener(
+                    namespace="mo",
+                    user_key="person",
+                    routing_key="person",
+                    path="/events/mo/person",
+                ),
+                # SD
                 Listener(
                     namespace="sd",
                     user_key="employment",
