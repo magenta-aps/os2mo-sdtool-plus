@@ -18,7 +18,6 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastramqpi.context import Context
 from fastramqpi.events import Event
-from pydantic import BaseModel
 from pydantic import Json
 
 from sdtoolplus import depends
@@ -27,7 +26,12 @@ from sdtoolplus.config import SDAMQPSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.depends import request_id
 from sdtoolplus.exceptions import EngagementSyncTemporarilyDisabled
-from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import EmploymentAMQPEvent
+from sdtoolplus.models import EmploymentGraphQLEvent
+from sdtoolplus.models import OrgAMQPEvent
+from sdtoolplus.models import OrgGraphQLEvent
+from sdtoolplus.models import PersonAMQPEvent
+from sdtoolplus.models import PersonGraphQLEvent
 from sdtoolplus.timeline import sync_engagement
 from sdtoolplus.timeline import sync_ou
 from sdtoolplus.timeline import sync_person
@@ -115,28 +119,6 @@ def process_message(
 # Employment
 
 
-class EmploymentAMQPEvent(BaseModel):
-    """
-    {
-      "id": "965cbb12-2329-451a-9e1f-0cb7ddf9c4b1",
-      "eventType": "Employment",
-      "instCode": "VH",
-      "tjnr": "20172",
-      "cpr": "1234567890"
-    }
-    """
-
-    instCode: str
-    tjnr: str
-    cpr: str
-
-
-class EmploymentGraphQLEvent(BaseModel):
-    institution_identifier: str
-    employment_identifier: str
-    cpr: str
-
-
 async def process_employment_amqp_event(
     message: AbstractIncomingMessage, graphql_client: GraphQLClient
 ) -> None:
@@ -178,27 +160,6 @@ async def _sd_employment(
 # Org
 
 
-class OrgAMQPEvent(BaseModel):
-    """
-    {
-      "id": "69d17fb0-7a2b-4e21-b0dc-dee6f6f2bef8",
-      "eventType": "Org",
-      "instCode": "VH",
-      "orgUnitUuid": "b1d3026f-8168-4a00-9a00-0000012c0001",
-      "fromDate": "2025-05-01",
-      "toDate": "9999-12-31"
-    }
-    """
-
-    instCode: str
-    orgUnitUuid: OrgUnitUUID
-
-
-class OrgGraphQLEvent(BaseModel):
-    institution_identifier: str
-    org_unit: OrgUnitUUID
-
-
 async def process_org_amqp_event(
     message: AbstractIncomingMessage, graphql_client: GraphQLClient
 ) -> None:
@@ -230,29 +191,11 @@ async def _sd_org(
         institution_identifier=org.institution_identifier,
         org_unit=org.org_unit,
         settings=settings,
+        priority=event.priority,
     )
 
 
 # Person
-
-
-class PersonAMQPEvent(BaseModel):
-    """
-    {
-      "id": "f4bdaa63-56a4-480f-8be4-cd581683016d",
-      "eventType": "Person",
-      "instCode": "7N",
-      "cpr": "1234567890"
-    }
-    """
-
-    instCode: str
-    cpr: str
-
-
-class PersonGraphQLEvent(BaseModel):
-    institution_identifier: str
-    cpr: str
 
 
 async def process_person_amqp_event(

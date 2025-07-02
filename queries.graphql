@@ -199,6 +199,24 @@ mutation TerminateOrgUnit($input: OrganisationUnitTerminateInput!) {
   }
 }
 
+query GetOrgUnitChildren(
+  $org_unit: UUID!
+  $from_date: DateTime!
+  $to_date: DateTime
+) {
+  org_units(
+    filter: {
+      parent: { uuids: [$org_unit], from_date: $from_date, to_date: $to_date }
+      from_date: $from_date
+      to_date: $to_date
+    }
+  ) {
+    objects {
+      uuid
+    }
+  }
+}
+
 query GetPerson($cpr: CPR!) {
   employees(
     filter: { cpr_numbers: [$cpr], from_date: null, to_date: null }

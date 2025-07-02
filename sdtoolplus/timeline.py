@@ -435,6 +435,8 @@ async def _sync_ou_intervals(
     org_unit: OrgUnitUUID,
     desired_unit_timeline: UnitTimeline,
     mo_unit_timeline: UnitTimeline,
+    institution_identifier: str,
+    priority: int,
     dry_run: bool,
 ) -> bool:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
@@ -471,6 +473,8 @@ async def _sync_ou_intervals(
                 org_unit=org_unit,
                 start=start,
                 end=end,
+                institution_identifier=institution_identifier,
+                priority=priority,
                 dry_run=dry_run,
             )
             continue
@@ -752,6 +756,7 @@ async def _sync_ou_phone_number(
     institution_identifier,
     org_unit,
     settings,
+    priority,
     dry_run=False: org_unit
 )
 async def sync_ou(
@@ -760,6 +765,7 @@ async def sync_ou(
     institution_identifier: str,
     org_unit: OrgUnitUUID,
     settings: SDToolPlusSettings,
+    priority: int,
     dry_run: bool = False,
 ) -> None:
     """Sync the entire org unit timeline for the given unit."""
@@ -794,6 +800,8 @@ async def sync_ou(
         org_unit=org_unit,
         desired_unit_timeline=desired_unit_timeline,
         mo_unit_timeline=mo_unit_timeline,
+        institution_identifier=institution_identifier,
+        priority=priority,
         dry_run=dry_run,
     )
 
