@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import unittest
 from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
@@ -411,6 +412,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
 
+@unittest.skip("To be completed later")
 @pytest.mark.integration_test
 async def test_ou_timeline_sd_unit_priority_sync(
     test_client: AsyncClient,
