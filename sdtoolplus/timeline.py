@@ -436,7 +436,7 @@ async def _sync_ou_intervals(
     desired_unit_timeline: UnitTimeline,
     mo_unit_timeline: UnitTimeline,
     dry_run: bool,
-) -> None:
+) -> bool:
     logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
 
     # Skip synchronisation if OU was never in SD. This ensures we don't delete
@@ -445,7 +445,7 @@ async def _sync_ou_intervals(
     # anyway due to limitations in SD.
     if desired_unit_timeline == UnitTimeline():
         logger.debug("Skipping sync of OU")
-        return
+        return False
 
     sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
@@ -477,7 +477,7 @@ async def _sync_ou_intervals(
 
         if not desired_unit_timeline.has_required_mo_values(start):
             logger.error("Cannot update OU due to missing timeline data")
-            continue
+            return False
 
         ou = await gql_client.get_org_unit_timeline(
             unit_uuid=org_unit, from_date=None, to_date=None
@@ -503,7 +503,10 @@ async def _sync_ou_intervals(
                 dry_run=dry_run,
             )
 
-        logger.info("Finished updating unit", org_unit=str(org_unit))
+        logger.info("Finished updating unit in interval", org_unit=str(org_unit))
+
+    logger.info("Finished syncing unit", org_unit=str(org_unit))
+    return True
 
 
 async def _sync_association_intervals(
@@ -785,7 +788,7 @@ async def sync_ou(
 
     mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
-    await _sync_ou_intervals(
+    ou_sync_successful = await _sync_ou_intervals(
         gql_client=gql_client,
         settings=settings,
         org_unit=org_unit,
@@ -794,7 +797,9 @@ async def sync_ou(
         dry_run=dry_run,
     )
 
-    if department is not None:
+    if department is not None and ou_sync_successful:
+        logger.info("Syncing OU addresses", org_unit=str(org_unit))
+
         await _sync_ou_pnumber(
             gql_client=gql_client,
             department=department,
@@ -815,6 +820,8 @@ async def sync_ou(
             org_unit=org_unit,
             dry_run=dry_run,
         )
+
+        logger.info("Finished syncing OU addresses", org_unit=str(org_unit))
 
 
 async def engagement_ou_strategy_elevate_to_ny_level(
