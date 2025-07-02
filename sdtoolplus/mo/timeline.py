@@ -630,7 +630,7 @@ async def terminate_ou(
         try:
             await gql_client.terminate_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
-            if str(error) == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN":
+            if str(one(error.errors)) == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN":
                 queue_priority = priority - 1
                 logger.error(
                     "Cannot terminate unit due to active child units. Queuing children",
