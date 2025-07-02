@@ -3,6 +3,7 @@
 from datetime import datetime
 from datetime import timedelta
 from itertools import pairwise
+from typing import cast
 from uuid import UUID
 
 import structlog
@@ -415,6 +416,26 @@ async def get_phone_number_timeline(
     return timeline
 
 
+async def _queue_ou_parent(
+    gql_client: GraphQLClient,
+    parent: OrgUnitUUID,
+    institution_identifier: str,
+    priority: int,
+) -> None:
+    logger.debug("Queuing OU parent", parent=str(parent))
+    await gql_client.send_event(
+        input=EventSendInput(
+            namespace="sd",
+            routing_key="org",
+            subject=OrgGraphQLEvent(
+                institution_identifier=institution_identifier,
+                org_unit=parent,
+            ).json(),
+            priority=priority,
+        )
+    )
+
+
 async def create_ou(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,
@@ -469,6 +490,8 @@ async def update_ou(
     end: datetime,
     desired_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
+    institution_identifier: str,
+    priority: int,
     dry_run: bool = False,
 ) -> None:
     logger.info("Updating OU", uuid=str(org_unit))
@@ -501,6 +524,8 @@ async def update_ou(
         class_user_key=unit_level.value,  # type: ignore
     )
 
+    parent = cast(OrgUnitUUID, desired_unit_timeline.parent.entity_at(start).value)
+
     if ou.objects:
         # The OU already exists in this validity period
         for validity in one(ou.objects).validities:
@@ -511,7 +536,7 @@ async def update_ou(
                 ),
                 name=desired_unit_timeline.name.entity_at(start).value,
                 user_key=desired_unit_timeline.unit_id.entity_at(start).value,
-                parent=desired_unit_timeline.parent.entity_at(start).value,
+                parent=parent,
                 org_unit_type=ou_type_uuid,
                 org_unit_level=ou_level_uuid,
                 org_unit_hierarchy=validity.org_unit_hierarchy,
@@ -519,7 +544,29 @@ async def update_ou(
             )
             logger.debug("OU update payload", payload=payload.dict())
             if not dry_run:
-                await gql_client.update_org_unit(payload)
+                try:
+                    await gql_client.update_org_unit(payload)
+                except GraphQLClientGraphQLMultiError as error:
+                    if (
+                        str(one(error.errors))
+                        == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
+                    ):
+                        queue_priority = priority - 1
+                        logger.error(
+                            "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                            org_unit=str(org_unit),
+                            start=start,
+                            end=end,
+                            priority=queue_priority,
+                        )
+                        await _queue_ou_parent(
+                            gql_client=gql_client,
+                            parent=parent,
+                            institution_identifier=institution_identifier,
+                            priority=queue_priority,
+                        )
+                    raise error
+
             logger.debug("OU updated", uuid=str(org_unit))
         return
 
@@ -529,13 +576,32 @@ async def update_ou(
         validity=mo_validity,
         name=desired_unit_timeline.name.entity_at(start).value,
         user_key=desired_unit_timeline.unit_id.entity_at(start).value,
-        parent=desired_unit_timeline.parent.entity_at(start).value,
+        parent=parent,
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )
     logger.debug("OU update payload", payload=payload.dict())
     if not dry_run:
-        await gql_client.update_org_unit(payload)
+        try:
+            await gql_client.update_org_unit(payload)
+        except GraphQLClientGraphQLMultiError as error:
+            if str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
+                queue_priority = priority - 1
+                logger.error(
+                    "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                    org_unit=str(org_unit),
+                    start=start,
+                    end=end,
+                    priority=queue_priority,
+                )
+                await _queue_ou_parent(
+                    gql_client=gql_client,
+                    parent=parent,
+                    institution_identifier=institution_identifier,
+                    priority=queue_priority,
+                )
+            raise error
+
     logger.debug("OU updated", uuid=str(org_unit))
 
 

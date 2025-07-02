@@ -494,6 +494,8 @@ async def _sync_ou_intervals(
                 end=end,
                 desired_unit_timeline=desired_unit_timeline,
                 org_unit_type_user_key=settings.org_unit_type,
+                institution_identifier=institution_identifier,
+                priority=priority,
                 dry_run=dry_run,
             )
         else:
