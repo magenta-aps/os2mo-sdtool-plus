@@ -47,6 +47,66 @@ class OrgGraphQLEvent(BaseModel):
     org_unit: OrgUnitUUID
 
 
+class EmploymentAMQPEvent(BaseModel):
+    """
+    {
+      "id": "965cbb12-2329-451a-9e1f-0cb7ddf9c4b1",
+      "eventType": "Employment",
+      "instCode": "VH",
+      "tjnr": "20172",
+      "cpr": "1234567890"
+    }
+    """
+
+    instCode: str
+    tjnr: str
+    cpr: str
+
+
+# Event models
+
+
+class EmploymentGraphQLEvent(BaseModel):
+    institution_identifier: str
+    employment_identifier: str
+    cpr: str
+
+
+class OrgAMQPEvent(BaseModel):
+    """
+    {
+      "id": "69d17fb0-7a2b-4e21-b0dc-dee6f6f2bef8",
+      "eventType": "Org",
+      "instCode": "VH",
+      "orgUnitUuid": "b1d3026f-8168-4a00-9a00-0000012c0001",
+      "fromDate": "2025-05-01",
+      "toDate": "9999-12-31"
+    }
+    """
+
+    instCode: str
+    orgUnitUuid: OrgUnitUUID
+
+
+class PersonAMQPEvent(BaseModel):
+    """
+    {
+      "id": "f4bdaa63-56a4-480f-8be4-cd581683016d",
+      "eventType": "Person",
+      "instCode": "7N",
+      "cpr": "1234567890"
+    }
+    """
+
+    instCode: str
+    cpr: str
+
+
+class PersonGraphQLEvent(BaseModel):
+    institution_identifier: str
+    cpr: str
+
+
 class EngType(Enum):
     MONTHLY_FULL_TIME = "fuldtid"
     MONTHLY_PART_TIME = "deltid"
