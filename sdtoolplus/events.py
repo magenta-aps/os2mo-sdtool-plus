@@ -28,6 +28,7 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.depends import request_id
 from sdtoolplus.exceptions import EngagementSyncTemporarilyDisabled
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
+from sdtoolplus.models import OrgGraphQLEvent
 from sdtoolplus.timeline import sync_engagement
 from sdtoolplus.timeline import sync_ou
 from sdtoolplus.timeline import sync_person
@@ -192,11 +193,6 @@ class OrgAMQPEvent(BaseModel):
 
     instCode: str
     orgUnitUuid: OrgUnitUUID
-
-
-class OrgGraphQLEvent(BaseModel):
-    institution_identifier: str
-    org_unit: OrgUnitUUID
 
 
 async def process_org_amqp_event(

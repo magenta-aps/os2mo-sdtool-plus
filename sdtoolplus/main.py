@@ -43,7 +43,6 @@ from .db.rundb import get_status
 from .db.rundb import persist_status
 from .depends import request_id
 from .events import EmploymentGraphQLEvent
-from .events import OrgGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
@@ -51,6 +50,7 @@ from .exceptions import EngagementSyncTemporarilyDisabled
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
+from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons

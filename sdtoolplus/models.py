@@ -42,6 +42,11 @@ class AddressTypeUserKey(Enum):
     PNUMBER_ADDR = "Pnummer"
 
 
+class OrgGraphQLEvent(BaseModel):
+    institution_identifier: str
+    org_unit: OrgUnitUUID
+
+
 class EngType(Enum):
     MONTHLY_FULL_TIME = "fuldtid"
     MONTHLY_PART_TIME = "deltid"
