@@ -439,7 +439,11 @@ async def _sync_ou_intervals(
     priority: int,
     dry_run: bool,
 ) -> bool:
-    logger.info("Create, update or terminate OU in MO", org_unit=str(org_unit))
+    logger.info(
+        "Create, update or terminate OU in MO",
+        org_unit=str(org_unit),
+        priority=priority,
+    )
 
     # Skip synchronisation if OU was never in SD. This ensures we don't delete
     # org-units unrelated to SD in MO. Note that is *is* technically possible
