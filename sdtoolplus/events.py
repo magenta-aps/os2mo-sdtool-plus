@@ -74,21 +74,21 @@ async def sd_amqp_lifespan(
         graphql_client: GraphQLClient = context["graphql_client"]
         queues = {
             "employment-events": partial(
-                process_employment_amqp_event,
+                process_sd_amqp_employment_event,
                 graphql_client=graphql_client,
             ),
             "org-events": partial(
-                process_org_amqp_event,
+                process_sd_amqp_org_event,
                 graphql_client=graphql_client,
             ),
             "person-events": partial(
-                process_person_amqp_event,
+                process_sd_amqp_person_event,
                 graphql_client=graphql_client,
             ),
         }
         for name, callback in queues.items():
             queue = await channel.get_queue(name)
-            await queue.consume(process_message(callback), timeout=5)
+            await queue.consume(process_sd_amqp_message(callback), timeout=5)
 
         try:
             yield  # wait until terminate
@@ -97,7 +97,7 @@ async def sd_amqp_lifespan(
             await connection.close()
 
 
-def process_message(
+def process_sd_amqp_message(
     func: Callable[[AbstractIncomingMessage], Coroutine],
 ) -> Callable[[AbstractIncomingMessage], Coroutine]:
     @wraps(func)
@@ -116,10 +116,11 @@ def process_message(
     return wrapper
 
 
-# Employment
+# SD AMQP Handlers
+# Converts SD AMQP messages to OS2mo GraphQL events.
 
 
-async def process_employment_amqp_event(
+async def process_sd_amqp_employment_event(
     message: AbstractIncomingMessage, graphql_client: GraphQLClient
 ) -> None:
     event = EmploymentAMQPEvent.parse_raw(message.body)
@@ -134,6 +135,43 @@ async def process_employment_amqp_event(
             ).json(),
         )
     )
+
+
+async def process_sd_amqp_org_event(
+    message: AbstractIncomingMessage, graphql_client: GraphQLClient
+) -> None:
+    event = OrgAMQPEvent.parse_raw(message.body)
+    # TODO: Set priority to ensure proper parent/children synchronisation order?
+    await graphql_client.send_event(
+        input=EventSendInput(
+            namespace="sd",
+            routing_key="org",
+            subject=OrgGraphQLEvent(
+                institution_identifier=event.instCode,
+                org_unit=event.orgUnitUuid,
+            ).json(),
+        )
+    )
+
+
+async def process_sd_amqp_person_event(
+    message: AbstractIncomingMessage, graphql_client: GraphQLClient
+) -> None:
+    event = PersonAMQPEvent.parse_raw(message.body)
+    await graphql_client.send_event(
+        input=EventSendInput(
+            namespace="sd",
+            routing_key="person",
+            subject=PersonGraphQLEvent(
+                institution_identifier=event.instCode,
+                cpr=event.cpr,
+            ).json(),
+        )
+    )
+
+
+# OS2mo GraphQL Event Handlers
+# Thin wrappers around the sync functions, for both MO and SD events.
 
 
 @router.post("/events/sd/employment")
@@ -157,24 +195,7 @@ async def _sd_employment(
     )
 
 
-# Org
-
-
-async def process_org_amqp_event(
-    message: AbstractIncomingMessage, graphql_client: GraphQLClient
-) -> None:
-    event = OrgAMQPEvent.parse_raw(message.body)
-    # TODO: Set priority to ensure proper parent/children synchronisation order?
-    await graphql_client.send_event(
-        input=EventSendInput(
-            namespace="sd",
-            routing_key="org",
-            subject=OrgGraphQLEvent(
-                institution_identifier=event.instCode,
-                org_unit=event.orgUnitUuid,
-            ).json(),
-        )
-    )
+# TODO: /events/mo/engagement
 
 
 @router.post("/events/sd/org")
@@ -195,23 +216,7 @@ async def _sd_org(
     )
 
 
-# Person
-
-
-async def process_person_amqp_event(
-    message: AbstractIncomingMessage, graphql_client: GraphQLClient
-) -> None:
-    event = PersonAMQPEvent.parse_raw(message.body)
-    await graphql_client.send_event(
-        input=EventSendInput(
-            namespace="sd",
-            routing_key="person",
-            subject=PersonGraphQLEvent(
-                institution_identifier=event.instCode,
-                cpr=event.cpr,
-            ).json(),
-        )
-    )
+# TODO: /events/mo/org-unit
 
 
 @router.post("/events/sd/person")
@@ -227,3 +232,6 @@ async def _sd_person(
         institution_identifier=person.institution_identifier,
         cpr=person.cpr,
     )
+
+
+# TODO: /events/mo/person
