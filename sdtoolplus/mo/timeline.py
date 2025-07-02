@@ -443,6 +443,8 @@ async def create_ou(
     end: datetime,
     desired_unit_timeline: UnitTimeline,
     org_unit_type_user_key: str,
+    institution_identifier: str,
+    priority: int,
     dry_run: bool = False,
 ) -> None:
     logger.info("Creating OU", uuid=str(org_unit))
@@ -468,18 +470,39 @@ async def create_ou(
         class_user_key=unit_level.value,  # type: ignore
     )
 
+    parent = cast(OrgUnitUUID, desired_unit_timeline.parent.entity_at(start).value)
+
     payload = OrganisationUnitCreateInput(
         uuid=org_unit,
         validity=timeline_interval_to_mo_validity(start, end),
         name=desired_unit_timeline.name.entity_at(start).value,
         user_key=desired_unit_timeline.unit_id.entity_at(start).value,
-        parent=desired_unit_timeline.parent.entity_at(start).value,
+        parent=parent,
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )
     logger.debug("OU create payload", payload=payload.dict())
     if not dry_run:
-        await gql_client.create_org_unit(payload)
+        try:
+            await gql_client.create_org_unit(payload)
+        except GraphQLClientGraphQLMultiError as error:
+            if str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
+                queue_priority = priority - 1
+                logger.error(
+                    "Cannot create unit due to a too narrow parent validity. Queuing parent",
+                    org_unit=str(org_unit),
+                    start=start,
+                    end=end,
+                    priority=queue_priority,
+                )
+                await _queue_ou_parent(
+                    gql_client=gql_client,
+                    parent=parent,
+                    institution_identifier=institution_identifier,
+                    priority=queue_priority,
+                )
+            raise error
+
     logger.debug("OU created", uuid=str(org_unit))
 
 
