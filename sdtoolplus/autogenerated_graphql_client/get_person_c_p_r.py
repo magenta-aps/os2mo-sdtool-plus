@@ -1,4 +1,6 @@
-from typing import Any, List, Optional
+from typing import Any
+from typing import List
+from typing import Optional
 
 from .base_model import BaseModel
 

@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from contextlib import suppress
 from functools import partial
 from functools import wraps
 from pathlib import Path
@@ -19,6 +20,7 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastramqpi.context import Context
 from fastramqpi.events import Event
+from more_itertools import one
 from pydantic import Json
 
 from sdtoolplus import depends
@@ -27,6 +29,7 @@ from sdtoolplus.config import SDAMQPSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.depends import request_id
 from sdtoolplus.exceptions import EngagementSyncTemporarilyDisabled
+from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.models import EmploymentAMQPEvent
 from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import OrgAMQPEvent
@@ -237,16 +240,35 @@ async def _sd_person(
 
 @router.post("/events/mo/person")
 async def _mo_person(
+    settings: depends.Settings,
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     event: Event[UUID],
 ) -> None:
-    person_uuid = event.subject
-    mo_person = gql_client.get_person_from_uuid(person_uuid)
-    mo_person_cpr = mo_person.cpr
-    await sync_person(
-        sd_client=sd_client,
-        gql_client=gql_client,
-        institution_identifier=TODO,  # ????????????
-        cpr=mo_person_cpr,
-    )
+    mo_person_uuid = event.subject
+    mo_persons = await gql_client.get_person_cpr(mo_person_uuid)
+    # There can only be one person with the given UUID
+    mo_person = one(mo_persons.objects)
+    # But that person can have multiple CPR-numbers over time
+    mo_person_cprs = {
+        validity.cpr_number
+        for validity in mo_person.validities
+        if validity.cpr_number is not None
+    }
+
+    assert settings.mo_subtree_paths_for_root is not None
+    for cpr in mo_person_cprs:
+        # There is no global person registry in SD; everything is below an
+        # institution. Iterate all known institutions.
+        for institution_identifier in settings.mo_subtree_paths_for_root.keys():
+            with suppress(PersonNotFoundError):
+                await sync_person(
+                    sd_client=sd_client,
+                    gql_client=gql_client,
+                    institution_identifier=institution_identifier,
+                    cpr=cpr,
+                )
+                # A person can have different names in different institutions,
+                # but we have no way to choose the best, so we just choose the
+                # first one.
+                break

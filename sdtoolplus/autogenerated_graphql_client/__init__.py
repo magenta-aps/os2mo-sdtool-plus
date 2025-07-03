@@ -144,6 +144,10 @@ from .get_parent_roots import GetParentRootsOrgUnitsObjects
 from .get_person import GetPerson
 from .get_person import GetPersonEmployees
 from .get_person import GetPersonEmployeesObjects
+from .get_person_cpr import GetPersonCpr
+from .get_person_cpr import GetPersonCprEmployees
+from .get_person_cpr import GetPersonCprEmployeesObjects
+from .get_person_cpr import GetPersonCprEmployeesObjectsValidities
 from .get_person_timeline import GetPersonTimeline
 from .get_person_timeline import GetPersonTimelineEmployees
 from .get_person_timeline import GetPersonTimelineEmployeesObjects
@@ -454,6 +458,10 @@ __all__ = [
     "GetParentRootsOrgUnits",
     "GetParentRootsOrgUnitsObjects",
     "GetPerson",
+    "GetPersonCpr",
+    "GetPersonCprEmployees",
+    "GetPersonCprEmployeesObjects",
+    "GetPersonCprEmployeesObjectsValidities",
     "GetPersonEmployees",
     "GetPersonEmployeesObjects",
     "GetPersonTimeline",
