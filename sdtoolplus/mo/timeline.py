@@ -649,7 +649,7 @@ async def _queue_ou_children(
                 routing_key="org",
                 subject=OrgGraphQLEvent(
                     institution_identifier=institution_identifier,
-                    org_unit=org_unit,
+                    org_unit=child_uuid,
                 ).json(),
                 priority=priority,
             )
