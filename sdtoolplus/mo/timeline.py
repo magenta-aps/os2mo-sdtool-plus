@@ -436,6 +436,26 @@ async def _queue_ou_parent(
     )
 
 
+async def _requeue_ou(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    institution_identifier: str,
+    priority: int,
+) -> None:
+    logger.debug("Re-queuing OU", org_unit=str(org_unit))
+    await gql_client.send_event(
+        input=EventSendInput(
+            namespace="sd",
+            routing_key="org",
+            subject=OrgGraphQLEvent(
+                institution_identifier=institution_identifier,
+                org_unit=org_unit,
+            ).json(),
+            priority=priority,
+        )
+    )
+
+
 async def create_ou(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,
@@ -486,22 +506,29 @@ async def create_ou(
         try:
             await gql_client.create_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
-            if str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
-                queue_priority = priority - 1
-                logger.error(
-                    "Cannot create unit due to a too narrow parent validity. Queuing parent",
-                    org_unit=str(org_unit),
-                    start=start,
-                    end=end,
-                    priority=queue_priority,
-                )
-                await _queue_ou_parent(
-                    gql_client=gql_client,
-                    parent=parent,
-                    institution_identifier=institution_identifier,
-                    priority=queue_priority,
-                )
-            raise error
+            if not str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
+                raise error
+
+            queue_priority = priority - 1
+            logger.error(
+                "Cannot create unit due to a too narrow parent validity. Queuing parent",
+                org_unit=str(org_unit),
+                start=start,
+                end=end,
+                priority=queue_priority,
+            )
+            await _queue_ou_parent(
+                gql_client=gql_client,
+                parent=parent,
+                institution_identifier=institution_identifier,
+                priority=queue_priority,
+            )
+            await _requeue_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                institution_identifier=institution_identifier,
+                priority=priority,
+            )
 
     logger.debug("OU created", uuid=str(org_unit))
 
@@ -570,25 +597,32 @@ async def update_ou(
                 try:
                     await gql_client.update_org_unit(payload)
                 except GraphQLClientGraphQLMultiError as error:
-                    if (
+                    if not (
                         str(one(error.errors))
                         == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
                     ):
-                        queue_priority = priority - 1
-                        logger.error(
-                            "Cannot update unit due to a too narrow parent validity. Queuing parent",
-                            org_unit=str(org_unit),
-                            start=start,
-                            end=end,
-                            priority=queue_priority,
-                        )
-                        await _queue_ou_parent(
-                            gql_client=gql_client,
-                            parent=parent,
-                            institution_identifier=institution_identifier,
-                            priority=queue_priority,
-                        )
-                    raise error
+                        raise error
+
+                    queue_priority = priority - 1
+                    logger.error(
+                        "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                        org_unit=str(org_unit),
+                        start=start,
+                        end=end,
+                        priority=queue_priority,
+                    )
+                    await _queue_ou_parent(
+                        gql_client=gql_client,
+                        parent=parent,
+                        institution_identifier=institution_identifier,
+                        priority=queue_priority,
+                    )
+                    await _requeue_ou(
+                        gql_client=gql_client,
+                        org_unit=org_unit,
+                        institution_identifier=institution_identifier,
+                        priority=priority,
+                    )
 
             logger.debug("OU updated", uuid=str(org_unit))
         return
@@ -608,22 +642,29 @@ async def update_ou(
         try:
             await gql_client.update_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
-            if str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
-                queue_priority = priority - 1
-                logger.error(
-                    "Cannot update unit due to a too narrow parent validity. Queuing parent",
-                    org_unit=str(org_unit),
-                    start=start,
-                    end=end,
-                    priority=queue_priority,
-                )
-                await _queue_ou_parent(
-                    gql_client=gql_client,
-                    parent=parent,
-                    institution_identifier=institution_identifier,
-                    priority=queue_priority,
-                )
-            raise error
+            if not str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
+                raise error
+
+            queue_priority = priority - 1
+            logger.error(
+                "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                org_unit=str(org_unit),
+                start=start,
+                end=end,
+                priority=queue_priority,
+            )
+            await _queue_ou_parent(
+                gql_client=gql_client,
+                parent=parent,
+                institution_identifier=institution_identifier,
+                priority=queue_priority,
+            )
+            await _requeue_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                institution_identifier=institution_identifier,
+                priority=priority,
+            )
 
     logger.debug("OU updated", uuid=str(org_unit))
 
@@ -719,23 +760,34 @@ async def terminate_ou(
         try:
             await gql_client.terminate_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
-            if str(one(error.errors)) == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN":
-                queue_priority = priority - 1
-                logger.error(
-                    "Cannot terminate unit due to active child units. Queuing children",
-                    org_unit=str(org_unit),
-                    start=start,
-                    end=end,
-                    priority=queue_priority,
-                )
-                await _queue_ou_children(
-                    gql_client=gql_client,
-                    org_unit=org_unit,
-                    mo_validity=mo_validity,
-                    institution_identifier=institution_identifier,
-                    priority=queue_priority,
-                )
-            raise error
+            if (
+                not str(one(error.errors))
+                == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN"
+            ):
+                raise error
+
+            queue_priority = priority - 1
+            logger.error(
+                "Cannot terminate unit due to active child units. Queuing children",
+                org_unit=str(org_unit),
+                start=start,
+                end=end,
+                priority=queue_priority,
+            )
+            await _queue_ou_children(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                mo_validity=mo_validity,
+                institution_identifier=institution_identifier,
+                priority=queue_priority,
+            )
+            await _requeue_ou(
+                gql_client=gql_client,
+                org_unit=org_unit,
+                institution_identifier=institution_identifier,
+                priority=priority,
+            )
+
     logger.debug("OU terminated", org_unit=str(org_unit))
 
 
