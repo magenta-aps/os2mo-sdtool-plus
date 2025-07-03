@@ -450,7 +450,7 @@ async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
 
     unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
     child_uuid = UUID("22222222-2222-2222-2222-222222222222")
-    grandchild_uuid =UUID("33333333-3333-3333-3333-333333333333")
+    grandchild_uuid = UUID("33333333-3333-3333-3333-333333333333")
 
     # Create units (arrange interval 1)
     await graphql_client.create_org_unit(
@@ -469,11 +469,11 @@ async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
         OrganisationUnitCreateInput(
             uuid=child_uuid,
             validity=timeline_interval_to_mo_validity(start=t1, end=t3),
-            name="child",
-            user_key="EFGH",
+            name="unit",
+            user_key="ABCD",
             parent=unit_uuid,
             org_unit_type=org_unit_type,
-            org_unit_level=org_unit_levels["NY0-niveau"],
+            org_unit_level=org_unit_levels["NY1-niveau"],
         )
     )
 
@@ -481,48 +481,65 @@ async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
         OrganisationUnitCreateInput(
             uuid=grandchild_uuid,
             validity=timeline_interval_to_mo_validity(start=t1, end=t3),
-            name="grandchild",
-            user_key="IJKL",
+            name="unit",
+            user_key="ABCD",
             parent=child_uuid,
             org_unit_type=org_unit_type,
-            org_unit_level=org_unit_levels["NY0-niveau"],
+            org_unit_level=org_unit_levels["NY1-niveau"],
         )
     )
 
-    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
-        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
-          <RequestStructure>
-            <InstitutionIdentifier>II</InstitutionIdentifier>
-            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
-            <ActivationDate>1930-02-18</ActivationDate>
-            <DeactivationDate>9999-12-31</DeactivationDate>
-            <ContactInformationIndicator>false</ContactInformationIndicator>
-            <DepartmentNameIndicator>true</DepartmentNameIndicator>
-            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
-            <PostalAddressIndicator>false</PostalAddressIndicator>
-            <ProductionUnitIndicator>false</ProductionUnitIndicator>
-            <UUIDIndicator>true</UUIDIndicator>
-          </RequestStructure>
-          <RegionIdentifier>RI</RegionIdentifier>
-          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
-          <InstitutionIdentifier>II</InstitutionIdentifier>
-          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
-          <Department>
-            <ActivationDate>2002-01-01</ActivationDate>
-            <DeactivationDate>2002-12-31</DeactivationDate>
-            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
-            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
-            <DepartmentLevelIdentifier>NY1-niveau</DepartmentLevelIdentifier>
-            <DepartmentName>unit</DepartmentName>
-          </Department>
-        </GetDepartment20111201>
-    """
+    def get_sd_dep_resp(
+        org_unit_uuid: UUID,
+    ) -> str:
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
+            <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+              <RequestStructure>
+                <InstitutionIdentifier>II</InstitutionIdentifier>
+                <DepartmentUUIDIdentifier>{str(org_unit_uuid)}</DepartmentUUIDIdentifier>
+                <ActivationDate>1930-02-18</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <ContactInformationIndicator>false</ContactInformationIndicator>
+                <DepartmentNameIndicator>true</DepartmentNameIndicator>
+                <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+                <PostalAddressIndicator>false</PostalAddressIndicator>
+                <ProductionUnitIndicator>false</ProductionUnitIndicator>
+                <UUIDIndicator>true</UUIDIndicator>
+              </RequestStructure>
+              <RegionIdentifier>RI</RegionIdentifier>
+              <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+              <InstitutionIdentifier>II</InstitutionIdentifier>
+              <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+              <Department>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(org_unit_uuid)}</DepartmentUUIDIdentifier>
+                <DepartmentLevelIdentifier>NY1-niveau</DepartmentLevelIdentifier>
+                <DepartmentName>unit</DepartmentName>
+              </Department>
+            </GetDepartment20111201>
+        """
 
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
-        content=sd_dep_resp,
+        content=get_sd_dep_resp(unit_uuid),
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(child_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=get_sd_dep_resp(child_uuid),
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(grandchild_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=get_sd_dep_resp(grandchild_uuid),
     )
 
     respx_mock.get(
@@ -533,6 +550,30 @@ async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
                 "startDate": "2001-01-01",
                 "endDate": "9999-12-31",
                 "parentUuid": "10000000-0000-0000-0000-000000000000",
+            },
+        ],
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(child_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2002-01-01",
+                "endDate": "2002-12-31",
+                "parentUuid": "11111111-1111-1111-1111-111111111111",
+            },
+        ],
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(grandchild_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2002-01-01",
+                "endDate": "2002-12-31",
+                "parentUuid": "22222222-2222-2222-2222-222222222222",
             },
         ],
     )
@@ -556,18 +597,24 @@ async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
         assert _mo_end_to_timeline_end(validity.validity.to) == t3
 
         # Check child
-        updated_child = await graphql_client.get_org_unit_timeline(child_uuid, None, None)
+        updated_child = await graphql_client.get_org_unit_timeline(
+            child_uuid, None, None
+        )
         validity = one(one(updated_child.objects).validities)
 
         assert validity.validity.from_ == t2
         assert _mo_end_to_timeline_end(validity.validity.to) == t3
 
         # Check grandchild
-        updated_grandchild = await graphql_client.get_org_unit_timeline(grandchild_uuid, None, None)
+        updated_grandchild = await graphql_client.get_org_unit_timeline(
+            grandchild_uuid, None, None
+        )
         validity = one(one(updated_grandchild.objects).validities)
 
         assert validity.validity.from_ == t2
         assert _mo_end_to_timeline_end(validity.validity.to) == t3
+
+    await verify()
 
 
 @unittest.skip("To be completed later")
