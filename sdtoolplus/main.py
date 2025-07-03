@@ -142,7 +142,9 @@ def create_fastramqpi() -> FastRAMQPI:
             declare_namespaces=[
                 Namespace(name="sd"),
             ],
-            declare_listeners=[
+            declare_listeners=[]
+            if not settings.event_based_sync
+            else [
                 # MO
                 Listener(
                     namespace="mo",
