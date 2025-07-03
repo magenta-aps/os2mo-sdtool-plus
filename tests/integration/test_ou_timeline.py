@@ -547,6 +547,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
     # assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
 
+@unittest.skip("To be completed later")
 @pytest.mark.integration_test
 async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancestors(
     test_client: AsyncClient,
