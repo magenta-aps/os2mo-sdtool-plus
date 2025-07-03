@@ -57,7 +57,6 @@ from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
 from .timeline import sync_engagement
 from .timeline import sync_mo_engagement_sd_units
-from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
 
@@ -488,22 +487,21 @@ def create_fastramqpi() -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
     async def timeline_sync_ou(
-        settings: depends.Settings,
-        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         payload: OrgUnitSyncPayload,
-        dry_run: bool = False,
     ) -> dict:
-        await sync_ou(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            org_unit=payload.org_unit,
-            settings=settings,
-            priority=9000,
-            dry_run=dry_run,
+        await gql_client.send_event(
+            input=EventSendInput(
+                namespace="sd",
+                routing_key="org",
+                subject=OrgGraphQLEvent(
+                    institution_identifier=payload.institution_identifier,
+                    org_unit=payload.org_unit,
+                ).json(),
+                priority=9000,
+            )
         )
-        return {"msg": "success"}
+        return {"detail": "OU queued for sync"}
 
     @fastapi_router.post(
         "/timeline/sync/engagement/mo-sd-units", status_code=HTTP_200_OK
