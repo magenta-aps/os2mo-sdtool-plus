@@ -7,6 +7,7 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
+from fastramqpi.pytest_util import retry
 from httpx import AsyncClient
 from more_itertools import one
 from respx import MockRouter
@@ -412,9 +413,8 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
 
 
-@unittest.skip("To be completed later")
 @pytest.mark.integration_test
-async def test_ou_timeline_sd_unit_priority_sync(
+async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -428,9 +428,10 @@ async def test_ou_timeline_sd_unit_priority_sync(
 
     Time  --------t1--------t2-------------------------------t3--------------------->
 
-    MO (active)   |------------------------------------------|
-    MO (child
-        active)   |------------------------------------------|
+    MO (unit)     |------------------------------------------|
+    MO (child)    |------------------------------------------|
+    MO (gr.child) |------------------------------------------|
+
 
     "Arrange"     |--------------------1---------------------|
     intervals
@@ -444,11 +445,12 @@ async def test_ou_timeline_sd_unit_priority_sync(
     tz = ZoneInfo("Europe/Copenhagen")
 
     t1 = datetime(2001, 1, 1, tzinfo=tz)
-    # t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
     t3 = datetime(2003, 1, 1, tzinfo=tz)
 
     unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
     child_uuid = UUID("22222222-2222-2222-2222-222222222222")
+    grandchild_uuid =UUID("33333333-3333-3333-3333-333333333333")
 
     # Create units (arrange interval 1)
     await graphql_client.create_org_unit(
@@ -470,6 +472,18 @@ async def test_ou_timeline_sd_unit_priority_sync(
             name="child",
             user_key="EFGH",
             parent=unit_uuid,
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY0-niveau"],
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=grandchild_uuid,
+            validity=timeline_interval_to_mo_validity(start=t1, end=t3),
+            name="grandchild",
+            user_key="IJKL",
+            parent=child_uuid,
             org_unit_type=org_unit_type,
             org_unit_level=org_unit_levels["NY0-niveau"],
         )
@@ -532,19 +546,28 @@ async def test_ou_timeline_sd_unit_priority_sync(
     # Assert
     assert r.status_code == 200
 
-    # updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
-    # validities = one(updated_unit.objects).validities
-    #
-    # assert len(validities) == 1
-    #
-    # validity = validities[0]
-    # assert validity.validity.from_ == t1
-    # assert _mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
-    # assert validity.name == "name1"
-    # assert validity.user_key == "II-ABCD"
-    # assert validity.org_unit_level is not None
-    # assert validity.org_unit_level.name == "NY0-niveau"
-    # assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+    @retry()
+    async def verify() -> None:
+        # Check unit
+        updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+        validity = one(one(updated_unit.objects).validities)
+
+        assert validity.validity.from_ == t2
+        assert _mo_end_to_timeline_end(validity.validity.to) == t3
+
+        # Check child
+        updated_child = await graphql_client.get_org_unit_timeline(child_uuid, None, None)
+        validity = one(one(updated_child.objects).validities)
+
+        assert validity.validity.from_ == t2
+        assert _mo_end_to_timeline_end(validity.validity.to) == t3
+
+        # Check grandchild
+        updated_grandchild = await graphql_client.get_org_unit_timeline(grandchild_uuid, None, None)
+        validity = one(one(updated_grandchild.objects).validities)
+
+        assert validity.validity.from_ == t2
+        assert _mo_end_to_timeline_end(validity.validity.to) == t3
 
 
 @unittest.skip("To be completed later")
