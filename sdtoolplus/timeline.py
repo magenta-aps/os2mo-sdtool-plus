@@ -433,7 +433,6 @@ async def _sync_ou_intervals(
     mo_unit_timeline: UnitTimeline,
     institution_identifier: str,
     priority: int,
-    dry_run: bool,
 ) -> bool:
     logger.info(
         "Create, update or terminate OU in MO",
@@ -475,7 +474,6 @@ async def _sync_ou_intervals(
                 end=end,
                 institution_identifier=institution_identifier,
                 priority=priority,
-                dry_run=dry_run,
             )
             continue
 
@@ -496,7 +494,6 @@ async def _sync_ou_intervals(
                 org_unit_type_user_key=settings.org_unit_type,
                 institution_identifier=institution_identifier,
                 priority=priority,
-                dry_run=dry_run,
             )
         else:
             await create_ou(
@@ -508,7 +505,6 @@ async def _sync_ou_intervals(
                 org_unit_type_user_key=settings.org_unit_type,
                 institution_identifier=institution_identifier,
                 priority=priority,
-                dry_run=dry_run,
             )
 
         logger.info("Finished updating unit in interval", org_unit=str(org_unit))
@@ -647,7 +643,6 @@ async def _sync_ou_pnumber(
     gql_client: GraphQLClient,
     department: GetDepartmentResponse,
     org_unit: OrgUnitUUID,
-    dry_run: bool,
 ) -> None:
     logger.info("Sync P-number timeline", org_unit=str(org_unit))
 
@@ -665,7 +660,6 @@ async def _sync_ou_pnumber(
         await delete_address(
             gql_client=gql_client,
             address_uuid=mo_pnumber_timeline_obj.uuid,
-            dry_run=dry_run,
         )
 
     if sd_pnumber_timeline == Timeline[UnitPNumber]():
@@ -676,7 +670,6 @@ async def _sync_ou_pnumber(
         org_unit=org_unit,
         address_uuid=mo_pnumber_timeline_obj.uuid,
         sd_pnumber_timeline=sd_pnumber_timeline,
-        dry_run=dry_run,
     )
 
 
@@ -684,7 +677,6 @@ async def _sync_ou_postal_address(
     gql_client: GraphQLClient,
     department: GetDepartmentResponse,
     org_unit: OrgUnitUUID,
-    dry_run: bool,
 ) -> None:
     logger.info("Sync postal address timeline", org_unit=str(org_unit))
 
@@ -702,7 +694,6 @@ async def _sync_ou_postal_address(
         await delete_address(
             gql_client=gql_client,
             address_uuid=mo_postal_address_timeline_obj.uuid,
-            dry_run=dry_run,
         )
 
     if sd_postal_address_timeline == Timeline[UnitPostalAddress]():
@@ -713,7 +704,6 @@ async def _sync_ou_postal_address(
         org_unit=org_unit,
         address_uuid=mo_postal_address_timeline_obj.uuid,
         sd_postal_address_timeline=sd_postal_address_timeline,
-        dry_run=dry_run,
     )
 
 
@@ -721,7 +711,6 @@ async def _sync_ou_phone_number(
     gql_client: GraphQLClient,
     department: GetDepartmentResponse,
     org_unit: OrgUnitUUID,
-    dry_run: bool,
 ) -> None:
     logger.info("Sync phone number timeline", org_unit=str(org_unit))
 
@@ -739,7 +728,6 @@ async def _sync_ou_phone_number(
         await delete_address(
             gql_client=gql_client,
             address_uuid=mo_phone_number_timeline_obj.uuid,
-            dry_run=dry_run,
         )
 
     if sd_phone_number_timeline == Timeline[UnitPhoneNumber]():
@@ -750,7 +738,6 @@ async def _sync_ou_phone_number(
         org_unit=org_unit,
         address_uuid=mo_phone_number_timeline_obj.uuid,
         sd_phone_number_timeline=sd_phone_number_timeline,
-        dry_run=dry_run,
     )
 
 
@@ -760,8 +747,7 @@ async def _sync_ou_phone_number(
     institution_identifier,
     org_unit,
     settings,
-    priority,
-    dry_run=False: org_unit
+    priority: org_unit
 )
 async def sync_ou(
     sd_client: SDClient,
@@ -770,14 +756,12 @@ async def sync_ou(
     org_unit: OrgUnitUUID,
     settings: SDToolPlusSettings,
     priority: int,
-    dry_run: bool = False,
 ) -> None:
     """Sync the entire org unit timeline for the given unit."""
     logger.info(
         "Sync OU timeline",
         institution_identifier=institution_identifier,
         org_uuid=str(org_unit),
-        dry_run=dry_run,
     )
 
     department = await get_department(
@@ -806,7 +790,6 @@ async def sync_ou(
         mo_unit_timeline=mo_unit_timeline,
         institution_identifier=institution_identifier,
         priority=priority,
-        dry_run=dry_run,
     )
 
     if department is not None and ou_sync_successful:
@@ -816,21 +799,18 @@ async def sync_ou(
             gql_client=gql_client,
             department=department,
             org_unit=org_unit,
-            dry_run=dry_run,
         )
 
         await _sync_ou_postal_address(
             gql_client=gql_client,
             department=department,
             org_unit=org_unit,
-            dry_run=dry_run,
         )
 
         await _sync_ou_phone_number(
             gql_client=gql_client,
             department=department,
             org_unit=org_unit,
-            dry_run=dry_run,
         )
 
         logger.info("Finished syncing OU addresses", org_unit=str(org_unit))
