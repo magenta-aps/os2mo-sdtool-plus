@@ -101,6 +101,7 @@ from sdtoolplus.sd.timeline import (
 )
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+from sdtoolplus.types import CPRNumber
 
 from .config import Mode
 from .config import SDToolPlusSettings
@@ -1148,7 +1149,7 @@ async def sync_engagement(
         raise DepartmentTimelineNotFoundError()
 
     # Get the person
-    r_person = await gql_client.get_person(cpr)
+    r_person = await gql_client.get_person(CPRNumber(cpr))
     person = one(
         r_person.objects,
         too_short=PersonNotFoundError,

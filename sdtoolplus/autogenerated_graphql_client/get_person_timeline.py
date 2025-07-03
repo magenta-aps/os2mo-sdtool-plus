@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Any
 from typing import List
 from typing import Optional
 from uuid import UUID
 
 from pydantic import Field
 
+from ..types import CPRNumber
 from .base_model import BaseModel
 
 
@@ -24,7 +24,7 @@ class GetPersonTimelineEmployeesObjects(BaseModel):
 
 class GetPersonTimelineEmployeesObjectsValidities(BaseModel):
     addresses: List["GetPersonTimelineEmployeesObjectsValiditiesAddresses"]
-    cpr_number: Optional[Any]
+    cpr_number: Optional[CPRNumber]
     given_name: str
     surname: str
     validity: "GetPersonTimelineEmployeesObjectsValiditiesValidity"

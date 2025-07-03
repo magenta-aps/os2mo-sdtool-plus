@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Any
 from typing import Optional
 from typing import Union
 from uuid import UUID
 
+from ..types import CPRNumber
 from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
@@ -517,7 +517,7 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return GetOrgUnitChildren.parse_obj(data).org_units
 
-    async def get_person(self, cpr: Any) -> GetPersonEmployees:
+    async def get_person(self, cpr: CPRNumber) -> GetPersonEmployees:
         query = gql(
             """
             query GetPerson($cpr: CPR!) {

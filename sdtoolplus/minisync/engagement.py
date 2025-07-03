@@ -25,6 +25,7 @@ from sdtoolplus.mo.timeline import mo_end_to_datetime
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+from sdtoolplus.types import CPRNumber
 
 from .models import EngagementMovePayload
 
@@ -91,7 +92,7 @@ async def move_engagement(
     )
 
     # Get the person in MO
-    r_person = await gql_client.get_person(payload.cpr)
+    r_person = await gql_client.get_person(CPRNumber(payload.cpr))
     person = one(
         r_person.objects,
         too_short=PersonNotFoundError,
