@@ -523,6 +523,7 @@ async def create_ou(
                 institution_identifier=institution_identifier,
                 priority=queue_priority,
             )
+            # TODO: should raise some form of RequeueException() when that is possible
             await _requeue_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
@@ -617,6 +618,7 @@ async def update_ou(
                         institution_identifier=institution_identifier,
                         priority=queue_priority,
                     )
+                    # TODO: should raise some form of RequeueException() when that is possible
                     await _requeue_ou(
                         gql_client=gql_client,
                         org_unit=org_unit,
@@ -659,6 +661,7 @@ async def update_ou(
                 institution_identifier=institution_identifier,
                 priority=queue_priority,
             )
+            # TODO: should raise some form of RequeueException() when that is possible
             await _requeue_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
@@ -781,6 +784,7 @@ async def terminate_ou(
                 institution_identifier=institution_identifier,
                 priority=queue_priority,
             )
+            # TODO: should raise some form of RequeueException() when that is possible
             await _requeue_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
