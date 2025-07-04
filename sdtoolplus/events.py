@@ -247,28 +247,31 @@ async def _mo_person(
 ) -> None:
     mo_person_uuid = event.subject
     mo_persons = await gql_client.get_person_cpr(mo_person_uuid)
-    # There can only be one person with the given UUID
     mo_person = one(mo_persons.objects)
-    # But that person can have multiple CPR-numbers over time
-    mo_person_cprs = {
-        validity.cpr_number
-        for validity in mo_person.validities
-        if validity.cpr_number is not None
-    }
+    # The CPR-number is used to map between MO and SD, and thus is not allowed
+    # to change over time. People *can* change their CPR-number in real life,
+    # however, but that is often done by creating a new person in SD (and
+    # therefore MO).
+    mo_person_cpr = one(
+        {
+            validity.cpr_number
+            for validity in mo_person.validities
+            if validity.cpr_number is not None
+        }
+    )
 
     assert settings.mo_subtree_paths_for_root is not None
-    for cpr in mo_person_cprs:
-        # There is no global person registry in SD; everything is below an
-        # institution. Iterate all known institutions.
-        for institution_identifier in settings.mo_subtree_paths_for_root.keys():
-            with suppress(PersonNotFoundError):
-                await sync_person(
-                    sd_client=sd_client,
-                    gql_client=gql_client,
-                    institution_identifier=institution_identifier,
-                    cpr=cpr,
-                )
-                # A person can have different names in different institutions,
-                # but we have no way to choose the best, so we just choose the
-                # first one.
-                break
+    # There is no global person registry in SD; everything is below an
+    # institution. Iterate all known institutions.
+    for institution_identifier in settings.mo_subtree_paths_for_root.keys():
+        with suppress(PersonNotFoundError):
+            await sync_person(
+                sd_client=sd_client,
+                gql_client=gql_client,
+                institution_identifier=institution_identifier,
+                cpr=mo_person_cpr,
+            )
+            # A person can have different names in different institutions, but
+            # we have no way to choose the best, so we just choose the first
+            # one.
+            break
