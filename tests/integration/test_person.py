@@ -76,10 +76,8 @@ async def test_person_reconcile(
     )
 
     # Create person with the wrong name
-    person_uuid = uuid4()
     await graphql_client.create_person(
         input=EmployeeCreateInput(
-            uuid=person_uuid,
             cpr_number=CPR,
             given_name="RECONCILE",
             surname="ME",

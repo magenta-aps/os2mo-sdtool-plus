@@ -7,6 +7,7 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
+from fastramqpi.pytest_util import retry
 from httpx import AsyncClient
 from more_itertools import one
 from respx import MockRouter
@@ -35,7 +36,133 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
+from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
+
+
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "EVENT_BASED_SYNC": "true",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+@pytest.mark.integration_test
+async def test_engagement_reconcile(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+) -> None:
+    """Test that changes in MO are reconciled.
+
+    This is a simple smoke-test to ensure that the GraphQL event system is
+    properly configured.
+    """
+    person_cpr = CPRNumber("0101011234")
+    employment_identifier = "12345"
+    engagement_user_key = f"II-{employment_identifier}"
+
+    # Configure SD API mock
+    sd_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>12345</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>10000000-0000-0000-0000-000000000000</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name4</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Create person
+    person_uuid = (
+        await graphql_client.create_person(
+            EmployeeCreateInput(
+                cpr_number=person_cpr,
+                given_name="Chuck",
+                surname="Norris",
+            )
+        )
+    ).uuid
+
+    # Create engagement under the wrong org unit
+    engagement_types = await get_engagement_types(graphql_client)
+    await graphql_client.create_engagement(
+        EngagementCreateInput(
+            user_key=engagement_user_key,
+            validity=RAValidityInput(from_=datetime(2000, 1, 1), to=None),
+            person=person_uuid,
+            org_unit=UUID("12121212-1212-1212-1212-121212121212"),
+            engagement_type=engagement_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # Ensure that the org unit is reconciled
+    @retry()
+    async def verify() -> None:
+        mo_engagement = await graphql_client.get_engagement_timeline(
+            person=person_uuid,
+            user_key=engagement_user_key,
+            from_date=None,
+            to_date=None,
+        )
+        validities = one(mo_engagement.objects).validities
+        org_units = {ou.uuid for v in validities for ou in v.org_unit}
+        assert org_units == {UUID("10000000-0000-0000-0000-000000000000")}
+
+    await verify()
 
 
 @pytest.mark.integration_test

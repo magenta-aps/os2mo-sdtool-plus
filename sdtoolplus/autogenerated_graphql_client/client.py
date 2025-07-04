@@ -536,11 +536,11 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return GetPerson.parse_obj(data).employees
 
-    async def get_person_cpr(self, uuid: UUID) -> GetPersonCprEmployees:
+    async def get_person_cpr(self, filter: EmployeeFilter) -> GetPersonCprEmployees:
         query = gql(
             """
-            query GetPersonCpr($uuid: UUID!) {
-              employees(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
+            query GetPersonCpr($filter: EmployeeFilter!) {
+              employees(filter: $filter) {
                 objects {
                   validities {
                     cpr_number
@@ -550,7 +550,7 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"uuid": uuid}
+        variables: dict[str, object] = {"filter": filter}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetPersonCpr.parse_obj(data).employees

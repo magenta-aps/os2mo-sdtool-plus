@@ -227,8 +227,8 @@ query GetPerson($cpr: CPR!) {
   }
 }
 
-query GetPersonCpr($uuid: UUID!) {
-  employees(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+query GetPersonCpr($filter: EmployeeFilter!) {
+  employees(filter: $filter) {
     objects {
       validities {
         cpr_number
@@ -236,6 +236,7 @@ query GetPersonCpr($uuid: UUID!) {
     }
   }
 }
+
 
 query GetPersonTimeline($filter: EmployeeFilter) {
   employees(filter: $filter) {
