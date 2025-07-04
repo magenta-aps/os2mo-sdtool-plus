@@ -414,6 +414,11 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "EVENT_BASED_SYNC": "true"
+    }
+)
 async def test_ou_timeline_sd_unit_priority_sync_via_update_operation(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,

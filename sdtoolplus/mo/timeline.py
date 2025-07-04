@@ -530,6 +530,7 @@ async def create_ou(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            return
 
     logger.debug("OU created", uuid=str(org_unit))
 
@@ -625,6 +626,7 @@ async def update_ou(
                         institution_identifier=institution_identifier,
                         priority=priority,
                     )
+                    return
 
             logger.debug("OU updated", uuid=str(org_unit))
         return
@@ -668,6 +670,7 @@ async def update_ou(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            return
 
     logger.debug("OU updated", uuid=str(org_unit))
 
@@ -791,6 +794,7 @@ async def terminate_ou(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            return
 
     logger.debug("OU terminated", org_unit=str(org_unit))
 
