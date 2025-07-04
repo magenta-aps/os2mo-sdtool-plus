@@ -227,6 +227,16 @@ query GetPerson($cpr: CPR!) {
   }
 }
 
+query GetPersonCpr($uuid: UUID!) {
+  employees(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+    objects {
+      validities {
+        cpr_number
+      }
+    }
+  }
+}
+
 query GetPersonTimeline($filter: EmployeeFilter) {
   employees(filter: $filter) {
     objects {

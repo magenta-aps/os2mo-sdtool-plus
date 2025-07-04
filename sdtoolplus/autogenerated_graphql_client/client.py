@@ -1,9 +1,9 @@
 from datetime import datetime
-from typing import Any
 from typing import Optional
 from typing import Union
 from uuid import UUID
 
+from ..types import CPRNumber
 from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
@@ -61,6 +61,8 @@ from .get_parent_roots import GetParentRoots
 from .get_parent_roots import GetParentRootsOrgUnits
 from .get_person import GetPerson
 from .get_person import GetPersonEmployees
+from .get_person_cpr import GetPersonCpr
+from .get_person_cpr import GetPersonCprEmployees
 from .get_person_timeline import GetPersonTimeline
 from .get_person_timeline import GetPersonTimelineEmployees
 from .get_related_units import GetRelatedUnits
@@ -517,7 +519,7 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return GetOrgUnitChildren.parse_obj(data).org_units
 
-    async def get_person(self, cpr: Any) -> GetPersonEmployees:
+    async def get_person(self, cpr: CPRNumber) -> GetPersonEmployees:
         query = gql(
             """
             query GetPerson($cpr: CPR!) {
@@ -533,6 +535,25 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetPerson.parse_obj(data).employees
+
+    async def get_person_cpr(self, uuid: UUID) -> GetPersonCprEmployees:
+        query = gql(
+            """
+            query GetPersonCpr($uuid: UUID!) {
+              employees(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
+                objects {
+                  validities {
+                    cpr_number
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetPersonCpr.parse_obj(data).employees
 
     async def get_person_timeline(
         self, filter: Union[Optional[EmployeeFilter], UnsetType] = UNSET

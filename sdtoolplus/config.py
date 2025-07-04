@@ -81,6 +81,9 @@ class SDToolPlusSettings(BaseSettings):
     # 3) Apply the special engagement OU strategy for the regions.
     mode: Mode = Mode.MUNICIPALITY
 
+    # Enable new event-based timeline-sync
+    event_based_sync: bool = False
+
     # SD AMQP
     sd_amqp: SDAMQPSettings | None = None
 

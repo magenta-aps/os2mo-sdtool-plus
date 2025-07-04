@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from ..types import CPRNumber
 from .base_model import UNSET
 from .base_model import BaseModel
 from .base_model import UnsetType
@@ -244,7 +245,7 @@ class EmployeeCreateInput(BaseModel):
     nickname_given_name: Optional[str] = None
     nickname_surname: Optional[str] = None
     seniority: Optional[Any] = None
-    cpr_number: Optional[Any] = None
+    cpr_number: Optional[CPRNumber] = None
     given_name: str
     surname: str
 
@@ -256,7 +257,7 @@ class EmployeeFilter(BaseModel):
     to_date: Optional[datetime] | UnsetType = UNSET
     registration: Optional["EmployeeRegistrationFilter"] = None
     query: Optional[str] | UnsetType = UNSET
-    cpr_numbers: Optional[List[Any]] = None
+    cpr_numbers: Optional[List[CPRNumber]] = None
 
 
 class EmployeeRegistrationFilter(BaseModel):
@@ -278,7 +279,7 @@ class EmployeeUpdateInput(BaseModel):
     nickname_given_name: Optional[str] = None
     nickname_surname: Optional[str] = None
     seniority: Optional[Any] = None
-    cpr_number: Optional[Any] = None
+    cpr_number: Optional[CPRNumber] = None
     given_name: Optional[str] = None
     surname: Optional[str] = None
     validity: "RAValidityInput"
@@ -1201,7 +1202,7 @@ class UuidsBoundEmployeeFilter(BaseModel):
     to_date: Optional[datetime] | UnsetType = UNSET
     registration: Optional["EmployeeRegistrationFilter"] = None
     query: Optional[str] | UnsetType = UNSET
-    cpr_numbers: Optional[List[Any]] = None
+    cpr_numbers: Optional[List[CPRNumber]] = None
 
 
 class UuidsBoundEngagementFilter(BaseModel):

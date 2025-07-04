@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Any
 from typing import List
 from typing import Optional
 from uuid import UUID
 
 from pydantic import Field
 
+from ..types import CPRNumber
 from .base_model import BaseModel
 
 
@@ -34,7 +34,7 @@ class GetEngagementsEngagementsObjectsValiditiesValidity(BaseModel):
 
 
 class GetEngagementsEngagementsObjectsValiditiesPerson(BaseModel):
-    cpr_number: Optional[Any]
+    cpr_number: Optional[CPRNumber]
 
 
 GetEngagements.update_forward_refs()
