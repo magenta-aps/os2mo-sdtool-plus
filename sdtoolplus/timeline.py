@@ -121,6 +121,15 @@ def _prefix_eng_user_key(
     return _sd_inst_id_prefix(user_key, inst_id)
 
 
+def _split_engagement_user_key(
+    settings: SDToolPlusSettings, user_key: str
+) -> tuple[str, str]:
+    if settings.mode == Mode.MUNICIPALITY:
+        return settings.sd_institution_identifier, user_key
+    institution_identifier, employment_id = user_key.split("-")
+    return institution_identifier, employment_id
+
+
 def prefix_unit_id_with_inst_id(
     settings: SDToolPlusSettings, unit_timeline: UnitTimeline, inst_id: str
 ) -> UnitTimeline:
@@ -1247,7 +1256,10 @@ async def sync_mo_engagement_sd_units(
     engagements = []
     for obj in mo_engagements.objects:
         try:
-            inst_id, emp_id = first(obj.validities).user_key.split("-")
+            inst_id, emp_id = _split_engagement_user_key(
+                settings=settings,
+                user_key=first(obj.validities).user_key,
+            )
             engagements.append(
                 Engagement(
                     institution_identifier=inst_id,
