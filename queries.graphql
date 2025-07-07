@@ -181,6 +181,17 @@ query GetParentRoots($input: OrganisationUnitFilter!) {
   }
 }
 
+query GetOrgUnitUserKeys($input: OrganisationUnitFilter!) {
+  org_units(filter: $input) {
+    objects {
+      uuid
+      validities {
+        user_key
+      }
+    }
+  }
+}
+
 mutation CreateOrgUnit($input: OrganisationUnitCreateInput!) {
   org_unit_create(input: $input) {
     uuid
