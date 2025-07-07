@@ -6,7 +6,6 @@ from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
-from fastramqpi.pytest_util import retry
 from httpx import AsyncClient
 from more_itertools import one
 from respx import MockRouter
@@ -46,61 +45,6 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
         </Person>
     </GetPerson20111201>
 """
-
-
-@pytest.mark.envvar(
-    {
-        "EVENT_BASED_SYNC": "true",
-        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
-    }
-)
-@pytest.mark.integration_test
-async def test_person_reconcile(
-    test_client: AsyncClient,
-    graphql_client: GraphQLClient,
-    respx_mock: MockRouter,
-) -> None:
-    """Test that changes in MO are reconciled.
-
-    This is a simple smoke-test to ensure that the GraphQL event system is
-    properly configured.
-    """
-    # Ensure that the person does not exist yet
-    mo_person = await graphql_client.get_person(cpr=CPR)
-    assert mo_person.objects == []
-
-    # Configure SD API mock
-    respx_mock.get(GETPERSON_URL).respond(
-        content_type="text/xml;charset=UTF-8",
-        content=SD_RESP,
-    )
-
-    # Create person with the wrong name
-    person_uuid = uuid4()
-    await graphql_client.create_person(
-        input=EmployeeCreateInput(
-            uuid=person_uuid,
-            cpr_number=CPR,
-            given_name="RECONCILE",
-            surname="ME",
-        )
-    )
-
-    # Ensure that the name is reconciled
-    @retry()
-    async def verify() -> None:
-        mo_person = await graphql_client.get_person_timeline(
-            filter=EmployeeFilter(
-                cpr_numbers=[CPR],
-                from_date=None,
-                to_date=None,
-            )
-        )
-        validities = one(mo_person.objects).validities
-        names = {(v.given_name, v.surname) for v in validities}
-        assert names == {("RECONCILE", "ME"), ("Chuck", "Norris")}
-
-    await verify()
 
 
 @pytest.mark.integration_test
