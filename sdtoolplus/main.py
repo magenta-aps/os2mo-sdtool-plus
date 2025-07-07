@@ -158,6 +158,12 @@ def create_fastramqpi() -> FastRAMQPI:
                     routing_key="engagement",
                     path="/events/mo/engagement",
                 ),
+                Listener(
+                    namespace="mo",
+                    user_key="org_unit",
+                    routing_key="org_unit",
+                    path="/events/mo/org-unit",
+                ),
                 # SD
                 Listener(
                     namespace="sd",
