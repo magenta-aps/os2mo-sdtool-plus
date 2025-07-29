@@ -598,19 +598,21 @@ async def update_ou(
                 try:
                     await gql_client.update_org_unit(payload)
                 except GraphQLClientGraphQLMultiError as error:
-                    if not (
-                        str(one(error.errors))
-                        == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
-                    ):
+                    mo_error = str(one(error.errors))
+                    if mo_error not in [
+                        "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
+                        "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
+                    ]:
                         raise error
 
                     queue_priority = priority - 1
                     logger.error(
-                        "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                        "Cannot update unit due to MO error. Queuing parent",
                         org_unit=str(org_unit),
                         start=start,
                         end=end,
                         priority=queue_priority,
+                        mo_error=mo_error,
                     )
                     await _queue_ou_parent(
                         gql_client=gql_client,
@@ -644,16 +646,21 @@ async def update_ou(
         try:
             await gql_client.update_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
-            if not str(one(error.errors)) == "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE":
+            mo_error = str(one(error.errors))
+            if mo_error not in [
+                "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
+                "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
+            ]:
                 raise error
 
             queue_priority = priority - 1
             logger.error(
-                "Cannot update unit due to a too narrow parent validity. Queuing parent",
+                "Cannot update unit due to MO error. Queuing parent",
                 org_unit=str(org_unit),
                 start=start,
                 end=end,
                 priority=queue_priority,
+                mo_error=mo_error,
             )
             await _queue_ou_parent(
                 gql_client=gql_client,
