@@ -450,6 +450,10 @@ def patch_missing_parents(
     parent_intervals = []
     for start, end in pairwise(endpoints):
         try:
+            desired_unit_timeline.active.entity_at(start)
+        except NoValueError:
+            continue
+        try:
             unit_parent = desired_unit_timeline.parent.entity_at(start)
             parent_intervals.append(
                 UnitParent(
