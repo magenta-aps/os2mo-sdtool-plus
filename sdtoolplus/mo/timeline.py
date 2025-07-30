@@ -720,7 +720,13 @@ async def terminate_ou(
     priority: int,
     dry_run: bool = False,
 ) -> None:
-    logger.info("(Re-)terminate OU", org_unit=str(org_unit))
+    logger.info("Terminate OU", org_unit=str(org_unit), start=start, end=end)
+    if end - start <= timedelta(days=1):
+        # Necessary due to https://redmine.magenta.dk/issues/65130
+        logger.error(
+            "Cannot terminate unit in an interval shorter than one day due to MO"
+        )
+        return
 
     mo_validity = timeline_interval_to_mo_validity(start, end)
 
