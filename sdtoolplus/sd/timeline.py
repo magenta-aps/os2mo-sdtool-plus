@@ -177,14 +177,16 @@ async def get_department_timeline(
 
 def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNumber]:
     timeline = Timeline[UnitPNumber](
-        intervals=tuple(
-            UnitPNumber(
-                start=sd_start_to_timeline_start(dep.ActivationDate),
-                end=sd_end_to_timeline_end(dep.DeactivationDate),
-                value=dep.ProductionUnitIdentifier,
+        intervals=combine_intervals(
+            tuple(
+                UnitPNumber(
+                    start=sd_start_to_timeline_start(dep.ActivationDate),
+                    end=sd_end_to_timeline_end(dep.DeactivationDate),
+                    value=dep.ProductionUnitIdentifier,
+                )
+                for dep in department.Department
+                if dep.ProductionUnitIdentifier is not None
             )
-            for dep in department.Department
-            if dep.ProductionUnitIdentifier is not None
         )
     )
     logger.debug("SD P-number timeline", timeline=timeline.dict())
@@ -196,14 +198,19 @@ def get_postal_address_timeline(
     department: GetDepartmentResponse,
 ) -> Timeline[UnitPostalAddress]:
     timeline = Timeline[UnitPostalAddress](
-        intervals=tuple(
-            UnitPostalAddress(
-                start=sd_start_to_timeline_start(dep.ActivationDate),
-                end=sd_end_to_timeline_end(dep.DeactivationDate),
-                value=f"{dep.PostalAddress.StandardAddressIdentifier}, {dep.PostalAddress.PostalCode}, {dep.PostalAddress.DistrictName}",
+        intervals=combine_intervals(
+            tuple(
+                UnitPostalAddress(
+                    start=sd_start_to_timeline_start(dep.ActivationDate),
+                    end=sd_end_to_timeline_end(dep.DeactivationDate),
+                    value=f"{dep.PostalAddress.StandardAddressIdentifier}, {dep.PostalAddress.PostalCode}, {dep.PostalAddress.DistrictName}",
+                )
+                for dep in department.Department
+                if dep.PostalAddress is not None
+                and dep.PostalAddress.StandardAddressIdentifier is not None
+                and dep.PostalAddress.PostalCode is not None
+                and dep.PostalAddress.DistrictName is not None
             )
-            for dep in department.Department
-            if dep.PostalAddress is not None
         )
     )
     logger.debug("SD postal address timeline", timeline=timeline.dict())
@@ -217,16 +224,19 @@ def get_phone_number_timeline(
     # According to the spec we will always only sync the *first* phone number in the
     # SD response (unless it equals "00000000" which means that it has not been set)
     timeline = Timeline[UnitPhoneNumber](
-        intervals=tuple(
-            UnitPhoneNumber(
-                start=sd_start_to_timeline_start(dep.ActivationDate),
-                end=sd_end_to_timeline_end(dep.DeactivationDate),
-                value=first(dep.ContactInformation.TelephoneNumberIdentifier),
+        intervals=combine_intervals(
+            tuple(
+                UnitPhoneNumber(
+                    start=sd_start_to_timeline_start(dep.ActivationDate),
+                    end=sd_end_to_timeline_end(dep.DeactivationDate),
+                    value=first(dep.ContactInformation.TelephoneNumberIdentifier),
+                )
+                for dep in department.Department
+                if dep.ContactInformation is not None
+                and dep.ContactInformation.TelephoneNumberIdentifier is not None
+                and first(dep.ContactInformation.TelephoneNumberIdentifier)
+                != "00000000"
             )
-            for dep in department.Department
-            if dep.ContactInformation is not None
-            and dep.ContactInformation.TelephoneNumberIdentifier is not None
-            and first(dep.ContactInformation.TelephoneNumberIdentifier) != "00000000"
         )
     )
     logger.debug("SD phone number timeline", timeline=timeline.dict())
