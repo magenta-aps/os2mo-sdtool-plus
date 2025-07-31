@@ -563,7 +563,10 @@ def create_fastramqpi() -> FastRAMQPI:
             if department.DepartmentLevelIdentifier == "Afdelings-niveau":
                 return DEFAULT_PRIORITY
             match = ny_regex.match(department.DepartmentLevelIdentifier)
-            assert match
+            assert match, (
+                f"Unknown department level: {department.DepartmentLevelIdentifier} "
+                f"found in unit {department.DepartmentUUIDIdentifier}"
+            )
             priority = DEFAULT_PRIORITY - int(one(match.groups()))
             return priority
 
@@ -571,8 +574,8 @@ def create_fastramqpi() -> FastRAMQPI:
             sd_client.get_department,
             GetDepartmentRequest(
                 InstitutionIdentifier=institution_identifier,
-                ActivationDate=datetime.datetime.min,
-                DeactivationDate=datetime.datetime.max,
+                ActivationDate=datetime.datetime.now(),
+                DeactivationDate=datetime.datetime.now(),
                 DepartmentNameIndicator=False,
                 UUIDIndicator=True,
                 PostalAddressIndicator=False,
@@ -587,7 +590,7 @@ def create_fastramqpi() -> FastRAMQPI:
         events = [
             EventSendInput(
                 namespace="sd",
-                routing_key="org_unit",
+                routing_key="org",
                 subject=OrgGraphQLEvent(
                     institution_identifier=institution_identifier,
                     org_unit=d.DepartmentUUIDIdentifier,
