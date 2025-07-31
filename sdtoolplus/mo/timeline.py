@@ -157,7 +157,7 @@ async def get_class(
 
     current = one(
         ou_type_classes.objects,
-        too_short=ClassNotFoundError,
+        too_short=ClassNotFoundError(facet_user_key, class_user_key),
         too_long=MoreThanOneClassError,
     ).current
     assert current is not None
@@ -1034,7 +1034,10 @@ async def create_engagement(
     )
     current_job_function = one(
         r_job_function.objects,
-        too_short=ClassNotFoundError,
+        too_short=ClassNotFoundError(
+            facet_user_key="engagement_job_function",
+            class_user_key=str(desired_eng_timeline.eng_key.entity_at(start).value),
+        ),
         too_long=MoreThanOneClassError,
     ).current
     assert current_job_function is not None
@@ -1164,7 +1167,10 @@ async def update_engagement(
     )
     current_job_function = one(
         r_job_function.objects,
-        too_short=ClassNotFoundError,
+        too_short=ClassNotFoundError(
+            facet_user_key="engagement_job_function",
+            class_user_key=str(desired_eng_timeline.eng_key.entity_at(start).value),
+        ),
         too_long=MoreThanOneClassError,
     ).current
     assert current_job_function is not None
@@ -1609,7 +1615,10 @@ async def create_postal_address(
     )
     current = one(
         ou_type_classes.objects,
-        too_short=ClassNotFoundError,
+        too_short=ClassNotFoundError(
+            facet_user_key="org_unit_address_type",
+            class_user_key="AdresseSDOrgUnit",
+        ),
         too_long=MoreThanOneClassError,
     ).current
     assert current is not None

@@ -347,7 +347,10 @@ async def _sync_leave_intervals(
     r_leave_type = await gql_client.get_class(ClassFilter(user_keys=["Orlov"]))
     leave_type = one(
         r_leave_type.objects,
-        too_short=ClassNotFoundError,
+        too_short=ClassNotFoundError(
+            facet_user_key="leave_type",
+            class_user_key="Orlov",
+        ),
         too_long=MoreThanOneClassError,
     ).uuid
 

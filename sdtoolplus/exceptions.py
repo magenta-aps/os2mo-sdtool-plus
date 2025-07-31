@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import structlog.stdlib
 from fastapi import HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
@@ -7,15 +8,23 @@ from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
+logger = structlog.stdlib.get_logger()
+
 
 class NoValueError(Exception):
     pass
 
 
 class ClassNotFoundError(HTTPException):
-    def __init__(self) -> None:
+    def __init__(self, facet_user_key: str, class_user_key: str) -> None:
+        logger.error(
+            "Class not found!",
+            facet_user_key=facet_user_key,
+            class_user_key=class_user_key,
+        )
         super().__init__(
-            status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Class not found in MO!"
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Class ({facet_user_key}/{class_user_key}) not found in MO!",
         )
 
 
