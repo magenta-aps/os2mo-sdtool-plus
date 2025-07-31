@@ -4,16 +4,37 @@ from datetime import datetime
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.timeline import patch_missing_parents
+from tests.integration.conftest import UNKNOWN_UNIT
+
+SOME_UNIT_UUID = uuid4()
+
+
+@pytest.fixture()
+def settings(sdtoolplus_settings: SDToolPlusSettings) -> SDToolPlusSettings:
+    settings = sdtoolplus_settings.dict()
+    settings.update(
+        {
+            "mode": "region",
+            "unknown_unit": str(UNKNOWN_UNIT),
+            "apply_ny_logic": False,
+            "mo_subtree_paths_for_root": {
+                "II": [SOME_UNIT_UUID],
+            },
+        }
+    )
+    return SDToolPlusSettings.parse_obj(settings)
 
 
 def test_patch_missing_parents_does_nothing_when_all_parents_exist(
-    sdtoolplus_settings: SDToolPlusSettings,
+    settings: SDToolPlusSettings,
 ):
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
@@ -26,18 +47,6 @@ def test_patch_missing_parents_does_nothing_when_all_parents_exist(
     parent_uuid1 = uuid4()
     parent_uuid2 = uuid4()
     parent_uuid3 = uuid4()
-
-    settings = sdtoolplus_settings.dict()
-    settings.update(
-        {
-            "mode": "region",
-            "unknown_unit": str(uuid4()),
-            "apply_ny_logic": False,
-            "mo_subtree_paths_for_root": {
-                "II": [str(uuid4()), str(uuid4())],
-            },
-        }
-    )
 
     desired_unit_timeline = UnitTimeline(
         active=Timeline[Active](intervals=(Active(start=t1, end=t4, value=True),)),
@@ -61,7 +70,7 @@ def test_patch_missing_parents_does_nothing_when_all_parents_exist(
 
 
 def test_patch_missing_parents_handles_missing_parent(
-    sdtoolplus_settings: SDToolPlusSettings,
+    settings: SDToolPlusSettings,
 ):
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
@@ -73,19 +82,6 @@ def test_patch_missing_parents_handles_missing_parent(
 
     parent_uuid1 = uuid4()
     parent_uuid2 = uuid4()
-    unknown_unit = uuid4()
-
-    settings = sdtoolplus_settings.dict()
-    settings.update(
-        {
-            "mode": "region",
-            "unknown_unit": str(unknown_unit),
-            "apply_ny_logic": False,
-            "mo_subtree_paths_for_root": {
-                "II": [str(uuid4()), str(uuid4())],
-            },
-        }
-    )
 
     desired_unit_timeline = UnitTimeline(
         active=Timeline[Active](intervals=(Active(start=t1, end=t4, value=True),)),
@@ -108,14 +104,14 @@ def test_patch_missing_parents_handles_missing_parent(
     assert patched_timeline.parent == Timeline[UnitParent](
         intervals=(
             UnitParent(start=t1, end=t2, value=parent_uuid1),
-            UnitParent(start=t2, end=t3, value=unknown_unit),
+            UnitParent(start=t2, end=t3, value=UNKNOWN_UNIT),
             UnitParent(start=t3, end=t4, value=parent_uuid2),
         )
     )
 
 
 def test_patch_missing_parents_handles_holes_in_timeline(
-    sdtoolplus_settings: SDToolPlusSettings,
+    settings: SDToolPlusSettings,
 ):
     """
     We test this scenario:
@@ -140,19 +136,6 @@ def test_patch_missing_parents_handles_holes_in_timeline(
 
     parent_uuid1 = uuid4()
     parent_uuid2 = uuid4()
-    unknown_unit = uuid4()
-
-    settings = sdtoolplus_settings.dict()
-    settings.update(
-        {
-            "mode": "region",
-            "unknown_unit": str(unknown_unit),
-            "apply_ny_logic": False,
-            "mo_subtree_paths_for_root": {
-                "II": [str(uuid4()), str(uuid4())],
-            },
-        }
-    )
 
     desired_unit_timeline = UnitTimeline(
         active=Timeline[Active](
@@ -181,7 +164,7 @@ def test_patch_missing_parents_handles_holes_in_timeline(
     assert patched_timeline.parent == Timeline[UnitParent](
         intervals=(
             UnitParent(start=t1, end=t2, value=parent_uuid1),
-            UnitParent(start=t3, end=t4, value=unknown_unit),
+            UnitParent(start=t3, end=t4, value=UNKNOWN_UNIT),
             UnitParent(start=t4, end=t5, value=parent_uuid2),
         )
     )
