@@ -454,22 +454,16 @@ def patch_missing_parents(
         except NoValueError:
             continue
         try:
-            unit_parent = desired_unit_timeline.parent.entity_at(start)
-            parent_intervals.append(
-                UnitParent(
-                    start=start,
-                    end=end,
-                    value=unit_parent.value,
-                )
-            )
+            parent_uuid = desired_unit_timeline.parent.entity_at(start).value
         except NoValueError:
-            parent_intervals.append(
-                UnitParent(
-                    start=start,
-                    end=end,
-                    value=settings.unknown_unit,
-                )
+            parent_uuid = settings.unknown_unit  # type: ignore
+        parent_intervals.append(
+            UnitParent(
+                start=start,
+                end=end,
+                value=parent_uuid,
             )
+        )
 
     return UnitTimeline(
         active=desired_unit_timeline.active,
