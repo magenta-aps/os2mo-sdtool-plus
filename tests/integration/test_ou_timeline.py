@@ -1195,7 +1195,7 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
     SD (active)             |------------------|             |--------------------|
     SD (name)               |-------name4------|             |-------name4--------|
     SD (id)                 |-------ABCD-------|             |-------ABCD---------|
-    SD (level)              |-------NY0--------|             |-------name4--------|
+    SD (level)              |-------NY0--------|             |--------NY0---------|
     SD (parent)             |-------dep1-------|             |-------dep1---------|
     SD (PNumber)            |-----2345678901---|             |-----3456789012-----|
     SD (Postal addr)        |---Karate Street--|             |----Judo Street-----|
@@ -1473,6 +1473,286 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
     assert phone_number_validity.value == "23456789"
 
     assert len(phone_number_validities) == 2
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_ou_timeline_address_intervals_are_combined(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  ------------------t1-----------------t2---------------------------------t3-->
+
+    MO (active)             |----------------------------------------------------------
+    MO (name)               |----------------------name4-------------------------------
+    MO (id)                 |---------------------II-ABCD------------------------------
+    MO (level)              |-----------------------NY0--------------------------------
+    MO (parent)             |-----------------------dep1-------------------------------
+    MO (PNumber)            |---------------------1234567890---------------------------
+    MO (postal)             |---------------Kung Fu Street 1, 1000, Andeby ------------
+    MO (phone)              |---------------------98765432-----------------------------
+
+    "Arrange" intervals     |------------------------1---------------------------------
+
+    SD (active)             |------------------|----------------------------------|
+    SD (name)               |-------name4------|---------------------name5--------|
+    SD (id)                 |-------ABCD-------|---------------------ABCD---------|
+    SD (level)              |-------NY0--------|----------------------NY0---------|
+    SD (parent)             |------------------dep1-------------------------------|
+
+    SD (PNumber)            |-----2345678901---|-------------------2345678901-----|
+    SD (Postal addr)        |---Karate Street--|----------------Karate Street-----|
+    SD (phone)              |------12345678----|------------------12345678--------|
+
+    "Assert"                |-----------------1-----------------------------------|
+    intervals
+
+    In SD: id = DepartmentIdentifier
+    In MO: id = user_key
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Create unit (arrange interval 1)
+    await graphql_client._testing__create_org_unit(
+        uuid=unit_uuid,
+        name="name4",
+        user_key="II-ABCD",
+        org_unit_type=org_unit_type,
+        org_unit_level=org_unit_levels["NY0-niveau"],
+        from_date=t1,
+        parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+    )
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="visibility",
+        class_user_key="Public",
+    )
+
+    # Get the P-number address type
+    p_number_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="P-nummer",
+    )
+
+    # Get the postal address type
+    postal_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="AdresseAPOSOrgUnit",
+    )
+
+    # Get the phone number address type
+    phone_number_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="lokation_telefon_lokal",
+    )
+
+    # Create P-number address
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            user_key="1234567890",
+            value="1234567890",
+            address_type=p_number_address_type_uuid,
+        )
+    )
+
+    # Create postal address
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            user_key="Kung Fu Street 1, 1000, Andeby",
+            value="Kung Fu Street 1, 1000, Andeby",
+            address_type=postal_address_type_uuid,
+        )
+    )
+
+    # Create phone number
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            user_key="98765432",
+            value="98765432",
+            address_type=phone_number_type_uuid,
+        )
+    )
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>false</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2001-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name4</DepartmentName>
+            <ProductionUnitIdentifier>2345678901</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Karate Street 1</StandardAddressIdentifier>
+              <PostalCode>2000</PostalCode>
+              <DistrictName>Gåserød</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+            <ContactInformation>
+              <TelephoneNumberIdentifier>12345678</TelephoneNumberIdentifier>
+              <TelephoneNumberIdentifier>34567890</TelephoneNumberIdentifier>
+            </ContactInformation>
+          </Department>
+          <Department>
+            <ActivationDate>2002-01-01</ActivationDate>
+            <DeactivationDate>2002-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name2</DepartmentName>
+            <ProductionUnitIdentifier>2345678901</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Karate Street 1</StandardAddressIdentifier>
+              <PostalCode>2000</PostalCode>
+              <DistrictName>Gåserød</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+            <ContactInformation>
+              <TelephoneNumberIdentifier>12345678</TelephoneNumberIdentifier>
+              <TelephoneNumberIdentifier>12345678</TelephoneNumberIdentifier>
+            </ContactInformation>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "2002-12-31",
+                "parentUuid": "10000000-0000-0000-0000-000000000000",
+            }
+        ],
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    pnumber_addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["P-nummer"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    pnumber_address_validity = one(one(pnumber_addresses.objects).validities)
+
+    # Check the P-number in "assert interval 1"
+    assert pnumber_address_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(pnumber_address_validity.validity.to) == t3
+    assert pnumber_address_validity.user_key == "2345678901"
+    assert pnumber_address_validity.value == "2345678901"
+
+    postal_addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["AdresseAPOSOrgUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    postal_address_validity = one(one(postal_addresses.objects).validities)
+
+    # Check the postal address in "assert interval 1"
+    assert postal_address_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(postal_address_validity.validity.to) == t3
+    assert postal_address_validity.user_key == "Karate Street 1, 2000, Gåserød"
+    assert postal_address_validity.value == "Karate Street 1, 2000, Gåserød"
+
+    phone_numbers = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["lokation_telefon_lokal"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    phone_number_validity = one(one(phone_numbers.objects).validities)
+
+    # Check the postal address in "assert interval 1"
+    assert phone_number_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(phone_number_validity.validity.to) == t3
+    assert phone_number_validity.user_key == "12345678"
+    assert phone_number_validity.value == "12345678"
 
 
 @pytest.mark.integration_test
