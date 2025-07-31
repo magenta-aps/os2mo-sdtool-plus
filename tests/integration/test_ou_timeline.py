@@ -1950,7 +1950,7 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
     }
 )
-async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
+async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -1973,6 +1973,10 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     SD (parent)                           MISSING!
     """
     # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
     unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
 
     sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -1995,7 +1999,7 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
           <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
           <Department>
             <ActivationDate>2001-01-01</ActivationDate>
-            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
             <DepartmentIdentifier>ABCD</DepartmentIdentifier>
             <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
             <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
@@ -2026,8 +2030,16 @@ async def test_ou_timeline_skip_create_new_unit_when_missing_data_from_sd(
     # Assert
     assert r.status_code == 200
 
-    mo_org_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
-    assert mo_org_unit.objects == []
+    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    validity = one(one(created_unit.objects).validities)
+
+    assert validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
+    assert validity.name == "name1"
+    assert validity.user_key == "II-ABCD"
+    assert validity.org_unit_level is not None
+    assert validity.org_unit_level.name == "NY0-niveau"
+    assert validity.parent_uuid == UNKNOWN_UNIT
 
 
 @pytest.mark.integration_test

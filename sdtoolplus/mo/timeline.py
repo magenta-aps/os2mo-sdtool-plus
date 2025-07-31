@@ -517,6 +517,7 @@ async def create_ou(
             logger.error(
                 "Cannot create unit due to a MO error. Queuing parent",
                 org_unit=str(org_unit),
+                parent=parent,
                 start=start,
                 end=end,
                 priority=queue_priority,
@@ -613,6 +614,7 @@ async def update_ou(
                     logger.error(
                         "Cannot update unit due to MO error. Queuing parent",
                         org_unit=str(org_unit),
+                        parent=parent,
                         start=start,
                         end=end,
                         priority=queue_priority,
@@ -661,6 +663,7 @@ async def update_ou(
             logger.error(
                 "Cannot update unit due to MO error. Queuing parent",
                 org_unit=str(org_unit),
+                parent=parent,
                 start=start,
                 end=end,
                 priority=queue_priority,

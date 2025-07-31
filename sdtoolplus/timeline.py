@@ -434,6 +434,48 @@ async def _sync_leave_intervals(
     )
 
 
+def patch_missing_parents(
+    settings: SDToolPlusSettings,
+    desired_unit_timeline: UnitTimeline,
+) -> UnitTimeline:
+    """
+    In some cases, an SD unit does not have a parent in its entire validity
+    interval. This function patches the unit timeline with the parent "Unknown"
+    in the intervals, where the SD unit does not have a parent.
+    """
+    # TODO: handle this for the municipality case
+    assert settings.mode == Mode.REGION
+
+    endpoints = sorted(desired_unit_timeline.get_interval_endpoints())
+    parent_intervals = []
+    for start, end in pairwise(endpoints):
+        try:
+            desired_unit_timeline.active.entity_at(start)
+        except NoValueError:
+            continue
+        try:
+            parent_uuid = desired_unit_timeline.parent.entity_at(start).value
+        except NoValueError:
+            parent_uuid = settings.unknown_unit  # type: ignore
+        parent_intervals.append(
+            UnitParent(
+                start=start,
+                end=end,
+                value=parent_uuid,
+            )
+        )
+
+    return UnitTimeline(
+        active=desired_unit_timeline.active,
+        name=desired_unit_timeline.name,
+        unit_id=desired_unit_timeline.unit_id,
+        unit_level=desired_unit_timeline.unit_level,
+        parent=Timeline[UnitParent](
+            intervals=combine_intervals(tuple(parent_intervals))
+        ),
+    )
+
+
 async def _sync_ou_intervals(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
@@ -804,6 +846,7 @@ async def sync_ou(
     desired_unit_timeline = prefix_unit_id_with_inst_id(
         settings, sd_unit_timeline, institution_identifier
     )
+    desired_unit_timeline = patch_missing_parents(settings, desired_unit_timeline)
 
     mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 

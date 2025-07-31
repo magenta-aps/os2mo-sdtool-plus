@@ -1,119 +1,170 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
-from datetime import timedelta
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+import pytest
+
+from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
-from sdtoolplus.models import UnitId
-from sdtoolplus.models import UnitLevel
-from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
+from sdtoolplus.timeline import patch_missing_parents
+from tests.integration.conftest import UNKNOWN_UNIT
+
+SOME_UNIT_UUID = uuid4()
 
 
-def test__get_ou_interval_endpoints():
+@pytest.fixture()
+def settings(sdtoolplus_settings: SDToolPlusSettings) -> SDToolPlusSettings:
+    settings = sdtoolplus_settings.dict()
+    settings.update(
+        {
+            "mode": "region",
+            "unknown_unit": str(UNKNOWN_UNIT),
+            "apply_ny_logic": False,
+            "mo_subtree_paths_for_root": {
+                "II": [SOME_UNIT_UUID],
+            },
+        }
+    )
+    return SDToolPlusSettings.parse_obj(settings)
+
+
+def test_patch_missing_parents_does_nothing_when_all_parents_exist(
+    settings: SDToolPlusSettings,
+):
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
 
-    t1 = datetime(1990, 1, 1, tzinfo=tz)
-    t2 = datetime(1999, 1, 1, tzinfo=tz)
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
     t3 = datetime(2003, 1, 1, tzinfo=tz)
     t4 = datetime(2004, 1, 1, tzinfo=tz)
-    t5 = datetime(2005, 1, 1, tzinfo=tz)
-    t6 = datetime(2006, 1, 1, tzinfo=tz)
-    t7 = datetime(2007, 1, 1, tzinfo=tz)
 
-    ou_timeline = UnitTimeline(
-        active=Timeline[Active](
-            intervals=(
-                Active(start=t1, end=t2, value=True),
-                Active(start=t2, end=t3, value=False),
-            )
-        ),
-        name=Timeline[UnitName](
-            intervals=(
-                UnitName(start=t1, end=t3, value="name1"),
-                UnitName(start=t3, end=t4, value="name2"),
-            )
-        ),
-        unit_id=Timeline[UnitId](
-            intervals=(
-                UnitId(start=t5, end=t6, value="id1"),
-                UnitId(start=t6, end=t7, value="id2"),
-            )
-        ),
-        unit_level=Timeline[UnitLevel](
-            intervals=(
-                UnitLevel(start=t5, end=t6, value="level1"),
-                UnitLevel(start=t6, end=t7, value="level2"),
-            )
-        ),
+    parent_uuid1 = uuid4()
+    parent_uuid2 = uuid4()
+    parent_uuid3 = uuid4()
+
+    desired_unit_timeline = UnitTimeline(
+        active=Timeline[Active](intervals=(Active(start=t1, end=t4, value=True),)),
         parent=Timeline[UnitParent](
             intervals=(
-                UnitParent(start=t5, end=t6, value=uuid4()),
-                UnitParent(start=t6, end=t7, value=uuid4()),
+                UnitParent(start=t1, end=t2, value=parent_uuid1),
+                UnitParent(start=t2, end=t3, value=parent_uuid2),
+                UnitParent(start=t3, end=t4, value=parent_uuid3),
             )
         ),
     )
 
     # Act
-    endpoints = ou_timeline.get_interval_endpoints()
+    patched_timeline = patch_missing_parents(
+        settings=SDToolPlusSettings.parse_obj(settings),
+        desired_unit_timeline=desired_unit_timeline,
+    )
 
     # Assert
-    assert endpoints == {t1, t2, t3, t4, t5, t6, t7}
+    assert patched_timeline == desired_unit_timeline
 
 
-def test_is_equal_no_parent():
-    """Test the comparison 'equal_at' in the case where one timeline is not active and the other has no parent in the same interval
-        We are testing this scenario:
-
-    Time  --------t1-------------------t2----------------------------------t3>
-
-    MO (active)   |---------------------|
-    MO (parent)   |---------------------|
-
-    SD (active)   |---------------------------------------------------------->
-    SD (parent)   |---------------------|
-
-    "Assert"      |--------equal--------|-------- not equal------------------>
-    intervals
-    """
+def test_patch_missing_parents_handles_missing_parent(
+    settings: SDToolPlusSettings,
+):
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
 
-    t1 = datetime(1990, 1, 1, tzinfo=tz)
-    t2 = datetime(1999, 1, 1, tzinfo=tz)
-    t3 = datetime(9999, 1, 1, tzinfo=tz)
-    parent = uuid4()
-    ou_timeline = UnitTimeline(
-        active=Timeline[Active](intervals=(Active(start=t1, end=t3, value=True),)),
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+
+    parent_uuid1 = uuid4()
+    parent_uuid2 = uuid4()
+
+    desired_unit_timeline = UnitTimeline(
+        active=Timeline[Active](intervals=(Active(start=t1, end=t4, value=True),)),
         parent=Timeline[UnitParent](
-            intervals=(UnitParent(start=t1, end=t2, value=parent),)
-        ),
-        name=Timeline[UnitName](intervals=(UnitName(start=t1, end=t3, value="name1"),)),
-        unit_id=Timeline[UnitId](intervals=(UnitId(start=t1, end=t3, value="id1"),)),
-        unit_level=Timeline[UnitLevel](
-            intervals=(UnitLevel(start=t1, end=t3, value="level1"),)
+            intervals=(
+                UnitParent(start=t1, end=t2, value=parent_uuid1),
+                # PARENT MISSING BETWEEN t2 and t3
+                UnitParent(start=t3, end=t4, value=parent_uuid2),
+            )
         ),
     )
-    ou_timeline_2 = UnitTimeline(
-        active=Timeline[Active](intervals=(Active(start=t1, end=t2, value=True),)),
-        parent=Timeline[UnitParent](
-            intervals=(UnitParent(start=t1, end=t2, value=parent),)
+
+    # Act
+    patched_timeline = patch_missing_parents(
+        settings=SDToolPlusSettings.parse_obj(settings),
+        desired_unit_timeline=desired_unit_timeline,
+    )
+
+    # Assert
+    assert patched_timeline.parent == Timeline[UnitParent](
+        intervals=(
+            UnitParent(start=t1, end=t2, value=parent_uuid1),
+            UnitParent(start=t2, end=t3, value=UNKNOWN_UNIT),
+            UnitParent(start=t3, end=t4, value=parent_uuid2),
+        )
+    )
+
+
+def test_patch_missing_parents_handles_holes_in_timeline(
+    settings: SDToolPlusSettings,
+):
+    """
+    We test this scenario:
+
+    Time          ----t1-------t2-------t3----------t4-----------t5----->
+
+    SD (active)       |--------|        |------------------------|
+    SD (parent)       |---p1---|                    |-----p2-----|
+
+    Desired (active)  |--------|        |------------------------|
+    Desired (parent)  |---p1---|        |--unknown--|-----p2-----|
+    """
+
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+
+    parent_uuid1 = uuid4()
+    parent_uuid2 = uuid4()
+
+    desired_unit_timeline = UnitTimeline(
+        active=Timeline[Active](
+            intervals=(
+                Active(start=t1, end=t2, value=True),
+                Active(start=t3, end=t5, value=True),
+            )
         ),
-        name=Timeline[UnitName](intervals=(UnitName(start=t1, end=t2, value="name1"),)),
-        unit_id=Timeline[UnitId](intervals=(UnitId(start=t1, end=t2, value="id1"),)),
-        unit_level=Timeline[UnitLevel](
-            intervals=(UnitLevel(start=t1, end=t2, value="level1"),)
+        parent=Timeline[UnitParent](
+            intervals=(
+                UnitParent(start=t1, end=t2, value=parent_uuid1),
+                # HOLE BETWEEN t2 AND t3
+                # PARENT MISSING BETWEEN t3 AND t4
+                UnitParent(start=t4, end=t5, value=parent_uuid2),
+            )
         ),
     )
-    # Act/Assert
-    assert ou_timeline.equal_at(t1, ou_timeline_2)
-    assert ou_timeline.equal_at(t2 - timedelta(days=1), ou_timeline_2)
-    assert not ou_timeline.equal_at(t2, ou_timeline_2)
-    assert not ou_timeline.equal_at(t3 - timedelta(days=1), ou_timeline_2)
-    # There are no values in either timeline at t3
-    assert ou_timeline.equal_at(t3, ou_timeline_2)
+
+    # Act
+    patched_timeline = patch_missing_parents(
+        settings=SDToolPlusSettings.parse_obj(settings),
+        desired_unit_timeline=desired_unit_timeline,
+    )
+
+    # Assert
+    assert patched_timeline.parent == Timeline[UnitParent](
+        intervals=(
+            UnitParent(start=t1, end=t2, value=parent_uuid1),
+            UnitParent(start=t3, end=t4, value=UNKNOWN_UNIT),
+            UnitParent(start=t4, end=t5, value=parent_uuid2),
+        )
+    )
