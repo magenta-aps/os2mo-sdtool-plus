@@ -3,6 +3,7 @@
 import asyncio
 import datetime
 import re
+from copy import copy
 from uuid import UUID
 
 import structlog
@@ -63,6 +64,49 @@ from .timeline import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
+
+
+MO_LISTENERS = [
+    Listener(
+        namespace="mo",
+        user_key="person",
+        routing_key="person",
+        path="/events/mo/person",
+    ),
+    Listener(
+        namespace="mo",
+        user_key="engagement",
+        routing_key="engagement",
+        path="/events/mo/engagement",
+    ),
+    Listener(
+        namespace="mo",
+        user_key="org_unit",
+        routing_key="org_unit",
+        path="/events/mo/org-unit",
+    ),
+]
+
+SD_LISTENERS = [
+    Listener(
+        namespace="sd",
+        user_key="employment",
+        routing_key="employment",
+        path="/events/sd/employment",
+    ),
+    Listener(
+        namespace="sd",
+        user_key="org",
+        routing_key="org",
+        path="/events/sd/org",
+    ),
+    Listener(
+        namespace="sd",
+        user_key="person",
+        routing_key="person",
+        path="/events/sd/person",
+    ),
+]
 
 
 async def run_db_start_operations(
@@ -134,6 +178,10 @@ async def background_run(
 def create_fastramqpi() -> FastRAMQPI:
     settings = SDToolPlusSettings()
 
+    listeners = copy(SD_LISTENERS)
+    if not settings.disable_mo_events:
+        listeners.extend(MO_LISTENERS)
+
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
@@ -143,48 +191,7 @@ def create_fastramqpi() -> FastRAMQPI:
             declare_namespaces=[
                 Namespace(name="sd"),
             ],
-            declare_listeners=[]
-            if not settings.event_based_sync
-            else [
-                # MO
-                Listener(
-                    namespace="mo",
-                    user_key="person",
-                    routing_key="person",
-                    path="/events/mo/person",
-                ),
-                Listener(
-                    namespace="mo",
-                    user_key="engagement",
-                    routing_key="engagement",
-                    path="/events/mo/engagement",
-                ),
-                Listener(
-                    namespace="mo",
-                    user_key="org_unit",
-                    routing_key="org_unit",
-                    path="/events/mo/org-unit",
-                ),
-                # SD
-                Listener(
-                    namespace="sd",
-                    user_key="employment",
-                    routing_key="employment",
-                    path="/events/sd/employment",
-                ),
-                Listener(
-                    namespace="sd",
-                    user_key="org",
-                    routing_key="org",
-                    path="/events/sd/org",
-                ),
-                Listener(
-                    namespace="sd",
-                    user_key="person",
-                    routing_key="person",
-                    path="/events/sd/person",
-                ),
-            ],
+            declare_listeners=listeners if settings.event_based_sync else [],
         ),
     )
     fastramqpi.add_context(settings=settings)

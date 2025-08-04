@@ -83,6 +83,8 @@ class SDToolPlusSettings(BaseSettings):
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
+    # If true, we only process SD events and not MO events
+    disable_mo_events: bool = False
 
     # SD AMQP
     sd_amqp: SDAMQPSettings | None = None
