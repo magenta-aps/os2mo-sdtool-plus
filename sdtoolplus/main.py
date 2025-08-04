@@ -621,7 +621,7 @@ def create_fastramqpi() -> FastRAMQPI:
             await gql_client.send_event(input=e)
 
         logger.info(f"Done queueing sync all SD units in {institution_identifier}")
-        return {"msg": "success"}
+        return {"msg": f"{len(events)} OU events queued"}
 
     app = fastramqpi.get_app()
     app.include_router(fastapi_router)
