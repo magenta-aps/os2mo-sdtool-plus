@@ -12,6 +12,10 @@ class NoValueError(Exception):
     pass
 
 
+class UnknownNYLevel(Exception):
+    pass
+
+
 class ClassNotFoundError(HTTPException):
     def __init__(self) -> None:
         super().__init__(

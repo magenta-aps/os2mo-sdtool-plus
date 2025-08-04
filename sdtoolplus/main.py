@@ -47,6 +47,7 @@ from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .exceptions import EngagementSyncTemporarilyDisabled
+from .exceptions import UnknownNYLevel
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
@@ -563,10 +564,8 @@ def create_fastramqpi() -> FastRAMQPI:
             if department.DepartmentLevelIdentifier == "Afdelings-niveau":
                 return DEFAULT_PRIORITY
             match = ny_regex.match(department.DepartmentLevelIdentifier)
-            assert match, (
-                f"Unknown department level: {department.DepartmentLevelIdentifier} "
-                f"found in unit {department.DepartmentUUIDIdentifier}"
-            )
+            if not match:
+                raise UnknownNYLevel()
             priority = DEFAULT_PRIORITY - int(one(match.groups()))
             return priority
 
@@ -587,18 +586,26 @@ def create_fastramqpi() -> FastRAMQPI:
             )
             return {"msg": "success"}
 
-        events = [
-            EventSendInput(
-                namespace="sd",
-                routing_key="org",
-                subject=OrgGraphQLEvent(
-                    institution_identifier=institution_identifier,
-                    org_unit=d.DepartmentUUIDIdentifier,
-                ).json(),
-                priority=priority_from_level(d),
-            )
-            for d in departments.Department
-        ]
+        events = []
+        for d in departments.Department:
+            try:
+                events.append(
+                    EventSendInput(
+                        namespace="sd",
+                        routing_key="org",
+                        subject=OrgGraphQLEvent(
+                            institution_identifier=institution_identifier,
+                            org_unit=d.DepartmentUUIDIdentifier,
+                        ).json(),
+                        priority=priority_from_level(d),
+                    )
+                )
+            except UnknownNYLevel:
+                logger.warning(
+                    "Unknown NY level. Skipping...",
+                    org_unit=str(d.DepartmentUUIDIdentifier),
+                    level=d.DepartmentLevelIdentifier,
+                )
 
         logger.debug("Syncing units", events=len(events))
         for e in events:
