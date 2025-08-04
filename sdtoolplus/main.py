@@ -589,23 +589,25 @@ def create_fastramqpi() -> FastRAMQPI:
         events = []
         for d in departments.Department:
             try:
-                events.append(
-                    EventSendInput(
-                        namespace="sd",
-                        routing_key="org",
-                        subject=OrgGraphQLEvent(
-                            institution_identifier=institution_identifier,
-                            org_unit=d.DepartmentUUIDIdentifier,
-                        ).json(),
-                        priority=priority_from_level(d),
-                    )
-                )
+                priority = priority_from_level(d)
             except UnknownNYLevel:
                 logger.warning(
                     "Unknown NY level. Skipping...",
                     org_unit=str(d.DepartmentUUIDIdentifier),
                     level=d.DepartmentLevelIdentifier,
                 )
+                continue
+            events.append(
+                EventSendInput(
+                    namespace="sd",
+                    routing_key="org",
+                    subject=OrgGraphQLEvent(
+                        institution_identifier=institution_identifier,
+                        org_unit=d.DepartmentUUIDIdentifier,
+                    ).json(),
+                    priority=priority,
+                )
+            )
 
         logger.debug("Syncing units", events=len(events))
         for e in events:
