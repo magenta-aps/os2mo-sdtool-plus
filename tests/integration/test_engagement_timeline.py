@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import asyncio
 from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
+from fastramqpi.pytest_util import retry
 from httpx import AsyncClient
 from more_itertools import one
 from respx import MockRouter
@@ -2047,6 +2047,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED": "false",
+        "EVENT_BASED_SYNC": "true",
     }
 )
 async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
@@ -2228,39 +2229,40 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
     # Assert
     assert r.status_code == 200
 
-    # Wait for the background task to complete
-    await asyncio.sleep(2)
+    @retry()
+    async def verify() -> None:
+        updated_eng = await graphql_client.get_engagement_timeline(
+            person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
+        )
+        validities = one(updated_eng.objects).validities
 
-    updated_eng = await graphql_client.get_engagement_timeline(
-        person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
-    )
-    validities = one(updated_eng.objects).validities
+        interval_1 = validities[0]
+        assert interval_1.validity.from_ == t1
+        assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
+        assert interval_1.extension_1 == "name4"
+        assert interval_1.extension_2 == "dep1"
+        assert interval_1.extension_3 == str(dep1_uuid)
+        assert interval_1.user_key == user_key
+        assert interval_1.job_function.uuid == job_function_1234
+        assert interval_1.extension_7 == "v1"
+        assert one(interval_1.org_unit).uuid == A_uuid
+        assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
-    interval_1 = validities[0]
-    assert interval_1.validity.from_ == t1
-    assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
-    assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep1"
-    assert interval_1.extension_3 == str(dep1_uuid)
-    assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
-    assert interval_1.extension_7 == "v1"
-    assert one(interval_1.org_unit).uuid == A_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+        interval_2 = validities[1]
+        assert interval_2.validity.from_ == t2
+        assert _mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
+        assert interval_2.extension_1 == "name4"
+        assert interval_2.extension_2 == "dep2"
+        assert interval_2.extension_3 == str(dep2_uuid)
+        assert interval_2.user_key == user_key
+        assert interval_2.job_function.uuid == job_function_1234
+        assert one(interval_2.org_unit).uuid == A_uuid
+        assert interval_2.extension_7 == "v1"
+        assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
-    interval_2 = validities[1]
-    assert interval_2.validity.from_ == t2
-    assert _mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
-    assert interval_2.extension_1 == "name4"
-    assert interval_2.extension_2 == "dep2"
-    assert interval_2.extension_3 == str(dep2_uuid)
-    assert interval_2.user_key == user_key
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == A_uuid
-    assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+        assert len(validities) == 2
 
-    assert len(validities) == 2
+    await verify()
 
 
 @pytest.mark.integration_test

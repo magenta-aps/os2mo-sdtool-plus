@@ -57,8 +57,8 @@ from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
+from .timeline import queue_mo_engagements_for_sd_unit_sync
 from .timeline import sync_engagement
-from .timeline import sync_mo_engagement_sd_units
 from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
@@ -555,7 +555,7 @@ def create_fastramqpi() -> FastRAMQPI:
             )
 
         background_tasks.add_task(
-            sync_mo_engagement_sd_units,
+            queue_mo_engagements_for_sd_unit_sync,
             sd_client=sd_client,
             gql_client=gql_client,
             settings=settings,
