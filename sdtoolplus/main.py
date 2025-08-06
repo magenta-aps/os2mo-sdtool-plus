@@ -69,13 +69,6 @@ logger = structlog.stdlib.get_logger()
 MO_LISTENERS = [
     Listener(
         namespace="mo",
-        user_key="person",
-        routing_key="person",
-        path="/events/mo/person",
-        parallelism=3,
-    ),
-    Listener(
-        namespace="mo",
         user_key="engagement",
         routing_key="engagement",
         path="/events/mo/engagement",
@@ -86,6 +79,16 @@ MO_LISTENERS = [
         user_key="org_unit",
         routing_key="org_unit",
         path="/events/mo/org-unit",
+        # The org unit handler requeues its parent/children with priority
+        # +1/-1. We don't understand the implications of doing this in
+        # parallel.
+        parallelism=1,
+    ),
+    Listener(
+        namespace="mo",
+        user_key="person",
+        routing_key="person",
+        path="/events/mo/person",
         parallelism=3,
     ),
 ]
@@ -103,7 +106,10 @@ SD_LISTENERS = [
         user_key="org",
         routing_key="org",
         path="/events/sd/org",
-        parallelism=3,
+        # The org unit handler requeues its parent/children with priority
+        # +1/-1. We don't understand the implications of doing this in
+        # parallel.
+        parallelism=1,
     ),
     Listener(
         namespace="sd",
