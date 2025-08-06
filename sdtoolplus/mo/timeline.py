@@ -308,13 +308,15 @@ async def get_pnumber_timeline(
     timeline = MOPNumberTimelineObj(
         uuid=object_.uuid,
         pnumber=Timeline[UnitPNumber](
-            intervals=tuple(
-                UnitPNumber(
-                    start=obj.validity.from_,
-                    end=_mo_end_to_timeline_end(obj.validity.to),
-                    value=obj.value,
+            intervals=combine_intervals(
+                tuple(
+                    UnitPNumber(
+                        start=obj.validity.from_,
+                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        value=obj.value,
+                    )
+                    for obj in object_.validities
                 )
-                for obj in object_.validities
             )
         ),
     )
@@ -356,13 +358,15 @@ async def get_postal_address_timeline(
     timeline = MOPostalAddressTimelineObj(
         uuid=object_.uuid,
         postal_address=Timeline[UnitPostalAddress](
-            intervals=tuple(
-                UnitPostalAddress(
-                    start=obj.validity.from_,
-                    end=_mo_end_to_timeline_end(obj.validity.to),
-                    value=obj.value,
+            intervals=combine_intervals(
+                tuple(
+                    UnitPostalAddress(
+                        start=obj.validity.from_,
+                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        value=obj.value,
+                    )
+                    for obj in object_.validities
                 )
-                for obj in object_.validities
             )
         ),
     )
@@ -401,13 +405,15 @@ async def get_phone_number_timeline(
     timeline = MOPhoneNumberTimelineObj(
         uuid=object_.uuid,
         phone_number=Timeline[UnitPhoneNumber](
-            intervals=tuple(
-                UnitPhoneNumber(
-                    start=obj.validity.from_,
-                    end=_mo_end_to_timeline_end(obj.validity.to),
-                    value=obj.value,
+            intervals=combine_intervals(
+                tuple(
+                    UnitPhoneNumber(
+                        start=obj.validity.from_,
+                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        value=obj.value,
+                    )
+                    for obj in object_.validities
                 )
-                for obj in object_.validities
             )
         ),
     )
