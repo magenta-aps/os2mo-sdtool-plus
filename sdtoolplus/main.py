@@ -72,21 +72,21 @@ MO_LISTENERS = [
         user_key="person",
         routing_key="person",
         path="/events/mo/person",
-        parallelism=3,
+        parallelism=5,
     ),
     Listener(
         namespace="mo",
         user_key="engagement",
         routing_key="engagement",
         path="/events/mo/engagement",
-        parallelism=3,
+        parallelism=5,
     ),
     Listener(
         namespace="mo",
         user_key="org_unit",
         routing_key="org_unit",
         path="/events/mo/org-unit",
-        parallelism=3,
+        parallelism=1,
     ),
 ]
 
@@ -96,21 +96,21 @@ SD_LISTENERS = [
         user_key="employment",
         routing_key="employment",
         path="/events/sd/employment",
-        parallelism=3,
+        parallelism=5,
     ),
     Listener(
         namespace="sd",
         user_key="org",
         routing_key="org",
         path="/events/sd/org",
-        parallelism=3,
+        parallelism=1,
     ),
     Listener(
         namespace="sd",
         user_key="person",
         routing_key="person",
         path="/events/sd/person",
-        parallelism=3,
+        parallelism=5,
     ),
 ]
 
