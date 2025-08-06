@@ -1001,7 +1001,7 @@ async def engagement_ou_strategy_elevate_to_ny_level(
         "Desired engagement timeline", desired_eng_timeline=desired_eng_timeline.dict()
     )
 
-    logger.info("Done applying OU elevate-to-NY-level strategy")
+    logger.info("Done applying OU elevate-to-NY-level strategy ")
 
     return desired_eng_timeline
 
