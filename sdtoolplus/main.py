@@ -72,21 +72,21 @@ MO_LISTENERS = [
         user_key="person",
         routing_key="person",
         path="/events/mo/person",
-        parallelism=3,
+        # parallelism=3,
     ),
     Listener(
         namespace="mo",
         user_key="engagement",
         routing_key="engagement",
         path="/events/mo/engagement",
-        parallelism=3,
+        # parallelism=3,
     ),
     Listener(
         namespace="mo",
         user_key="org_unit",
         routing_key="org_unit",
         path="/events/mo/org-unit",
-        parallelism=3,
+        # parallelism=3,
     ),
 ]
 
@@ -96,21 +96,21 @@ SD_LISTENERS = [
         user_key="employment",
         routing_key="employment",
         path="/events/sd/employment",
-        parallelism=3,
+        # parallelism=3,
     ),
     Listener(
         namespace="sd",
         user_key="org",
         routing_key="org",
         path="/events/sd/org",
-        parallelism=3,
+        # parallelism=3,
     ),
     Listener(
         namespace="sd",
         user_key="person",
         routing_key="person",
         path="/events/sd/person",
-        parallelism=3,
+        # parallelism=3,
     ),
 ]
 
@@ -443,7 +443,7 @@ def create_fastramqpi() -> FastRAMQPI:
 
         logger.info(f"Done queueing sync all SD persons in {institution_identifier}")
 
-        return {"msg": "success"}
+        return {"msg": f"{len(events)} person events queued"}
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
