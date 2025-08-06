@@ -1053,6 +1053,9 @@ async def engagement_ou_strategy_region(
     # found in MO in the interval
     unit_intervals = []
     for start, end in pairwise(endpoints):
+        logger.debug(
+            "Processing OU region strategy endpoint pair", start=start, end=end
+        )
         try:
             entity = mo_eng_timeline.eng_unit.entity_at(start)
             unit = entity.value
