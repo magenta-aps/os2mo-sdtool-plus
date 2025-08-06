@@ -443,7 +443,7 @@ def create_fastramqpi() -> FastRAMQPI:
 
         logger.info(f"Done queueing sync all SD persons in {institution_identifier}")
 
-        return {"msg": "success"}
+        return {"msg": f"{len(events)} person events queued"}
 
     @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
