@@ -86,7 +86,7 @@ MO_LISTENERS = [
         user_key="org_unit",
         routing_key="org_unit",
         path="/events/mo/org-unit",
-        parallelism=3,
+        parallelism=1,
     ),
 ]
 
@@ -103,7 +103,7 @@ SD_LISTENERS = [
         user_key="org",
         routing_key="org",
         path="/events/sd/org",
-        parallelism=3,
+        parallelism=1,
     ),
     Listener(
         namespace="sd",
