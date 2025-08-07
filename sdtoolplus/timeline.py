@@ -1300,27 +1300,42 @@ async def queue_mo_engagements_for_sd_unit_sync(
         eng_filter = EngagementFilter(
             employee=EmployeeFilter(cpr_numbers=[cpr]), from_date=None, to_date=None
         )
-    mo_engagements = await gql_client.get_engagements(eng_filter)
+
     engagements = []
-    for obj in mo_engagements.objects:
-        try:
+
+    # Make a sequence of paginated GraphQL requests to get all MO engagement
+    next_cursor = None
+    while True:
+        mo_engagement_batch = await gql_client.get_engagements(
+            input=eng_filter,
+            cursor=next_cursor,
+            limit=300,
+        )
+        next_cursor = mo_engagement_batch.page_info.next_cursor
+
+        for obj in mo_engagement_batch.objects:
             inst_id, emp_id = _split_engagement_user_key(
                 settings=settings,
                 user_key=first(obj.validities).user_key,
             )
-            engagements.append(
-                Engagement(
+            try:
+                eng = Engagement(
                     institution_identifier=inst_id,
                     cpr=one(first(obj.validities).person).cpr_number,
                     employment_identifier=emp_id,
                 )
-            )
-        except ValueError:
-            logger.warn(
-                "Could not create object for queueing engagement for SD unit (extention_3) sync",
-                eng_obj=obj.dict(),
-            )
-            continue
+            except ValueError:
+                logger.warn(
+                    "Could not create object for queueing engagement for SD unit (extention_3) sync",
+                    eng_obj=obj.dict(),
+                )
+                continue
+            engagements.append(eng)
+
+        logger.info("Number of engagements processed", n=len(engagements))
+
+        if next_cursor is None:
+            break
 
     for eng in engagements:
         logger.debug(
