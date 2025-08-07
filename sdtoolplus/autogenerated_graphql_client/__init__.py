@@ -107,6 +107,7 @@ from .get_engagements import GetEngagementsEngagementsObjects
 from .get_engagements import GetEngagementsEngagementsObjectsValidities
 from .get_engagements import GetEngagementsEngagementsObjectsValiditiesPerson
 from .get_engagements import GetEngagementsEngagementsObjectsValiditiesValidity
+from .get_engagements import GetEngagementsEngagementsPageInfo
 from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_facet_uuid import GetFacetUuidFacetsObjects
@@ -433,6 +434,7 @@ __all__ = [
     "GetEngagementsEngagementsObjectsValidities",
     "GetEngagementsEngagementsObjectsValiditiesPerson",
     "GetEngagementsEngagementsObjectsValiditiesValidity",
+    "GetEngagementsEngagementsPageInfo",
     "GetFacetUuid",
     "GetFacetUuidFacets",
     "GetFacetUuidFacetsObjects",

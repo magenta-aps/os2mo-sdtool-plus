@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from typing import Optional
 from typing import Union
 from uuid import UUID
@@ -666,12 +667,18 @@ class GraphQLClient(AsyncBaseClient):
         return CreateEngagement.parse_obj(data).engagement_create
 
     async def get_engagements(
-        self, input: EngagementFilter
+        self,
+        input: EngagementFilter,
+        cursor: Union[Optional[Any], UnsetType] = UNSET,
+        limit: Union[Optional[Any], UnsetType] = UNSET,
     ) -> GetEngagementsEngagements:
         query = gql(
             """
-            query GetEngagements($input: EngagementFilter!) {
-              engagements(filter: $input) {
+            query GetEngagements($cursor: Cursor, $limit: int, $input: EngagementFilter!) {
+              engagements(cursor: $cursor, limit: $limit, filter: $input) {
+                page_info {
+                  next_cursor
+                }
                 objects {
                   uuid
                   validities {
@@ -689,7 +696,11 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"input": input}
+        variables: dict[str, object] = {
+            "cursor": cursor,
+            "limit": limit,
+            "input": input,
+        }
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetEngagements.parse_obj(data).engagements
