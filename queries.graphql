@@ -290,8 +290,15 @@ mutation CreateEngagement($input: EngagementCreateInput!) {
   }
 }
 
-query GetEngagements($input: EngagementFilter!) {
-  engagements(filter: $input) {
+query GetEngagements(
+  $cursor: Cursor,
+  $limit: int,
+  $input: EngagementFilter!
+) {
+  engagements(cursor: $cursor, limit: $limit, filter: $input) {
+    page_info {
+      next_cursor
+    }
     objects {
       uuid
       validities {
