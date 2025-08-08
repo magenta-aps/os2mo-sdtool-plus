@@ -1266,7 +1266,6 @@ async def sync_engagement(
 
 
 async def queue_mo_engagements_for_sd_unit_sync(
-    sd_client: SDClient,
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     cpr: str | None,
@@ -1277,7 +1276,6 @@ async def queue_mo_engagements_for_sd_unit_sync(
     fields are also synchronized except for the engagement unit which is left unchanged.
 
     Args:
-        sd_client: The SD client
         gql_client: The GraphQL client
         settings: The application settings
         cpr: The person CPR number
