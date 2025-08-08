@@ -47,6 +47,8 @@ from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .exceptions import EngagementSyncTemporarilyDisabled
 from .exceptions import UnknownNYLevel
+from .middleware import ExceptionLoggerMiddleware
+from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
@@ -637,6 +639,11 @@ def create_fastramqpi() -> FastRAMQPI:
     app.include_router(fastapi_router)
     app.include_router(minisync_router)
     app.include_router(events_router)
+
+    # ExceptionLoggerMiddleware must be installed before RequestIDMiddleware to
+    # ensure that exception logs receive the request-id
+    app.add_middleware(ExceptionLoggerMiddleware)
+    app.add_middleware(RequestIDMiddleware)
 
     return fastramqpi
 
