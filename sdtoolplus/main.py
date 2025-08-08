@@ -556,7 +556,6 @@ def create_fastramqpi() -> FastRAMQPI:
 
         background_tasks.add_task(
             queue_mo_engagements_for_sd_unit_sync,
-            sd_client=sd_client,
             gql_client=gql_client,
             settings=settings,
             cpr=cpr,
