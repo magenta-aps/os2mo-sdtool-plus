@@ -145,6 +145,12 @@ class Person(BaseModel):
     addresses: list[str]
 
 
+class Engagement(BaseModel):
+    institution_identifier: str
+    cpr: str
+    employment_identifier: str
+
+
 class Interval(GenericModel, Generic[V], frozen=True):
     """
     Interval conventions:
