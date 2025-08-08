@@ -17,7 +17,6 @@ import aio_pika
 import structlog
 from aio_pika.abc import AbstractIncomingMessage
 from fastapi import APIRouter
-from fastapi import Depends
 from fastramqpi.context import Context
 from fastramqpi.events import Event
 from more_itertools import one
@@ -44,7 +43,7 @@ from sdtoolplus.timeline import sync_ou
 from sdtoolplus.timeline import sync_person
 
 logger = structlog.stdlib.get_logger()
-router = APIRouter(dependencies=[Depends(request_id)])
+router = APIRouter()
 
 
 @asynccontextmanager

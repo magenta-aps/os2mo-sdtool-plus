@@ -9,7 +9,6 @@ from uuid import UUID
 import structlog
 from fastapi import APIRouter
 from fastapi import BackgroundTasks
-from fastapi import Depends
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Response
@@ -42,7 +41,6 @@ from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .depends import request_id
 from .events import EmploymentGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
@@ -226,7 +224,7 @@ def create_fastramqpi() -> FastRAMQPI:
             priority=1200,
         )
 
-    fastapi_router = APIRouter(dependencies=[Depends(request_id)])
+    fastapi_router = APIRouter()
 
     @fastapi_router.get("/tree/mo")
     async def print_mo_tree(settings: depends.Settings) -> str:

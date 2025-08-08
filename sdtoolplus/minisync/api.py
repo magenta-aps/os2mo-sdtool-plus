@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import structlog.stdlib
 from fastapi import APIRouter
-from fastapi import Depends
 from fastapi import Response
 from starlette.status import HTTP_200_OK
 
@@ -16,7 +15,7 @@ from .models import EngagementSyncPayload
 
 logger = structlog.stdlib.get_logger()
 
-minisync_router = APIRouter(dependencies=[Depends(depends.request_id)])
+minisync_router = APIRouter()
 
 
 @minisync_router.post("/minisync/move-employment", status_code=HTTP_200_OK)
