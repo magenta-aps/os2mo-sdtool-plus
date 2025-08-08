@@ -86,7 +86,7 @@ from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
-from sdtoolplus.timeline import _split_engagement_user_key
+from sdtoolplus.string_utils import split_engagement_user_key
 
 logger = structlog.stdlib.get_logger()
 
@@ -1857,7 +1857,7 @@ async def get_all_mo_engagements(
         next_cursor = mo_engagement_batch.page_info.next_cursor
 
         for obj in mo_engagement_batch.objects:
-            inst_id, emp_id = _split_engagement_user_key(
+            inst_id, emp_id = split_engagement_user_key(
                 settings=settings,
                 user_key=first(obj.validities).user_key,
             )
