@@ -9,7 +9,6 @@ from uuid import UUID
 import structlog
 from fastapi import APIRouter
 from fastapi import BackgroundTasks
-from fastapi import Depends
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Response
@@ -42,13 +41,14 @@ from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .depends import request_id
 from .events import EmploymentGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .exceptions import EngagementSyncTemporarilyDisabled
 from .exceptions import UnknownNYLevel
+from .middleware import ExceptionLoggerMiddleware
+from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import EngagementSyncPayload
@@ -57,8 +57,8 @@ from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
+from .timeline import queue_mo_engagements_for_sd_unit_sync
 from .timeline import sync_engagement
-from .timeline import sync_mo_engagement_sd_units
 from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
@@ -226,7 +226,7 @@ def create_fastramqpi() -> FastRAMQPI:
             priority=1200,
         )
 
-    fastapi_router = APIRouter(dependencies=[Depends(request_id)])
+    fastapi_router = APIRouter()
 
     @fastapi_router.get("/tree/mo")
     async def print_mo_tree(settings: depends.Settings) -> str:
@@ -555,7 +555,7 @@ def create_fastramqpi() -> FastRAMQPI:
             )
 
         background_tasks.add_task(
-            sync_mo_engagement_sd_units,
+            queue_mo_engagements_for_sd_unit_sync,
             sd_client=sd_client,
             gql_client=gql_client,
             settings=settings,
@@ -639,6 +639,11 @@ def create_fastramqpi() -> FastRAMQPI:
     app.include_router(fastapi_router)
     app.include_router(minisync_router)
     app.include_router(events_router)
+
+    # ExceptionLoggerMiddleware must be installed before RequestIDMiddleware to
+    # ensure that exception logs receive the request-id
+    app.add_middleware(ExceptionLoggerMiddleware)
+    app.add_middleware(RequestIDMiddleware)
 
     return fastramqpi
 

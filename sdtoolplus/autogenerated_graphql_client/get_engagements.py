@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -14,7 +15,12 @@ class GetEngagements(BaseModel):
 
 
 class GetEngagementsEngagements(BaseModel):
+    page_info: "GetEngagementsEngagementsPageInfo"
     objects: List["GetEngagementsEngagementsObjects"]
+
+
+class GetEngagementsEngagementsPageInfo(BaseModel):
+    next_cursor: Optional[Any]
 
 
 class GetEngagementsEngagementsObjects(BaseModel):
@@ -39,6 +45,7 @@ class GetEngagementsEngagementsObjectsValiditiesPerson(BaseModel):
 
 GetEngagements.update_forward_refs()
 GetEngagementsEngagements.update_forward_refs()
+GetEngagementsEngagementsPageInfo.update_forward_refs()
 GetEngagementsEngagementsObjects.update_forward_refs()
 GetEngagementsEngagementsObjectsValidities.update_forward_refs()
 GetEngagementsEngagementsObjectsValiditiesValidity.update_forward_refs()

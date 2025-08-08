@@ -75,17 +75,23 @@ async def get_all_sd_persons(
             PostalAddressIndicator=postal_address,
         ),
     )
-    return [
-        Person(
-            cpr=sd_response_person.PersonCivilRegistrationIdentifier,
-            given_name=sd_response_person.PersonGivenName,
-            surname=sd_response_person.PersonSurnameName,
-            emails=[],
-            phone_numbers=[],
-            addresses=[],
-        )
-        for sd_response_person in sd_response.Person
-    ]
+    persons = []
+    for sd_response_person in sd_response.Person:
+        try:
+            person = Person(
+                cpr=sd_response_person.PersonCivilRegistrationIdentifier,
+                given_name=str(sd_response_person.PersonGivenName),
+                surname=str(sd_response_person.PersonSurnameName),
+                emails=[],
+                phone_numbers=[],
+                addresses=[],
+            )
+        except ValueError as error:
+            logger.error("Could not parse person", person=sd_response_person)
+            raise error
+        persons.append(person)
+
+    return persons
 
 
 async def get_sd_person_engagements(
