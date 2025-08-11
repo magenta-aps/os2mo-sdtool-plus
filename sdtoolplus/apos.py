@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import json
 from datetime import date
+from typing import Any
 
 import structlog
 from sdclient.requests import GetEmploymentChangedRequest
@@ -21,11 +23,28 @@ logger = structlog.stdlib.get_logger()
 def _engagement_timeline_to_csv_line(
     engagement: Engagement,
     sd_eng_timeline: EngagementTimeline,
-) -> list[str]:
-    prefix_eng_str = (
-        f"{engagement.institution_identifier}||"
-        f"{engagement.cpr}||"
-        f"{engagement.employment_identifier}"
+) -> dict[tuple[str, ...], list[dict[str, str]]]:
+    """
+    Returns an engagement dict like this:
+    {
+        ("II", "0101011234", "12345"): [
+            {
+                "sd_unit": "29356454-fa40-48a3-b6b1-05732b3ad652",
+                "from": "2014-07-10",
+                "to": "2020-12-31",
+            },
+            {
+                "sd_unit": "1f52cffa-21b4-4aa7-b092-a94c19607b9f",
+                "from": "2021-07-10",
+                "to": "None",
+            },
+        ]
+    }
+    """
+    eng_key = (
+        engagement.institution_identifier,
+        engagement.cpr,
+        engagement.employment_identifier,
     )
 
     eng_sd_units = []
@@ -33,10 +52,16 @@ def _engagement_timeline_to_csv_line(
         mo_validity = timeline_interval_to_mo_validity(sd_unit.start, sd_unit.end)
 
         eng_sd_units.append(
-            f"{prefix_eng_str}||{str(sd_unit.value)}||{mo_validity.from_.strftime('%Y-%m-%d')}||{mo_validity.to.strftime('%Y-%m-%d') if mo_validity.to is not None else 'None'}\n"
+            {
+                "sd_unit": str(sd_unit.value),
+                "from": mo_validity.from_.strftime("%Y-%m-%d"),
+                "to": mo_validity.to.strftime("%Y-%m-%d")
+                if mo_validity.to is not None
+                else "None",
+            }
         )
 
-    return eng_sd_units
+    return {eng_key: eng_sd_units}
 
 
 async def csv_engagements(
@@ -52,8 +77,14 @@ async def csv_engagements(
     """
     logger.info("Generating engagement CSV file for the APOS importer")
 
+    try:
+        with open("/tmp/engagements.csv", "w") as fp:
+            engagements: dict[str, Any] = json.load(fp)
+    except FileNotFoundError:
+        engagements = {"engagements": []}
+
     mo_engagements = []
-    next_cursor = None
+    next_cursor = engagements.get("next_cursor")
     while True:
         next_mo_engagements, next_cursor = await get_mo_engagements(
             gql_client=gql_client,
@@ -68,37 +99,37 @@ async def csv_engagements(
         if next_cursor is None:
             break
 
-    # Get the SD timeline for each engagement
-    all_csv_lines = []
-    for eng in mo_engagements:
-        logger.info("Getting SD engagement timeline", engagement=eng)
+        # Get the SD timeline for each engagement
+        for eng in next_mo_engagements:
+            logger.info("Getting SD engagement timeline", engagement=eng)
 
-        r_employment = await asyncio.to_thread(
-            sd_client.get_employment_changed,
-            GetEmploymentChangedRequest(
-                InstitutionIdentifier=eng.institution_identifier,
-                PersonCivilRegistrationIdentifier=eng.cpr,
-                EmploymentIdentifier=eng.employment_identifier,
-                ActivationDate=date.min,
-                DeactivationDate=date.max,
-                DepartmentIndicator=True,
-                EmploymentStatusIndicator=True,
-                ProfessionIndicator=True,
-                WorkingTimeIndicator=True,
-                UUIDIndicator=True,
-            ),
-        )
+            try:
+                r_employment = await asyncio.to_thread(
+                    sd_client.get_employment_changed,
+                    GetEmploymentChangedRequest(
+                        InstitutionIdentifier=eng.institution_identifier,
+                        PersonCivilRegistrationIdentifier=eng.cpr,
+                        EmploymentIdentifier=eng.employment_identifier,
+                        ActivationDate=date.min,
+                        DeactivationDate=date.max,
+                        DepartmentIndicator=True,
+                        EmploymentStatusIndicator=True,
+                        ProfessionIndicator=True,
+                        WorkingTimeIndicator=True,
+                        UUIDIndicator=True,
+                    ),
+                )
+            except Exception as error:
+                logger.error("Failed to get SD engagement timeline", eng=eng)
+                with open("/tmp/engagements.csv", "w") as fp:
+                    json.dump(engagements, fp)
+                raise error
 
-        sd_eng_timeline = await get_employment_timeline(r_employment)
-        csv_lines = _engagement_timeline_to_csv_line(eng, sd_eng_timeline)
+            sd_eng_timeline = await get_employment_timeline(r_employment)
+            eng_dict = _engagement_timeline_to_csv_line(eng, sd_eng_timeline)
 
-        all_csv_lines.extend(csv_lines)
+            engagements["engagements"].append(eng_dict)
 
-    # Remove "\n" for the last line
-    all_csv_lines[-1] = all_csv_lines[-1][:-1]
+        engagements["next_cursor"] = next_cursor
 
-    logger.info("Writing CSV file")
-    with open("/tmp/engagements.csv", "w") as fp:
-        fp.writelines(all_csv_lines)
-
-    logger.info("Done generating engagement CSV file for the APOS importer")
+        logger.info("Done generating engagement CSV file for the APOS importer")
