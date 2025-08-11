@@ -9,7 +9,7 @@ from sdclient.requests import GetEmploymentChangedRequest
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.depends import SDClient
-from sdtoolplus.mo.timeline import get_all_mo_engagements
+from sdtoolplus.mo.timeline import get_mo_engagements
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.models import Engagement
 from sdtoolplus.models import EngagementTimeline
@@ -55,7 +55,7 @@ async def csv_engagements(
     mo_engagements = []
     next_cursor = None
     while True:
-        next_mo_engagements, next_cursor = await get_all_mo_engagements(
+        next_mo_engagements, next_cursor = await get_mo_engagements(
             gql_client=gql_client,
             settings=settings,
             next_cursor=next_cursor,

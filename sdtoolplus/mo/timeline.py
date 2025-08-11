@@ -1831,7 +1831,7 @@ async def terminate_association(
     logger.debug("Association terminated", person=str(person), user_key=user_key)
 
 
-async def get_all_mo_engagements(
+async def get_mo_engagements(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     next_cursor: str | None = None,

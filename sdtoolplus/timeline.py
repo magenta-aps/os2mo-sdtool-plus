@@ -43,7 +43,6 @@ from sdtoolplus.mo.timeline import create_phone_number
 from sdtoolplus.mo.timeline import create_pnumber_address
 from sdtoolplus.mo.timeline import create_postal_address
 from sdtoolplus.mo.timeline import delete_address
-from sdtoolplus.mo.timeline import get_all_mo_engagements
 from sdtoolplus.mo.timeline import get_association_filter
 from sdtoolplus.mo.timeline import (
     get_association_timeline as get_mo_association_timeline,
@@ -51,6 +50,7 @@ from sdtoolplus.mo.timeline import (
 from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
+from sdtoolplus.mo.timeline import get_mo_engagements
 from sdtoolplus.mo.timeline import get_ou_timeline
 from sdtoolplus.mo.timeline import (
     get_phone_number_timeline as get_mo_phone_number_timeline,
@@ -1279,7 +1279,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
     engagements = []
     next_cursor = None
     while True:
-        next_engagements, next_cursor = await get_all_mo_engagements(
+        next_engagements, next_cursor = await get_mo_engagements(
             gql_client=gql_client,
             settings=settings,
             next_cursor=next_cursor,
