@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any
 
 import structlog
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 
 from sdtoolplus.config import SDToolPlusSettings
@@ -23,29 +24,22 @@ logger = structlog.stdlib.get_logger()
 def _engagement_timeline_to_json(
     engagement: Engagement,
     sd_eng_timeline: EngagementTimeline,
-) -> dict[tuple[str, ...], list[dict[str, str]]]:
+) -> list[dict[str, str]]:
     """
     Returns an engagement dict like this:
-    {
-        ("II", "0101011234", "12345"): [
-            {
-                "sd_unit": "29356454-fa40-48a3-b6b1-05732b3ad652",
-                "from": "2014-07-10",
-                "to": "2020-12-31",
-            },
-            {
-                "sd_unit": "1f52cffa-21b4-4aa7-b092-a94c19607b9f",
-                "from": "2021-07-10",
-                "to": "None",
-            },
-        ]
-    }
+    [
+        {
+            "sd_unit": "29356454-fa40-48a3-b6b1-05732b3ad652",
+            "from": "2014-07-10",
+            "to": "2020-12-31",
+        },
+        {
+            "sd_unit": "1f52cffa-21b4-4aa7-b092-a94c19607b9f",
+            "from": "2021-07-10",
+            "to": "None",
+        },
+    ]
     """
-    eng_key = (
-        engagement.institution_identifier,
-        engagement.cpr,
-        engagement.employment_identifier,
-    )
 
     eng_sd_units = []
     for sd_unit in sd_eng_timeline.eng_unit.intervals:
@@ -61,7 +55,7 @@ def _engagement_timeline_to_json(
             }
         )
 
-    return {eng_key: eng_sd_units}
+    return eng_sd_units
 
 
 async def json_engagements(
@@ -78,10 +72,10 @@ async def json_engagements(
     logger.info("Generating engagement CSV file for the APOS importer")
 
     try:
-        with open("/tmp/engagements.csv", "w") as fp:
+        with open("/tmp/engagements.json") as fp:
             engagements: dict[str, Any] = json.load(fp)
     except FileNotFoundError:
-        engagements = {"engagements": []}
+        engagements = {"engagements": dict()}
 
     mo_engagements = []
     next_cursor = engagements.get("next_cursor")
@@ -95,9 +89,6 @@ async def json_engagements(
 
         mo_engagements.extend(next_mo_engagements)
         logger.info("Number of engagements processed", n=len(mo_engagements))
-
-        if next_cursor is None:
-            break
 
         # Get the SD timeline for each engagement
         for eng in next_mo_engagements:
@@ -119,17 +110,31 @@ async def json_engagements(
                         UUIDIndicator=True,
                     ),
                 )
+            except SDRootElementNotFound as error:
+                logger.warning("Could not find engagement in SD", eng=eng, error=error)
+                continue
             except Exception as error:
-                logger.error("Failed to get SD engagement timeline", eng=eng)
-                with open("/tmp/engagements.csv", "w") as fp:
+                logger.error(
+                    "Failed to get SD engagement timeline", eng=eng, error=error
+                )
+                with open("/tmp/engagements.json", "w") as fp:
                     json.dump(engagements, fp)
                 raise error
 
             sd_eng_timeline = await get_employment_timeline(r_employment)
-            eng_dict = _engagement_timeline_to_json(eng, sd_eng_timeline)
+            eng_list = _engagement_timeline_to_json(eng, sd_eng_timeline)
 
-            engagements["engagements"].append(eng_dict)
+            eng_key = (
+                f"{eng.institution_identifier},{eng.cpr},{eng.employment_identifier}"
+            )
+            engagements["engagements"][eng_key] = eng_list
 
         engagements["next_cursor"] = next_cursor
 
-        logger.info("Done generating engagement CSV file for the APOS importer")
+        if next_cursor is None:
+            break
+
+    with open("/tmp/engagements.json", "w") as fp:
+        json.dump(engagements, fp)
+
+    logger.info("Done generating engagement CSV file for the APOS importer")
