@@ -1276,11 +1276,21 @@ async def queue_mo_engagements_for_sd_unit_sync(
         dry_run=dry_run,
     )
 
-    engagements = await get_all_mo_engagements(
-        gql_client=gql_client,
-        settings=settings,
-        cpr=cpr,
-    )
+    engagements = []
+    next_cursor = None
+    while True:
+        next_engagements, next_cursor = await get_all_mo_engagements(
+            gql_client=gql_client,
+            settings=settings,
+            next_cursor=next_cursor,
+            cpr=cpr,
+        )
+
+        engagements.extend(next_engagements)
+        logger.info("Number of engagements processed", n=len(engagements))
+
+        if next_cursor is None:
+            break
 
     for eng in engagements:
         logger.debug(

@@ -30,9 +30,7 @@ def _engagement_timeline_to_csv_line(
 
     eng_sd_units = []
     for sd_unit in sd_eng_timeline.eng_unit.intervals:
-        mo_validity = timeline_interval_to_mo_validity(
-            sd_unit.start, sd_unit.end
-        )
+        mo_validity = timeline_interval_to_mo_validity(sd_unit.start, sd_unit.end)
 
         eng_sd_units.append(
             f"{prefix_eng_str}||{str(sd_unit.value)}||{mo_validity.from_.strftime('%Y-%m-%d')}||{mo_validity.to.strftime('%Y-%m-%d') if mo_validity.to is not None else 'None'}\n"
@@ -54,11 +52,21 @@ async def csv_engagements(
     """
     logger.info("Generating engagement CSV file for the APOS importer")
 
-    mo_engagements = await get_all_mo_engagements(
-        gql_client=gql_client,
-        settings=settings,
-        cpr=cpr,
-    )
+    mo_engagements = []
+    next_cursor = None
+    while True:
+        next_mo_engagements, next_cursor = await get_all_mo_engagements(
+            gql_client=gql_client,
+            settings=settings,
+            next_cursor=next_cursor,
+            cpr=cpr,
+        )
+
+        mo_engagements.extend(next_mo_engagements)
+        logger.info("Number of engagements processed", n=len(mo_engagements))
+
+        if next_cursor is None:
+            break
 
     # Get the SD timeline for each engagement
     all_csv_lines = []
