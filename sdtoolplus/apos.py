@@ -20,7 +20,7 @@ from sdtoolplus.sd.timeline import get_employment_timeline
 logger = structlog.stdlib.get_logger()
 
 
-def _engagement_timeline_to_csv_line(
+def _engagement_timeline_to_json(
     engagement: Engagement,
     sd_eng_timeline: EngagementTimeline,
 ) -> dict[tuple[str, ...], list[dict[str, str]]]:
@@ -64,7 +64,7 @@ def _engagement_timeline_to_csv_line(
     return {eng_key: eng_sd_units}
 
 
-async def csv_engagements(
+async def json_engagements(
     sd_client: SDClient,
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
@@ -126,7 +126,7 @@ async def csv_engagements(
                 raise error
 
             sd_eng_timeline = await get_employment_timeline(r_employment)
-            eng_dict = _engagement_timeline_to_csv_line(eng, sd_eng_timeline)
+            eng_dict = _engagement_timeline_to_json(eng, sd_eng_timeline)
 
             engagements["engagements"].append(eng_dict)
 
