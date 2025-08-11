@@ -3,6 +3,8 @@
 import asyncio
 import json
 from datetime import date
+from datetime import datetime
+from datetime import timezone
 from typing import Any
 
 import structlog
@@ -70,6 +72,7 @@ async def json_engagements(
     by the APOS importer.
     """
     logger.info("Generating engagement CSV file for the APOS importer")
+    t_start = datetime.now(tz=timezone.utc)
 
     try:
         with open("/tmp/engagements.json") as fp:
@@ -88,7 +91,12 @@ async def json_engagements(
         )
 
         mo_engagements.extend(next_mo_engagements)
-        logger.info("Number of engagements processed", n=len(mo_engagements))
+        now = datetime.now(tz=timezone.utc)
+        logger.info(
+            "Number of engagements processed",
+            n=len(mo_engagements),
+            time=now - t_start,
+        )
 
         # Get the SD timeline for each engagement
         for eng in next_mo_engagements:
@@ -137,4 +145,8 @@ async def json_engagements(
     with open("/tmp/engagements.json", "w") as fp:
         json.dump(engagements, fp)
 
-    logger.info("Done generating engagement CSV file for the APOS importer")
+    now = datetime.now(tz=timezone.utc)
+    logger.info(
+        "Done generating engagement CSV file for the APOS importer",
+        time=now - t_start,
+    )
