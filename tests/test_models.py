@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from sdtoolplus.exceptions import NoValueError
-from sdtoolplus.models import Active
+from sdtoolplus.models import Active, POSITIVE_INFINITY
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -122,6 +122,44 @@ def test_combine_intervals_single_input():
 
     # Assert
     assert condensed == intervals
+
+
+def test_combine_intervals_eng_type():
+    # Arrange
+    intervals = (
+        EngagementType(
+            start=datetime(2025, 6, 10,tzinfo=TZ),
+            end=datetime(2025, 7, 1, 0, tzinfo=TZ),
+            value=EngType.MONTHLY_PART_TIME,
+        ),
+        EngagementType(
+            start=datetime(2025, 7, 1, tzinfo=TZ),
+            end=datetime(2025, 8, 1, tzinfo=TZ),
+            value=EngType.MONTHLY_PART_TIME,
+        ),
+        EngagementType(
+            start=datetime(2025, 8, 1,tzinfo=TZ),
+            end=datetime(2025, 8, 14, tzinfo=TZ),
+            value=EngType.MONTHLY_PART_TIME
+        ),
+        EngagementType(
+            start=datetime(2025, 8, 14, tzinfo=TZ),
+            end=POSITIVE_INFINITY,
+            value=EngType.MONTHLY_PART_TIME
+        )
+    )
+
+    # Act
+    condensed = combine_intervals(intervals)
+
+    # Assert
+    assert condensed == (
+        EngagementType(
+            start=datetime(2025, 6, 10, tzinfo=TZ),
+            end=POSITIVE_INFINITY,
+            value=EngType.MONTHLY_PART_TIME
+        ),
+    )
 
 
 def test_timeline_can_be_instantiated_correctly():

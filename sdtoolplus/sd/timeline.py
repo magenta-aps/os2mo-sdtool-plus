@@ -249,6 +249,11 @@ async def get_employment_timeline(
 ) -> EngagementTimeline:
     logger.info("Get SD employment timeline")
 
+    logger.debug(
+        "Raw GetEmploymentChangedResponse",
+        raw=sd_get_employment_changed_resp.dict()
+    )
+
     person = only(
         sd_get_employment_changed_resp.Person, too_long=MoreThanOnePersonError
     )
@@ -336,6 +341,10 @@ async def get_employment_timeline(
         if employment.WorkingTime
         else tuple()
     )
+    logger.debug("Eng type intervals", eng_type_intervals=eng_type_intervals)
+
+    comb = combine_intervals(eng_type_intervals)
+    logger.debug("Combined intervals", comb=comb)
 
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
@@ -353,7 +362,7 @@ async def get_employment_timeline(
             intervals=combine_intervals(eng_unit_id_intervals)
         ),
         eng_type=Timeline[EngagementType](
-            intervals=combine_intervals(eng_type_intervals)
+            intervals=comb
         ),
     )
     logger.debug("SD engagement timeline", timeline=timeline.dict())
