@@ -16,7 +16,6 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.depends import SDClient
 from sdtoolplus.mo.timeline import get_mo_engagements
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
-from sdtoolplus.models import Engagement
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
@@ -24,7 +23,6 @@ logger = structlog.stdlib.get_logger()
 
 
 def _engagement_timeline_to_json(
-    engagement: Engagement,
     sd_eng_timeline: EngagementTimeline,
 ) -> list[dict[str, str]]:
     """
@@ -130,7 +128,7 @@ async def json_engagements(
                 raise error
 
             sd_eng_timeline = await get_employment_timeline(r_employment)
-            eng_list = _engagement_timeline_to_json(eng, sd_eng_timeline)
+            eng_list = _engagement_timeline_to_json(sd_eng_timeline)
 
             eng_key = (
                 f"{eng.institution_identifier},{eng.cpr},{eng.employment_identifier}"
