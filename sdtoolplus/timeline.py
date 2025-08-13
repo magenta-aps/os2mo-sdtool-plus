@@ -11,7 +11,6 @@ from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
 from more_itertools import one
 from more_itertools import only
-from pydantic import BaseModel
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
@@ -73,6 +72,7 @@ from sdtoolplus.mo.timeline import update_ou
 from sdtoolplus.mo.timeline import update_person
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EmploymentGraphQLEvent
+from sdtoolplus.models import Engagement
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import LeaveTimeline
@@ -1266,7 +1266,6 @@ async def sync_engagement(
 
 
 async def queue_mo_engagements_for_sd_unit_sync(
-    sd_client: SDClient,
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     cpr: str | None,
@@ -1277,7 +1276,6 @@ async def queue_mo_engagements_for_sd_unit_sync(
     fields are also synchronized except for the engagement unit which is left unchanged.
 
     Args:
-        sd_client: The SD client
         gql_client: The GraphQL client
         settings: The application settings
         cpr: The person CPR number
@@ -1288,11 +1286,6 @@ async def queue_mo_engagements_for_sd_unit_sync(
         cpr=cpr,
         dry_run=dry_run,
     )
-
-    class Engagement(BaseModel):
-        institution_identifier: str
-        cpr: str
-        employment_identifier: str
 
     # Get all MO engagements
     eng_filter = EngagementFilter(from_date=None, to_date=None)
