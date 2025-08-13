@@ -3,19 +3,22 @@
 import asyncio
 import json
 import re
-from datetime import date, datetime, timezone
+from copy import copy
+from datetime import date
+from datetime import datetime
+from datetime import timezone
 from typing import Any
 
-from sdclient.requests import GetEmploymentChangedRequest
-from sdclient.exceptions import SDRootElementNotFound
 import click
 import structlog.stdlib
-
 from more_itertools import last
+from sdclient.exceptions import SDRootElementNotFound
+from sdclient.requests import GetEmploymentChangedRequest
 
 from sdtoolplus.depends import SDClient
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
-from sdtoolplus.models import Engagement, EngagementTimeline
+from sdtoolplus.models import Engagement
+from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 
 REGEX_CPR = re.compile("^\\d{10}$")
@@ -94,8 +97,8 @@ def _engagement_timeline_to_json(
     return eng_sd_units
 
 
-def _write_json(sd_engagements: dict[str, Any]) -> None:
-    with open("/tmp/engagements.json", "w") as fp:
+def _write_json(sd_engagements: dict[str, Any], filepath: str) -> None:
+    with open(filepath, "w") as fp:
         json.dump(sd_engagements, fp)
 
 
@@ -131,27 +134,34 @@ def main(username: str, password: str) -> None:
         with open("/tmp/engagements.json") as fp:
             sd_engagements: dict[str, Any] = json.load(fp)
     except FileNotFoundError:
-        sd_engagements = {"engagements": dict()}
+        sd_engagements = dict()
+    logger.info("Already processed engagements", n=len(sd_engagements))
+
+    try:
+        with open("/tmp/engagements-not-found.json") as fp:
+            sd_engagements_not_found: dict[str, Any] = json.load(fp)
+    except FileNotFoundError:
+        sd_engagements_not_found = dict()
     logger.info(
-        "Already processed engagements",
-        n=len(sd_engagements["engagements"])
+        "Already processed engagements (not found)", n=len(sd_engagements_not_found)
     )
+
+    already_processed = copy(sd_engagements)
+    already_processed.update(sd_engagements_not_found)
 
     mo_engagements = _get_mo_engagements_from_postgres_csv()
     mo_engagements = [
-        eng for eng in mo_engagements
-        if _get_eng_key(eng) not in sd_engagements["engagements"]
+        eng for eng in mo_engagements if _get_eng_key(eng) not in already_processed
     ]
-    logger.info(
-        "Engagements to process",
-        n=len(mo_engagements)
-    )
+    logger.info("Engagements to process", n=len(mo_engagements))
 
     sd_client = SDClient(username, password)
 
     # Get the SD timeline for each engagement
     for i, eng in enumerate(mo_engagements):
         logger.info("Getting SD engagement timeline", engagement=eng, i=i)
+        eng_key = _get_eng_key(eng)
+
         try:
             r_employment = sd_client.get_employment_changed(
                 GetEmploymentChangedRequest(
@@ -169,25 +179,28 @@ def main(username: str, password: str) -> None:
             )
         except SDRootElementNotFound as error:
             logger.warning("Could not find engagement in SD", eng=eng, error=error)
+            sd_engagements_not_found[eng_key] = eng.dict()
             continue
         except Exception as error:
-            logger.error(
-                "Failed to get SD engagement timeline", eng=eng, error=error
-            )
-            _write_json(sd_engagements)
+            logger.error("Failed to get SD engagement timeline", eng=eng, error=error)
+            _write_json(sd_engagements, "/tmp/engagements.json")
+            _write_json(sd_engagements_not_found, "/tmp/engagements-not-found.json")
             raise error
 
         sd_eng_timeline = asyncio.run(get_employment_timeline(r_employment))
         eng_list = _engagement_timeline_to_json(sd_eng_timeline)
 
-        eng_key = _get_eng_key(eng)
-        sd_engagements["engagements"][eng_key] = eng_list
+        sd_engagements[eng_key] = eng_list
 
-        if i % 10 == 0:
-            logger.info("Writing JSON", i=i, time=datetime.now(tz=timezone.utc) - t_start)
-            _write_json(sd_engagements)
+        if i % 100 == 0:
+            logger.info(
+                "Writing JSON", i=i, time=datetime.now(tz=timezone.utc) - t_start
+            )
+            _write_json(sd_engagements, "/tmp/engagements.json")
+            _write_json(sd_engagements_not_found, "/tmp/engagements-not-found.json")
 
-    _write_json(sd_engagements)
+    _write_json(sd_engagements, "/tmp/engagements.json")
+    _write_json(sd_engagements_not_found, "/tmp/engagements-not-found.json")
 
     now = datetime.now(tz=timezone.utc)
     logger.info(
