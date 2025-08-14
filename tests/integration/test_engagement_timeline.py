@@ -2555,3 +2555,112 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
             ),
         )
     )
+
+
+@pytest.mark.integration_test
+async def test_eng_timeline_delete_engagement_not_found_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    job_function_5678: UUID,
+    job_function_9000: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  ------------------t1---------t2------------------------------------------->
+
+    MO (name)               |---name4--|
+    MO (key)                |--12345---|
+    MO (unit)               |---dep1---|
+    MO (unit ID)            |---dep1---|
+    MO (ext_7)              |----v1----|
+    MO (active)             |----------|
+    MO (eng_type)           |---full---|
+
+    "Arrange" intervals     |-----1----|
+
+    SD (empty)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange interval 1)
+    await graphql_client.create_engagement(
+        EngagementCreateInput(
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(start=t1, end=t2),
+            extension_1="name4",
+            extension_2="dep1",
+            extension_7="v1",
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    sd_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <Envelope>
+          <Body>
+            <Fault>
+              <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+              <faultstring>The stated EmploymentIdentifier '12345' does not exist</faultstring>
+              <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetEmploymentChanged20111201BO</faultactor>
+              <detail>
+                <string>Missing or invalid parameter from client: "The stated EmploymentIdentifier '12345' does not exist"</string>
+              </detail>
+            </Fault>
+          </Body>
+        </Envelope>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+    )
+
+    assert not updated_eng.objects

@@ -1178,27 +1178,37 @@ async def sync_engagement(
         dry_run=dry_run,
     )
 
-    r_employment = await asyncio.to_thread(
-        sd_client.get_employment_changed,
-        GetEmploymentChangedRequest(
-            InstitutionIdentifier=institution_identifier,
-            PersonCivilRegistrationIdentifier=cpr,
-            EmploymentIdentifier=employment_identifier,
-            ActivationDate=date.min,
-            DeactivationDate=date.max,
-            DepartmentIndicator=True,
-            EmploymentStatusIndicator=True,
-            ProfessionIndicator=True,
-            WorkingTimeIndicator=True,
-            UUIDIndicator=True,
-        ),
-    )
+    try:
+        r_employment = await asyncio.to_thread(
+            sd_client.get_employment_changed,
+            GetEmploymentChangedRequest(
+                InstitutionIdentifier=institution_identifier,
+                PersonCivilRegistrationIdentifier=cpr,
+                EmploymentIdentifier=employment_identifier,
+                ActivationDate=date.min,
+                DeactivationDate=date.max,
+                DepartmentIndicator=True,
+                EmploymentStatusIndicator=True,
+                ProfessionIndicator=True,
+                WorkingTimeIndicator=True,
+                UUIDIndicator=True,
+            ),
+        )
+        sd_eng_timeline = await get_employment_timeline(r_employment)
+        sd_leave_timeline = await get_sd_leave_timeline(r_employment)
 
-    sd_eng_timeline = await get_employment_timeline(r_employment)
-
-    # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
-    if len(sd_eng_timeline.eng_unit.intervals) == 0:
-        raise DepartmentTimelineNotFoundError()
+        # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
+        if len(sd_eng_timeline.eng_unit.intervals) == 0:
+            raise DepartmentTimelineNotFoundError()
+    except SDRootElementNotFound:
+        logger.warning(
+            "Could not find employment in SD. Delete engagement from MO",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            emp_id=employment_identifier,
+        )
+        sd_eng_timeline = EngagementTimeline()
+        sd_leave_timeline = LeaveTimeline()
 
     # Get the person
     r_person = await gql_client.get_person(CPRNumber(cpr))
@@ -1235,7 +1245,7 @@ async def sync_engagement(
         dry_run=dry_run,
     )
 
-    sd_leave_timeline = await get_sd_leave_timeline(r_employment)
+    # Sync leaves
     mo_leave_timeline = await get_mo_leave_timeline(
         gql_client=gql_client,
         person=person.uuid,
