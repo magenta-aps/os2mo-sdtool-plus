@@ -196,10 +196,10 @@ async def test_move_engagement(
     assert interval_1.extension_1 == "name4"
     assert interval_1.extension_2 == "dep3"
     assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
+    assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
-    assert one(interval_1.org_unit).uuid == dep3_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_1.org_unit_uuid == dep3_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -207,10 +207,10 @@ async def test_move_engagement(
     assert interval_2.extension_1 == "name4"
     assert interval_2.extension_2 == "dep3"
     assert interval_2.user_key == user_key
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == dep2_uuid
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == dep2_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -218,10 +218,10 @@ async def test_move_engagement(
     assert interval_3.extension_1 == "name4"
     assert interval_3.extension_2 == "dep4"
     assert interval_3.user_key == user_key
-    assert interval_3.job_function.uuid == job_function_1234
-    assert one(interval_3.org_unit).uuid == dep2_uuid
+    assert interval_3.job_function_uuid == job_function_1234
+    assert interval_3.org_unit_uuid == dep2_uuid
     assert interval_3.extension_7 == "v2"
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t4
@@ -229,10 +229,10 @@ async def test_move_engagement(
     assert interval_4.extension_1 == "name5"
     assert interval_4.extension_2 == "dep4"
     assert interval_4.user_key == user_key
-    assert interval_4.job_function.uuid == job_function_1234
-    assert one(interval_4.org_unit).uuid == dep2_uuid
+    assert interval_4.job_function_uuid == job_function_1234
+    assert interval_4.org_unit_uuid == dep2_uuid
     assert interval_4.extension_7 == "v3"
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_5 = validities[4]
     assert interval_5.validity.from_ == t5_minus_one
@@ -240,10 +240,10 @@ async def test_move_engagement(
     assert interval_5.extension_1 == "name5"
     assert interval_5.extension_2 == "dep4"
     assert interval_5.user_key == user_key
-    assert interval_5.job_function.uuid == job_function_1234
-    assert one(interval_5.org_unit).uuid == dep4_uuid
+    assert interval_5.job_function_uuid == job_function_1234
+    assert interval_5.org_unit_uuid == dep4_uuid
     assert interval_5.extension_7 == "v3"
-    assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_5.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_6 = validities[5]
     assert interval_6.validity.from_ == t5
@@ -251,10 +251,10 @@ async def test_move_engagement(
     assert interval_6.extension_1 == "name5"
     assert interval_6.extension_2 == "dep4"
     assert interval_6.user_key == user_key
-    assert interval_6.job_function.uuid == job_function_1234
-    assert one(interval_6.org_unit).uuid == dep4_uuid
+    assert interval_6.job_function_uuid == job_function_1234
+    assert interval_6.org_unit_uuid == dep4_uuid
     assert interval_6.extension_7 == "v4"
-    assert interval_6.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_6.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_7 = validities[6]
     assert interval_7.validity.from_ == t6
@@ -262,10 +262,10 @@ async def test_move_engagement(
     assert interval_7.extension_1 == "name5"
     assert interval_7.extension_2 == "dep4"
     assert interval_7.user_key == user_key
-    assert interval_7.job_function.uuid == job_function_5678
-    assert one(interval_7.org_unit).uuid == dep4_uuid
+    assert interval_7.job_function_uuid == job_function_5678
+    assert interval_7.org_unit_uuid == dep4_uuid
     assert interval_7.extension_7 == "v5"
-    assert interval_7.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_7.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     assert len(validities) == 7
 
@@ -439,10 +439,10 @@ async def test_move_engagement_to_infinity(
     assert interval_1.extension_1 == "name4"
     assert interval_1.extension_2 == "dep3"
     assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
+    assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
-    assert one(interval_1.org_unit).uuid == dep3_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_1.org_unit_uuid == dep3_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -450,10 +450,10 @@ async def test_move_engagement_to_infinity(
     assert interval_2.extension_1 == "name4"
     assert interval_2.extension_2 == "dep3"
     assert interval_2.user_key == user_key
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == dep2_uuid
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == dep2_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -461,10 +461,10 @@ async def test_move_engagement_to_infinity(
     assert interval_3.extension_1 == "name4"
     assert interval_3.extension_2 == "dep4"
     assert interval_3.user_key == user_key
-    assert interval_3.job_function.uuid == job_function_1234
-    assert one(interval_3.org_unit).uuid == dep2_uuid
+    assert interval_3.job_function_uuid == job_function_1234
+    assert interval_3.org_unit_uuid == dep2_uuid
     assert interval_3.extension_7 == "v2"
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t4
@@ -472,10 +472,10 @@ async def test_move_engagement_to_infinity(
     assert interval_4.extension_1 == "name5"
     assert interval_4.extension_2 == "dep4"
     assert interval_4.user_key == user_key
-    assert interval_4.job_function.uuid == job_function_1234
-    assert one(interval_4.org_unit).uuid == dep2_uuid
+    assert interval_4.job_function_uuid == job_function_1234
+    assert interval_4.org_unit_uuid == dep2_uuid
     assert interval_4.extension_7 == "v3"
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_5 = validities[4]
     assert interval_5.validity.from_ == t5
@@ -483,10 +483,10 @@ async def test_move_engagement_to_infinity(
     assert interval_5.extension_1 == "name5"
     assert interval_5.extension_2 == "dep4"
     assert interval_5.user_key == user_key
-    assert interval_5.job_function.uuid == job_function_1234
-    assert one(interval_5.org_unit).uuid == dep2_uuid
+    assert interval_5.job_function_uuid == job_function_1234
+    assert interval_5.org_unit_uuid == dep2_uuid
     assert interval_5.extension_7 == "v4"
-    assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_5.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_6 = validities[5]
     assert interval_6.validity.from_ == t6
@@ -494,10 +494,10 @@ async def test_move_engagement_to_infinity(
     assert interval_6.extension_1 == "name5"
     assert interval_6.extension_2 == "dep4"
     assert interval_6.user_key == user_key
-    assert interval_6.job_function.uuid == job_function_5678
-    assert one(interval_6.org_unit).uuid == dep2_uuid
+    assert interval_6.job_function_uuid == job_function_5678
+    assert interval_6.org_unit_uuid == dep2_uuid
     assert interval_6.extension_7 == "v5"
-    assert interval_6.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_6.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     assert len(validities) == 6
 
@@ -694,6 +694,6 @@ async def test_move_engagement_only_valid_for_a_day(
     assert interval_1.extension_1 == "name4"
     assert interval_1.extension_2 == "dep3"
     assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
-    assert one(interval_1.org_unit).uuid == dep2_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_1.job_function_uuid == job_function_1234
+    assert interval_1.org_unit_uuid == dep2_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
