@@ -166,6 +166,21 @@ async def get_class(
     return current.uuid
 
 
+async def get_class_user_key(gql_client: GraphQLClient, class_uuid: UUID) -> str:
+    classes = await gql_client.get_class(ClassFilter(uuids=[class_uuid]))
+
+    try:
+        current = one(classes.objects).current
+    except ValueError as error:
+        logger.error(
+            "Class not found or more than one class found", class_uuid=class_uuid
+        )
+        raise error
+    assert current is not None
+
+    return current.user_key
+
+
 async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]:
     """
     Get map from engagement type (Enum) to MO engagement type class UUID
@@ -797,6 +812,9 @@ async def get_engagement_timeline(
     object_ = one(objects, too_long=MoreThanOneEngagementError)
     validities = object_.validities
 
+    # Make sure we only look up each class once in MO for this time calculation
+    class_uuid_to_user_key: dict[UUID, str] = dict()
+
     activity_intervals = tuple(
         Active(
             start=obj.validity.from_,
@@ -808,14 +826,21 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
-    key_intervals = tuple(
-        EngagementKey(
-            start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
-            value=obj.job_function.user_key,
+    key_intervals = []
+    for obj in validities:
+        job_function_user_key = class_uuid_to_user_key.get(obj.job_function_uuid)
+        if job_function_user_key is None:
+            job_function_user_key = await get_class_user_key(
+                gql_client=gql_client, class_uuid=obj.job_function_uuid
+            )
+            class_uuid_to_user_key[obj.job_function_uuid] = job_function_user_key
+        key_intervals.append(
+            EngagementKey(
+                start=obj.validity.from_,
+                end=_mo_end_to_timeline_end(obj.validity.to),
+                value=job_function_user_key,
+            )
         )
-        for obj in validities
-    )
 
     name_intervals = tuple(
         EngagementName(
@@ -831,7 +856,7 @@ async def get_engagement_timeline(
         EngagementUnit(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=one(set(ou.uuid for ou in obj.org_unit)),
+            value=obj.org_unit_uuid,
         )
         for obj in validities
     )
@@ -854,18 +879,26 @@ async def get_engagement_timeline(
         for obj in validities
     )
 
-    type_intervals = tuple(
-        EngagementType(
-            start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
-            value=EngType(obj.engagement_type.user_key),
+    type_intervals = []
+    for obj in validities:
+        type_user_key = class_uuid_to_user_key.get(obj.engagement_type_uuid)
+        if type_user_key is None:
+            type_user_key = await get_class_user_key(
+                gql_client=gql_client, class_uuid=obj.engagement_type_uuid
+            )
+        type_intervals.append(
+            EngagementType(
+                start=obj.validity.from_,
+                end=_mo_end_to_timeline_end(obj.validity.to),
+                value=EngType(type_user_key),
+            )
         )
-        for obj in validities
-    )
 
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
-        eng_key=Timeline[EngagementKey](intervals=combine_intervals(key_intervals)),
+        eng_key=Timeline[EngagementKey](
+            intervals=combine_intervals(tuple(key_intervals))
+        ),
         eng_name=Timeline[EngagementName](intervals=combine_intervals(name_intervals)),
         eng_unit=Timeline[EngagementUnit](intervals=combine_intervals(unit_intervals)),
         eng_sd_unit=Timeline[EngagementSDUnit](
@@ -874,7 +907,9 @@ async def get_engagement_timeline(
         eng_unit_id=Timeline[EngagementUnitId](
             intervals=combine_intervals(unit_id_intervals)
         ),
-        eng_type=Timeline[EngagementType](intervals=combine_intervals(type_intervals)),
+        eng_type=Timeline[EngagementType](
+            intervals=combine_intervals(tuple(type_intervals))
+        ),
     )
     logger.debug("MO engagement timeline", timeline=timeline.dict())
 
@@ -1148,7 +1183,9 @@ async def update_engagement(
             payload = EngagementUpdateInput(
                 uuid=obj.uuid,
                 user_key=user_key,
-                primary=validity.primary.uuid if validity.primary is not None else None,
+                primary=validity.primary_uuid
+                if validity.primary_uuid is not None
+                else None,
                 validity=get_patch_validity(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),

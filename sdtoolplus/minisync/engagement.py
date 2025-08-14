@@ -122,7 +122,9 @@ async def move_engagement(
         update_payload = EngagementUpdateInput(
             uuid=obj.uuid,
             user_key=user_key,
-            primary=validity.primary.uuid if validity.primary is not None else None,
+            primary=validity.primary_uuid
+            if validity.primary_uuid is not None
+            else None,
             validity=get_patch_validity(
                 validity.validity.from_, validity.validity.to, payload_validity
             ),
@@ -138,8 +140,8 @@ async def move_engagement(
             extension_10=validity.extension_10,
             person=person.uuid,
             org_unit=payload.org_unit_uuid,
-            engagement_type=validity.engagement_type.uuid,
-            job_function=validity.job_function.uuid,
+            engagement_type=validity.engagement_type_uuid,
+            job_function=validity.job_function_uuid,
         )
         logger.debug("Moving engagement...", payload=update_payload.dict())
         if not dry_run:
