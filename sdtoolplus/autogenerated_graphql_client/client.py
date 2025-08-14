@@ -722,9 +722,7 @@ class GraphQLClient(AsyncBaseClient):
                   uuid
                   validities {
                     user_key
-                    primary {
-                      uuid
-                    }
+                    primary_uuid
                     validity {
                       from
                       to
@@ -742,18 +740,9 @@ class GraphQLClient(AsyncBaseClient):
                     person {
                       uuid
                     }
-                    org_unit(filter: {from_date: $from_date, to_date: $to_date}) {
-                      uuid
-                    }
-                    engagement_type {
-                      uuid
-                      user_key
-                      name
-                    }
-                    job_function {
-                      uuid
-                      user_key
-                    }
+                    org_unit_uuid
+                    engagement_type_uuid
+                    job_function_uuid
                   }
                 }
               }

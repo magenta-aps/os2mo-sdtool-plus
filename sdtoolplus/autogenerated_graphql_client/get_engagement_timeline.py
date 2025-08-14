@@ -23,7 +23,7 @@ class GetEngagementTimelineEngagementsObjects(BaseModel):
 
 class GetEngagementTimelineEngagementsObjectsValidities(BaseModel):
     user_key: str
-    primary: Optional["GetEngagementTimelineEngagementsObjectsValiditiesPrimary"]
+    primary_uuid: Optional[UUID]
     validity: "GetEngagementTimelineEngagementsObjectsValiditiesValidity"
     extension_1: Optional[str]
     extension_2: Optional[str]
@@ -36,13 +36,9 @@ class GetEngagementTimelineEngagementsObjectsValidities(BaseModel):
     extension_9: Optional[str]
     extension_10: Optional[str]
     person: List["GetEngagementTimelineEngagementsObjectsValiditiesPerson"]
-    org_unit: List["GetEngagementTimelineEngagementsObjectsValiditiesOrgUnit"]
-    engagement_type: "GetEngagementTimelineEngagementsObjectsValiditiesEngagementType"
-    job_function: "GetEngagementTimelineEngagementsObjectsValiditiesJobFunction"
-
-
-class GetEngagementTimelineEngagementsObjectsValiditiesPrimary(BaseModel):
-    uuid: UUID
+    org_unit_uuid: UUID
+    engagement_type_uuid: UUID
+    job_function_uuid: UUID
 
 
 class GetEngagementTimelineEngagementsObjectsValiditiesValidity(BaseModel):
@@ -54,28 +50,9 @@ class GetEngagementTimelineEngagementsObjectsValiditiesPerson(BaseModel):
     uuid: UUID
 
 
-class GetEngagementTimelineEngagementsObjectsValiditiesOrgUnit(BaseModel):
-    uuid: UUID
-
-
-class GetEngagementTimelineEngagementsObjectsValiditiesEngagementType(BaseModel):
-    uuid: UUID
-    user_key: str
-    name: str
-
-
-class GetEngagementTimelineEngagementsObjectsValiditiesJobFunction(BaseModel):
-    uuid: UUID
-    user_key: str
-
-
 GetEngagementTimeline.update_forward_refs()
 GetEngagementTimelineEngagements.update_forward_refs()
 GetEngagementTimelineEngagementsObjects.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValidities.update_forward_refs()
-GetEngagementTimelineEngagementsObjectsValiditiesPrimary.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValiditiesValidity.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValiditiesPerson.update_forward_refs()
-GetEngagementTimelineEngagementsObjectsValiditiesOrgUnit.update_forward_refs()
-GetEngagementTimelineEngagementsObjectsValiditiesEngagementType.update_forward_refs()
-GetEngagementTimelineEngagementsObjectsValiditiesJobFunction.update_forward_refs()
