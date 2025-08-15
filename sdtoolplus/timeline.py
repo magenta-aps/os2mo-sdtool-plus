@@ -64,6 +64,7 @@ from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_association
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
+from sdtoolplus.mo.timeline import terminate_leave_before_engagement_termination
 from sdtoolplus.mo.timeline import terminate_ou
 from sdtoolplus.mo.timeline import update_association
 from sdtoolplus.mo.timeline import update_engagement
@@ -279,6 +280,14 @@ async def _sync_eng_intervals(
             is_active = False  # type: ignore
 
         if not is_active:
+            await terminate_leave_before_engagement_termination(
+                gql_client=gql_client,
+                eng_term_start=start,
+                eng_term_end=end,
+                mo_leave_timeline=mo_leave_timeline,
+                person=person,
+                user_key=user_key,
+            )
             await terminate_engagement(
                 gql_client=gql_client,
                 person=person,
