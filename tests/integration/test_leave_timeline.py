@@ -117,8 +117,6 @@ async def test_leave_timeline(
 
     print("LEAVE UUID", leave_uuid)
 
-    # await asyncio.sleep(300)
-
     sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
         <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
           <RequestStructure>
