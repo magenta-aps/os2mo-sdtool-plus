@@ -243,6 +243,7 @@ async def _sync_eng_intervals(
     employment_identifier: str,
     desired_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
+    mo_leave_timeline: LeaveTimeline,
     settings: SDToolPlusSettings,
     dry_run: bool,
 ) -> None:
@@ -1234,18 +1235,6 @@ async def sync_engagement(
         mo_eng_timeline=mo_eng_timeline,
     )
 
-    await _sync_eng_intervals(
-        gql_client=gql_client,
-        person=person.uuid,
-        institution_identifier=institution_identifier,
-        employment_identifier=employment_identifier,
-        desired_eng_timeline=desired_eng_timeline,
-        mo_eng_timeline=mo_eng_timeline,
-        settings=settings,
-        dry_run=dry_run,
-    )
-
-    # Sync leaves
     mo_leave_timeline = await get_mo_leave_timeline(
         gql_client=gql_client,
         person=person.uuid,
@@ -1254,6 +1243,19 @@ async def sync_engagement(
         ),
     )
 
+    await _sync_eng_intervals(
+        gql_client=gql_client,
+        person=person.uuid,
+        institution_identifier=institution_identifier,
+        employment_identifier=employment_identifier,
+        desired_eng_timeline=desired_eng_timeline,
+        mo_eng_timeline=mo_eng_timeline,
+        mo_leave_timeline=mo_leave_timeline,
+        settings=settings,
+        dry_run=dry_run,
+    )
+
+    # Sync leaves
     await _sync_leave_intervals(
         gql_client=gql_client,
         person=person.uuid,
