@@ -4,6 +4,9 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextlib import suppress
+from datetime import datetime
+from datetime import time
+from datetime import timedelta
 from functools import partial
 from functools import wraps
 from pathlib import Path
@@ -12,11 +15,14 @@ from typing import Callable
 from typing import Coroutine
 from urllib.parse import urlencode
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import aio_pika
 import structlog
 from aio_pika.abc import AbstractIncomingMessage
 from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
 from fastramqpi.context import Context
 from fastramqpi.events import Event
 from more_itertools import one
@@ -41,7 +47,6 @@ from sdtoolplus.timeline import sync_ou
 from sdtoolplus.timeline import sync_person
 
 logger = structlog.stdlib.get_logger()
-router = APIRouter()
 
 
 @asynccontextmanager
@@ -174,11 +179,33 @@ async def process_sd_amqp_person_event(
     )
 
 
+async def sd_api_open() -> None:
+    # The SD API SLA is defined in Copenhagen time
+    now = datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
+    open, close = time(6, 0), time(22, 0)
+
+    # The SD API is open
+    if open < now.time() < close:
+        return
+
+    # This works correctly during a DST transition because timedelta addition
+    # ignores both fold and tzinfo attributes (like intra-zone or naive
+    # datetime subtraction).
+    open_next = datetime.combine(date=now, time=open, tzinfo=now.tzinfo)
+    open_remaining = (open_next - now) % timedelta(days=1)
+    raise HTTPException(
+        status_code=503,
+        detail="SD API CLOSED",
+        headers={"Retry-After": str(open_remaining.seconds)},
+    )
+
+
 # OS2mo GraphQL Event Handlers
 # Thin wrappers around the sync functions, for both MO and SD events.
+router = APIRouter()
 
 
-@router.post("/events/sd/employment")
+@router.post("/events/sd/employment", dependencies=[Depends(sd_api_open)])
 async def _sd_employment(
     settings: depends.Settings,
     sd_client: depends.SDClient,
@@ -196,7 +223,7 @@ async def _sd_employment(
     )
 
 
-@router.post("/events/mo/engagement")
+@router.post("/events/mo/engagement", dependencies=[Depends(sd_api_open)])
 async def _mo_engagement(
     settings: depends.Settings,
     sd_client: depends.SDClient,
@@ -298,7 +325,7 @@ async def _mo_org_unit(
     )
 
 
-@router.post("/events/sd/person")
+@router.post("/events/sd/person", dependencies=[Depends(sd_api_open)])
 async def _sd_person(
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
@@ -313,7 +340,7 @@ async def _sd_person(
     )
 
 
-@router.post("/events/mo/person")
+@router.post("/events/mo/person", dependencies=[Depends(sd_api_open)])
 async def _mo_person(
     settings: depends.Settings,
     sd_client: depends.SDClient,
