@@ -54,6 +54,7 @@ from sdtoolplus.exceptions import MoreThanOneOrgUnitError
 from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
 from sdtoolplus.exceptions import MoreThanOnePostalAddressError
+from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
@@ -1365,6 +1366,57 @@ async def terminate_leave(
     if not dry_run:
         await gql_client.terminate_leave(payload)
     logger.debug("Leave terminated", person=str(person), user_key=user_key)
+
+
+async def terminate_leave_before_engagement_termination(
+    gql_client: GraphQLClient,
+    eng_term_start: datetime,
+    eng_term_end: datetime,
+    mo_leave_timeline: LeaveTimeline,
+    person: UUID,
+    user_key: str,
+) -> None:
+    logger.debug(
+        "Terminate leave prior to engagement termination",
+        person=str(person),
+        user_key=user_key,
+        eng_term_start=eng_term_start,
+        eng_term_end=eng_term_end,
+    )
+
+    endpoints = sorted(
+        mo_leave_timeline.get_interval_endpoints().union({eng_term_start, eng_term_end})
+    )
+    endpoints = [
+        endpoint for endpoint in endpoints if eng_term_start <= endpoint <= eng_term_end
+    ]
+
+    for start, end in pairwise(endpoints):
+        try:
+            mo_leave_timeline.leave_active.entity_at(start)
+        except NoValueError:
+            logger.debug(
+                "No leave to terminate in this interval",
+                person=str(person),
+                user_key=user_key,
+                start=start,
+                end=end,
+            )
+            continue
+        await terminate_leave(
+            gql_client=gql_client,
+            person=person,
+            user_key=user_key,
+            start=start,
+            end=end,
+        )
+        logger.debug(
+            "Terminated leave prior to engagement termination",
+            person=str(person),
+            user_key=user_key,
+            start=start,
+            end=end,
+        )
 
 
 def _get_related_units_endpoints(
