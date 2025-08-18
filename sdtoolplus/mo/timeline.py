@@ -1183,9 +1183,7 @@ async def update_engagement(
             payload = EngagementUpdateInput(
                 uuid=obj.uuid,
                 user_key=user_key,
-                primary=validity.primary_uuid
-                if validity.primary_uuid is not None
-                else None,
+                primary=validity.primary_uuid,
                 validity=get_patch_validity(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
