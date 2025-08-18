@@ -84,19 +84,7 @@ from .get_engagement_timeline import GetEngagementTimelineEngagements
 from .get_engagement_timeline import GetEngagementTimelineEngagementsObjects
 from .get_engagement_timeline import GetEngagementTimelineEngagementsObjectsValidities
 from .get_engagement_timeline import (
-    GetEngagementTimelineEngagementsObjectsValiditiesEngagementType,
-)
-from .get_engagement_timeline import (
-    GetEngagementTimelineEngagementsObjectsValiditiesJobFunction,
-)
-from .get_engagement_timeline import (
-    GetEngagementTimelineEngagementsObjectsValiditiesOrgUnit,
-)
-from .get_engagement_timeline import (
     GetEngagementTimelineEngagementsObjectsValiditiesPerson,
-)
-from .get_engagement_timeline import (
-    GetEngagementTimelineEngagementsObjectsValiditiesPrimary,
 )
 from .get_engagement_timeline import (
     GetEngagementTimelineEngagementsObjectsValiditiesValidity,
@@ -419,11 +407,7 @@ __all__ = [
     "GetEngagementTimelineEngagements",
     "GetEngagementTimelineEngagementsObjects",
     "GetEngagementTimelineEngagementsObjectsValidities",
-    "GetEngagementTimelineEngagementsObjectsValiditiesEngagementType",
-    "GetEngagementTimelineEngagementsObjectsValiditiesJobFunction",
-    "GetEngagementTimelineEngagementsObjectsValiditiesOrgUnit",
     "GetEngagementTimelineEngagementsObjectsValiditiesPerson",
-    "GetEngagementTimelineEngagementsObjectsValiditiesPrimary",
     "GetEngagementTimelineEngagementsObjectsValiditiesValidity",
     "GetEngagements",
     "GetEngagementsEngagements",

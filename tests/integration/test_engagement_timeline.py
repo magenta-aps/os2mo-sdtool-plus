@@ -332,10 +332,10 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_1.extension_1 == "name1"
     assert interval_1.extension_2 == "dep1"
     assert interval_1.user_key == emp_id
-    assert interval_1.job_function.uuid == job_function_9000
+    assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.extension_7 is None
-    assert one(interval_1.org_unit).uuid == dep1_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_1.org_unit_uuid == dep1_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -343,10 +343,10 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_2.extension_1 == "name1"
     assert interval_2.extension_2 == "dep2"
     assert interval_2.user_key == emp_id
-    assert interval_2.job_function.uuid == job_function_9000
-    assert one(interval_2.org_unit).uuid == dep2_uuid
+    assert interval_2.job_function_uuid == job_function_9000
+    assert interval_2.org_unit_uuid == dep2_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -354,10 +354,10 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_3.extension_1 == "name2"
     assert interval_3.extension_2 == "dep2"
     assert interval_3.user_key == emp_id
-    assert interval_3.job_function.uuid == job_function_9000
-    assert one(interval_3.org_unit).uuid == dep2_uuid
+    assert interval_3.job_function_uuid == job_function_9000
+    assert interval_3.org_unit_uuid == dep2_uuid
     assert interval_3.extension_7 == "v2"
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t4
@@ -365,10 +365,10 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_4.extension_1 == "name2"
     assert interval_4.extension_2 == "dep2"
     assert interval_4.user_key == emp_id
-    assert interval_4.job_function.uuid == job_function_9000
-    assert one(interval_4.org_unit).uuid == dep2_uuid
+    assert interval_4.job_function_uuid == job_function_9000
+    assert interval_4.org_unit_uuid == dep2_uuid
     assert interval_4.extension_7 == "v3"
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_5 = validities[4]
     assert interval_5.validity.from_ == t6
@@ -376,10 +376,10 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_5.extension_1 is None
     assert interval_5.extension_2 == "dep2"
     assert interval_5.user_key == emp_id
-    assert interval_5.job_function.uuid == job_function_9000
-    assert one(interval_5.org_unit).uuid == dep2_uuid
+    assert interval_5.job_function_uuid == job_function_9000
+    assert interval_5.org_unit_uuid == dep2_uuid
     assert interval_5.extension_7 == "v5"
-    assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_5.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
 
 @pytest.mark.integration_test
@@ -603,10 +603,10 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_1.extension_1 == "name1"
     assert interval_1.extension_2 == "dep1"
     assert interval_1.user_key == emp_id
-    assert interval_1.job_function.uuid == job_function_9000
+    assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.extension_7 is None
-    assert one(interval_1.org_unit).uuid == dep1_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_1.org_unit_uuid == dep1_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -614,10 +614,10 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_2.extension_1 == "name1"
     assert interval_2.extension_2 == "dep2"
     assert interval_2.user_key == emp_id
-    assert interval_2.job_function.uuid == job_function_9000
-    assert one(interval_2.org_unit).uuid == dep2_uuid
+    assert interval_2.job_function_uuid == job_function_9000
+    assert interval_2.org_unit_uuid == dep2_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -625,10 +625,10 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_3.extension_1 == "name2"
     assert interval_3.extension_2 == "dep2"
     assert interval_3.user_key == emp_id
-    assert interval_3.job_function.uuid == job_function_9000
-    assert one(interval_3.org_unit).uuid == dep2_uuid
+    assert interval_3.job_function_uuid == job_function_9000
+    assert interval_3.org_unit_uuid == dep2_uuid
     assert interval_3.extension_7 == "v1"
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t6
@@ -636,10 +636,10 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_4.extension_1 == "name3"
     assert interval_4.extension_2 == "dep2"
     assert interval_4.user_key == emp_id
-    assert interval_4.job_function.uuid == job_function_9000
-    assert one(interval_4.org_unit).uuid == dep2_uuid
+    assert interval_4.job_function_uuid == job_function_9000
+    assert interval_4.org_unit_uuid == dep2_uuid
     assert interval_4.extension_7 == "v1"
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     assert len(validities) == 4
 
@@ -837,9 +837,9 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_1.extension_1 == "name1"
     assert interval_1.extension_2 == "dep1"
     assert interval_1.user_key == emp_id
-    assert interval_1.job_function.uuid == job_function_9000
-    assert one(interval_1.org_unit).uuid == dep1_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_1.job_function_uuid == job_function_9000
+    assert interval_1.org_unit_uuid == dep1_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -847,9 +847,9 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_2.extension_1 == "name1"
     assert interval_2.extension_2 == "dep2"
     assert interval_2.user_key == emp_id
-    assert interval_2.job_function.uuid == job_function_9000
-    assert one(interval_2.org_unit).uuid == dep2_uuid
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_2.job_function_uuid == job_function_9000
+    assert interval_2.org_unit_uuid == dep2_uuid
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -857,9 +857,9 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_3.extension_1 == "name2"
     assert interval_3.extension_2 == "dep2"
     assert interval_3.user_key == emp_id
-    assert interval_3.job_function.uuid == job_function_9000
-    assert one(interval_3.org_unit).uuid == dep2_uuid
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_3.job_function_uuid == job_function_9000
+    assert interval_3.org_unit_uuid == dep2_uuid
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t6
@@ -867,9 +867,9 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_4.extension_1 == "name3"
     assert interval_4.extension_2 == "dep2"
     assert interval_4.user_key == emp_id
-    assert interval_4.job_function.uuid == job_function_9000
-    assert one(interval_4.org_unit).uuid == dep2_uuid
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_4.job_function_uuid == job_function_9000
+    assert interval_4.org_unit_uuid == dep2_uuid
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
 
 @pytest.mark.integration_test
@@ -1040,9 +1040,9 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_1.extension_2 == "dep1"
     assert interval_1.extension_3 == str(dep1_uuid)
     assert interval_1.user_key == emp_id
-    assert interval_1.job_function.uuid == job_function_1234
-    assert one(interval_1.org_unit).uuid == dep2_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_1.job_function_uuid == job_function_1234
+    assert interval_1.org_unit_uuid == dep2_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t3
@@ -1051,9 +1051,9 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_2.extension_2 == "dep1"
     assert interval_2.extension_3 == str(dep1_uuid)
     assert interval_2.user_key == emp_id
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == dep3_uuid
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == dep3_uuid
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t4
@@ -1062,9 +1062,9 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_3.extension_2 == "dep1"
     assert interval_3.extension_3 == str(dep1_uuid)
     assert interval_3.user_key == emp_id
-    assert interval_3.job_function.uuid == job_function_1234
-    assert one(interval_3.org_unit).uuid == dep4_uuid
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_3.job_function_uuid == job_function_1234
+    assert interval_3.org_unit_uuid == dep4_uuid
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
 
     assert len(validities) == 3
 
@@ -1739,10 +1739,10 @@ async def test_eng_timeline_related_units(
     assert interval_1.extension_2 == "dep1"
     assert interval_1.extension_3 == str(dep1_uuid)
     assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
+    assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
-    assert one(interval_1.org_unit).uuid == A_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_1.org_unit_uuid == A_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t3
@@ -1751,10 +1751,10 @@ async def test_eng_timeline_related_units(
     assert interval_2.extension_2 == "dep3"
     assert interval_2.extension_3 == str(dep3_uuid)
     assert interval_2.user_key == user_key
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == C_uuid
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == C_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t5
@@ -1763,10 +1763,10 @@ async def test_eng_timeline_related_units(
     assert interval_3.extension_2 == "dep3"
     assert interval_3.extension_3 == str(dep3_uuid)
     assert interval_3.user_key == user_key
-    assert interval_3.job_function.uuid == job_function_1234
-    assert one(interval_3.org_unit).uuid == D_uuid
+    assert interval_3.job_function_uuid == job_function_1234
+    assert interval_3.org_unit_uuid == D_uuid
     assert interval_3.extension_7 == "v1"
-    assert interval_3.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t6
@@ -1775,10 +1775,10 @@ async def test_eng_timeline_related_units(
     assert interval_4.extension_2 == "dep3"
     assert interval_4.extension_3 == str(dep3_uuid)
     assert interval_4.user_key == user_key
-    assert interval_4.job_function.uuid == job_function_1234
-    assert one(interval_4.org_unit).uuid == E_uuid
+    assert interval_4.job_function_uuid == job_function_1234
+    assert interval_4.org_unit_uuid == E_uuid
     assert interval_4.extension_7 == "v1"
-    assert interval_4.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_5 = validities[4]
     assert interval_5.validity.from_ == t7
@@ -1787,10 +1787,10 @@ async def test_eng_timeline_related_units(
     assert interval_5.extension_2 == "dep3"
     assert interval_5.extension_3 == str(dep3_uuid)
     assert interval_5.user_key == user_key
-    assert interval_5.job_function.uuid == job_function_1234
-    assert one(interval_5.org_unit).uuid == UNKNOWN_UNIT
+    assert interval_5.job_function_uuid == job_function_1234
+    assert interval_5.org_unit_uuid == UNKNOWN_UNIT
     assert interval_5.extension_7 == "v1"
-    assert interval_5.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_5.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_6 = validities[5]
     assert interval_6.validity.from_ == t8
@@ -1799,10 +1799,10 @@ async def test_eng_timeline_related_units(
     assert interval_6.extension_2 == "dep2"
     assert interval_6.extension_3 == str(dep2_uuid)
     assert interval_6.user_key == user_key
-    assert interval_6.job_function.uuid == job_function_1234
-    assert one(interval_6.org_unit).uuid == B_uuid
+    assert interval_6.job_function_uuid == job_function_1234
+    assert interval_6.org_unit_uuid == B_uuid
     assert interval_6.extension_7 == "v1"
-    assert interval_6.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_6.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_7 = validities[6]
     assert interval_7.validity.from_ == t9
@@ -1811,10 +1811,10 @@ async def test_eng_timeline_related_units(
     assert interval_7.extension_2 == "dep2"
     assert interval_7.extension_3 == str(dep2_uuid)
     assert interval_7.user_key == user_key
-    assert interval_7.job_function.uuid == job_function_1234
-    assert one(interval_7.org_unit).uuid == C_uuid
+    assert interval_7.job_function_uuid == job_function_1234
+    assert interval_7.org_unit_uuid == C_uuid
     assert interval_7.extension_7 == "v1"
-    assert interval_7.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_7.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     assert len(validities) == 7
 
@@ -2023,10 +2023,10 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     assert interval_1.extension_2 == "dep1"
     assert interval_1.extension_3 == str(dep1_uuid)
     assert interval_1.user_key == user_key
-    assert interval_1.job_function.uuid == job_function_1234
+    assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
-    assert one(interval_1.org_unit).uuid == A_uuid
-    assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_1.org_unit_uuid == A_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -2035,10 +2035,10 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     assert interval_2.extension_2 == "dep2"
     assert interval_2.extension_3 == str(dep2_uuid)
     assert interval_2.user_key == user_key
-    assert interval_2.job_function.uuid == job_function_1234
-    assert one(interval_2.org_unit).uuid == B_uuid
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == B_uuid
     assert interval_2.extension_7 == "v1"
-    assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     assert len(validities) == 2
 
@@ -2247,10 +2247,10 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
         assert interval_1.extension_2 == "dep1"
         assert interval_1.extension_3 == str(dep1_uuid)
         assert interval_1.user_key == user_key
-        assert interval_1.job_function.uuid == job_function_1234
+        assert interval_1.job_function_uuid == job_function_1234
         assert interval_1.extension_7 == "v1"
-        assert one(interval_1.org_unit).uuid == A_uuid
-        assert interval_1.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+        assert interval_1.org_unit_uuid == A_uuid
+        assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
         interval_2 = validities[1]
         assert interval_2.validity.from_ == t2
@@ -2259,10 +2259,10 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
         assert interval_2.extension_2 == "dep2"
         assert interval_2.extension_3 == str(dep2_uuid)
         assert interval_2.user_key == user_key
-        assert interval_2.job_function.uuid == job_function_1234
-        assert one(interval_2.org_unit).uuid == A_uuid
+        assert interval_2.job_function_uuid == job_function_1234
+        assert interval_2.org_unit_uuid == A_uuid
         assert interval_2.extension_7 == "v1"
-        assert interval_2.engagement_type.uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+        assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
         assert len(validities) == 2
 

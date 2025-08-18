@@ -310,14 +310,18 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return GetFacetUuid.parse_obj(data).facets
 
-    async def get_class(self, class_filter: ClassFilter) -> GetClassClasses:
+    async def get_class(
+        self,
+        class_filter: ClassFilter,
+        at: Union[Optional[datetime], UnsetType] = UNSET,
+    ) -> GetClassClasses:
         query = gql(
             """
-            query GetClass($class_filter: ClassFilter!) {
+            query GetClass($class_filter: ClassFilter!, $at: DateTime) {
               classes(filter: $class_filter) {
                 objects {
                   uuid
-                  current {
+                  current(at: $at) {
                     uuid
                     user_key
                     name
@@ -333,7 +337,7 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {"class_filter": class_filter}
+        variables: dict[str, object] = {"class_filter": class_filter, "at": at}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetClass.parse_obj(data).classes
@@ -722,9 +726,7 @@ class GraphQLClient(AsyncBaseClient):
                   uuid
                   validities {
                     user_key
-                    primary {
-                      uuid
-                    }
+                    primary_uuid
                     validity {
                       from
                       to
@@ -742,18 +744,9 @@ class GraphQLClient(AsyncBaseClient):
                     person {
                       uuid
                     }
-                    org_unit(filter: {from_date: $from_date, to_date: $to_date}) {
-                      uuid
-                    }
-                    engagement_type {
-                      uuid
-                      user_key
-                      name
-                    }
-                    job_function {
-                      uuid
-                      user_key
-                    }
+                    org_unit_uuid
+                    engagement_type_uuid
+                    job_function_uuid
                   }
                 }
               }

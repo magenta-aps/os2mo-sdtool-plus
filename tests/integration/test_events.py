@@ -200,7 +200,7 @@ async def test_reconcile_person_and_related_objects(
             to_date=None,
         )
         validities = one(mo_engagement.objects).validities
-        job_function_uuids = {v.job_function.uuid for v in validities}
+        job_function_uuids = {v.job_function_uuid for v in validities}
         assert job_function_uuids == {job_function_9000}
 
     await verify()
