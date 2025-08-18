@@ -23,22 +23,10 @@ class GetLeaveLeavesObjects(BaseModel):
 
 class GetLeaveLeavesObjectsValidities(BaseModel):
     user_key: str
-    person: List["GetLeaveLeavesObjectsValiditiesPerson"]
-    engagement: "GetLeaveLeavesObjectsValiditiesEngagement"
-    leave_type: "GetLeaveLeavesObjectsValiditiesLeaveType"
+    employee_uuid: UUID
+    engagement_uuid: UUID
+    leave_type_uuid: UUID
     validity: "GetLeaveLeavesObjectsValiditiesValidity"
-
-
-class GetLeaveLeavesObjectsValiditiesPerson(BaseModel):
-    uuid: UUID
-
-
-class GetLeaveLeavesObjectsValiditiesEngagement(BaseModel):
-    uuid: UUID
-
-
-class GetLeaveLeavesObjectsValiditiesLeaveType(BaseModel):
-    uuid: UUID
 
 
 class GetLeaveLeavesObjectsValiditiesValidity(BaseModel):
@@ -50,7 +38,4 @@ GetLeave.update_forward_refs()
 GetLeaveLeaves.update_forward_refs()
 GetLeaveLeavesObjects.update_forward_refs()
 GetLeaveLeavesObjectsValidities.update_forward_refs()
-GetLeaveLeavesObjectsValiditiesPerson.update_forward_refs()
-GetLeaveLeavesObjectsValiditiesEngagement.update_forward_refs()
-GetLeaveLeavesObjectsValiditiesLeaveType.update_forward_refs()
 GetLeaveLeavesObjectsValiditiesValidity.update_forward_refs()

@@ -813,15 +813,9 @@ class GraphQLClient(AsyncBaseClient):
                   uuid
                   validities {
                     user_key
-                    person {
-                      uuid
-                    }
-                    engagement {
-                      uuid
-                    }
-                    leave_type {
-                      uuid
-                    }
+                    employee_uuid
+                    engagement_uuid
+                    leave_type_uuid
                     validity {
                       from
                       to
