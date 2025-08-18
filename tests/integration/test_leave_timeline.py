@@ -94,7 +94,7 @@ async def test_leave_timeline(
                 user_key=user_key,
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name1",
-                extension_2="dep1",
+                extension_4="dep1",
                 person=person_uuid,
                 org_unit=dep1_uuid,
                 engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],

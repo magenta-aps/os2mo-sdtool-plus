@@ -152,9 +152,9 @@ class SDToolPlusSettings(BaseSettings):
     unknown_unit: OrgUnitUUID | None = None
 
     # If the engagement SD unit UUID value changes (stored in MOs engagement attribute
-    # extension_3), we will re-calculate the engagement placement - see the
+    # extension_5), we will re-calculate the engagement placement - see the
     # engagement_ou_strategy_region. The only situation where this flag has to be set
-    # to "False" is for the initial population of the extension_3 attribute
+    # to "False" is for the initial population of the extension_5 attribute
     # (this setting is only used in "region" mode)
     recalc_mo_unit_when_sd_employment_moved: bool = True
 

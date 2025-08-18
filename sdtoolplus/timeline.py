@@ -1033,7 +1033,7 @@ async def engagement_ou_strategy_region(
        engagement in a (random) related unit in the given interval.
 
     These two rules apply apart from the following exception. If the engagement SD unit
-    UUID value changes (stored in MOs engagement attribute "extension_3"), we will
+    UUID value changes (stored in MOs engagement attribute "extension_5"), we will
     re-calculate the engagement placement according to 2) above. As a consequence, *any*
     manual engagement changes in MO are overwritten in the given interval! This happens
     when the engagement is placed in a new department in SD. The following ASCII
@@ -1073,7 +1073,7 @@ async def engagement_ou_strategy_region(
             unit = entity.value
             if settings.recalc_mo_unit_when_sd_employment_moved:
                 # Overwrite (i.e. set to the unknown unit and hence recalculate below)
-                # if the MO SD unit (extension_3) and the SD unit UUID are different
+                # if the MO SD unit (extension_5) and the SD unit UUID are different
                 # (see docstring ASCII)
                 mo_sd_unit = mo_eng_timeline.eng_sd_unit.entity_at(start).value
                 sd_unit = sd_eng_timeline.eng_unit.entity_at(start).value
@@ -1293,7 +1293,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
     dry_run: bool,
 ) -> None:
     """
-    Sync the SD unit to the MO engagement extension_3 attribute. All other engagement
+    Sync the SD unit to the MO engagement extension_5 attribute. All other engagement
     fields are also synchronized except for the engagement unit which is left unchanged.
 
     Args:
@@ -1303,7 +1303,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
         dry_run: If true, nothing will be written to MO.
     """
     logger.info(
-        "Sync SD unit to MO engagement extension_3 attributes",
+        "Sync SD unit to MO engagement extension_5 attributes",
         cpr=cpr,
         dry_run=dry_run,
     )
@@ -1353,7 +1353,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
 
     for eng in engagements:
         logger.debug(
-            "Queuing engagement for SD unit (extension_3) sync", engagement=eng.dict()
+            "Queuing engagement for SD unit (extension_5) sync", engagement=eng.dict()
         )
         event = EventSendInput(
             namespace="sd",
@@ -1367,5 +1367,5 @@ async def queue_mo_engagements_for_sd_unit_sync(
         await gql_client.send_event(input=event)
 
     logger.info(
-        f"Done queueing {len(engagements)} engagements for SD unit (extension_3) sync)"
+        f"Done queueing {len(engagements)} engagements for SD unit (extension_5) sync)"
     )
