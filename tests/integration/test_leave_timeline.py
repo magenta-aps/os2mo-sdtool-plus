@@ -115,8 +115,6 @@ async def test_leave_timeline(
         )
     ).uuid
 
-    print("LEAVE UUID", leave_uuid)
-
     sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
         <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
           <RequestStructure>
@@ -213,14 +211,14 @@ async def test_leave_timeline(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.user_key == user_key
-    assert one(interval_1.person).uuid == person_uuid
-    assert interval_1.leave_type.uuid == leave_type
+    assert interval_1.employee_uuid == person_uuid
+    assert interval_1.leave_type_uuid == leave_type
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t5
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t6
     assert interval_2.user_key == user_key
-    assert one(interval_2.person).uuid == person_uuid
-    assert interval_2.leave_type.uuid == leave_type
+    assert interval_2.employee_uuid == person_uuid
+    assert interval_2.leave_type_uuid == leave_type
 
     assert len(validities) == 2
