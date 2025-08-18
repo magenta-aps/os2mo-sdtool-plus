@@ -95,7 +95,7 @@ async def test_move_engagement(
                 user_key=user_key,
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name4",
-                extension_2="dep3",
+                extension_4="dep3",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep3_uuid,
@@ -112,7 +112,7 @@ async def test_move_engagement(
             user_key=user_key,
             validity=RAValidityInput(from_=t3, to=t4),
             extension_1="name4",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v2",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -128,7 +128,7 @@ async def test_move_engagement(
             user_key=user_key,
             validity=RAValidityInput(from_=t4, to=t5),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v3",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -144,7 +144,7 @@ async def test_move_engagement(
             user_key=user_key,
             validity=RAValidityInput(from_=t5, to=t6),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v4",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -160,7 +160,7 @@ async def test_move_engagement(
             user_key=user_key,
             validity=RAValidityInput(from_=t6, to=None),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v5",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -194,7 +194,7 @@ async def test_move_engagement(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep3"
+    assert interval_1.extension_4 == "dep3"
     assert interval_1.user_key == user_key
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
@@ -205,7 +205,7 @@ async def test_move_engagement(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name4"
-    assert interval_2.extension_2 == "dep3"
+    assert interval_2.extension_4 == "dep3"
     assert interval_2.user_key == user_key
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == dep2_uuid
@@ -216,7 +216,7 @@ async def test_move_engagement(
     assert interval_3.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t4
     assert interval_3.extension_1 == "name4"
-    assert interval_3.extension_2 == "dep4"
+    assert interval_3.extension_4 == "dep4"
     assert interval_3.user_key == user_key
     assert interval_3.job_function_uuid == job_function_1234
     assert interval_3.org_unit_uuid == dep2_uuid
@@ -227,7 +227,7 @@ async def test_move_engagement(
     assert interval_4.validity.from_ == t4
     assert interval_4.validity.to == t5_minus_two
     assert interval_4.extension_1 == "name5"
-    assert interval_4.extension_2 == "dep4"
+    assert interval_4.extension_4 == "dep4"
     assert interval_4.user_key == user_key
     assert interval_4.job_function_uuid == job_function_1234
     assert interval_4.org_unit_uuid == dep2_uuid
@@ -238,7 +238,7 @@ async def test_move_engagement(
     assert interval_5.validity.from_ == t5_minus_one
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t5
     assert interval_5.extension_1 == "name5"
-    assert interval_5.extension_2 == "dep4"
+    assert interval_5.extension_4 == "dep4"
     assert interval_5.user_key == user_key
     assert interval_5.job_function_uuid == job_function_1234
     assert interval_5.org_unit_uuid == dep4_uuid
@@ -249,7 +249,7 @@ async def test_move_engagement(
     assert interval_6.validity.from_ == t5
     assert _mo_end_to_timeline_end(interval_6.validity.to) == t6
     assert interval_6.extension_1 == "name5"
-    assert interval_6.extension_2 == "dep4"
+    assert interval_6.extension_4 == "dep4"
     assert interval_6.user_key == user_key
     assert interval_6.job_function_uuid == job_function_1234
     assert interval_6.org_unit_uuid == dep4_uuid
@@ -260,7 +260,7 @@ async def test_move_engagement(
     assert interval_7.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_7.validity.to) == POSITIVE_INFINITY
     assert interval_7.extension_1 == "name5"
-    assert interval_7.extension_2 == "dep4"
+    assert interval_7.extension_4 == "dep4"
     assert interval_7.user_key == user_key
     assert interval_7.job_function_uuid == job_function_5678
     assert interval_7.org_unit_uuid == dep4_uuid
@@ -338,7 +338,7 @@ async def test_move_engagement_to_infinity(
                 user_key=user_key,
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name4",
-                extension_2="dep3",
+                extension_4="dep3",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep3_uuid,
@@ -355,7 +355,7 @@ async def test_move_engagement_to_infinity(
             user_key=user_key,
             validity=RAValidityInput(from_=t3, to=t4),
             extension_1="name4",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v2",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -371,7 +371,7 @@ async def test_move_engagement_to_infinity(
             user_key=user_key,
             validity=RAValidityInput(from_=t4, to=t5),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v3",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -387,7 +387,7 @@ async def test_move_engagement_to_infinity(
             user_key=user_key,
             validity=RAValidityInput(from_=t5, to=t6),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v4",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -403,7 +403,7 @@ async def test_move_engagement_to_infinity(
             user_key=user_key,
             validity=RAValidityInput(from_=t6, to=None),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v5",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -437,7 +437,7 @@ async def test_move_engagement_to_infinity(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep3"
+    assert interval_1.extension_4 == "dep3"
     assert interval_1.user_key == user_key
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
@@ -448,7 +448,7 @@ async def test_move_engagement_to_infinity(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name4"
-    assert interval_2.extension_2 == "dep3"
+    assert interval_2.extension_4 == "dep3"
     assert interval_2.user_key == user_key
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == dep2_uuid
@@ -459,7 +459,7 @@ async def test_move_engagement_to_infinity(
     assert interval_3.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t4
     assert interval_3.extension_1 == "name4"
-    assert interval_3.extension_2 == "dep4"
+    assert interval_3.extension_4 == "dep4"
     assert interval_3.user_key == user_key
     assert interval_3.job_function_uuid == job_function_1234
     assert interval_3.org_unit_uuid == dep2_uuid
@@ -470,7 +470,7 @@ async def test_move_engagement_to_infinity(
     assert interval_4.validity.from_ == t4
     assert _mo_end_to_timeline_end(interval_4.validity.to) == t5
     assert interval_4.extension_1 == "name5"
-    assert interval_4.extension_2 == "dep4"
+    assert interval_4.extension_4 == "dep4"
     assert interval_4.user_key == user_key
     assert interval_4.job_function_uuid == job_function_1234
     assert interval_4.org_unit_uuid == dep2_uuid
@@ -481,7 +481,7 @@ async def test_move_engagement_to_infinity(
     assert interval_5.validity.from_ == t5
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t6
     assert interval_5.extension_1 == "name5"
-    assert interval_5.extension_2 == "dep4"
+    assert interval_5.extension_4 == "dep4"
     assert interval_5.user_key == user_key
     assert interval_5.job_function_uuid == job_function_1234
     assert interval_5.org_unit_uuid == dep2_uuid
@@ -492,7 +492,7 @@ async def test_move_engagement_to_infinity(
     assert interval_6.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_6.validity.to) == POSITIVE_INFINITY
     assert interval_6.extension_1 == "name5"
-    assert interval_6.extension_2 == "dep4"
+    assert interval_6.extension_4 == "dep4"
     assert interval_6.user_key == user_key
     assert interval_6.job_function_uuid == job_function_5678
     assert interval_6.org_unit_uuid == dep2_uuid
@@ -564,7 +564,7 @@ async def test_move_engagement_where_engagement_not_active_in_entire_period(
                 user_key=user_key,
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name4",
-                extension_2="dep3",
+                extension_4="dep3",
                 person=person_uuid,
                 org_unit=dep3_uuid,
                 engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
@@ -659,7 +659,7 @@ async def test_move_engagement_only_valid_for_a_day(
             user_key=user_key,
             validity=timeline_interval_to_mo_validity(t1, t1_plus_one),
             extension_1="name4",
-            extension_2="dep3",
+            extension_4="dep3",
             person=person_uuid,
             org_unit=dep3_uuid,
             engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
@@ -692,7 +692,7 @@ async def test_move_engagement_only_valid_for_a_day(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t1_plus_one
     assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep3"
+    assert interval_1.extension_4 == "dep3"
     assert interval_1.user_key == user_key
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.org_unit_uuid == dep2_uuid

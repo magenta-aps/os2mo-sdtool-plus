@@ -126,7 +126,7 @@ async def test_eng_timeline_http_triggered_sync(
                 user_key=emp_id,
                 validity=RAValidityInput(from_=t2, to=None),
                 extension_1="name4",
-                extension_2="dep3",
+                extension_4="dep3",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep3_uuid,
@@ -143,7 +143,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=emp_id,
             validity=RAValidityInput(from_=t3, to=t4),
             extension_1="name4",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v2",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -159,7 +159,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=emp_id,
             validity=RAValidityInput(from_=t4, to=t5),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v3",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -175,7 +175,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=emp_id,
             validity=RAValidityInput(from_=t5, to=t6),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v4",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -191,7 +191,7 @@ async def test_eng_timeline_http_triggered_sync(
             user_key=emp_id,
             validity=RAValidityInput(from_=t6, to=None),
             extension_1="name5",
-            extension_2="dep4",
+            extension_4="dep4",
             extension_7="v5",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -330,7 +330,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name1"
-    assert interval_1.extension_2 == "dep1"
+    assert interval_1.extension_4 == "dep1"
     assert interval_1.user_key == emp_id
     assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.extension_7 is None
@@ -341,7 +341,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name1"
-    assert interval_2.extension_2 == "dep2"
+    assert interval_2.extension_4 == "dep2"
     assert interval_2.user_key == emp_id
     assert interval_2.job_function_uuid == job_function_9000
     assert interval_2.org_unit_uuid == dep2_uuid
@@ -352,7 +352,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_3.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t4
     assert interval_3.extension_1 == "name2"
-    assert interval_3.extension_2 == "dep2"
+    assert interval_3.extension_4 == "dep2"
     assert interval_3.user_key == emp_id
     assert interval_3.job_function_uuid == job_function_9000
     assert interval_3.org_unit_uuid == dep2_uuid
@@ -363,7 +363,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_4.validity.from_ == t4
     assert _mo_end_to_timeline_end(interval_4.validity.to) == t5
     assert interval_4.extension_1 == "name2"
-    assert interval_4.extension_2 == "dep2"
+    assert interval_4.extension_4 == "dep2"
     assert interval_4.user_key == emp_id
     assert interval_4.job_function_uuid == job_function_9000
     assert interval_4.org_unit_uuid == dep2_uuid
@@ -374,7 +374,7 @@ async def test_eng_timeline_http_triggered_sync(
     assert interval_5.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t7
     assert interval_5.extension_1 is None
-    assert interval_5.extension_2 == "dep2"
+    assert interval_5.extension_4 == "dep2"
     assert interval_5.user_key == emp_id
     assert interval_5.job_function_uuid == job_function_9000
     assert interval_5.org_unit_uuid == dep2_uuid
@@ -463,7 +463,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
             user_key=emp_id,
             validity=RAValidityInput(from_=t2, to=None),
             extension_1="name4",
-            extension_2="dep3",
+            extension_4="dep3",
             extension_7="v1",
             person=person_uuid,
             org_unit=dep3_uuid,
@@ -601,7 +601,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name1"
-    assert interval_1.extension_2 == "dep1"
+    assert interval_1.extension_4 == "dep1"
     assert interval_1.user_key == emp_id
     assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.extension_7 is None
@@ -612,7 +612,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name1"
-    assert interval_2.extension_2 == "dep2"
+    assert interval_2.extension_4 == "dep2"
     assert interval_2.user_key == emp_id
     assert interval_2.job_function_uuid == job_function_9000
     assert interval_2.org_unit_uuid == dep2_uuid
@@ -623,7 +623,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_3.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t5
     assert interval_3.extension_1 == "name2"
-    assert interval_3.extension_2 == "dep2"
+    assert interval_3.extension_4 == "dep2"
     assert interval_3.user_key == emp_id
     assert interval_3.job_function_uuid == job_function_9000
     assert interval_3.org_unit_uuid == dep2_uuid
@@ -634,7 +634,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     assert interval_4.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_4.validity.to) == t7
     assert interval_4.extension_1 == "name3"
-    assert interval_4.extension_2 == "dep2"
+    assert interval_4.extension_4 == "dep2"
     assert interval_4.user_key == emp_id
     assert interval_4.job_function_uuid == job_function_9000
     assert interval_4.org_unit_uuid == dep2_uuid
@@ -835,7 +835,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name1"
-    assert interval_1.extension_2 == "dep1"
+    assert interval_1.extension_4 == "dep1"
     assert interval_1.user_key == emp_id
     assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.org_unit_uuid == dep1_uuid
@@ -845,7 +845,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t3
     assert interval_2.extension_1 == "name1"
-    assert interval_2.extension_2 == "dep2"
+    assert interval_2.extension_4 == "dep2"
     assert interval_2.user_key == emp_id
     assert interval_2.job_function_uuid == job_function_9000
     assert interval_2.org_unit_uuid == dep2_uuid
@@ -855,7 +855,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_3.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t5
     assert interval_3.extension_1 == "name2"
-    assert interval_3.extension_2 == "dep2"
+    assert interval_3.extension_4 == "dep2"
     assert interval_3.user_key == emp_id
     assert interval_3.job_function_uuid == job_function_9000
     assert interval_3.org_unit_uuid == dep2_uuid
@@ -865,7 +865,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_4.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_4.validity.to) == POSITIVE_INFINITY
     assert interval_4.extension_1 == "name3"
-    assert interval_4.extension_2 == "dep2"
+    assert interval_4.extension_4 == "dep2"
     assert interval_4.user_key == emp_id
     assert interval_4.job_function_uuid == job_function_9000
     assert interval_4.org_unit_uuid == dep2_uuid
@@ -1037,8 +1037,8 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_1.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t3
     assert interval_1.extension_1 == "name1"
-    assert interval_1.extension_2 == "dep1"
-    assert interval_1.extension_3 == str(dep1_uuid)
+    assert interval_1.extension_4 == "dep1"
+    assert interval_1.extension_5 == str(dep1_uuid)
     assert interval_1.user_key == emp_id
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.org_unit_uuid == dep2_uuid
@@ -1048,8 +1048,8 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_2.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t4
     assert interval_2.extension_1 == "name1"
-    assert interval_2.extension_2 == "dep1"
-    assert interval_2.extension_3 == str(dep1_uuid)
+    assert interval_2.extension_4 == "dep1"
+    assert interval_2.extension_5 == str(dep1_uuid)
     assert interval_2.user_key == emp_id
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == dep3_uuid
@@ -1059,8 +1059,8 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     assert interval_3.validity.from_ == t4
     assert _mo_end_to_timeline_end(interval_3.validity.to) == POSITIVE_INFINITY
     assert interval_3.extension_1 == "name1"
-    assert interval_3.extension_2 == "dep1"
-    assert interval_3.extension_3 == str(dep1_uuid)
+    assert interval_3.extension_4 == "dep1"
+    assert interval_3.extension_5 == str(dep1_uuid)
     assert interval_3.user_key == emp_id
     assert interval_3.job_function_uuid == job_function_1234
     assert interval_3.org_unit_uuid == dep4_uuid
@@ -1541,8 +1541,8 @@ async def test_eng_timeline_related_units(
                 user_key=user_key,
                 validity=RAValidityInput(from_=t1, to=None),
                 extension_1="name4",
-                extension_2="dep1",
-                extension_3=str(dep1_uuid),
+                extension_4="dep1",
+                extension_5=str(dep1_uuid),
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=A_uuid,
@@ -1559,8 +1559,8 @@ async def test_eng_timeline_related_units(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t2, to=t9),
             extension_1="name4",
-            extension_2="ukendt",
-            extension_3="",
+            extension_4="ukendt",
+            extension_5="",
             extension_7="v1",
             person=person_uuid,
             org_unit=UNKNOWN_UNIT,
@@ -1576,8 +1576,8 @@ async def test_eng_timeline_related_units(
             user_key=f"II-{emp_id}",
             validity=RAValidityInput(from_=t9, to=None),
             extension_1="name4",
-            extension_2="dep2",
-            extension_3=str(dep2_uuid),
+            extension_4="dep2",
+            extension_5=str(dep2_uuid),
             extension_7="v1",
             person=person_uuid,
             org_unit=C_uuid,
@@ -1736,8 +1736,8 @@ async def test_eng_timeline_related_units(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t3
     assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep1"
-    assert interval_1.extension_3 == str(dep1_uuid)
+    assert interval_1.extension_4 == "dep1"
+    assert interval_1.extension_5 == str(dep1_uuid)
     assert interval_1.user_key == user_key
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
@@ -1748,8 +1748,8 @@ async def test_eng_timeline_related_units(
     assert interval_2.validity.from_ == t3
     assert _mo_end_to_timeline_end(interval_2.validity.to) == t5
     assert interval_2.extension_1 == "name4"
-    assert interval_2.extension_2 == "dep3"
-    assert interval_2.extension_3 == str(dep3_uuid)
+    assert interval_2.extension_4 == "dep3"
+    assert interval_2.extension_5 == str(dep3_uuid)
     assert interval_2.user_key == user_key
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == C_uuid
@@ -1760,8 +1760,8 @@ async def test_eng_timeline_related_units(
     assert interval_3.validity.from_ == t5
     assert _mo_end_to_timeline_end(interval_3.validity.to) == t6
     assert interval_3.extension_1 == "name4"
-    assert interval_3.extension_2 == "dep3"
-    assert interval_3.extension_3 == str(dep3_uuid)
+    assert interval_3.extension_4 == "dep3"
+    assert interval_3.extension_5 == str(dep3_uuid)
     assert interval_3.user_key == user_key
     assert interval_3.job_function_uuid == job_function_1234
     assert interval_3.org_unit_uuid == D_uuid
@@ -1772,8 +1772,8 @@ async def test_eng_timeline_related_units(
     assert interval_4.validity.from_ == t6
     assert _mo_end_to_timeline_end(interval_4.validity.to) == t7
     assert interval_4.extension_1 == "name4"
-    assert interval_4.extension_2 == "dep3"
-    assert interval_4.extension_3 == str(dep3_uuid)
+    assert interval_4.extension_4 == "dep3"
+    assert interval_4.extension_5 == str(dep3_uuid)
     assert interval_4.user_key == user_key
     assert interval_4.job_function_uuid == job_function_1234
     assert interval_4.org_unit_uuid == E_uuid
@@ -1784,8 +1784,8 @@ async def test_eng_timeline_related_units(
     assert interval_5.validity.from_ == t7
     assert _mo_end_to_timeline_end(interval_5.validity.to) == t8
     assert interval_5.extension_1 == "name4"
-    assert interval_5.extension_2 == "dep3"
-    assert interval_5.extension_3 == str(dep3_uuid)
+    assert interval_5.extension_4 == "dep3"
+    assert interval_5.extension_5 == str(dep3_uuid)
     assert interval_5.user_key == user_key
     assert interval_5.job_function_uuid == job_function_1234
     assert interval_5.org_unit_uuid == UNKNOWN_UNIT
@@ -1796,8 +1796,8 @@ async def test_eng_timeline_related_units(
     assert interval_6.validity.from_ == t8
     assert _mo_end_to_timeline_end(interval_6.validity.to) == t9
     assert interval_6.extension_1 == "name4"
-    assert interval_6.extension_2 == "dep2"
-    assert interval_6.extension_3 == str(dep2_uuid)
+    assert interval_6.extension_4 == "dep2"
+    assert interval_6.extension_5 == str(dep2_uuid)
     assert interval_6.user_key == user_key
     assert interval_6.job_function_uuid == job_function_1234
     assert interval_6.org_unit_uuid == B_uuid
@@ -1808,8 +1808,8 @@ async def test_eng_timeline_related_units(
     assert interval_7.validity.from_ == t9
     assert _mo_end_to_timeline_end(interval_7.validity.to) == POSITIVE_INFINITY
     assert interval_7.extension_1 == "name4"
-    assert interval_7.extension_2 == "dep2"
-    assert interval_7.extension_3 == str(dep2_uuid)
+    assert interval_7.extension_4 == "dep2"
+    assert interval_7.extension_5 == str(dep2_uuid)
     assert interval_7.user_key == user_key
     assert interval_7.job_function_uuid == job_function_1234
     assert interval_7.org_unit_uuid == C_uuid
@@ -1906,8 +1906,8 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
             user_key=user_key,
             validity=RAValidityInput(from_=t1, to=None),
             extension_1="name4",
-            extension_2="dep1",
-            extension_3=str(dep1_uuid),
+            extension_4="dep1",
+            extension_5=str(dep1_uuid),
             extension_7="v1",
             person=person_uuid,
             org_unit=A_uuid,
@@ -2020,8 +2020,8 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     assert interval_1.validity.from_ == t1
     assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
     assert interval_1.extension_1 == "name4"
-    assert interval_1.extension_2 == "dep1"
-    assert interval_1.extension_3 == str(dep1_uuid)
+    assert interval_1.extension_4 == "dep1"
+    assert interval_1.extension_5 == str(dep1_uuid)
     assert interval_1.user_key == user_key
     assert interval_1.job_function_uuid == job_function_1234
     assert interval_1.extension_7 == "v1"
@@ -2032,8 +2032,8 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     assert interval_2.validity.from_ == t2
     assert _mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
     assert interval_2.extension_1 == "name4"
-    assert interval_2.extension_2 == "dep2"
-    assert interval_2.extension_3 == str(dep2_uuid)
+    assert interval_2.extension_4 == "dep2"
+    assert interval_2.extension_5 == str(dep2_uuid)
     assert interval_2.user_key == user_key
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == B_uuid
@@ -2063,7 +2063,7 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
 ):
     """
     We are testing this scenario. The focus of the test is the MO SD unit part, i.e.
-    MOs extension_3.
+    MOs extension_5.
 
     Time  --------t1-----------------------------------------t2--------------------->
 
@@ -2133,7 +2133,7 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
             user_key=user_key,
             validity=RAValidityInput(from_=t1, to=None),
             extension_1="name4",
-            extension_2="dep1",
+            extension_4="dep1",
             extension_7="v1",
             person=person_uuid,
             org_unit=A_uuid,
@@ -2244,8 +2244,8 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
         assert interval_1.validity.from_ == t1
         assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
         assert interval_1.extension_1 == "name4"
-        assert interval_1.extension_2 == "dep1"
-        assert interval_1.extension_3 == str(dep1_uuid)
+        assert interval_1.extension_4 == "dep1"
+        assert interval_1.extension_5 == str(dep1_uuid)
         assert interval_1.user_key == user_key
         assert interval_1.job_function_uuid == job_function_1234
         assert interval_1.extension_7 == "v1"
@@ -2256,8 +2256,8 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
         assert interval_2.validity.from_ == t2
         assert _mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
         assert interval_2.extension_1 == "name4"
-        assert interval_2.extension_2 == "dep2"
-        assert interval_2.extension_3 == str(dep2_uuid)
+        assert interval_2.extension_4 == "dep2"
+        assert interval_2.extension_5 == str(dep2_uuid)
         assert interval_2.user_key == user_key
         assert interval_2.job_function_uuid == job_function_1234
         assert interval_2.org_unit_uuid == A_uuid
@@ -2407,7 +2407,7 @@ async def test_get_engagement_timeline_eng_previously_in_closed_unit(
                 user_key=emp_id,
                 validity=RAValidityInput(from_=t2, to=None),
                 extension_1="name4",
-                extension_2="dep4",
+                extension_4="dep4",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep4_uuid,
@@ -2424,7 +2424,7 @@ async def test_get_engagement_timeline_eng_previously_in_closed_unit(
             user_key=emp_id,
             validity=timeline_interval_to_mo_validity(t2, t3),
             extension_1="name4",
-            extension_2="depX",
+            extension_4="depX",
             extension_7="v1",
             person=person_uuid,
             org_unit=depX_uuid,
@@ -2465,7 +2465,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
     org_unit_levels: dict[str, OrgUnitLevelUUID],
 ):
     """
-    Test that we handle the case where unitID (extension_2) is not set in a given
+    Test that we handle the case where unitID (extension_4) is not set in a given
     interval (from t3 to infinity).
 
     Time  ------------------t2---------t3------------------------------------------->
@@ -2513,7 +2513,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
                 user_key=emp_id,
                 validity=timeline_interval_to_mo_validity(t2, t3),
                 extension_1="name4",
-                extension_2="dep4",
+                extension_4="dep4",
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep4_uuid,
@@ -2530,7 +2530,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
             user_key=emp_id,
             validity=timeline_interval_to_mo_validity(t3, POSITIVE_INFINITY),
             extension_1="name4",
-            extension_2=None,
+            extension_4=None,
             extension_7="v1",
             person=person_uuid,
             org_unit=dep4_uuid,
@@ -2619,7 +2619,7 @@ async def test_eng_timeline_delete_engagement_not_found_in_sd(
             user_key=emp_id,
             validity=timeline_interval_to_mo_validity(start=t1, end=t2),
             extension_1="name4",
-            extension_2="dep1",
+            extension_4="dep1",
             extension_7="v1",
             person=person_uuid,
             org_unit=dep1_uuid,
@@ -2743,8 +2743,8 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
                 user_key=emp_id,
                 validity=timeline_interval_to_mo_validity(start=t1, end=t9),
                 extension_1="name1",
-                extension_2="dep1",
-                extension_3=str(dep1_uuid),
+                extension_4="dep1",
+                extension_5=str(dep1_uuid),
                 extension_7="v1",
                 person=person_uuid,
                 org_unit=dep1_uuid,

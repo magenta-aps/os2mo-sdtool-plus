@@ -872,7 +872,7 @@ async def get_engagement_timeline(
         EngagementSDUnit(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=obj.extension_3,
+            value=obj.extension_5,
         )
         for obj in validities
     )
@@ -881,7 +881,7 @@ async def get_engagement_timeline(
         EngagementUnitId(
             start=obj.validity.from_,
             end=_mo_end_to_timeline_end(obj.validity.to),
-            value=obj.extension_2,
+            value=obj.extension_4,
         )
         for obj in validities
     )
@@ -1049,11 +1049,9 @@ async def create_engagement(
     payload = EngagementCreateInput(
         user_key=user_key,
         validity=timeline_interval_to_mo_validity(start, end),
-        # TODO: introduce extension_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
-        extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-        # TODO: introduce extension_3 strategy
-        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
+        extension_4=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        extension_5=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[
@@ -1194,17 +1192,15 @@ async def update_engagement(
                 validity=get_patch_validity(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
-                # TODO: introduce extention_1 strategy
                 # The empty string will be converted to null in the LoRa DB. Update
                 # logic when https://redmine.magenta.dk/issues/65028 has been fixed.
                 extension_1=eng_name if eng_name is not None else "",
-                extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-                # TODO: introduce extension_3 strategy
-                extension_3=str(
+                extension_2=validity.extension_2,
+                extension_3=validity.extension_3,
+                extension_4=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+                extension_5=str(
                     desired_eng_timeline.eng_sd_unit.entity_at(start).value
                 ),
-                extension_4=validity.extension_4,
-                extension_5=validity.extension_5,
                 extension_6=validity.extension_6,
                 extension_7=validity.extension_7,
                 extension_8=validity.extension_8,
@@ -1237,9 +1233,8 @@ async def update_engagement(
         validity=mo_validity,
         # TODO: introduce extention_1 strategy
         extension_1=desired_eng_timeline.eng_name.entity_at(start).value,
-        extension_2=desired_eng_timeline.eng_unit_id.entity_at(start).value,
-        # TODO: introduce extension_3 strategy
-        extension_3=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
+        extension_4=desired_eng_timeline.eng_unit_id.entity_at(start).value,
+        extension_5=str(desired_eng_timeline.eng_sd_unit.entity_at(start).value),
         person=person,
         org_unit=desired_eng_timeline.eng_unit.entity_at(start).value,
         engagement_type=eng_types[desired_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
