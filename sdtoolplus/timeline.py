@@ -218,6 +218,11 @@ async def sync_person(
             effective_date=datetime.today(),
         )
     except SDRootElementNotFound:
+        logger.warning(
+            "Person not found in SD",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
         raise PersonNotFoundError()
 
     mo_person = await gql_client.get_person_timeline(
@@ -234,7 +239,9 @@ async def sync_person(
         dry_run=dry_run,
     )
 
-    logger.info("Done syncing person!")
+    logger.info(
+        "Done syncing person!", institution_identifier=institution_identifier, cpr=cpr
+    )
 
 
 async def _sync_eng_intervals(
