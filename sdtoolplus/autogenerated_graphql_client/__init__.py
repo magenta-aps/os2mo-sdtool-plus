@@ -151,7 +151,6 @@ from .get_related_units import GetRelatedUnits
 from .get_related_units import GetRelatedUnitsRelatedUnits
 from .get_related_units import GetRelatedUnitsRelatedUnitsObjects
 from .get_related_units import GetRelatedUnitsRelatedUnitsObjectsValidities
-from .get_related_units import GetRelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits
 from .get_related_units import GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity
 from .input_types import AccessLogFilter
 from .input_types import AddressCreateInput
@@ -463,7 +462,6 @@ __all__ = [
     "GetRelatedUnitsRelatedUnits",
     "GetRelatedUnitsRelatedUnitsObjects",
     "GetRelatedUnitsRelatedUnitsObjectsValidities",
-    "GetRelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits",
     "GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity",
     "GraphQLClient",
     "GraphQLClientError",
