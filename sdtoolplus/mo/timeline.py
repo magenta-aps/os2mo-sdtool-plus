@@ -1494,11 +1494,11 @@ def _get_related_unit_at(
     unit UUIDs
     """
     related_units = sorted(
-        org_unit.uuid
+        org_unit_uuid
         for obj in objects
         for validity in obj.validities
-        for org_unit in validity.org_units
-        if not org_unit.uuid == unit_uuid
+        for org_unit_uuid in validity.org_unit_uuids
+        if not org_unit_uuid == unit_uuid
         and validity.validity.from_
         <= at
         < _mo_end_to_timeline_end(validity.validity.to)
