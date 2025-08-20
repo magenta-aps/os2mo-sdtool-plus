@@ -451,9 +451,7 @@ query GetRelatedUnits($filter: RelatedUnitFilter!) {
           from
           to
         }
-        org_units {
-          uuid
-        }
+        org_unit_uuids
       }
     }
   }
