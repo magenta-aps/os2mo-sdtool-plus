@@ -24,9 +24,9 @@ RELATED_OBJECTS_RAW = [
                     "from": "2005-01-01T00:00:00+01:00",
                     "to": "2006-12-31T00:00:00+01:00",
                 },
-                "org_units": [
-                    {"uuid": "30000000-0000-0000-0000-000000000000"},
-                    {"uuid": "eeeeeeee-2a66-429e-8893-eeeeeeeeeeee"},
+                "org_unit_uuids": [
+                    "30000000-0000-0000-0000-000000000000",
+                    "eeeeeeee-2a66-429e-8893-eeeeeeeeeeee",
                 ],
             }
         ]
@@ -39,9 +39,9 @@ RELATED_OBJECTS_RAW = [
                     "from": "2004-01-01T00:00:00+01:00",
                     "to": "2005-12-31T00:00:00+01:00",
                 },
-                "org_units": [
-                    {"uuid": "30000000-0000-0000-0000-000000000000"},
-                    {"uuid": "dddddddd-2a66-429e-8893-dddddddddddd"},
+                "org_unit_uuids": [
+                    "30000000-0000-0000-0000-000000000000",
+                    "dddddddd-2a66-429e-8893-dddddddddddd",
                 ],
             }
         ]
@@ -54,9 +54,9 @@ RELATED_OBJECTS_RAW = [
                     "from": "2001-01-01T00:00:00+01:00",
                     "to": "2004-12-31T00:00:00+01:00",
                 },
-                "org_units": [
-                    {"uuid": "30000000-0000-0000-0000-000000000000"},
-                    {"uuid": "cccccccc-2a66-429e-8893-cccccccccccc"},
+                "org_unit_uuids": [
+                    "30000000-0000-0000-0000-000000000000",
+                    "cccccccc-2a66-429e-8893-cccccccccccc",
                 ],
             }
         ]
