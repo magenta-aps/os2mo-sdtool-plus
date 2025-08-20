@@ -4,6 +4,7 @@ import asyncio
 import json
 from datetime import date
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import click
@@ -84,6 +85,7 @@ async def lookup_employment_timeline(
 @click.option(
     "--file",
     "filepath",
+    type=click.Path(exists=True, path_type=Path),
     required=True,
     help="File to update",
 )
@@ -93,7 +95,13 @@ async def lookup_employment_timeline(
     required=True,
     help="Update file with engagements since this date",
 )
-def main(username, password, institution_identifier, filepath, since: datetime):
+def main(
+    username: str,
+    password: str,
+    institution_identifier: str,
+    filepath: Path,
+    since: datetime,
+):
     logger.info("Generating engagement JSON file for the APOS importer")
 
     with open(filepath) as fp:
@@ -129,7 +137,8 @@ def main(username, password, institution_identifier, filepath, since: datetime):
     for eng_key, timeline in zip(keys, timelines):
         engagements[eng_key] = timeline
 
-    with open(filepath, "w") as fp:
+    output_file = filepath.parent.joinpath(f"{filepath.stem}-patched.json")
+    with open(output_file, "w") as fp:
         json.dump(engagements, fp)
 
 
