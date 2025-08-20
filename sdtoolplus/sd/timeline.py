@@ -244,7 +244,7 @@ def get_phone_number_timeline(
     return timeline
 
 
-async def get_employment_timeline(
+def get_employment_timeline(
     sd_get_employment_changed_resp: GetEmploymentChangedResponse,
 ) -> EngagementTimeline:
     logger.info("Get SD employment timeline")
@@ -361,7 +361,7 @@ async def get_employment_timeline(
     return timeline
 
 
-async def get_leave_timeline(
+def get_leave_timeline(
     sd_get_employment_changed_resp: GetEmploymentChangedResponse,
 ) -> LeaveTimeline:
     logger.info("Get SD leave timeline")
