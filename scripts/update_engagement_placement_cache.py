@@ -10,17 +10,23 @@ from typing import Any
 import click
 import structlog
 from fastramqpi.ra_utils.asyncio_utils import gather_with_concurrency
+from pydantic import BaseSettings
 from sdclient.client import SDClient
 from sdclient.requests import GetEmploymentChangedAtDateRequest
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.responses import GetEmploymentChangedAtDateResponse
 
 from scripts.sd_engagement_json import _engagement_timeline_to_json
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.sd.timeline import get_employment_timeline
 
 logger = structlog.stdlib.get_logger()
 
 BASE_START_DATE = datetime(1970, 1, 1)
+
+
+class ScriptSettings(BaseSettings):
+    mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None = None
 
 
 async def get_changed_employments(
@@ -77,12 +83,6 @@ async def lookup_employment_timeline(
     help="SD password",
 )
 @click.option(
-    "--institution-identifier",
-    envvar="SD_INSTITUTION_IDENTIFIER",
-    # required=True,
-    help="SD institution identifier",
-)
-@click.option(
     "--file",
     "filepath",
     type=click.Path(exists=True, path_type=Path),
@@ -98,7 +98,6 @@ async def lookup_employment_timeline(
 def main(
     username: str,
     password: str,
-    institution_identifier: str,
     filepath: Path,
     since: datetime,
 ):
@@ -107,35 +106,45 @@ def main(
     with open(filepath) as fp:
         engagements: dict[str, Any] = json.load(fp)
 
+    settings = ScriptSettings()
+    assert settings.mo_subtree_paths_for_root is not None
+    institution_identifiers = settings.mo_subtree_paths_for_root.keys()
+
     sd_client = SDClient(username, password)
-    changed_employments = asyncio.run(
-        get_changed_employments(
-            sd_client=sd_client,
-            institution_identifier=institution_identifier,
-            since=since,
+
+    for institution_identifier in institution_identifiers:
+        logger.info(
+            "Processing institution", institution_identifier=institution_identifier
         )
-    )
 
-    tasks = []
-    keys = []
-    for person in changed_employments.Person:
-        for eng in person.Employment:
-            keys.append(
-                f"{institution_identifier},{person.PersonCivilRegistrationIdentifier},{eng.EmploymentIdentifier}"
+        changed_employments = asyncio.run(
+            get_changed_employments(
+                sd_client=sd_client,
+                institution_identifier=institution_identifier,
+                since=since,
             )
-            tasks.append(
-                lookup_employment_timeline(
-                    sd_client=sd_client,
-                    institution_identifier=institution_identifier,
-                    cpr=person.PersonCivilRegistrationIdentifier,
-                    employment_identifier=eng.EmploymentIdentifier,
+        )
+
+        tasks = []
+        keys = []
+        for person in changed_employments.Person:
+            for eng in person.Employment:
+                keys.append(
+                    f"{institution_identifier},{person.PersonCivilRegistrationIdentifier},{eng.EmploymentIdentifier}"
                 )
-            )
+                tasks.append(
+                    lookup_employment_timeline(
+                        sd_client=sd_client,
+                        institution_identifier=institution_identifier,
+                        cpr=person.PersonCivilRegistrationIdentifier,
+                        employment_identifier=eng.EmploymentIdentifier,
+                    )
+                )
 
-    timelines = asyncio.run(gather_with_concurrency(5, *tasks))
+        timelines = asyncio.run(gather_with_concurrency(5, *tasks))
 
-    for eng_key, timeline in zip(keys, timelines):
-        engagements[eng_key] = timeline
+        for eng_key, timeline in zip(keys, timelines):
+            engagements[eng_key] = timeline
 
     output_file = filepath.parent.joinpath(f"{filepath.stem}-patched.json")
     with open(output_file, "w") as fp:
