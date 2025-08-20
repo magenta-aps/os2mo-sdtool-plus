@@ -89,7 +89,7 @@ async def lookup_employment_timeline(
 )
 @click.option(
     "--file",
-    "filename",
+    "filepath",
     type=str,
     required=True,
     help="File to update",
@@ -100,10 +100,10 @@ async def lookup_employment_timeline(
     required=True,
     help="Update file with engagements since this date",
 )
-def main(username, password, institution_identifier, filename, since: datetime):
+def main(username, password, institution_identifier, filepath, since: datetime):
     logger.info("Generating engagement JSON file for the APOS importer")
 
-    with open(filename) as fp:
+    with open(filepath) as fp:
         engagements: dict[str, Any] = json.load(fp)
 
     sd_client = SDClient(username, password)
@@ -136,7 +136,7 @@ def main(username, password, institution_identifier, filename, since: datetime):
     for eng_key, timeline in zip(keys, timelines):
         engagements[eng_key] = timeline
 
-    with open("filename", "w") as fp:
+    with open(filepath, "w") as fp:
         json.dump(engagements, fp)
 
 
