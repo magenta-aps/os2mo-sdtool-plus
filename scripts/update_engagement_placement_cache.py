@@ -14,7 +14,7 @@ from sdclient.requests import GetEmploymentChangedAtDateRequest
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.responses import GetEmploymentChangedAtDateResponse
 
-from sdtoolplus.apos import _engagement_timeline_to_json
+from scripts.sd_engagement_json import _engagement_timeline_to_json
 from sdtoolplus.sd.timeline import get_employment_timeline
 
 logger = structlog.stdlib.get_logger()
@@ -37,14 +37,17 @@ async def get_changed_employments(
 
 
 async def lookup_employment_timeline(
-    sd_client: SDClient, institution_identifier: str, cpr: str, tjnrn: str
+    sd_client: SDClient,
+    institution_identifier: str,
+    cpr: str,
+    employment_identifier: str,
 ):
     r_employment = await asyncio.to_thread(
         sd_client.get_employment_changed,
         GetEmploymentChangedRequest(
             InstitutionIdentifier=institution_identifier,
             PersonCivilRegistrationIdentifier=cpr,
-            EmploymentIdentifier=tjnrn,
+            EmploymentIdentifier=employment_identifier,
             ActivationDate=date.min,
             DeactivationDate=date.max,
             DepartmentIndicator=True,
@@ -98,7 +101,7 @@ async def lookup_employment_timeline(
     help="Update file with engagements since this date",
 )
 def main(username, password, institution_identifier, filename, since: datetime):
-    logger.info("Generating engagement CSV file for the APOS importer")
+    logger.info("Generating engagement JSON file for the APOS importer")
 
     with open(filename) as fp:
         engagements: dict[str, Any] = json.load(fp)
@@ -124,14 +127,14 @@ def main(username, password, institution_identifier, filename, since: datetime):
                     sd_client=sd_client,
                     institution_identifier=institution_identifier,
                     cpr=person.PersonCivilRegistrationIdentifier,
-                    tjnrn=eng.EmploymentIdentifier,
+                    employment_identifier=eng.EmploymentIdentifier,
                 )
             )
 
-    timelines = asyncio.run(gather_with_concurrency(10, *tasks))
+    timelines = asyncio.run(gather_with_concurrency(5, *tasks))
 
     for eng_key, timeline in zip(keys, timelines):
-        engagements["engagements"][eng_key] = timeline
+        engagements[eng_key] = timeline
 
     with open("filename", "w") as fp:
         json.dump(engagements, fp)
