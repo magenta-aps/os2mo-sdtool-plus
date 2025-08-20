@@ -964,9 +964,7 @@ class GraphQLClient(AsyncBaseClient):
                       from
                       to
                     }
-                    org_units {
-                      uuid
-                    }
+                    org_unit_uuids
                   }
                 }
               }

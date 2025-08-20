@@ -23,7 +23,7 @@ class GetRelatedUnitsRelatedUnitsObjects(BaseModel):
 class GetRelatedUnitsRelatedUnitsObjectsValidities(BaseModel):
     uuid: UUID
     validity: "GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity"
-    org_units: List["GetRelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits"]
+    org_unit_uuids: List[UUID]
 
 
 class GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity(BaseModel):
@@ -31,13 +31,8 @@ class GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity(BaseModel):
     to: Optional[datetime]
 
 
-class GetRelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits(BaseModel):
-    uuid: UUID
-
-
 GetRelatedUnits.update_forward_refs()
 GetRelatedUnitsRelatedUnits.update_forward_refs()
 GetRelatedUnitsRelatedUnitsObjects.update_forward_refs()
 GetRelatedUnitsRelatedUnitsObjectsValidities.update_forward_refs()
 GetRelatedUnitsRelatedUnitsObjectsValiditiesValidity.update_forward_refs()
-GetRelatedUnitsRelatedUnitsObjectsValiditiesOrgUnits.update_forward_refs()
