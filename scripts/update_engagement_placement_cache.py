@@ -129,9 +129,9 @@ def main(
         keys = []
         for person in changed_employments.Person:
             for eng in person.Employment:
-                keys.append(
-                    f"{institution_identifier},{person.PersonCivilRegistrationIdentifier},{eng.EmploymentIdentifier}"
-                )
+                key = f"{institution_identifier},{person.PersonCivilRegistrationIdentifier},{eng.EmploymentIdentifier}"
+                logger.info("Processing engagement", key=key)
+                keys.append(key)
                 tasks.append(
                     lookup_employment_timeline(
                         sd_client=sd_client,
