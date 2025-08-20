@@ -12,6 +12,7 @@ import structlog
 from fastramqpi.ra_utils.asyncio_utils import gather_with_concurrency
 from pydantic import BaseSettings
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedAtDateRequest
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.responses import GetEmploymentChangedAtDateResponse
@@ -48,22 +49,31 @@ async def lookup_employment_timeline(
     institution_identifier: str,
     cpr: str,
     employment_identifier: str,
-):
-    r_employment = await asyncio.to_thread(
-        sd_client.get_employment_changed,
-        GetEmploymentChangedRequest(
-            InstitutionIdentifier=institution_identifier,
-            PersonCivilRegistrationIdentifier=cpr,
-            EmploymentIdentifier=employment_identifier,
-            ActivationDate=date.min,
-            DeactivationDate=date.max,
-            DepartmentIndicator=True,
-            EmploymentStatusIndicator=True,
-            ProfessionIndicator=True,
-            WorkingTimeIndicator=True,
-            UUIDIndicator=True,
-        ),
-    )
+) -> list[dict[str, str]]:
+    try:
+        r_employment = await asyncio.to_thread(
+            sd_client.get_employment_changed,
+            GetEmploymentChangedRequest(
+                InstitutionIdentifier=institution_identifier,
+                PersonCivilRegistrationIdentifier=cpr,
+                EmploymentIdentifier=employment_identifier,
+                ActivationDate=date.min,
+                DeactivationDate=date.max,
+                DepartmentIndicator=True,
+                EmploymentStatusIndicator=True,
+                ProfessionIndicator=True,
+                WorkingTimeIndicator=True,
+                UUIDIndicator=True,
+            ),
+        )
+    except SDRootElementNotFound:
+        logger.warning(
+            "SD employment not found!",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            employment_identifier=employment_identifier,
+        )
+        return []
     sd_eng_timeline = get_employment_timeline(r_employment)
     eng_list = _engagement_timeline_to_json(sd_eng_timeline)
     return eng_list
@@ -132,6 +142,7 @@ def main(
                 key = f"{institution_identifier},{person.PersonCivilRegistrationIdentifier},{eng.EmploymentIdentifier}"
                 logger.info("Processing engagement", key=key)
                 keys.append(key)
+
                 tasks.append(
                     lookup_employment_timeline(
                         sd_client=sd_client,
@@ -144,6 +155,9 @@ def main(
         timelines = asyncio.run(gather_with_concurrency(5, *tasks))
 
         for eng_key, timeline in zip(keys, timelines):
+            if not timeline:
+                logger.warning("SD employment not found!", eng_key=eng_key)
+                continue
             engagements[eng_key] = timeline
 
     output_file = filepath.parent.joinpath(f"{filepath.stem}-patched.json")
