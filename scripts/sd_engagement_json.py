@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-import asyncio
 import json
 import re
 from copy import copy
@@ -187,7 +186,7 @@ def main(username: str, password: str) -> None:
             _write_json(sd_engagements_not_found, "/tmp/engagements-not-found.json")
             raise error
 
-        sd_eng_timeline = asyncio.run(get_employment_timeline(r_employment))
+        sd_eng_timeline = get_employment_timeline(r_employment)
         eng_list = _engagement_timeline_to_json(sd_eng_timeline)
 
         sd_engagements[eng_key] = eng_list

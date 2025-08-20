@@ -1211,8 +1211,8 @@ async def sync_engagement(
                 UUIDIndicator=True,
             ),
         )
-        sd_eng_timeline = await get_employment_timeline(r_employment)
-        sd_leave_timeline = await get_sd_leave_timeline(r_employment)
+        sd_eng_timeline = get_employment_timeline(r_employment)
+        sd_leave_timeline = get_sd_leave_timeline(r_employment)
 
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
         if len(sd_eng_timeline.eng_unit.intervals) == 0:

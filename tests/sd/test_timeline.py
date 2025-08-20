@@ -273,7 +273,7 @@ async def test_get_department_timeline_parent_not_found():
 
 async def test_get_engagement_timeline(mock_sd_employment_response_dict):
     # Act
-    engagement_timeline = await get_employment_timeline(
+    engagement_timeline = get_employment_timeline(
         GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
     )
 
@@ -356,7 +356,7 @@ async def test_get_engagement_timeline(mock_sd_employment_response_dict):
 
 async def test_get_engagement_timeline_no_person_found():
     # Act
-    engagement_timeline = await get_employment_timeline(
+    engagement_timeline = get_employment_timeline(
         GetEmploymentChangedResponse.parse_obj({"Person": []})
     )
 
@@ -383,7 +383,7 @@ async def test_get_engagement_timeline_no_employment_found():
     )
 
     # Act
-    engagement_timeline = await get_employment_timeline(sd_resp)
+    engagement_timeline = get_employment_timeline(sd_resp)
 
     # Assert
     assert engagement_timeline == EngagementTimeline(
@@ -396,7 +396,7 @@ async def test_get_engagement_timeline_no_employment_found():
 
 async def test_get_leave_timeline(mock_sd_employment_response_dict):
     # Act
-    engagement_timeline = await get_leave_timeline(
+    engagement_timeline = get_leave_timeline(
         GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
     )
 

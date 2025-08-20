@@ -54,7 +54,7 @@ async def lookup_employment_timeline(
             UUIDIndicator=True,
         ),
     )
-    sd_eng_timeline = await get_employment_timeline(r_employment)
+    sd_eng_timeline = get_employment_timeline(r_employment)
     eng_list = _engagement_timeline_to_json(sd_eng_timeline)
     return eng_list
 
