@@ -65,24 +65,18 @@ async def lookup_employment_timeline(
 @click.command()
 @click.option(
     "--username",
-    "username",
-    type=click.STRING,
     envvar="SD_USERNAME",
     required=True,
     help="SD username",
 )
 @click.option(
     "--password",
-    "password",
-    type=click.STRING,
     envvar="SD_PASSWORD",
     required=True,
     help="SD password",
 )
 @click.option(
     "--institution-identifier",
-    "institution_identifier",
-    type=click.STRING,
     envvar="SD_INSTITUTION_IDENTIFIER",
     # required=True,
     help="SD institution identifier",
@@ -90,7 +84,6 @@ async def lookup_employment_timeline(
 @click.option(
     "--file",
     "filepath",
-    type=str,
     required=True,
     help="File to update",
 )
