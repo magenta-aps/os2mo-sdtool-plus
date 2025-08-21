@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from datetime import timedelta
 from uuid import UUID
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -2038,6 +2039,234 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     assert interval_2.job_function_uuid == job_function_1234
     assert interval_2.org_unit_uuid == B_uuid
     assert interval_2.extension_7 == "v1"
+    assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+
+    assert len(validities) == 2
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_eng_timeline_related_units_single_day_relation(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the case where we have an org unit relation valid for a
+    single day. Focus of the test is on the org unit part - the related unit
+    look up to be exact - the rest of the engagement attributes are not
+    important in this test.
+
+                                t2 = t1 + 1 day
+    Time  --------t1------------t2--------------------------------------------->
+
+    MO (name)     |--------------------------------name4------------------------
+    MO (key)      |--------------------------------1234-------------------------
+    MO (unit)     |---unknown---|--------------------B--------------------------
+    MO (unit ID)  |---unknown---|------------------dep1-------------------------
+    MO (active)   |-------------------------------------------------------------
+    MO (eng_type) |--------------------------------full-------------------------
+
+    "Arrange"     |------1------|-------------------2---------------------------
+    intervals
+
+    SD (name)     |--------------------------------name4------------------------
+    SD (key)      |--------------------------------1234-------------------------
+    SD (unit)     |--------------------------------dep1-------------------------
+    SD (unit ID)  |--------------------------------dep1-------------------------
+    SD (active)   |-------------------------------------------------------------
+    SD (eng_type) |--------------------------------full-------------------------
+
+    OU relations:
+    dep1          |------A------|-------------------B---------------------------
+
+    "Assert"      |------1------|-------------------2---------------------------
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = t1 + timedelta(days=1)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+    A_uuid = UUID("aaaaaaaa-2a66-429e-8893-aaaaaaaaaaaa")
+    B_uuid = UUID("bbbbbbbb-2a66-429e-8893-bbbbbbbbbbbb")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    user_key = f"II-{emp_id}"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange intervals 1-2)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=user_key,
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name4",
+                extension_4="ukendt",
+                extension_5="",
+                person=person_uuid,
+                org_unit=UNKNOWN_UNIT,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Update engagement (arrange interval 2)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=f"II-{emp_id}",
+            validity=timeline_interval_to_mo_validity(t2, POSITIVE_INFINITY),
+            extension_1="name4",
+            extension_4="dep1",
+            extension_5=str(dep1_uuid),
+            person=person_uuid,
+            org_unit=B_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # Create org unit relations
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=dep1_uuid,
+            destination=[A_uuid],
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=dep1_uuid,
+            destination=[B_uuid],
+            validity=timeline_interval_to_mo_validity(t2, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name4</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
+    )
+    validities = one(updated_eng.objects).validities
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert _mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.extension_1 == "name4"
+    assert interval_1.extension_4 == "dep1"
+    assert interval_1.extension_5 == str(dep1_uuid)
+    assert interval_1.user_key == user_key
+    assert interval_1.job_function_uuid == job_function_1234
+    assert interval_1.org_unit_uuid == A_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t2
+    assert _mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
+    assert interval_2.extension_1 == "name4"
+    assert interval_2.extension_4 == "dep1"
+    assert interval_2.extension_5 == str(dep1_uuid)
+    assert interval_2.user_key == user_key
+    assert interval_2.job_function_uuid == job_function_1234
+    assert interval_2.org_unit_uuid == B_uuid
     assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
 
     assert len(validities) == 2

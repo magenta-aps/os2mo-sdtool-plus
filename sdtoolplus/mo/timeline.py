@@ -1494,11 +1494,11 @@ def _get_related_unit_at(
     unit UUIDs
     """
     related_units = sorted(
-        org_unit.uuid
+        org_unit_uuid
         for obj in objects
         for validity in obj.validities
-        for org_unit in validity.org_units
-        if not org_unit.uuid == unit_uuid
+        for org_unit_uuid in validity.org_unit_uuids
+        if not org_unit_uuid == unit_uuid
         and validity.validity.from_
         <= at
         < _mo_end_to_timeline_end(validity.validity.to)
@@ -1517,14 +1517,15 @@ async def related_units(
     unit can be found). Note that the input interval may be divided into smaller
     intervals.
     """
-    mo_validity = timeline_interval_to_mo_validity(
-        unit_interval.start, unit_interval.end
-    )
-
     mo_rel_units = await gql_client.get_related_units(
         RelatedUnitFilter(
-            from_date=mo_validity.from_,
-            to_date=mo_validity.to,
+            from_date=unit_interval.start,
+            # This to_date is counterintuitive for this OU relation look up,
+            # since the to_date is the day *after* the relation potentially
+            # ends, but MO requires these dates. Especially since we are not
+            # allowed to ask for an OU relation where from_date=to_date, which
+            # is the case for a unit_interval lasting only for a single day.
+            to_date=datetime_to_mo_end(unit_interval.end),
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
         )
     )
