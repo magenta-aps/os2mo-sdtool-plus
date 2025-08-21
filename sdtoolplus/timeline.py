@@ -1090,6 +1090,8 @@ async def engagement_ou_strategy_region(
             unit = settings.unknown_unit  # type: ignore
         unit_intervals.append(EngagementUnit(start=start, end=end, value=unit))
 
+    logger.debug("Unit intervals", unit_intervals=unit_intervals)
+
     # Find the engagement unit(s) in all intervals
     related_unit_intervals = []
     for unit_interval in unit_intervals:
