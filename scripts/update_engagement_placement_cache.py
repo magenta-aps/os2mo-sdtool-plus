@@ -27,7 +27,7 @@ BASE_START_DATE = datetime(1970, 1, 1)
 
 
 class ScriptSettings(BaseSettings):
-    mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None = None
+    mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]]
 
 
 async def get_changed_employments(
@@ -117,7 +117,6 @@ def main(
         engagements: dict[str, Any] = json.load(fp)
 
     settings = ScriptSettings()
-    assert settings.mo_subtree_paths_for_root is not None
     institution_identifiers = settings.mo_subtree_paths_for_root.keys()
 
     sd_client = SDClient(username, password)
