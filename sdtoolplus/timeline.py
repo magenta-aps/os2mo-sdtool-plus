@@ -880,36 +880,40 @@ async def sync_ou(
         dry_run=dry_run,
     )
 
-    if (
-        department is not None
-        and ou_sync_successful
-        and not settings.disable_ou_address_sync
-    ):
-        logger.info("Syncing OU addresses", org_unit=str(org_unit))
+    if department is None:
+        logger.warning("Department not found in SD! Skipping OU address sync")
+        return
+    if not ou_sync_successful:
+        logger.warning("OU sync failed! Skipping OU address sync")
+        return
+    if not settings.enable_ou_address_sync:
+        logger.warning("OU address sync disabled! Skipping OU address sync")
+        return
 
-        await _sync_ou_pnumber(
-            gql_client=gql_client,
-            department=department,
-            org_unit=org_unit,
-            dry_run=dry_run,
-        )
+    logger.info("Syncing OU addresses", org_unit=str(org_unit))
 
-        await _sync_ou_postal_address(
-            gql_client=gql_client,
-            department=department,
-            org_unit=org_unit,
-            dry_run=dry_run,
-        )
+    await _sync_ou_pnumber(
+        gql_client=gql_client,
+        department=department,
+        org_unit=org_unit,
+        dry_run=dry_run,
+    )
 
-        await _sync_ou_phone_number(
-            gql_client=gql_client,
-            department=department,
-            org_unit=org_unit,
-            dry_run=dry_run,
-        )
+    await _sync_ou_postal_address(
+        gql_client=gql_client,
+        department=department,
+        org_unit=org_unit,
+        dry_run=dry_run,
+    )
 
-        logger.info("Finished syncing OU addresses", org_unit=str(org_unit))
+    await _sync_ou_phone_number(
+        gql_client=gql_client,
+        department=department,
+        org_unit=org_unit,
+        dry_run=dry_run,
+    )
 
+    logger.info("Finished syncing OU addresses", org_unit=str(org_unit))
     logger.info("Finished syncing OU and its addresses!", org_unit=str(org_unit))
 
 
