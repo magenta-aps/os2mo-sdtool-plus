@@ -910,6 +910,8 @@ async def sync_ou(
 
         logger.info("Finished syncing OU addresses", org_unit=str(org_unit))
 
+    logger.info("Finished syncing OU and its addresses!", org_unit=str(org_unit))
+
 
 async def engagement_ou_strategy_elevate_to_ny_level(
     sd_client: SDClient,
