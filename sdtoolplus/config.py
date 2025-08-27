@@ -125,6 +125,9 @@ class SDToolPlusSettings(BaseSettings):
     # who do not have an "Afdelings-niveau" as leafs.
     build_extra_tree: bool = False
 
+    # Whether to enable org unit address sync. NOTE: this flag is not used in
+    # the legacy part of the SDTool+ integration.
+    enable_ou_address_sync: bool = True
     # If true, only the postal addresses from the line management
     # ("Linjeorganisationen") org units are synchronized
     only_sync_line_mgmt_postal_addresses: bool = False

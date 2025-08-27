@@ -2440,6 +2440,129 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "ENABLE_OU_ADDRESS_SYNC": "false",
+    }
+)
+async def test_ou_timeline_no_address_sync_when_disabled(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing that the OU address are not synced to MO:
+
+    Time  --------t1-------------------------------------------------------t2------>
+
+    MO (unit does not exist)
+
+    SD (name)     |-------------------------name1--------------------------|
+    SD (id)       |-------------------------ABCD---------------------------|
+    SD (level)    |-------------------------NY0----------------------------|
+    SD (PNumber)  |----------------------1234567890------------------------|
+    SD (postal)   |---------------Kung Fu Street 1, 1000, Andeby ----------|
+    SD (phone)    |----------------------23456789--------------------------|
+    SD (parent)   |-------------------------dep3---------------------------|
+
+    "Assert"      |-------------------------1------------------------------|
+    intervals
+    """
+    # Arrange
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>true</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2001-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+            <ProductionUnitIdentifier>1234567890</ProductionUnitIdentifier>
+            <PostalAddress>
+              <StandardAddressIdentifier>Kung Fu Street 1</StandardAddressIdentifier>
+              <PostalCode>1000</PostalCode>
+              <DistrictName>Andeby</DistrictName>
+              <MunicipalityCode>1000</MunicipalityCode>
+            </PostalAddress>
+            <ContactInformation>
+              <TelephoneNumberIdentifier>23456789</TelephoneNumberIdentifier>
+              <TelephoneNumberIdentifier>34567890</TelephoneNumberIdentifier>
+            </ContactInformation>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "2001-12-31",
+                "parentUuid": "30000000-0000-0000-0000-000000000000",
+            },
+        ],
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+
+    assert r.status_code == 200
+
+    addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["P-nummer", "AdresseAPOSOrgUnit", "lokation_telefon_lokal"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    assert addresses.objects == []
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
     }
 )
 async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
