@@ -52,7 +52,7 @@ facets:
     AddressMailUnit:
       title: "Postadresse"
       scope: "DAR"
-    AdresseAPOSOrgUnit:
+    AdresseSDOrgUnit:
       title: "Postadresse fra SD"
       scope: "TEXT"
     lokation_telefon_lokal:

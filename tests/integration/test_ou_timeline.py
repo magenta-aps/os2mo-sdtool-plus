@@ -992,7 +992,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
                 ClassFilter(
                     facet=FacetFilter(user_keys=["org_unit_address_type"]),
                     # TODO: handle required variability in municipality mode
-                    user_keys=["AdresseAPOSOrgUnit"],
+                    user_keys=["AdresseSDOrgUnit"],
                 )
             )
         ).objects
@@ -1005,7 +1005,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
                 org_unit=unit_uuid,
                 visibility=visibility_class_uuid,
                 validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
-                user_key="AdresseAPOSOrgUnit",
+                user_key="AdresseSDOrgUnit",
                 value="Kung FU Street, 1000, Andeby",
                 address_type=postal_address_type_uuid,
             )
@@ -1211,7 +1211,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
     postal_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="org_unit_address_type",
-        class_user_key="AdresseAPOSOrgUnit",
+        class_user_key="AdresseSDOrgUnit",
     )
 
     # Get the phone number address type
@@ -1334,7 +1334,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["AdresseAPOSOrgUnit"],
+                user_keys=["AdresseSDOrgUnit"],
             ),
             from_date=None,
             to_date=None,
@@ -1458,7 +1458,7 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
     postal_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="org_unit_address_type",
-        class_user_key="AdresseAPOSOrgUnit",
+        class_user_key="AdresseSDOrgUnit",
     )
 
     # Get the phone number address type
@@ -1631,7 +1631,7 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["AdresseAPOSOrgUnit"],
+                user_keys=["AdresseSDOrgUnit"],
             ),
             from_date=None,
             to_date=None,
@@ -1773,7 +1773,7 @@ async def test_ou_timeline_address_intervals_are_combined(
     postal_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="org_unit_address_type",
-        class_user_key="AdresseAPOSOrgUnit",
+        class_user_key="AdresseSDOrgUnit",
     )
 
     # Get the phone number address type
@@ -1931,7 +1931,7 @@ async def test_ou_timeline_address_intervals_are_combined(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["AdresseAPOSOrgUnit"],
+                user_keys=["AdresseSDOrgUnit"],
             ),
             from_date=None,
             to_date=None,
@@ -2054,7 +2054,7 @@ async def test_ou_timeline_update_addresses_for_unit_in_past(
     postal_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="org_unit_address_type",
-        class_user_key="AdresseAPOSOrgUnit",
+        class_user_key="AdresseSDOrgUnit",
     )
 
     # Get the phone number address type
@@ -2193,7 +2193,7 @@ async def test_ou_timeline_update_addresses_for_unit_in_past(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["AdresseAPOSOrgUnit"],
+                user_keys=["AdresseSDOrgUnit"],
             ),
             from_date=None,
             to_date=None,
@@ -2313,7 +2313,7 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
     postal_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="org_unit_address_type",
-        class_user_key="AdresseAPOSOrgUnit",
+        class_user_key="AdresseSDOrgUnit",
     )
 
     # Get the phone number address type
@@ -2423,7 +2423,7 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["P-nummer", "AdresseAPOSOrgUnit", "lokation_telefon_lokal"],
+                user_keys=["P-nummer", "AdresseSDOrgUnit", "lokation_telefon_lokal"],
             ),
             from_date=None,
             to_date=None,
@@ -2546,7 +2546,7 @@ async def test_ou_timeline_no_address_sync_when_disabled(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                user_keys=["P-nummer", "AdresseAPOSOrgUnit", "lokation_telefon_lokal"],
+                user_keys=["P-nummer", "AdresseSDOrgUnit", "lokation_telefon_lokal"],
             ),
             from_date=None,
             to_date=None,

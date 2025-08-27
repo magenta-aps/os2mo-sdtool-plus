@@ -363,7 +363,7 @@ async def get_postal_address_timeline(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
                 # TODO: use both keys for now as it has changed in the APOS importer?
                 # TODO: handle the municipality case
-                user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+                user_keys=["AdresseSDOrgUnit"],
             ),
             from_date=None,
             to_date=None,
@@ -1657,7 +1657,7 @@ async def create_postal_address(
     ou_type_classes = await gql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["org_unit_address_type"]),
-            user_keys=["AdresseAPOSOrgUnit", "AdresseSDOrgUnit"],
+            user_keys=["AdresseSDOrgUnit"],
         )
     )
     current = one(
