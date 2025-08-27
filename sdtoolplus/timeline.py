@@ -880,7 +880,11 @@ async def sync_ou(
         dry_run=dry_run,
     )
 
-    if department is not None and ou_sync_successful:
+    if (
+        department is not None
+        and ou_sync_successful
+        and not settings.disable_ou_address_sync
+    ):
         logger.info("Syncing OU addresses", org_unit=str(org_unit))
 
         await _sync_ou_pnumber(
