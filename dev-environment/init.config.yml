@@ -58,9 +58,6 @@ facets:
     lokation_telefon_lokal:
       title: "Telefon lokal"
       scope: "PHONE"
-    P-nummer:
-      title: "P-nummer"
-      scope: "PNUMBER"
   engagement_type:
     TestAnsat:
       title: "TestAnsat"
