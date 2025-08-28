@@ -457,6 +457,20 @@ query GetRelatedUnits($filter: RelatedUnitFilter!) {
   }
 }
 
+query GetManagers($filter: ManagerFilter!) {
+  managers(filter: $filter) {
+    objects {
+      uuid
+      validities {
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 mutation SendEvent($input: EventSendInput!) {
   event_send(input: $input)
 }
