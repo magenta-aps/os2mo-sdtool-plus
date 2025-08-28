@@ -21,6 +21,7 @@ from .mo_org_unit_importer import OrgUnitUUID
 SD_RETRY_WAIT_TIME = 15
 SD_RETRY_ATTEMPTS = 10
 TIMEZONE = ZoneInfo("Europe/Copenhagen")
+PNUMBER_CLASS_USER_KEY = "Pnummer"
 
 
 class Mode(Enum):
