@@ -104,6 +104,11 @@ from .get_leave import GetLeaveLeaves
 from .get_leave import GetLeaveLeavesObjects
 from .get_leave import GetLeaveLeavesObjectsValidities
 from .get_leave import GetLeaveLeavesObjectsValiditiesValidity
+from .get_managers import GetManagers
+from .get_managers import GetManagersManagers
+from .get_managers import GetManagersManagersObjects
+from .get_managers import GetManagersManagersObjectsValidities
+from .get_managers import GetManagersManagersObjectsValiditiesValidity
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnitsObjects
@@ -423,6 +428,11 @@ __all__ = [
     "GetLeaveLeavesObjects",
     "GetLeaveLeavesObjectsValidities",
     "GetLeaveLeavesObjectsValiditiesValidity",
+    "GetManagers",
+    "GetManagersManagers",
+    "GetManagersManagersObjects",
+    "GetManagersManagersObjectsValidities",
+    "GetManagersManagersObjectsValiditiesValidity",
     "GetOrgUnitChildren",
     "GetOrgUnitChildrenOrgUnits",
     "GetOrgUnitChildrenOrgUnitsObjects",
