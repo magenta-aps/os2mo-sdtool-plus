@@ -90,16 +90,7 @@ from sdtoolplus.sd.person import get_sd_person
 from sdtoolplus.sd.timeline import (
     get_association_timeline as get_sd_association_timeline,
 )
-from sdtoolplus.sd.timeline import get_department
-from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
-from sdtoolplus.sd.timeline import (
-    get_phone_number_timeline as get_sd_phone_number_timeline,
-)
-from sdtoolplus.sd.timeline import get_pnumber_timeline as get_sd_pnumber_timeline
-from sdtoolplus.sd.timeline import (
-    get_postal_address_timeline as get_sd_postal_address_timeline,
-)
 from sdtoolplus.sd.timeline import sd_end_to_timeline_end
 from sdtoolplus.sd.timeline import sd_start_to_timeline_start
 from sdtoolplus.types import CPRNumber
@@ -108,6 +99,15 @@ from .config import Mode
 from .config import SDToolPlusSettings
 from .mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from .sd.timeline import get_leave_timeline as get_sd_leave_timeline
+from .sd.timelines.org_unit import get_department
+from .sd.timelines.org_unit import get_department_timeline
+from .sd.timelines.org_unit import (
+    get_phone_number_timeline as get_sd_phone_number_timeline,
+)
+from .sd.timelines.org_unit import get_pnumber_timeline as get_sd_pnumber_timeline
+from .sd.timelines.org_unit import (
+    get_postal_address_timeline as get_sd_postal_address_timeline,
+)
 
 logger = structlog.stdlib.get_logger()
 

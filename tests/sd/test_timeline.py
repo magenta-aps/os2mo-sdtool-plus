@@ -42,11 +42,11 @@ from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sd.timeline import _sd_employment_type
-from sdtoolplus.sd.timeline import get_department
-from sdtoolplus.sd.timeline import get_department_timeline
 from sdtoolplus.sd.timeline import get_employment_timeline
 from sdtoolplus.sd.timeline import get_leave_timeline
-from sdtoolplus.sd.timeline import get_phone_number_timeline
+from sdtoolplus.sd.timelines.org_unit import get_department
+from sdtoolplus.sd.timelines.org_unit import get_department_timeline
+from sdtoolplus.sd.timelines.org_unit import get_phone_number_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 from sdtoolplus.timeline import engagement_ou_strategy_elevate_to_ny_level
 
