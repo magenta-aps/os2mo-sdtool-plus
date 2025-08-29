@@ -462,9 +462,6 @@ def patch_missing_parents(
     interval. This function patches the unit timeline with the parent "Unknown"
     in the intervals, where the SD unit does not have a parent.
     """
-    # TODO: handle this for the municipality case
-    assert settings.mode == Mode.REGION
-
     endpoints = sorted(desired_unit_timeline.get_interval_endpoints())
     parent_intervals = []
     for start, end in pairwise(endpoints):
