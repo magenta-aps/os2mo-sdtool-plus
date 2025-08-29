@@ -32,8 +32,8 @@ from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.sd.timeline import _sd_employment_type
-from sdtoolplus.sd.timeline import get_employment_timeline
-from sdtoolplus.sd.timeline import get_leave_timeline
+from sdtoolplus.sd.timelines.employment import get_employment_timeline
+from sdtoolplus.sd.timelines.employment import get_leave_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 from sdtoolplus.timeline import engagement_ou_strategy_elevate_to_ny_level
 
