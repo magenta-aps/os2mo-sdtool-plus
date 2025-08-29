@@ -90,8 +90,8 @@ from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_person
-from sdtoolplus.sd.timeline import sd_end_to_timeline_end
-from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
+from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 from sdtoolplus.sd.timelines.employment import (
     get_association_timeline as get_sd_association_timeline,
 )

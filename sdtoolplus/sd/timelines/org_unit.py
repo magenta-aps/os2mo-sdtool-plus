@@ -23,8 +23,8 @@ from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
-from sdtoolplus.sd.timeline import sd_end_to_timeline_end
-from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
+from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 
 logger = structlog.stdlib.get_logger()
 

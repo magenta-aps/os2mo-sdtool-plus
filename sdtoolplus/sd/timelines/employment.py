@@ -19,9 +19,9 @@ from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
-from sdtoolplus.sd.timeline import logger
-from sdtoolplus.sd.timeline import sd_end_to_timeline_end
-from sdtoolplus.sd.timeline import sd_start_to_timeline_start
+from sdtoolplus.sd.timelines.common import logger
+from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
+from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 
 
 def _sd_employment_type(worktime: WorkingTime) -> EngType:
