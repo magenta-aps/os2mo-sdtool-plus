@@ -41,12 +41,7 @@ from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timeline import create_association
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_leave
-from sdtoolplus.mo.timeline import create_ou
 from sdtoolplus.mo.timeline import create_person
-from sdtoolplus.mo.timeline import create_phone_number
-from sdtoolplus.mo.timeline import create_pnumber_address
-from sdtoolplus.mo.timeline import create_postal_address
-from sdtoolplus.mo.timeline import delete_address
 from sdtoolplus.mo.timeline import get_association_filter
 from sdtoolplus.mo.timeline import (
     get_association_timeline as get_mo_association_timeline,
@@ -55,25 +50,32 @@ from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import get_leave_timeline as get_mo_leave_timeline
-from sdtoolplus.mo.timeline import get_ou_timeline
-from sdtoolplus.mo.timeline import (
-    get_phone_number_timeline as get_mo_phone_number_timeline,
-)
-from sdtoolplus.mo.timeline import get_pnumber_timeline as get_mo_pnumber_timeline
-from sdtoolplus.mo.timeline import (
-    get_postal_address_timeline as get_mo_postal_address_timeline,
-)
 from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_association
 from sdtoolplus.mo.timeline import terminate_engagement
 from sdtoolplus.mo.timeline import terminate_leave
 from sdtoolplus.mo.timeline import terminate_leave_before_engagement_termination
-from sdtoolplus.mo.timeline import terminate_ou
 from sdtoolplus.mo.timeline import update_association
 from sdtoolplus.mo.timeline import update_engagement
 from sdtoolplus.mo.timeline import update_leave
-from sdtoolplus.mo.timeline import update_ou
 from sdtoolplus.mo.timeline import update_person
+from sdtoolplus.mo.timelines.org_unit import create_ou
+from sdtoolplus.mo.timelines.org_unit import create_phone_number
+from sdtoolplus.mo.timelines.org_unit import create_pnumber_address
+from sdtoolplus.mo.timelines.org_unit import create_postal_address
+from sdtoolplus.mo.timelines.org_unit import delete_address
+from sdtoolplus.mo.timelines.org_unit import get_ou_timeline
+from sdtoolplus.mo.timelines.org_unit import (
+    get_phone_number_timeline as get_mo_phone_number_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import (
+    get_pnumber_timeline as get_mo_pnumber_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import (
+    get_postal_address_timeline as get_mo_postal_address_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import terminate_ou
+from sdtoolplus.mo.timelines.org_unit import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import Engagement
