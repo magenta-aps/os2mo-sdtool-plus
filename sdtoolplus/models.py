@@ -430,6 +430,10 @@ class AssociationTimeline(BaseTimeline):
             return False
 
 
+class ManagerTimeline(BaseTimeline):
+    manager_active: Timeline[Active] = Timeline[Active]()
+
+
 class MOPNumberTimelineObj(BaseModel, frozen=True):
     # MO P-number address UUID
     uuid: UUID | None
