@@ -18,7 +18,7 @@ from sdtoolplus.depends import SDClient
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
 from sdtoolplus.models import Engagement
 from sdtoolplus.models import EngagementTimeline
-from sdtoolplus.sd.timeline import get_employment_timeline
+from sdtoolplus.sd.timelines.employment import get_employment_timeline
 
 REGEX_CPR = re.compile("^\\d{10}$")
 logger = structlog.stdlib.get_logger()

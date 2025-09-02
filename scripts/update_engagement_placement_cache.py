@@ -19,7 +19,7 @@ from sdclient.responses import GetEmploymentChangedAtDateResponse
 
 from scripts.sd_engagement_json import _engagement_timeline_to_json
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
-from sdtoolplus.sd.timeline import get_employment_timeline
+from sdtoolplus.sd.timelines.employment import get_employment_timeline
 
 logger = structlog.stdlib.get_logger()
 
