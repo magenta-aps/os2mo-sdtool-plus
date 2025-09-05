@@ -470,18 +470,28 @@ query GetManagerTimeline($uuid: UUID!) {
     objects {
       uuid
       validities {
-        user_key
-        person {
-          uuid
-          cpr_number
-          engagements(filter: { from_date: null, to_date: null }) {
-            user_key
-            validity {
-              from
-              to
-            }
-          }
+        employee_uuid
+        validity {
+          from
+          to
         }
+      }
+    }
+  }
+}
+
+query GetManagerEngagements($employee_uuid: UUID!) {
+  engagements(
+    filter: {
+      employees: [$employee_uuid],
+      from_date: null,
+      to_date: null
+    }
+  ) {
+    objects {
+      uuid
+      validities {
+        user_key
         validity {
           from
           to

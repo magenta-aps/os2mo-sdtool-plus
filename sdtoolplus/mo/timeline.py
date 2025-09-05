@@ -54,6 +54,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import ManagerPerson
 from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
@@ -1093,3 +1094,25 @@ async def terminate_association(
     if not dry_run:
         await gql_client.terminate_association(payload)
     logger.debug("Association terminated", person=str(person), user_key=user_key)
+
+
+async def get_manager_person_timeline(
+    gql_client: GraphQLClient, manager_uuid: UUID
+) -> Timeline[ManagerPerson]:
+    mo_manager = await gql_client.get_manager_timeline(manager_uuid)
+
+    validities = one(mo_manager.objects).validities
+
+    person_intervals = tuple(
+        ManagerPerson(
+            start=validity.validity.from_,
+            end=_mo_end_to_timeline_end(validity.validity.to),
+            value=validity.employee_uuid,
+        )
+        for validity in validities
+    )
+
+    timeline = Timeline[ManagerPerson](intervals=combine_intervals(person_intervals))
+    logger.debug("Manager person timeline", timeline=timeline.dict())
+
+    return timeline

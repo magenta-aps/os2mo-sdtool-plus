@@ -52,6 +52,8 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_manager_engagements import GetManagerEngagements
+from .get_manager_engagements import GetManagerEngagementsEngagements
 from .get_manager_timeline import GetManagerTimeline
 from .get_manager_timeline import GetManagerTimelineManagers
 from .get_managers import GetManagers
@@ -1006,18 +1008,7 @@ class GraphQLClient(AsyncBaseClient):
                 objects {
                   uuid
                   validities {
-                    user_key
-                    person {
-                      uuid
-                      cpr_number
-                      engagements(filter: {from_date: null, to_date: null}) {
-                        user_key
-                        validity {
-                          from
-                          to
-                        }
-                      }
-                    }
+                    employee_uuid
                     validity {
                       from
                       to
@@ -1032,6 +1023,34 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetManagerTimeline.parse_obj(data).managers
+
+    async def get_manager_engagements(
+        self, employee_uuid: UUID
+    ) -> GetManagerEngagementsEngagements:
+        query = gql(
+            """
+            query GetManagerEngagements($employee_uuid: UUID!) {
+              engagements(
+                filter: {employees: [$employee_uuid], from_date: null, to_date: null}
+              ) {
+                objects {
+                  uuid
+                  validities {
+                    user_key
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"employee_uuid": employee_uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagerEngagements.parse_obj(data).engagements
 
     async def send_event(self, input: EventSendInput) -> bool:
         query = gql(

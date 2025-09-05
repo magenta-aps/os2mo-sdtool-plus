@@ -246,6 +246,10 @@ class EngagementType(Interval[EngType]):
     pass
 
 
+class ManagerPerson(Interval[Optional[UUID]]):
+    pass
+
+
 def combine_intervals(intervals: tuple[T, ...]) -> tuple[T, ...]:
     """
     Combine adjacent interval entities with same values.
