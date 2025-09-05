@@ -52,6 +52,10 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_manager_timeline import GetManagerTimeline
+from .get_manager_timeline import GetManagerTimelineManagers
+from .get_managers import GetManagers
+from .get_managers import GetManagersManagers
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
@@ -93,6 +97,7 @@ from .input_types import LeaveCreateInput
 from .input_types import LeaveFilter
 from .input_types import LeaveTerminateInput
 from .input_types import LeaveUpdateInput
+from .input_types import ManagerFilter
 from .input_types import OrganisationUnitCreateInput
 from .input_types import OrganisationUnitFilter
 from .input_types import OrganisationUnitTerminateInput
@@ -975,6 +980,58 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetRelatedUnits.parse_obj(data).related_units
+
+    async def get_managers(self, filter: ManagerFilter) -> GetManagersManagers:
+        query = gql(
+            """
+            query GetManagers($filter: ManagerFilter!) {
+              managers(filter: $filter) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagers.parse_obj(data).managers
+
+    async def get_manager_timeline(self, uuid: UUID) -> GetManagerTimelineManagers:
+        query = gql(
+            """
+            query GetManagerTimeline($uuid: UUID!) {
+              managers(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
+                objects {
+                  uuid
+                  validities {
+                    user_key
+                    person {
+                      uuid
+                      cpr_number
+                      engagements(filter: {from_date: null, to_date: null}) {
+                        user_key
+                        validity {
+                          from
+                          to
+                        }
+                      }
+                    }
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagerTimeline.parse_obj(data).managers
 
     async def send_event(self, input: EventSendInput) -> bool:
         query = gql(

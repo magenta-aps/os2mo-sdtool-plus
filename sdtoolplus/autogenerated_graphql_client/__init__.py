@@ -104,6 +104,21 @@ from .get_leave import GetLeaveLeaves
 from .get_leave import GetLeaveLeavesObjects
 from .get_leave import GetLeaveLeavesObjectsValidities
 from .get_leave import GetLeaveLeavesObjectsValiditiesValidity
+from .get_manager_timeline import GetManagerTimeline
+from .get_manager_timeline import GetManagerTimelineManagers
+from .get_manager_timeline import GetManagerTimelineManagersObjects
+from .get_manager_timeline import GetManagerTimelineManagersObjectsValidities
+from .get_manager_timeline import GetManagerTimelineManagersObjectsValiditiesPerson
+from .get_manager_timeline import (
+    GetManagerTimelineManagersObjectsValiditiesPersonEngagements,
+)
+from .get_manager_timeline import (
+    GetManagerTimelineManagersObjectsValiditiesPersonEngagementsValidity,
+)
+from .get_manager_timeline import GetManagerTimelineManagersObjectsValiditiesValidity
+from .get_managers import GetManagers
+from .get_managers import GetManagersManagers
+from .get_managers import GetManagersManagersObjects
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnitsObjects
@@ -423,6 +438,17 @@ __all__ = [
     "GetLeaveLeavesObjects",
     "GetLeaveLeavesObjectsValidities",
     "GetLeaveLeavesObjectsValiditiesValidity",
+    "GetManagerTimeline",
+    "GetManagerTimelineManagers",
+    "GetManagerTimelineManagersObjects",
+    "GetManagerTimelineManagersObjectsValidities",
+    "GetManagerTimelineManagersObjectsValiditiesPerson",
+    "GetManagerTimelineManagersObjectsValiditiesPersonEngagements",
+    "GetManagerTimelineManagersObjectsValiditiesPersonEngagementsValidity",
+    "GetManagerTimelineManagersObjectsValiditiesValidity",
+    "GetManagers",
+    "GetManagersManagers",
+    "GetManagersManagersObjects",
     "GetOrgUnitChildren",
     "GetOrgUnitChildrenOrgUnits",
     "GetOrgUnitChildrenOrgUnitsObjects",

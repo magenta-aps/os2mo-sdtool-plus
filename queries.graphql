@@ -457,6 +457,40 @@ query GetRelatedUnits($filter: RelatedUnitFilter!) {
   }
 }
 
+query GetManagers($filter: ManagerFilter!) {
+  managers(filter: $filter) {
+    objects {
+      uuid
+    }
+  }
+}
+
+query GetManagerTimeline($uuid: UUID!) {
+  managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
+    objects {
+      uuid
+      validities {
+        user_key
+        person {
+          uuid
+          cpr_number
+          engagements(filter: { from_date: null, to_date: null }) {
+            user_key
+            validity {
+              from
+              to
+            }
+          }
+        }
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 mutation SendEvent($input: EventSendInput!) {
   event_send(input: $input)
 }
