@@ -52,6 +52,8 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_manager_timeline import GetManagerTimeline
+from .get_manager_timeline import GetManagerTimelineManagers
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
@@ -949,6 +951,33 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateAssociation.parse_obj(data).association_terminate
+
+    async def get_manager_timeline(
+        self, employee_uuid: UUID
+    ) -> GetManagerTimelineManagers:
+        query = gql(
+            """
+            query GetManagerTimeline($employee_uuid: UUID!) {
+              managers(
+                filter: {from_date: null, to_date: null, employee: {uuids: [$employee_uuid]}}
+              ) {
+                objects {
+                  validities {
+                    org_unit_uuid
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"employee_uuid": employee_uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagerTimeline.parse_obj(data).managers
 
     async def get_related_units(
         self, filter: RelatedUnitFilter

@@ -442,6 +442,26 @@ mutation TerminateAssociation($input: AssociationTerminateInput!) {
   }
 }
 
+query GetManagerTimeline($employee_uuid: UUID!) {
+  managers(
+    filter: {
+      from_date: null
+      to_date: null
+      employee: { uuids: [$employee_uuid] }
+    }
+  ) {
+    objects {
+      validities {
+        org_unit_uuid
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 query GetRelatedUnits($filter: RelatedUnitFilter!) {
   related_units(filter: $filter) {
     objects {
