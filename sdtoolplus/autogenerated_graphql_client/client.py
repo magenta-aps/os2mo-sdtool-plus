@@ -52,6 +52,8 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_omada_engagements import GetOmadaEngagements
+from .get_omada_engagements import GetOmadaEngagementsEngagements
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
@@ -796,6 +798,28 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateEngagement.parse_obj(data).engagement_terminate
+
+    async def get_omada_engagements(self) -> GetOmadaEngagementsEngagements:
+        query = gql(
+            """
+            query GetOmadaEngagements {
+              engagements(
+                filter: {from_date: null, to_date: null, engagement_type: {user_keys: ["omada_manually_created", "omada_manually_created_hidden"]}}
+              ) {
+                objects {
+                  validities {
+                    user_key
+                    employee_uuid
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetOmadaEngagements.parse_obj(data).engagements
 
     async def get_leave(self, filter: LeaveFilter) -> GetLeaveLeaves:
         query = gql(

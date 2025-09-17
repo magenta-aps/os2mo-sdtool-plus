@@ -371,6 +371,25 @@ mutation TerminateEngagement($input: EngagementTerminateInput!) {
   }
 }
 
+query GetOmadaEngagements {
+  engagements(
+    filter: {
+      from_date: null
+      to_date: null
+      engagement_type: {
+        user_keys: ["omada_manually_created", "omada_manually_created_hidden"]
+      }
+    }
+  ) {
+    objects {
+      validities {
+        user_key
+        employee_uuid
+      }
+    }
+  }
+}
+
 query GetLeave($filter: LeaveFilter!) {
   leaves(filter: $filter) {
     objects {
