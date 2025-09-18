@@ -224,20 +224,12 @@ async def sync_person(
         )
         return
 
-    try:
-        sd_person = await get_sd_person(
-            sd_client=sd_client,
-            institution_identifier=institution_identifier,
-            cpr=cpr,
-            effective_date=datetime.today(),
-        )
-    except SDRootElementNotFound:
-        logger.warning(
-            "Person not found in SD",
-            institution_identifier=institution_identifier,
-            cpr=cpr,
-        )
-        raise PersonNotFoundError()
+    sd_person = await get_sd_person(
+        sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        effective_date=datetime.today(),
+    )
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
