@@ -775,7 +775,17 @@ async def terminate_engagement(
     eng = await gql_client.get_engagement_timeline(
         person=person, user_key=user_key, from_date=None, to_date=None
     )
-    eng_uuid = one(eng.objects).uuid
+    try:
+        eng_uuid = one(eng.objects).uuid
+    except ValueError:
+        # This can happen if the SD engagement active timeline only contains
+        # status 8 intervals
+        logger.warning(
+            "Cannot terminate engagement since it is not found in MO",
+            person=str(person),
+            user_key=user_key,
+        )
+        return
 
     if mo_validity.to is not None:
         payload = EngagementTerminateInput(
