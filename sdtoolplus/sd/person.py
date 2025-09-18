@@ -34,6 +34,7 @@ async def get_sd_person(
             PersonCivilRegistrationIdentifier=cpr,
             EffectiveDate=effective_date,
             ContactInformationIndicator=contact_information,
+            StatusPassiveIndicator=True,
             PostalAddressIndicator=postal_address,
         ),
     )
