@@ -246,4 +246,31 @@ async def test_person_timeline_update(
     assert len(validities) == 2
 
 
-# TODO: add test where MO-person validity should be extended
+@pytest.mark.integration_test
+async def test_person_skip_0000_cprs(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+):
+    """
+    Test that we are skipping person with CPRs ending in 0000.
+    """
+    # Arrange
+    cpr = "0101010000"
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "II",
+            "cpr": "0101010000",
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_person = await graphql_client.get_person_timeline(
+        EmployeeFilter(cpr_numbers=[cpr], from_date=None, to_date=None)
+    )
+
+    assert not mo_person.objects

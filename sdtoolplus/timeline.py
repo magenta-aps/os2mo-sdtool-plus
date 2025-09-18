@@ -215,6 +215,15 @@ async def sync_person(
         cpr=cpr,
         dry_run=dry_run,
     )
+
+    if cpr.endswith("0000"):
+        logger.warning(
+            "Skipping person since CPR ends with 0000",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return
+
     try:
         sd_person = await get_sd_person(
             sd_client=sd_client,
