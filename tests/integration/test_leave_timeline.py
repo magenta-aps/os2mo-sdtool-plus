@@ -222,3 +222,320 @@ async def test_leave_timeline(
     assert interval_2.leave_type_uuid == leave_type
 
     assert len(validities) == 2
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the case where a leave cannot be created due to a
+    missing engagement (which could not be created due to missing engagement
+    data from SD).
+
+    We are testing this scenario:
+
+    Time  --------t1----------t2------------------------t3--------------------->
+
+    MO (eng)                          (empty)
+    MO (leave)                        (empty)
+
+    SD (status)   |-----3-----|-------------1-----------|
+    SD (dep)       (missing!) |-----------dep1----------|
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    user_key = f"II-{emp_id}"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <EmploymentStatusCode>3</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentDepartment>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # Check that the engagement has only been created in the status 1 period
+    engagement = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=user_key, from_date=None, to_date=None
+    )
+    validity = one(one(engagement.objects).validities)
+
+    assert validity.validity.from_ == t2
+    assert _mo_end_to_timeline_end(validity.validity.to) == t3
+
+    # Check that no leave has been created
+    leave = await graphql_client.get_leave(
+        LeaveFilter(employees=[person_uuid], from_date=None, to_date=None)
+    )
+    assert not leave.objects
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the case where a leave cannot be updated due to a
+    missing engagement (which could not be created due to missing engagement
+    data from SD).
+
+    We are testing this scenario:
+
+    Time  --------t1----------t2------------------------t3--------------------->
+
+    MO (eng)                          (empty)
+    MO (leave)                        (empty)
+
+    SD (status)   |-----3-----|-------------1-----------|----------4-----------
+    SD (dep)      |---------------dep1------------------|      (missing!)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    user_key = f"II-{emp_id}"
+
+    # Leave type
+    r_leave_type = await graphql_client.get_class(ClassFilter(user_keys=["Orlov"]))
+    leave_type = one(r_leave_type.objects).uuid
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <EmploymentStatusCode>3</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2003-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>4</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # Check that the engagement has only been created in the entire SD active
+    # period
+    engagement = await graphql_client.get_engagement_timeline(
+        person=person_uuid, user_key=user_key, from_date=None, to_date=None
+    )
+    eng_validity = one(one(engagement.objects).validities)
+
+    assert eng_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(eng_validity.validity.to) == t3
+
+    # Check that the leave has only been created in the first interval where
+    # all SD engagement data is available
+    leave = await graphql_client.get_leave(
+        LeaveFilter(
+            employees=[person_uuid], user_key=user_key, from_date=None, to_date=None
+        )
+    )
+
+    leave_validity = one(one(leave.objects).validities)
+
+    assert leave_validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(leave_validity.validity.to) == t2
+    assert leave_validity.user_key == user_key
+    assert leave_validity.employee_uuid == person_uuid
+    assert leave_validity.leave_type_uuid == leave_type
