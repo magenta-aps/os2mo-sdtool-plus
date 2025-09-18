@@ -61,9 +61,7 @@ class EngagementNotActiveError(HTTPException):
 
 class PersonNotFoundError(HTTPException):
     def __init__(self) -> None:
-        super().__init__(
-            status_code=HTTP_404_NOT_FOUND, detail="Could not find person in MO"
-        )
+        super().__init__(status_code=HTTP_404_NOT_FOUND, detail="Could not find person")
 
 
 class MoreThanOnePersonError(HTTPException):
