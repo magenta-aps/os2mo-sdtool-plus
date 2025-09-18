@@ -3116,3 +3116,126 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
     assert leave_interval_1.user_key == emp_id
     assert leave_interval_1.employee_uuid == person_uuid
     assert leave_interval_1.leave_type_uuid == leave_type
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
+async def test_eng_timeline_handle_termination_of_sd_status_8_engagements(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    job_function_5678: UUID,
+    job_function_9000: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    There are examples of events containing SD employments which are only in
+    status 8. We will therefor have data in the SD timeline, but no periods
+    where the engagement is active. This will cause the code to try to terminate
+    the engagement in MO in the relevant period(s), which is not possible if
+    the engagement does not already exist in MO. This test makes sure that the
+    code can handle this special termination case.
+
+    We are testing this scenario:
+
+    Time  --------t1----------------------------------t2----------------------->
+
+    MO (engagement does not exist)
+
+    SD (active)   |----------------8------------------|
+    """
+    # Arrange
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=cpr,
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <JobPositionIdentifier>9000</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <EmploymentStatusCode>8</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
