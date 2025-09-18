@@ -66,7 +66,7 @@ async def test_reconcile_person_and_related_objects(
     today_sd_format = date.strftime(date.today(), "%Y-%m-%d")
     today_url_format = date.strftime(date.today(), "%d.%m.%Y")
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={today_url_format}&PersonCivilRegistrationIdentifier={person_cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={today_url_format}&PersonCivilRegistrationIdentifier={person_cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=f"""<?xml version="1.0" encoding="UTF-8" ?>
