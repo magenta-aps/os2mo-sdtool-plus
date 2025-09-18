@@ -22,7 +22,7 @@ CPR = CPRNumber("0101011234")
 EMP_ID = "12345"
 TODAY_SD_FORMAT = date.strftime(date.today(), "%Y-%m-%d")
 TODAY_URL_FORMAT = date.strftime(date.today(), "%d.%m.%Y")
-GETPERSON_URL = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+GETPERSON_URL = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={CPR}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
 
 SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
     <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
@@ -31,7 +31,7 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
             <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
             <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
             <StatusActiveIndicator>true</StatusActiveIndicator>
-            <StatusPassiveIndicator>false</StatusPassiveIndicator>
+            <StatusPassiveIndicator>true</StatusPassiveIndicator>
             <ContactInformationIndicator>false</ContactInformationIndicator>
             <PostalAddressIndicator>false</PostalAddressIndicator>
         </RequestStructure>
@@ -61,7 +61,7 @@ async def test_person_not_in_sd(
     # Arrange
 
     cpr = "0101010101"
-    get_person_url = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    get_person_url = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
 
     respx_mock.get(get_person_url).respond(
         content_type="text/xml;charset=UTF-8",
