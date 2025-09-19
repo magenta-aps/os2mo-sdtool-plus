@@ -4,6 +4,7 @@ import asyncio
 from datetime import date
 from datetime import datetime
 from itertools import pairwise
+from typing import cast
 from uuid import UUID
 
 import structlog
@@ -224,24 +225,16 @@ async def sync_person(
         )
         return
 
-    try:
-        sd_person = await get_sd_person(
-            sd_client=sd_client,
-            institution_identifier=institution_identifier,
-            cpr=cpr,
-            effective_date=datetime.today(),
-        )
-    except SDRootElementNotFound:
-        logger.warning(
-            "Person not found in SD",
-            institution_identifier=institution_identifier,
-            cpr=cpr,
-        )
-        raise PersonNotFoundError()
+    sd_person = await get_sd_person(
+        sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        effective_date=datetime.today(),
+    )
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
-            cpr_numbers=[cpr], from_date=datetime.today(), to_date=None
+            cpr_numbers=[cast(CPRNumber, cpr)], from_date=datetime.today(), to_date=None
         )
     )
     logger.debug("MO person", mo_person=mo_person.dict())

@@ -7,6 +7,7 @@ from datetime import date
 import structlog.stdlib
 from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
 from sdclient.responses import GetEmploymentChangedResponse
@@ -27,17 +28,26 @@ async def get_sd_person(
     contact_information: bool = True,
     postal_address: bool = True,
 ):
-    sd_response = await asyncio.to_thread(
-        sd_client.get_person,
-        GetPersonRequest(
-            InstitutionIdentifier=institution_identifier,
-            PersonCivilRegistrationIdentifier=cpr,
-            EffectiveDate=effective_date,
-            ContactInformationIndicator=contact_information,
-            StatusPassiveIndicator=True,
-            PostalAddressIndicator=postal_address,
-        ),
-    )
+    try:
+        sd_response = await asyncio.to_thread(
+            sd_client.get_person,
+            GetPersonRequest(
+                InstitutionIdentifier=institution_identifier,
+                PersonCivilRegistrationIdentifier=cpr,
+                EffectiveDate=effective_date,
+                ContactInformationIndicator=contact_information,
+                StatusPassiveIndicator=True,
+                PostalAddressIndicator=postal_address,
+            ),
+        )
+    except SDRootElementNotFound as sd_error:
+        logger.warning(
+            "Person not found in SD",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            error=sd_error.error,
+        )
+        raise PersonNotFoundError()
 
     sd_response_person = one(
         sd_response.Person,
