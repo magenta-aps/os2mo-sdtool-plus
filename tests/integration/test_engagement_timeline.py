@@ -2791,7 +2791,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
 
 
 @pytest.mark.integration_test
-async def test_eng_timeline_delete_engagement_not_found_in_sd(
+async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -2816,6 +2816,8 @@ async def test_eng_timeline_delete_engagement_not_found_in_sd(
     "Arrange" intervals     |-----1----|
 
     SD (empty)
+
+    The engagement should in this case not be deleted from MO.
     """
     # Arrange
     tz = ZoneInfo("Europe/Copenhagen")
@@ -2890,13 +2892,14 @@ async def test_eng_timeline_delete_engagement_not_found_in_sd(
     )
 
     # Assert
-    assert r.status_code == 200
+    assert r.status_code == 500
 
     updated_eng = await graphql_client.get_engagement_timeline(
         person=person_uuid, user_key=emp_id, from_date=None, to_date=None
     )
 
-    assert not updated_eng.objects
+    # Make sure the MO engagement has not been deleted
+    assert updated_eng.objects
 
 
 @pytest.mark.integration_test
