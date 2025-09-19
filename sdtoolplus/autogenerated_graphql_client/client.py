@@ -48,6 +48,8 @@ from .get_engagement_timeline import GetEngagementTimeline
 from .get_engagement_timeline import GetEngagementTimelineEngagements
 from .get_engagements import GetEngagements
 from .get_engagements import GetEngagementsEngagements
+from .get_events import GetEvents
+from .get_events import GetEventsEvents
 from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
@@ -89,6 +91,7 @@ from .input_types import EngagementFilter
 from .input_types import EngagementTerminateInput
 from .input_types import EngagementUpdateInput
 from .input_types import EventSendInput
+from .input_types import FullEventFilter
 from .input_types import LeaveCreateInput
 from .input_types import LeaveFilter
 from .input_types import LeaveTerminateInput
@@ -975,6 +978,24 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetRelatedUnits.parse_obj(data).related_units
+
+    async def get_events(self, filter: FullEventFilter) -> GetEventsEvents:
+        query = gql(
+            """
+            query GetEvents($filter: FullEventFilter!) {
+              events(filter: $filter) {
+                objects {
+                  subject
+                  priority
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetEvents.parse_obj(data).events
 
     async def send_event(self, input: EventSendInput) -> bool:
         query = gql(
