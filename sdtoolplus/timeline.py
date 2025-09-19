@@ -1240,15 +1240,15 @@ async def sync_engagement(
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
         if len(sd_eng_timeline.eng_unit.intervals) == 0:
             raise DepartmentTimelineNotFoundError()
-    except SDRootElementNotFound:
+    except SDRootElementNotFound as sd_error:
         logger.warning(
-            "Could not find employment in SD. Delete engagement from MO",
+            "Could not read employment from SD",
             institution_identifier=institution_identifier,
             cpr=cpr,
             emp_id=employment_identifier,
+            error=sd_error.error,
         )
-        sd_eng_timeline = EngagementTimeline()
-        sd_leave_timeline = LeaveTimeline()
+        raise sd_error
 
     # Get the person
     r_person = await gql_client.get_person(CPRNumber(cpr))
