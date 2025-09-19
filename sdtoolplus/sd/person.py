@@ -40,11 +40,12 @@ async def get_sd_person(
                 PostalAddressIndicator=postal_address,
             ),
         )
-    except SDRootElementNotFound:
+    except SDRootElementNotFound as sd_error:
         logger.warning(
             "Person not found in SD",
             institution_identifier=institution_identifier,
             cpr=cpr,
+            error=sd_error.error,
         )
         raise PersonNotFoundError()
 
