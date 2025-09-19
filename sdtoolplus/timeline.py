@@ -4,6 +4,7 @@ import asyncio
 from datetime import date
 from datetime import datetime
 from itertools import pairwise
+from typing import cast
 from uuid import UUID
 
 import structlog
@@ -233,7 +234,7 @@ async def sync_person(
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
-            cpr_numbers=[cpr], from_date=datetime.today(), to_date=None
+            cpr_numbers=[cast(CPRNumber, cpr)], from_date=datetime.today(), to_date=None
         )
     )
     logger.debug("MO person", mo_person=mo_person.dict())
