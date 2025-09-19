@@ -457,6 +457,15 @@ query GetRelatedUnits($filter: RelatedUnitFilter!) {
   }
 }
 
+query GetEvents($filter: FullEventFilter!) {
+  events(filter: $filter) {
+    objects {
+      subject
+      priority
+    }
+  }
+}
+
 mutation SendEvent($input: EventSendInput!) {
   event_send(input: $input)
 }
