@@ -1211,6 +1211,14 @@ async def sync_engagement(
         dry_run=dry_run,
     )
 
+    if cpr.endswith("0000"):
+        logger.warning(
+            "Skipping engagement since CPR ends with 0000",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return
+
     try:
         r_employment = await asyncio.to_thread(
             sd_client.get_employment_changed,
