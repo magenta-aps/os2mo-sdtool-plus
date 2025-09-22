@@ -38,7 +38,6 @@ from sdtoolplus.exceptions import MoreThanOneClassError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import NoValueError
-from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timeline import create_association
 from sdtoolplus.mo.timeline import create_engagement
 from sdtoolplus.mo.timeline import create_leave
@@ -1253,11 +1252,16 @@ async def sync_engagement(
 
     # Get the person
     r_person = await gql_client.get_person(CPRNumber(cpr))
-    person = one(
-        r_person.objects,
-        too_short=PersonNotFoundError,
-        too_long=MoreThanOnePersonError,
-    )
+    try:
+        person = one(r_person.objects)
+    except ValueError as error:
+        logger.error(
+            "Not exactly one person found",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            error=error,
+        )
+        raise error
 
     mo_eng_timeline = await get_engagement_timeline(
         gql_client=gql_client,
