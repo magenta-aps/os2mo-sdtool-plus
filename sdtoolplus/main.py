@@ -21,6 +21,7 @@ from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import first
 from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import Department
 from sqlalchemy import Engine
@@ -494,14 +495,23 @@ def create_fastramqpi() -> FastRAMQPI:
                 f"Dry-run. Would create engagement events for {len(sd_persons)} persons"
             )
             return {"msg": "success"}
-
         for person in sd_persons:
-            employments = await get_sd_person_engagements(
-                sd_client=sd_client,
-                institution_identifier=institution_identifier,
-                cpr=person.cpr,
-            )
-            for e in one(employments.Person).Employment:
+            try:
+                res = await get_sd_person_engagements(
+                    sd_client=sd_client,
+                    institution_identifier=institution_identifier,
+                    cpr=person.cpr,
+                )
+                logger.debug("Found engagements", engagements=res)
+            except SDRootElementNotFound:
+                logger.info(
+                    "Person could not be found in sd",
+                    institution_identifier=institution_identifier,
+                    person=person,
+                )
+                continue
+
+            for e in one(res.Person).Employment:
                 event = EventSendInput(
                     namespace="sd",
                     routing_key="employment",

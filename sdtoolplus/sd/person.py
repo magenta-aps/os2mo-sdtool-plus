@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
-import datetime
 from datetime import date
 
 import structlog.stdlib
@@ -113,7 +112,12 @@ async def get_sd_person_engagements(
         GetEmploymentChangedRequest(
             InstitutionIdentifier=institution_identifier,
             PersonCivilRegistrationIdentifier=cpr,
-            ActivationDate=datetime.date.min,
-            DeactivationDate=datetime.date.max,
+            ActivationDate=date.min,
+            DeactivationDate=date.max,
+            DepartmentIndicator=True,
+            EmploymentStatusIndicator=True,
+            ProfessionIndicator=True,
+            WorkingTimeIndicator=True,
+            UUIDIndicator=True,
         ),
     )
