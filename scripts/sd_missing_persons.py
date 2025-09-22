@@ -3,6 +3,7 @@
 import asyncio
 import json
 from datetime import date
+from enum import Enum
 
 import click
 import structlog.stdlib
@@ -23,6 +24,11 @@ from sdtoolplus.depends import SDClient
 logger = structlog.stdlib.get_logger()
 
 
+class Queue(Enum):
+    PERSON = "person"
+    EMPLOYMENT = "employment"
+
+
 class SDPersonStatus(BaseModel):
     institution_identifier: str
     cpr: str
@@ -33,6 +39,7 @@ async def missing_persons(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     use_test_env: bool,
+    queue: Queue,
 ) -> list[SDPersonStatus]:
     sd_client = SDClient(
         settings.sd_username,
@@ -44,7 +51,7 @@ async def missing_persons(
     person_events = await gql_client.get_events(
         FullEventFilter(
             listeners=ListenerFilter(
-                routing_keys=["person"], namespaces=NamespaceFilter(names=["sd"])
+                routing_keys=[queue.value], namespaces=NamespaceFilter(names=["sd"])
             )
         )
     )
@@ -95,7 +102,8 @@ async def missing_persons(
 
 
 @click.command()
-def main() -> None:
+@click.option("--queue", type=click.Choice(Queue), required=True, help="Event que")
+def main(queue: Queue) -> None:
     logger.info("Script started")
 
     settings = get_settings()
@@ -106,6 +114,7 @@ def main() -> None:
             gql_client=gql_client,
             settings=settings,
             use_test_env=settings.sd_use_test_env,
+            queue=queue,
         )
     )
     sd_person_dicts = [person.dict() for person in sd_persons]
