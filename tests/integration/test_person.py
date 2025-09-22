@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import date
 from datetime import datetime
+from typing import cast
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
@@ -270,7 +271,7 @@ async def test_person_skip_0000_cprs(
     assert r.status_code == 200
 
     mo_person = await graphql_client.get_person_timeline(
-        EmployeeFilter(cpr_numbers=[cpr], from_date=None, to_date=None)
+        EmployeeFilter(cpr_numbers=[cast(CPRNumber, cpr)], from_date=None, to_date=None)
     )
 
     assert not mo_person.objects
