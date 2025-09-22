@@ -38,13 +38,12 @@ class SDPersonStatus(BaseModel):
 async def missing_persons(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
-    use_test_env: bool,
     queue: Queue,
 ) -> list[SDPersonStatus]:
     sd_client = SDClient(
         settings.sd_username,
         settings.sd_password.get_secret_value(),
-        use_test_env=use_test_env,
+        use_test_env=settings.sd_use_test_env,
     )
 
     logger.info("Getting person events")
@@ -113,7 +112,6 @@ def main(queue: Queue) -> None:
         missing_persons(
             gql_client=gql_client,
             settings=settings,
-            use_test_env=settings.sd_use_test_env,
             queue=queue,
         )
     )
