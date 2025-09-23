@@ -61,6 +61,14 @@ class SDToolPlusSettings(BaseSettings):
     # above.
     mo_subtree_paths_for_root: dict[str, list[OrgUnitUUID]] | None = None
 
+    # Some of the SD institution units (i.e. the MO units which are
+    # *institutions* and NOT *departments* in SD) may for historic reasons have
+    # been created with random UUIDs in MO, which does not match the SD
+    # institution UUIDs. This ENV maps the SD institution UUIDs to the MO unit
+    # UUIDs which is needed in order to keep the children of the SD institutions
+    # in (OU) sync.
+    sd_to_mo_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID] = dict()
+
     # Configures Sentry error monitoring
     sentry_dsn: str | None = None
 

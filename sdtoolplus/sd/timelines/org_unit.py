@@ -63,6 +63,7 @@ async def get_department_timeline(
     sd_client: SDClient,
     inst_id: str,
     unit_uuid: OrgUnitUUID,
+    sd_to_mo_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID],
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
 
@@ -117,7 +118,7 @@ async def get_department_timeline(
         UnitParent(
             start=sd_start_to_timeline_start(parent.startDate),
             end=sd_end_to_timeline_end(parent.endDate),
-            value=parent.parentUuid,
+            value=sd_to_mo_ou_uuid_map.get(parent.parentUuid, parent.parentUuid),
         )
         for parent in parents
     )
