@@ -69,12 +69,17 @@ class SDToolPlusSettings(BaseSettings):
     # in (OU) sync.
     sd_to_mo_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID] = dict()
 
+    # In some cases, the name of an SD institution (or department) needs to be
+    # something other than the value in SD
+    sd_to_mo_ou_name_map: dict[OrgUnitUUID, str] = dict()
+
     # Configures Sentry error monitoring
     sentry_dsn: str | None = None
 
     # Credentials, etc. for authenticating against SD and performing SD API calls
     sd_username: str
     sd_institution_identifier: str
+    sd_region_identifier: str | None = None
     sd_password: SecretStr
     sd_use_test_env: bool = False
 
@@ -102,6 +107,12 @@ class SDToolPlusSettings(BaseSettings):
     # org units in MO. The default value matches the existing setup at SD customers.
     org_unit_type: str = "Enhed"
     sd_lon_base_url: AnyHttpUrl = "http://sdlon:8000"  # type: ignore
+
+    # If true, the application will ensure that the SD institutions (which are
+    # NOT SD units) are created as MO units with the same UUIDs as the SD
+    # institutions in the unit tree location specified by the
+    # "mo_subtree_paths_for_root" setting
+    ensure_sd_institution_units: bool = False
 
     # In some cases, the SD InstitutionIdentifier UUID does not match the MO
     # organization UUID (which it should), so in such cases we can override
@@ -184,6 +195,24 @@ class SDToolPlusSettings(BaseSettings):
             raise ValueError("Apply NY logic not allowed to be enabled in region mode")
         if values["mo_subtree_paths_for_root"] is None:
             raise ValueError("MO_SUBTREE_PATHS_FOR_ROOT must be set in region mode")
+
+        return values
+
+    @root_validator
+    def check_ensure_institution_settings(
+        cls, values: dict[str, Any]
+    ) -> dict[str, Any]:
+        if not values["ensure_sd_institution_units"]:
+            return values
+
+        if values["sd_region_identifier"] is None:
+            raise ValueError(
+                "SD_REGION_IDENTIFIER must be set when ENSURE_SD_INSTITUTION_UNITS is true"
+            )
+        if values["mo_subtree_paths_for_root"] is None:
+            raise ValueError(
+                "MO_SUBTREE_PATHS_FOR_ROOT must be set when ENSURE_SD_INSTITUTION_UNITS is true"
+            )
 
         return values
 
