@@ -3,7 +3,6 @@
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from copy import copy
 
 import structlog.stdlib
 from fastramqpi.context import Context
@@ -42,8 +41,7 @@ async def ensure_sd_institution_units(
         institution_identifier,
         subtree_path,
     ) in settings.mo_subtree_paths_for_root.items():
-        path = copy(subtree_path)
-        mo_unit_uuid = path.pop()
+        *path, mo_unit_uuid = subtree_path
 
         institution: GetInstitutionResponse = await asyncio.to_thread(
             sd_client.get_institution,
