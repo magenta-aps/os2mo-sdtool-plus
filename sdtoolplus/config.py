@@ -66,8 +66,9 @@ class SDToolPlusSettings(BaseSettings):
     # been created with random UUIDs in MO, which does not match the SD
     # institution UUIDs. This ENV maps the SD institution UUIDs to the MO unit
     # UUIDs which is needed in order to keep the children of the SD institutions
-    # in (OU) sync.
-    sd_to_mo_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID] = dict()
+    # in (OU) sync. Note that this map is only for the top MO units
+    # corresponding to an SD institution.
+    sd_institution_to_mo_root_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID] = dict()
 
     # In some cases, the name of an SD institution (or department) needs to be
     # something other than the value in SD

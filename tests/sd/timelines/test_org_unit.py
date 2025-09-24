@@ -97,7 +97,7 @@ async def test_get_department_timeline():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_to_mo_ou_uuid_map=dict(),
+        sd_institution_to_mo_root_ou_uuid_map=dict(),
     )
 
     # Assert
@@ -201,7 +201,7 @@ async def test_get_department_timeline_department_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_to_mo_ou_uuid_map=dict(),
+        sd_institution_to_mo_root_ou_uuid_map=dict(),
     )
 
     # Assert
@@ -240,7 +240,7 @@ async def test_get_department_timeline_parent_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_to_mo_ou_uuid_map=dict(),
+        sd_institution_to_mo_root_ou_uuid_map=dict(),
     )
 
     # Assert

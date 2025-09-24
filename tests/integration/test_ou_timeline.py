@@ -2801,7 +2801,7 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
 @pytest.mark.integration_test
 @pytest.mark.envvar(
     {
-        "SD_TO_MO_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}'
+        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}'
     }
 )
 async def test_ou_timeline_sd_to_mo_ou_uuid_map(
@@ -2892,7 +2892,9 @@ async def test_ou_timeline_sd_to_mo_ou_uuid_map(
     # Assert
     assert r.status_code == 200
 
-    mo_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    mo_unit = await graphql_client.get_org_unit_timeline(
+        unit_uuid=unit_uuid, from_date=None, to_date=None
+    )
     validity = one(one(mo_unit.objects).validities)
 
     assert validity.validity.from_ == t1
