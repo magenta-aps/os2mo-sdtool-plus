@@ -2796,3 +2796,107 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
 
     # We assert that the unit still exists
     assert len(validities) == 1
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}'
+    }
+)
+async def test_ou_timeline_sd_to_mo_ou_uuid_map(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  --------t1-------------------------------------------------------t2-->
+
+    MO (unit does not exist)
+    MO (parent)   |-------------------------dep1---------------------------|
+
+    SD (name)     |-------------------------name1--------------------------|
+    SD (id)       |-------------------------ABCD---------------------------|
+    SD (level)    |-------------------------NY0----------------------------|
+    SD (parent)   |---------b113bae1-7582-448e-a0d7-59015dcc143c-----------|
+                (the SD institution which should be replaced with the MO dep1)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>true</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>b113bae1-7582-448e-a0d7-59015dcc143c</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2001-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "2001-12-31",
+                # This is the SD institution UUID
+                "parentUuid": "b113bae1-7582-448e-a0d7-59015dcc143c",
+            }
+        ],
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_unit = await graphql_client.get_org_unit_timeline(
+        unit_uuid=unit_uuid, from_date=None, to_date=None
+    )
+    validity = one(one(mo_unit.objects).validities)
+
+    assert validity.validity.from_ == t1
+    assert _mo_end_to_timeline_end(validity.validity.to) == t2
+    assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")

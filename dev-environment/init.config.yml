@@ -34,6 +34,9 @@ facets:
     non-SD:
       title: "non-SD"
       scope: "TEXT"
+    TOP:
+      title: "TOP"
+      scope: "TEXT"
   org_unit_hierarchy:
     linjeorg:
       title: "Linjeorganisation"

@@ -498,7 +498,7 @@ def patch_missing_parents(
     )
 
 
-async def _sync_ou_intervals(
+async def sync_ou_intervals(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     org_unit: OrgUnitUUID,
@@ -864,6 +864,7 @@ async def sync_ou(
         sd_client=sd_client,
         inst_id=institution_identifier,
         unit_uuid=org_unit,
+        sd_institution_to_mo_root_ou_uuid_map=settings.sd_institution_to_mo_root_ou_uuid_map,
     )
     desired_unit_timeline = prefix_unit_id_with_inst_id(
         settings, sd_unit_timeline, institution_identifier
@@ -872,7 +873,7 @@ async def sync_ou(
 
     mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
-    ou_sync_successful = await _sync_ou_intervals(
+    ou_sync_successful = await sync_ou_intervals(
         gql_client=gql_client,
         settings=settings,
         org_unit=org_unit,
