@@ -101,7 +101,7 @@ async def missing_persons(
 
 
 @click.command()
-@click.option("--queue", type=click.Choice(Queue), required=True, help="Event que")
+@click.option("--queue", type=click.Choice(Queue), required=True, help="Event queue")
 def main(queue: Queue) -> None:
     logger.info("Script started")
 
