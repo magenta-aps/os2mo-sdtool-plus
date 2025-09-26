@@ -40,6 +40,7 @@ from sdtoolplus.exceptions import MoreThanOneAssociationError
 from sdtoolplus.exceptions import MoreThanOneClassError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOneLeaveError
+from sdtoolplus.exceptions import MoreThanOneManagerError
 from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
@@ -54,6 +55,8 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import ManagerTimeline
+from sdtoolplus.models import ManagerUnit
 from sdtoolplus.models import Person
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
@@ -1093,3 +1096,68 @@ async def terminate_association(
     if not dry_run:
         await gql_client.terminate_association(payload)
     logger.debug("Association terminated", person=str(person), user_key=user_key)
+
+
+async def get_manager_timeline(
+    gql_client: GraphQLClient,
+    person_uuid: UUID,
+) -> ManagerTimeline:
+    logger.info("Get manager timeline", person_uuid=str(person_uuid))
+
+    manager_timeline = await gql_client.get_manager_timeline(person_uuid)
+
+    if not manager_timeline.objects:
+        return ManagerTimeline()
+
+    # try:
+    #     validities = one(manager_timeline.objects).validities
+    # except ValueError:
+    #     logger.error(
+    #         "Person has more than one manager object", manager_timeline=manager_timeline
+    #     )
+    #     raise MoreThanOneManagerError()
+
+    active_intervals = tuple(
+        Active(
+            start=validity.validity.from_,
+            end=_mo_end_to_timeline_end(validity.validity.to),
+            value=True,
+        )
+        for obj in manager_timeline.objects
+        for validity in obj.validities
+    )
+
+    if not all(i1.end <= i2.start for i1, i2 in pairwise(active_intervals)):
+
+    manager_unit_intervals = tuple(
+        ManagerUnit(
+            start=validity.validity.from_,
+            end=_mo_end_to_timeline_end(validity.validity.to),
+            value=validity.org_unit_uuid,
+        )
+        for obj in manager_timeline.objects
+        for validity in obj.validities
+    )
+
+    # engagement_unit_intervals = tuple(
+    #     EngagementUnit(
+    #         start=eng.validity.validity.from_,
+    #         end=_mo_end_to_timeline_end(eng.validity.to),
+    #         value=eng.org_unit_uuid,
+    #     )
+    #     # We can use (e.g.) the first manager validity, since the person objects
+    #     # in all the manager validities are the same due to the construction
+    #     # of the manager timeline GraphQL query.
+    #     for eng in one(first(validities).person).engagements
+    # )
+
+    timeline = ManagerTimeline(
+        manager_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
+        manager_unit=Timeline[ManagerUnit](
+            intervals=combine_intervals(manager_unit_intervals)
+        ),
+        # engagement_unit=Timeline[EngagementUnit](intervals=combine_intervals(engagement_unit_intervals)),
+    )
+    logger.debug("Manager timeline", manager_timeline=manager_timeline.dict())
+
+    return timeline

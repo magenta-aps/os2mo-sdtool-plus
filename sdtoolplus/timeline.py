@@ -3,6 +3,7 @@
 import asyncio
 from datetime import date
 from datetime import datetime
+from itertools import chain
 from itertools import pairwise
 from uuid import UUID
 
@@ -50,6 +51,7 @@ from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import get_leave_timeline as get_mo_leave_timeline
+from sdtoolplus.mo.timeline import get_manager_timeline
 from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_association
 from sdtoolplus.mo.timeline import terminate_engagement
@@ -1144,12 +1146,77 @@ async def engagement_ou_strategy_region(
     return desired_timeline
 
 
+async def engagement_ou_strategy_elevated_managers(
+    gql_client: GraphQLClient,
+    sd_eng_timeline: EngagementTimeline,
+    mo_eng_timeline: EngagementTimeline,
+    person_uuid: UUID,
+) -> EngagementTimeline:
+    logger.info("Applying manager engagement OU strategy", person_uuid=str(person_uuid))
+
+    manager_timeline = await get_manager_timeline(gql_client, person_uuid)
+    sd_ou_only_timeline = EngagementTimeline(eng_unit=sd_eng_timeline.eng_unit)
+    mo_ou_only_timeline = EngagementTimeline(eng_unit=mo_eng_timeline.eng_unit)
+
+    manager_timeline_endpoints = manager_timeline.get_interval_endpoints()
+    sd_interval_endpoints = sd_ou_only_timeline.get_interval_endpoints()
+    mo_interval_endpoints = mo_ou_only_timeline.get_interval_endpoints()
+
+    endpoints = sorted(
+        chain(manager_timeline_endpoints, sd_interval_endpoints, mo_interval_endpoints)
+    )
+    logger.debug("List of manager and engagement endpoints", endpoints=endpoints)
+
+    unit_intervals = []
+    for start, end in pairwise(endpoints):
+        unit_interval = EngagementUnit(
+            start=start,
+            end=end,
+            value=sd_ou_only_timeline.eng_unit.entity_at(start).value,
+        )
+
+        try:
+            is_manager = manager_timeline.manager_active.entity_at(start).value
+        except NoValueError:
+            is_manager = False  # type: ignore
+
+        if is_manager:
+            manager_unit = manager_timeline.manager_unit.entity_at(start).value
+            mo_unit = mo_eng_timeline.eng_unit.entity_at(start).value
+            if manager_unit == mo_unit:
+                unit_interval = EngagementUnit(
+                    start=start,
+                    end=end,
+                    value=mo_unit,
+                )
+
+        unit_intervals.append(unit_interval)
+
+    desired_timeline = EngagementTimeline(
+        eng_active=sd_eng_timeline.eng_active,
+        eng_key=sd_eng_timeline.eng_key,
+        eng_name=sd_eng_timeline.eng_name,
+        eng_unit=Timeline[EngagementUnit](
+            intervals=combine_intervals(tuple(unit_intervals))
+        ),
+        eng_sd_unit=sd_eng_timeline.eng_sd_unit,
+        eng_unit_id=sd_eng_timeline.eng_unit_id,
+        eng_type=sd_eng_timeline.eng_type,
+    )
+    logger.debug("Desired engagement timeline", desired_timeline=desired_timeline)
+
+    logger.info("Done applying manager engagement OU strategy")
+
+    return desired_timeline
+
+
 async def engagement_ou_strategy(
     sd_client: SDClient,
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     sd_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
+    person_uuid: UUID,
 ) -> EngagementTimeline:
     """
     Combined state/strategy pattern choosing an OU timeline strategy based on
@@ -1159,6 +1226,13 @@ async def engagement_ou_strategy(
         if settings.apply_ny_logic:
             return await engagement_ou_strategy_elevate_to_ny_level(
                 sd_client, sd_eng_timeline
+            )
+        elif settings.enable_elevated_managers:
+            return await engagement_ou_strategy_elevated_managers(
+                gql_client=gql_client,
+                sd_eng_timeline=sd_eng_timeline,
+                mo_eng_timeline=mo_eng_timeline,
+                person_uuid=person_uuid,
             )
         return sd_eng_timeline
     return await engagement_ou_strategy_region(
@@ -1263,6 +1337,7 @@ async def sync_engagement(
         settings=settings,
         sd_eng_timeline=sd_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
+        person_uuid=person.uuid,
     )
 
     mo_leave_timeline = await get_mo_leave_timeline(

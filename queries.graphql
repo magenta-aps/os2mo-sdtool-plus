@@ -442,6 +442,26 @@ mutation TerminateAssociation($input: AssociationTerminateInput!) {
   }
 }
 
+query GetManagerTimeline($employee_uuid: UUID!) {
+  managers(
+    filter: {
+      from_date: null
+      to_date: null
+      employee: { uuids: [$employee_uuid] }
+    }
+  ) {
+    objects {
+      validities {
+        org_unit_uuid
+        validity {
+          from
+          to
+        }
+      }
+    }
+  }
+}
+
 query GetRelatedUnits($filter: RelatedUnitFilter!) {
   related_units(filter: $filter) {
     objects {
@@ -562,5 +582,17 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
         }
       }
     }
+  }
+}
+
+mutation _Testing_CreateManager($input: ManagerCreateInput!) {
+  manager_create(input: $input) {
+    uuid
+  }
+}
+
+mutation _Testing_UpdateManager($input: ManagerUpdateInput!) {
+  manager_update(input: $input) {
+    uuid
   }
 }

@@ -88,3 +88,15 @@ facets:
     Orlov:
       title: "Orlov"
       scope: "TEXT"
+  responsibility:
+    Lederansvar:
+      title: "Lederansvar"
+      scope: "TEXT"
+  manager_type:
+    SectionHead:
+      title: "Sektionsleder"
+      scope: "TEXT"
+  manager_level:
+    Level1:
+      title: "Niveau 1"
+      scope: "TEXT"

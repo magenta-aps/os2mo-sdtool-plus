@@ -49,6 +49,7 @@ class SDToolPlusSettings(BaseSettings):
     )
 
     apply_ny_logic: bool = True
+    enable_elevated_managers: bool = False
     httpx_timeout_ny_logic: PositiveInt = 120
 
     # Compare the SD tree to the MO tree found at the path. The path must be a
@@ -164,6 +165,20 @@ class SDToolPlusSettings(BaseSettings):
 
     class Config:
         env_nested_delimiter = "__"
+
+    @root_validator
+    def check_municipality_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
+        if not values["mode"] == Mode.MUNICIPALITY:
+            return values
+        if (
+            values["apply_ny_logic"] is True
+            and values["enable_elevated_managers"] is True
+        ):
+            raise ValueError(
+                "Apply NY logic and elevated managers are not allowed simultaneously"
+            )
+
+        return values
 
     @root_validator
     def check_region_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
