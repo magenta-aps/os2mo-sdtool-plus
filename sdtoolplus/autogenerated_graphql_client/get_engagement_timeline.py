@@ -35,7 +35,7 @@ class GetEngagementTimelineEngagementsObjectsValidities(BaseModel):
     extension_8: Optional[str]
     extension_9: Optional[str]
     extension_10: Optional[str]
-    person: List["GetEngagementTimelineEngagementsObjectsValiditiesPerson"]
+    employee_uuid: UUID
     org_unit_uuid: UUID
     engagement_type_uuid: UUID
     job_function_uuid: UUID
@@ -46,13 +46,8 @@ class GetEngagementTimelineEngagementsObjectsValiditiesValidity(BaseModel):
     to: Optional[datetime]
 
 
-class GetEngagementTimelineEngagementsObjectsValiditiesPerson(BaseModel):
-    uuid: UUID
-
-
 GetEngagementTimeline.update_forward_refs()
 GetEngagementTimelineEngagements.update_forward_refs()
 GetEngagementTimelineEngagementsObjects.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValidities.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValiditiesValidity.update_forward_refs()
-GetEngagementTimelineEngagementsObjectsValiditiesPerson.update_forward_refs()

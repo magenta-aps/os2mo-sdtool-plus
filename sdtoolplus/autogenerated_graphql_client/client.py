@@ -744,9 +744,7 @@ class GraphQLClient(AsyncBaseClient):
                     extension_8
                     extension_9
                     extension_10
-                    person {
-                      uuid
-                    }
+                    employee_uuid
                     org_unit_uuid
                     engagement_type_uuid
                     job_function_uuid
