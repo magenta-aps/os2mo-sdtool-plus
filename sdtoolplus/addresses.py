@@ -30,6 +30,8 @@ from sdtoolplus.mo_org_unit_importer import MOOrgTreeImport
 from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
+from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.sd.importer import get_sd_units
 
 DARAddressUUID: TypeAlias = UUID
@@ -283,3 +285,18 @@ class AddressFixer:
             dry_run,
         ):
             yield operation, org_unit_node, addr
+
+
+async def sd_postal_address_strategy(
+    settings: SDToolPlusSettings,
+    sd_postal_address_timeline: Timeline[UnitPostalAddress],
+) -> Timeline[UnitPostalAddress]:
+    """
+    Strategy/state pattern for getting the SD postal address timeline based on
+    the settings, i.e. whether to use text addresses or DAR (UUID) addresses or
+    something else (the latter is not yet implemented).
+    """
+    if settings.use_dar_addresses:
+        # TODO: implement proper DAR strategy
+        return sd_postal_address_timeline
+    return sd_postal_address_timeline
