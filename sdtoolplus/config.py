@@ -149,8 +149,11 @@ class SDToolPlusSettings(BaseSettings):
     # Whether to enable org unit address sync. NOTE: this flag is not used in
     # the legacy part of the SDTool+ integration.
     enable_ou_address_sync: bool = True
+    # If true, OU addresses will be persisted to MO as DAR address UUIDs
+    use_dar_addresses: bool = False
     # If true, only the postal addresses from the line management
-    # ("Linjeorganisationen") org units are synchronized
+    # ("Linjeorganisationen") org units are synchronized. This flag is only
+    # used in the legacy part of the SDTool+ integration.
     only_sync_line_mgmt_postal_addresses: bool = False
 
     # Truncate the SD unit start dates to min_mo_datetime, if the SD start date
