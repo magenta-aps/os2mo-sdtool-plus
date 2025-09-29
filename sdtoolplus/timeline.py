@@ -47,6 +47,7 @@ from sdtoolplus.mo.timeline import (
     get_association_timeline as get_mo_association_timeline,
 )
 from sdtoolplus.mo.timeline import get_class
+from sdtoolplus.mo.timeline import get_engagement_filter
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
 from sdtoolplus.mo.timeline import get_leave_timeline as get_mo_leave_timeline
@@ -316,7 +317,9 @@ async def _sync_eng_intervals(
             continue
 
         mo_eng = await gql_client.get_engagement_timeline(
-            person=person, user_key=user_key, from_date=None, to_date=None
+            get_engagement_filter(
+                person=person, user_key=user_key, from_date=None, to_date=None
+            )
         )
         if mo_eng.objects:
             await update_engagement(
@@ -378,7 +381,9 @@ async def _sync_leave_intervals(
 
     # Get the corresponding engagement
     mo_eng = await gql_client.get_engagement_timeline(
-        person=person, user_key=user_key, from_date=None, to_date=None
+        get_engagement_filter(
+            person=person, user_key=user_key, from_date=None, to_date=None
+        )
     )
     eng_obj = only(mo_eng.objects, too_long=MoreThanOneEngagementError)
     if eng_obj is None:

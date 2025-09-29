@@ -12,6 +12,8 @@ ENV PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV="/venv"
 ENV PATH="$VIRTUAL_ENV/bin:$POETRY_HOME/bin:$PATH"
 
+RUN apt update && apt install -y vim jq less screen
+
 # Install poetry in an isolated environment
 RUN python -m venv $POETRY_HOME \
     && pip install --no-cache-dir poetry==${POETRY_VERSION}

@@ -316,18 +316,10 @@ query GetEngagements(
 }
 
 query GetEngagementTimeline(
-  $person: UUID!,
-  $user_key: String!,
-  $from_date: DateTime,
-  $to_date: DateTime
+  $filter: EngagementFilter!
 ) {
   engagements(
-    filter: {
-      employee: { uuids: [$person] },
-      user_keys: [$user_key],
-      from_date: $from_date,
-      to_date: $to_date
-    }
+    filter: $filter
   ) {
     objects {
       uuid
@@ -348,9 +340,7 @@ query GetEngagementTimeline(
         extension_8
         extension_9
         extension_10
-        person {
-          uuid
-        }
+        employee_uuid
         org_unit_uuid
         engagement_type_uuid
         job_function_uuid

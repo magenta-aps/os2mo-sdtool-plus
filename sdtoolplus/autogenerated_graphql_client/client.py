@@ -713,18 +713,12 @@ class GraphQLClient(AsyncBaseClient):
         return GetEngagements.parse_obj(data).engagements
 
     async def get_engagement_timeline(
-        self,
-        person: UUID,
-        user_key: str,
-        from_date: Union[Optional[datetime], UnsetType] = UNSET,
-        to_date: Union[Optional[datetime], UnsetType] = UNSET,
+        self, filter: EngagementFilter
     ) -> GetEngagementTimelineEngagements:
         query = gql(
             """
-            query GetEngagementTimeline($person: UUID!, $user_key: String!, $from_date: DateTime, $to_date: DateTime) {
-              engagements(
-                filter: {employee: {uuids: [$person]}, user_keys: [$user_key], from_date: $from_date, to_date: $to_date}
-              ) {
+            query GetEngagementTimeline($filter: EngagementFilter!) {
+              engagements(filter: $filter) {
                 objects {
                   uuid
                   validities {
@@ -744,9 +738,7 @@ class GraphQLClient(AsyncBaseClient):
                     extension_8
                     extension_9
                     extension_10
-                    person {
-                      uuid
-                    }
+                    employee_uuid
                     org_unit_uuid
                     engagement_type_uuid
                     job_function_uuid
@@ -756,12 +748,7 @@ class GraphQLClient(AsyncBaseClient):
             }
             """
         )
-        variables: dict[str, object] = {
-            "person": person,
-            "user_key": user_key,
-            "from_date": from_date,
-            "to_date": to_date,
-        }
+        variables: dict[str, object] = {"filter": filter}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetEngagementTimeline.parse_obj(data).engagements

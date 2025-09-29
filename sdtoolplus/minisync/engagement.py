@@ -20,6 +20,7 @@ from sdtoolplus.exceptions import EngagementNotFoundError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
+from sdtoolplus.mo.timeline import get_engagement_filter
 from sdtoolplus.mo.timeline import get_patch_validity
 from sdtoolplus.mo.timeline import mo_end_to_datetime
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
@@ -101,10 +102,12 @@ async def move_engagement(
 
     # Get the engagement in MO
     eng = await gql_client.get_engagement_timeline(
-        person=person.uuid,
-        user_key=user_key,
-        from_date=mo_lookup_start,
-        to_date=mo_lookup_end,
+        get_engagement_filter(
+            person=person.uuid,
+            user_key=user_key,
+            from_date=mo_lookup_start,
+            to_date=mo_lookup_end,
+        )
     )
     obj = one(
         eng.objects,
