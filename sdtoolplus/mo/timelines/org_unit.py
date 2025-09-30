@@ -25,8 +25,6 @@ from sdtoolplus.config import PNUMBER_CLASS_USER_KEY
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import CannotProcessOrgUnitError
-from sdtoolplus.exceptions import ClassNotFoundError
-from sdtoolplus.exceptions import MoreThanOneClassError
 from sdtoolplus.exceptions import MoreThanOneOrgUnitError
 from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
@@ -731,11 +729,11 @@ async def create_postal_address(
             scope=["DAR" if settings.use_dar_addresses else "TEXT"],
         )
     )
-    current = one(
-        ou_address_type_classes.objects,
-        too_short=ClassNotFoundError,
-        too_long=MoreThanOneClassError,
-    ).current
+    try:
+        current = one(ou_address_type_classes.objects).current
+    except ValueError as error:
+        logger.error("Not exactly one OU address type found", error=error)
+        raise error
     assert current is not None
     postal_address_type_uuid = current.uuid
 
