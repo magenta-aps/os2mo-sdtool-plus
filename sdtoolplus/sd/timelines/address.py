@@ -48,13 +48,14 @@ async def sd_postal_dar_address_strategy(
                     logger.error("Failed to get DAR address", addr=interval.value)
                     raise error
 
-            dar_uuid_intervals.append(
-                UnitPostalAddress(
-                    start=interval.start,
-                    end=interval.end,
-                    value=value,
+            if value is not None:
+                dar_uuid_intervals.append(
+                    UnitPostalAddress(
+                        start=interval.start,
+                        end=interval.end,
+                        value=value,
+                    )
                 )
-            )
 
     desired_address_timeline = Timeline[UnitPostalAddress](
         intervals=combine_intervals(tuple(dar_uuid_intervals)),
