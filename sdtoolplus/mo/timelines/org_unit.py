@@ -720,14 +720,14 @@ async def create_postal_address(
     )
 
     # Get the postal address type
-    ou_type_classes = await gql_client.get_class(
+    ou_address_type_classes = await gql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["org_unit_address_type"]),
             user_keys=["AdresseSDOrgUnit"],
         )
     )
     current = one(
-        ou_type_classes.objects,
+        ou_address_type_classes.objects,
         too_short=ClassNotFoundError,
         too_long=MoreThanOneClassError,
     ).current
