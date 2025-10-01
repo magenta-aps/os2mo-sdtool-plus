@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from typing import cast
+from uuid import UUID
 
+from async_lru import alru_cache
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 
 from sdtoolplus.addresses import logger
@@ -10,7 +12,22 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import combine_intervals
 
-DAR_ADDRESS_NOT_FOUND = "DAR address not found"
+
+@alru_cache()
+async def _get_dar_address(dar_client: AsyncDARClient, address: str) -> UUID | None:
+    try:
+        r = await dar_client.cleanse_single(address)
+        value = r["id"]
+        logger.debug("Found address in DAR", dar_uuid_address=value)
+        return value
+    except ValueError:
+        logger.warning("No DAR address match", addr=address)
+        return None
+    except Exception as error:
+        # This will happen when DAR is occasionally down. In this case,
+        # the OU event fails and will be retried later.
+        logger.error("Failed to get DAR address", addr=address)
+        raise error
 
 
 async def sd_postal_dar_address_strategy(
@@ -19,7 +36,6 @@ async def sd_postal_dar_address_strategy(
     logger.info("Getting DAR address timeline")
 
     dar_client = AsyncDARClient()
-    local_dar_cache: dict[str, str] = dict()
 
     dar_uuid_intervals = []
     async with dar_client:
@@ -27,44 +43,18 @@ async def sd_postal_dar_address_strategy(
             logger.debug("Processing postal address interval", interval=interval.dict())
 
             interval_value = cast(str, interval.value)  # To make mypy happy...
-            dar_uuid_address = local_dar_cache.get(interval_value)
+            dar_uuid_address = await _get_dar_address(dar_client, interval_value)
 
-            if dar_uuid_address:
-                # We have already just looked up the address
-                logger.debug(
-                    "Found DAR address in cache", dar_uuid_address=dar_uuid_address
-                )
-                value = (
-                    dar_uuid_address
-                    if not dar_uuid_address == DAR_ADDRESS_NOT_FOUND
-                    else None
-                )
-            else:
-                logger.debug("Looking up DAR address...")
-                try:
-                    r = await dar_client.cleanse_single(interval_value)
-                    value = r["id"]
-                    local_dar_cache[interval_value] = value
+            if dar_uuid_address is None:
+                continue
 
-                    logger.debug("Found address in DAR", dar_uuid_address=value)
-                except ValueError:
-                    logger.warning("No DAR address match", addr=interval_value)
-                    value = None
-                    local_dar_cache[interval_value] = DAR_ADDRESS_NOT_FOUND
-                except Exception as error:
-                    # This will happen when DAR is occasionally down. In this case,
-                    # the OU event fails and will be retried later.
-                    logger.error("Failed to get DAR address", addr=interval.value)
-                    raise error
-
-            if value is not None:
-                dar_uuid_intervals.append(
-                    UnitPostalAddress(
-                        start=interval.start,
-                        end=interval.end,
-                        value=value,
-                    )
+            dar_uuid_intervals.append(
+                UnitPostalAddress(
+                    start=interval.start,
+                    end=interval.end,
+                    value=str(dar_uuid_address),
                 )
+            )
 
     desired_address_timeline = Timeline[UnitPostalAddress](
         intervals=combine_intervals(tuple(dar_uuid_intervals)),
