@@ -184,6 +184,37 @@ async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]
     return {EngType(clazz.user_key): clazz.uuid for clazz in relevant_classes}
 
 
+async def get_job_function(
+    gql_client: GraphQLClient, job_function_user_key: str
+) -> UUID:
+    """
+    Get the job_function class UUID
+    """
+    r_job_function = await gql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
+            user_keys=[job_function_user_key],
+            # The scope is the JobPositionLevelCode, and employments in SD
+            # always refer to JobPositions at level 0.
+            scope=["0"],
+        )
+    )
+    try:
+        current_job_function = one(r_job_function.objects).current
+    except ValueError as error:
+        logger.error(
+            "Not exactly on class found in MO",
+            facet_user_key="engagement_job_function",
+            class_user_key=job_function_user_key,
+            error=error,
+        )
+        raise error
+
+    assert current_job_function is not None
+
+    return current_job_function.uuid
+
+
 def get_association_filter(
     person: UUID, user_key: str, from_date: datetime | None, to_date: datetime | None
 ) -> AssociationFilter:
@@ -441,29 +472,10 @@ async def create_engagement(
     )
 
     # Get the job_function
-    job_function_user_key = str(desired_eng_timeline.eng_key.entity_at(start).value)
-    r_job_function = await gql_client.get_class(
-        ClassFilter(
-            facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=[job_function_user_key],
-            # The scope is the JobPositionLevelCode, and employments in SD
-            # always refer to JobPositions at level 0.
-            scope=["0"],
-        )
+    job_function_uuid = await get_job_function(
+        gql_client=gql_client,
+        job_function_user_key=str(desired_eng_timeline.eng_key.entity_at(start).value),
     )
-    try:
-        current_job_function = one(r_job_function.objects).current
-    except ValueError as error:
-        logger.error(
-            "Not exactly on class found in MO",
-            facet_user_key="engagement_job_function",
-            class_user_key=job_function_user_key,
-            error=error,
-        )
-        raise error
-
-    assert current_job_function is not None
-    job_function_uuid = current_job_function.uuid
 
     payload = EngagementCreateInput(
         user_key=user_key,
@@ -588,29 +600,10 @@ async def update_engagement(
     )
 
     # Get the job_function
-    job_function_user_key = str(desired_eng_timeline.eng_key.entity_at(start).value)
-    r_job_function = await gql_client.get_class(
-        ClassFilter(
-            facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=[job_function_user_key],
-            # The scope is the JobPositionLevelCode, and employments in SD
-            # always refer to JobPositions at level 0.
-            scope=["0"],
-        )
+    job_function_uuid = await get_job_function(
+        gql_client=gql_client,
+        job_function_user_key=str(desired_eng_timeline.eng_key.entity_at(start).value),
     )
-    try:
-        current_job_function = one(r_job_function.objects).current
-    except ValueError as error:
-        logger.error(
-            "Not exactly on class found in MO",
-            facet_user_key="engagement_job_function",
-            class_user_key=job_function_user_key,
-            error=error,
-        )
-        raise error
-
-    assert current_job_function is not None
-    job_function_uuid = current_job_function.uuid
 
     mo_validity = timeline_interval_to_mo_validity(start, end)
 
