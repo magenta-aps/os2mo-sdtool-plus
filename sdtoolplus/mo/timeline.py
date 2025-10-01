@@ -203,7 +203,7 @@ async def get_job_function(
         current_job_function = one(r_job_function.objects).current
     except ValueError as error:
         logger.error(
-            "Not exactly on class found in MO",
+            "Not exactly one class found in MO",
             facet_user_key="engagement_job_function",
             class_user_key=job_function_user_key,
             error=error,

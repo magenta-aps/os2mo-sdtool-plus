@@ -48,6 +48,7 @@ from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import get_engagement_filter
 from sdtoolplus.mo.timeline import get_engagement_timeline
 from sdtoolplus.mo.timeline import get_engagement_types
+from sdtoolplus.mo.timeline import get_job_function
 from sdtoolplus.mo.timeline import get_leave_timeline as get_mo_leave_timeline
 from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timeline import terminate_association
@@ -78,6 +79,7 @@ from sdtoolplus.mo.timelines.org_unit import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import Engagement
+from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import LeaveTimeline
@@ -1184,6 +1186,56 @@ async def engagement_ou_strategy(
     )
 
 
+async def fix_missing_job_functions(
+    gql_client: GraphQLClient,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    eng_key_intervals: list[EngagementKey] = []
+    for interval in sd_eng_timeline.eng_key.intervals:
+        job_function_user_key = cast(str, interval.value)
+        try:
+            await get_job_function(
+                gql_client=gql_client,
+                job_function_user_key=job_function_user_key,
+            )
+        except ValueError as error:
+            if not str(error).startswith("too few items in iterable"):
+                raise error
+
+            logger.debug(
+                "Job function not found. Defaulting to unknown",
+                job_function_user_key=job_function_user_key,
+            )
+
+            eng_key_intervals.append(
+                EngagementKey(
+                    start=interval.start,
+                    end=interval.end,
+                    value="unknown",
+                )
+            )
+            continue
+
+        eng_key_intervals.append(interval)
+
+    eng_key_timeline = Timeline[EngagementKey](
+        intervals=combine_intervals(tuple(eng_key_intervals))
+    )
+    logger.debug("Engagement key timeline", eng_key_timeline=eng_key_timeline)
+
+    desired_eng_timeline = EngagementTimeline(
+        eng_active=sd_eng_timeline.eng_active,
+        eng_key=eng_key_timeline,
+        eng_name=sd_eng_timeline.eng_name,
+        eng_unit=sd_eng_timeline.eng_unit,
+        eng_sd_unit=sd_eng_timeline.eng_sd_unit,
+        eng_unit_id=sd_eng_timeline.eng_unit_id,
+        eng_type=sd_eng_timeline.eng_type,
+    )
+
+    return desired_eng_timeline
+
+
 @handle_exclusively_decorator(
     key=lambda sd_client,
     gql_client,
@@ -1291,6 +1343,11 @@ async def sync_engagement(
         settings=settings,
         sd_eng_timeline=sd_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
+    )
+
+    desired_eng_timeline = await fix_missing_job_functions(
+        gql_client=gql_client,
+        sd_eng_timeline=desired_eng_timeline,
     )
 
     mo_leave_timeline = await get_mo_leave_timeline(
