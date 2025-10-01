@@ -35,6 +35,7 @@ tenacity = "^8"
 ramodels = "^39"
 graphql-core = "^3"
 aio-pika = "^9"
+async-lru = "^2.0.5"
 
 [tool.poetry.group.pre-commit.dependencies]
 pre-commit = "^3"

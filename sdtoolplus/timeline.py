@@ -93,6 +93,7 @@ from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.person import get_sd_person
+from sdtoolplus.sd.timelines.address import sd_postal_address_strategy
 from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
 from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 from sdtoolplus.sd.timelines.employment import (
@@ -760,6 +761,7 @@ async def _sync_ou_pnumber(
 
 async def _sync_ou_postal_address(
     gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
     department: GetDepartmentResponse,
     org_unit: OrgUnitUUID,
     dry_run: bool,
@@ -767,12 +769,16 @@ async def _sync_ou_postal_address(
     logger.info("Sync postal address timeline", org_unit=str(org_unit))
 
     sd_postal_address_timeline = get_sd_postal_address_timeline(department)
+    desired_postal_address_timeline = await sd_postal_address_strategy(
+        settings=settings,
+        sd_postal_address_timeline=sd_postal_address_timeline,
+    )
     mo_postal_address_timeline_obj = await get_mo_postal_address_timeline(
         gql_client=gql_client,
         unit_uuid=org_unit,
     )
 
-    if sd_postal_address_timeline == mo_postal_address_timeline_obj.postal_address:
+    if desired_postal_address_timeline == mo_postal_address_timeline_obj.postal_address:
         logger.debug("Postal address timelines identical")
         return
 
@@ -788,9 +794,10 @@ async def _sync_ou_postal_address(
 
     await create_postal_address(
         gql_client=gql_client,
+        settings=settings,
         org_unit=org_unit,
         address_uuid=mo_postal_address_timeline_obj.uuid,
-        sd_postal_address_timeline=sd_postal_address_timeline,
+        desired_postal_address_timeline=desired_postal_address_timeline,
         dry_run=dry_run,
     )
 
@@ -910,6 +917,7 @@ async def sync_ou(
 
     await _sync_ou_postal_address(
         gql_client=gql_client,
+        settings=settings,
         department=department,
         org_unit=org_unit,
         dry_run=dry_run,
