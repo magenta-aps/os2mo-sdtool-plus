@@ -87,6 +87,9 @@ facets:
     9000:
       title: "Karate Coach"
       scope: "0"
+    unknown:
+      title: "Ukendt"
+      scope: "0"
   leave_type:
     Orlov:
       title: "Orlov"
