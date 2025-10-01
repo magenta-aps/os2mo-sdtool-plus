@@ -2568,6 +2568,227 @@ async def test_ou_timeline_no_address_sync_when_disabled(
 @pytest.mark.integration_test
 @pytest.mark.envvar(
     {
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "USE_DAR_ADDRESSES": "true",
+    }
+)
+async def test_ou_timeline_postal_dar_address(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    DAR1: Silkeborgvej 260, 1.sal, 8230 Åbyhøj
+    DAR2: Silkeborgvej 2, 1., 8000 Aarhus C
+    non-DAR1: Paradisæblevej 13, 1000 Andeby
+    non-DAR2: Fasanvænget 14, 2000 Gåserød
+
+    Time  ---------------t1-----------t2-------t3-------t4-----------t5-------------->
+
+    MO (postal)                               (empty)
+
+    SD (name)            |---name1----|--name2-|-name3--|---name4----|-----name5------
+    SD (Postal addr)     |--non-DAR1--|--DAR1--|--DAR2--|--non-DAR2--|-----DAR1-------
+
+    "Assert" intervals                |---1----|---2----|            |-------3--------
+    (for addresses)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Get the address visibility UUID
+    visibility_class_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="visibility",
+        class_user_key="Public",
+    )
+
+    # Get the postal address type
+    postal_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="org_unit_address_type",
+        class_user_key="AddressMailUnit",
+    )
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>true</PostalAddressIndicator>
+            <ProductionUnitIndicator>true</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2001-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Paradisæblevej 13</StandardAddressIdentifier>
+              <PostalCode>1000</PostalCode>
+              <DistrictName>Andeby</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+          </Department>
+          <Department>
+            <ActivationDate>2002-01-01</ActivationDate>
+            <DeactivationDate>2002-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name2</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Silkeborgvej 260, 1.sal</StandardAddressIdentifier>
+              <PostalCode>8230</PostalCode>
+              <DistrictName>Åbyhøj</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+          </Department>
+          <Department>
+            <ActivationDate>2003-01-01</ActivationDate>
+            <DeactivationDate>2003-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name3</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Silkeborgvej 2, 1.</StandardAddressIdentifier>
+              <PostalCode>8000</PostalCode>
+              <DistrictName>Aarhus C</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+          </Department>
+          <Department>
+            <ActivationDate>2004-01-01</ActivationDate>
+            <DeactivationDate>2004-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name4</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Fasanvænget 14</StandardAddressIdentifier>
+              <PostalCode>2000</PostalCode>
+              <DistrictName>Gåserød</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+          </Department>
+          <Department>
+            <ActivationDate>2005-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name5</DepartmentName>
+            <PostalAddress>
+              <StandardAddressIdentifier>Silkeborgvej 260, 1.sal</StandardAddressIdentifier>
+              <PostalCode>8230</PostalCode>
+              <DistrictName>Åbyhøj</DistrictName>
+              <MunicipalityCode>4000</MunicipalityCode>
+            </PostalAddress>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "9999-12-31",
+                "parentUuid": "10000000-0000-0000-0000-000000000000",
+            }
+        ],
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    postal_addresses = await graphql_client.get_address_timeline(
+        AddressFilter(
+            org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
+            address_type=ClassFilter(
+                facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                user_keys=["AddressMailUnit"],
+            ),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    validities = one(postal_addresses.objects).validities
+
+    # Check the postal address in "assert interval 1"
+    validity1 = validities[0]
+    assert validity1.validity.from_ == t2
+    assert _mo_end_to_timeline_end(validity1.validity.to) == t3
+    assert validity1.user_key == "efed5e84-eb95-4e7c-b37d-8b9f704ec1bf"
+    assert validity1.value == "efed5e84-eb95-4e7c-b37d-8b9f704ec1bf"
+    assert validity1.visibility_uuid == visibility_class_uuid
+    assert validity1.address_type.uuid == postal_address_type_uuid
+
+    # Check the postal address in "assert interval 2"
+    validity2 = validities[1]
+    assert validity2.validity.from_ == t3
+    assert _mo_end_to_timeline_end(validity2.validity.to) == t4
+    assert validity2.user_key == "f6eb9610-3dab-48ce-9ae2-5a34aae1a914"
+    assert validity2.value == "f6eb9610-3dab-48ce-9ae2-5a34aae1a914"
+    assert validity2.visibility_uuid == visibility_class_uuid
+    assert validity2.address_type.uuid == postal_address_type_uuid
+
+    # Check the postal address in "assert interval 3"
+    validity3 = validities[2]
+    assert validity3.validity.from_ == t5
+    assert _mo_end_to_timeline_end(validity3.validity.to) == POSITIVE_INFINITY
+    assert validity3.user_key == "efed5e84-eb95-4e7c-b37d-8b9f704ec1bf"
+    assert validity3.value == "efed5e84-eb95-4e7c-b37d-8b9f704ec1bf"
+    assert validity3.visibility_uuid == visibility_class_uuid
+    assert validity3.address_type.uuid == postal_address_type_uuid
+
+    assert len(validities) == 3
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
         "MODE": "region",
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
