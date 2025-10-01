@@ -20,21 +20,6 @@ class CannotProcessOrgUnitError(Exception):
     pass
 
 
-class ClassNotFoundError(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=HTTP_500_INTERNAL_SERVER_ERROR, detail="Class not found in MO!"
-        )
-
-
-class MoreThanOneClassError(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="More than one class found in MO!",
-        )
-
-
 class EngagementNotFoundError(HTTPException):
     def __init__(self) -> None:
         super().__init__(
