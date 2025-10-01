@@ -703,12 +703,12 @@ async def create_postal_address(
     settings: SDToolPlusSettings,
     org_unit: OrgUnitUUID,
     address_uuid: UUID | None,
-    sd_postal_address_timeline: Timeline[UnitPostalAddress],
+    desired_postal_address_timeline: Timeline[UnitPostalAddress],
     dry_run: bool,
 ) -> None:
     logger.debug(
         "Create postal address in MO",
-        postal_address_timeline=sd_postal_address_timeline.dict(),
+        postal_address_timeline=desired_postal_address_timeline.dict(),
     )
 
     # Get the address visibility UUID
@@ -737,7 +737,7 @@ async def create_postal_address(
     assert current is not None
     postal_address_type_uuid = current.uuid
 
-    first_sd_postal_address = first(sd_postal_address_timeline.intervals)
+    first_sd_postal_address = first(desired_postal_address_timeline.intervals)
     create_address_payload = AddressCreateInput(
         uuid=address_uuid,
         org_unit=org_unit,
@@ -757,7 +757,7 @@ async def create_postal_address(
     else:
         created_address_uuid = UUID(int=0)
 
-    for sd_postal_address in sd_postal_address_timeline.intervals[1:]:
+    for sd_postal_address in desired_postal_address_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
             uuid=created_address_uuid,
             org_unit=org_unit,

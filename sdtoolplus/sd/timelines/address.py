@@ -16,28 +16,37 @@ DAR_ADDRESS_NOT_FOUND = "DAR address not found"
 async def sd_postal_dar_address_strategy(
     sd_postal_address_timeline: Timeline[UnitPostalAddress],
 ) -> Timeline[UnitPostalAddress]:
-    dar_client = AsyncDARClient()
+    logger.info("Getting DAR address timeline")
 
+    dar_client = AsyncDARClient()
     local_dar_cache: dict[str, str] = dict()
 
     dar_uuid_intervals = []
     async with dar_client:
         for interval in sd_postal_address_timeline.intervals:
+            logger.debug("Processing postal address interval", interval=interval.dict())
+
             interval_value = cast(str, interval.value)  # To make mypy happy...
             dar_uuid_address = local_dar_cache.get(interval_value)
 
             if dar_uuid_address:
                 # We have already just looked up the address
+                logger.debug(
+                    "Found DAR address in cache", dar_uuid_address=dar_uuid_address
+                )
                 value = (
                     dar_uuid_address
                     if not dar_uuid_address == DAR_ADDRESS_NOT_FOUND
                     else None
                 )
             else:
+                logger.debug("Looking up DAR address...")
                 try:
                     r = await dar_client.cleanse_single(interval_value)
                     value = r["id"]
                     local_dar_cache[interval_value] = value
+
+                    logger.debug("Found address in DAR", dar_uuid_address=value)
                 except ValueError:
                     logger.warning("No DAR address match", addr=interval_value)
                     value = None
@@ -59,6 +68,11 @@ async def sd_postal_dar_address_strategy(
 
     desired_address_timeline = Timeline[UnitPostalAddress](
         intervals=combine_intervals(tuple(dar_uuid_intervals)),
+    )
+
+    logger.debug(
+        "Desired DAR address timeline",
+        desired_address_timeline=desired_address_timeline.dict(),
     )
 
     return desired_address_timeline

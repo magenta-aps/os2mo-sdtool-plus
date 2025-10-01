@@ -797,7 +797,7 @@ async def _sync_ou_postal_address(
         settings=settings,
         org_unit=org_unit,
         address_uuid=mo_postal_address_timeline_obj.uuid,
-        sd_postal_address_timeline=sd_postal_address_timeline,
+        desired_postal_address_timeline=desired_postal_address_timeline,
         dry_run=dry_run,
     )
 
