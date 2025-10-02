@@ -566,6 +566,22 @@ async def job_function_9000(graphql_client: GraphQLClient) -> UUID:
 
 
 @pytest.fixture
+async def job_function_unknown(graphql_client: GraphQLClient) -> UUID:
+    current_class = one(
+        (
+            await graphql_client.get_class(
+                ClassFilter(
+                    facet=FacetFilter(user_keys=["engagement_job_function"]),
+                    user_keys=["unknown"],
+                )
+            )
+        ).objects
+    ).current
+    assert current_class is not None
+    return current_class.uuid
+
+
+@pytest.fixture
 async def engagement_type(graphql_client: GraphQLClient) -> UUID:
     current_class = one(
         (
