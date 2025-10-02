@@ -1305,6 +1305,12 @@ async def sync_engagement(
 
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
         if len(sd_eng_timeline.eng_unit.intervals) == 0:
+            logger.warning(
+                "Empty department timeline for employment found in SD",
+                institution_identifier=institution_identifier,
+                cpr=cpr,
+                emp_id=employment_identifier,
+            )
             raise DepartmentTimelineNotFoundError()
     except SDRootElementNotFound as sd_error:
         logger.warning(
