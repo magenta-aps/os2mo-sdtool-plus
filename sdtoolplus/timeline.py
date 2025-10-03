@@ -1127,12 +1127,15 @@ async def engagement_ou_strategy_region(
         if not unit_interval.value == settings.unknown_unit:
             related_unit_intervals.append(unit_interval)
         else:
+            try:
+                sd_unit = sd_eng_timeline.eng_unit.entity_at(unit_interval.start).value
+            except NoValueError:
+                related_unit_intervals.append(unit_interval)
+                continue
             related_unit_intervals.extend(
                 await related_units(
                     gql_client=gql_client,
-                    unit_uuid=sd_eng_timeline.eng_unit.entity_at(
-                        unit_interval.start
-                    ).value,  # type: ignore
+                    unit_uuid=cast(OrgUnitUUID, sd_unit),
                     unit_interval=unit_interval,
                     unknown_unit_uuid=settings.unknown_unit,
                 )
