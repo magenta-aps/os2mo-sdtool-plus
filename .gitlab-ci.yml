@@ -69,7 +69,7 @@ Test:
 Integration-test:
   extends:
     - .integration-test:mo
-  parallel: 2
+  parallel: 3
   variables:
       RUN_ALEMBIC_MIGRATIONS: "false"
       SD_USERNAME: "username"
