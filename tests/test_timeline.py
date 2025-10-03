@@ -1,10 +1,18 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
+from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
+from unittest.mock import patch
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import pytest
+from sdclient.responses import EmploymentPersonWithLists
+from sdclient.responses import EmploymentStatus
+from sdclient.responses import EmploymentWithLists
+from sdclient.responses import GetEmploymentChangedResponse
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.models import Active
@@ -12,6 +20,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.timeline import patch_missing_parents
+from sdtoolplus.timeline import sync_engagement
 from tests.integration.conftest import UNKNOWN_UNIT
 
 SOME_UNIT_UUID = uuid4()
@@ -168,3 +177,48 @@ def test_patch_missing_parents_handles_holes_in_timeline(
             UnitParent(start=t4, end=t5, value=parent_uuid2),
         )
     )
+
+
+@patch("sdtoolplus.timeline.get_engagement_timeline")
+async def test_skip_missing_sd_employment_timelines(
+    mock_get_engagement_timeline: AsyncMock,
+) -> None:
+    """
+    This scenario occurs as described in https://redmine.magenta.dk/issues/64950:
+    """
+    # Arrange
+    mock_sd_client = MagicMock()
+    mock_sd_client.get_employment_changed.return_value = GetEmploymentChangedResponse(
+        Person=[
+            EmploymentPersonWithLists(
+                PersonCivilRegistrationIdentifier="0101011234",
+                Employment=[
+                    EmploymentWithLists(
+                        EmploymentIdentifier="12345",
+                        EmploymentStatus=[
+                            EmploymentStatus(
+                                ActivationDate=date(2000, 1, 1),
+                                DeactivationDate=date(2001, 1, 1),
+                                EmploymentStatusCode="8",
+                            )
+                        ],
+                    )
+                ],
+            )
+        ]
+    )
+
+    mock_gql_client = AsyncMock()
+
+    # Act
+    await sync_engagement(
+        sd_client=mock_sd_client,
+        gql_client=mock_gql_client,
+        institution_identifier="II",
+        cpr="0101011234",
+        employment_identifier="12345",
+        settings=MagicMock(spec=SDToolPlusSettings),
+    )
+
+    # Assert
+    mock_get_engagement_timeline.assert_not_awaited()
