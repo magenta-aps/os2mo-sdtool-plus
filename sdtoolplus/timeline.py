@@ -1306,12 +1306,9 @@ async def sync_engagement(
         sd_leave_timeline = get_sd_leave_timeline(r_employment)
 
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
-        if (
-            len(sd_eng_timeline.eng_active.intervals) == 0
-            and len(sd_eng_timeline.eng_unit.intervals) == 0
-        ):
+        if sd_eng_timeline == EngagementTimeline():
             logger.warning(
-                "Employment not active in any intervals and department timeline is empty",
+                "Empty SD employment timeline. Skipping event",
                 institution_identifier=institution_identifier,
                 cpr=cpr,
                 emp_id=employment_identifier,
