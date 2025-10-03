@@ -30,7 +30,6 @@ from sdtoolplus.config import Mode
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import DepartmentParentsNotFoundError
-from sdtoolplus.exceptions import DepartmentTimelineNotFoundError
 from sdtoolplus.exceptions import DepartmentValidityExceedsParentsValiditiesError
 from sdtoolplus.exceptions import HolesInDepartmentParentsTimelineError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
@@ -1307,14 +1306,17 @@ async def sync_engagement(
         sd_leave_timeline = get_sd_leave_timeline(r_employment)
 
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
-        if len(sd_eng_timeline.eng_unit.intervals) == 0:
+        if (
+            len(sd_eng_timeline.eng_active.intervals) == 0
+            and len(sd_eng_timeline.eng_unit.intervals) == 0
+        ):
             logger.warning(
-                "Empty department timeline for employment found in SD",
+                "Employment not active in any intervals and department timeline is empty",
                 institution_identifier=institution_identifier,
                 cpr=cpr,
                 emp_id=employment_identifier,
             )
-            raise DepartmentTimelineNotFoundError()
+            return
     except SDRootElementNotFound as sd_error:
         logger.warning(
             "Could not read employment from SD",
