@@ -57,14 +57,6 @@ class MoreThanOnePersonError(HTTPException):
         )
 
 
-class DepartmentTimelineNotFoundError(HTTPException):
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Empty department timeline for employment found in SD",
-        )
-
-
 class EngagementSyncTemporarilyDisabled(HTTPException):
     """
     Only raised when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is set to False
