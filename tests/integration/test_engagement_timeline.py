@@ -2298,6 +2298,200 @@ async def test_eng_timeline_related_units_single_day_relation(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+    }
+)
+async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario. The focus of the test is the unit part - especially
+    that the SD unit does not exist in the interval [t1, t2).
+
+    Time  --------t1---------------t2----------------------------------------------->
+
+    MO (name)     |--------------------------------name4-----------------------------
+    MO (key)      |--------------------------------1234------------------------------
+    MO (unit)     |---------------------------------A--------------------------------
+    MO (unit ID)  |--------------------------------dep1------------------------------
+    MO (SD unit)  |------------------------------dep1 UUID---------------------------
+    MO (active)   |------------------------------------------------------------------
+    MO (eng_type) |--------------------------------full------------------------------
+    MO (ext_7)    |---------------------------------v1-------------------------------
+
+    "Arrange"     |----------------------------------1-------------------------------
+    intervals
+
+    SD (name)                      |-------------------name4-------------------------
+    SD (key)                       |--------------------1234-------------------------
+    SD (unit)                      |-------------------dep1--------------------------
+    SD (unit ID)                   |-------------------dep1--------------------------
+    SD (SD unit)                   |-----------------dep1 UUID-----------------------
+    SD (active)                    |-------------------------------------------------
+    SD (eng_type)                  |--------------------full-------------------------
+
+    OU relations:
+    dep1          |-----------------------------------A------------------------------
+
+    Time  --------t1---------------t2----------------------------------------------->
+
+    "Assert"                       |----------------------1--------------------------
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    A_uuid = UUID("aaaaaaaa-2a66-429e-8893-aaaaaaaaaaaa")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    user_key = f"II-{emp_id}"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange intervals 1)
+    await graphql_client.create_engagement(
+        EngagementCreateInput(
+            user_key=user_key,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            extension_1="name4",
+            extension_4="dep1",
+            extension_5=str(dep1_uuid),
+            extension_7="v1",
+            person=person_uuid,
+            org_unit=A_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # Create org unit relations
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=dep1_uuid,
+            destination=[A_uuid],
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2002-01-01</EmploymentDate>
+              <AnniversaryDate>2002-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name4</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
+        )
+    )
+    interval_1 = one(one(updated_eng.objects).validities)
+
+    assert interval_1.validity.from_ == t2
+    assert _mo_end_to_timeline_end(interval_1.validity.to) == POSITIVE_INFINITY
+    assert interval_1.extension_1 == "name4"
+    assert interval_1.extension_4 == "dep1"
+    assert interval_1.extension_5 == str(dep1_uuid)
+    assert interval_1.user_key == user_key
+    assert interval_1.job_function_uuid == job_function_1234
+    assert interval_1.extension_7 == "v1"
+    assert interval_1.org_unit_uuid == A_uuid
+    assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED": "false",
         "EVENT_BASED_SYNC": "true",
     }
