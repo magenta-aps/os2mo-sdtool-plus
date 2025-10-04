@@ -278,10 +278,16 @@ async def _sync_eng_intervals(
     desired_interval_endpoints = desired_eng_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_eng_timeline.get_interval_endpoints()
 
-    endpoints = sorted(desired_interval_endpoints.union(mo_interval_endpoints))
+    # There are occasionally bad data in the past resulting errors, which in turn
+    # leads to missing a processing of current and future data (where the latter
+    # are typically more important). We therefore process the timeline in reverse to
+    # increase the probability of processing the most important data first.
+    endpoints = sorted(
+        desired_interval_endpoints.union(mo_interval_endpoints), reverse=True
+    )
     logger.debug("List of endpoints", endpoints=endpoints)
 
-    for start, end in pairwise(endpoints):
+    for end, start in pairwise(endpoints):
         logger.debug("Processing endpoint pair", start=start, end=end)
 
         if desired_eng_timeline.equal_at(start, mo_eng_timeline):
