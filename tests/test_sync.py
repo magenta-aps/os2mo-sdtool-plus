@@ -179,7 +179,7 @@ def test_patch_missing_parents_handles_holes_in_timeline(
     )
 
 
-@patch("sdtoolplus.timeline.get_engagement_timeline")
+@patch("sdtoolplus.mo.timelines.engagement.get_engagement_timeline")
 async def test_skip_missing_sd_employment_timelines(
     mock_get_engagement_timeline: AsyncMock,
 ) -> None:
