@@ -6,6 +6,7 @@ from itertools import pairwise
 from typing import cast
 from uuid import UUID
 
+import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
 from more_itertools import one
@@ -51,11 +52,12 @@ from sdtoolplus.sd.timelines.employment import (
     get_leave_timeline as get_sd_leave_timeline,
 )
 from sdtoolplus.sync.association import sync_associations
-from sdtoolplus.sync.common import logger
 from sdtoolplus.sync.common import prefix_eng_user_key
 from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.sync.leave import _sync_leave_intervals
 from sdtoolplus.types import CPRNumber
+
+logger = structlog.stdlib.get_logger()
 
 
 async def _sync_eng_intervals(

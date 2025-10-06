@@ -3,14 +3,16 @@
 from typing import cast
 from uuid import UUID
 
+import structlog
 from async_lru import alru_cache
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 
-from sdtoolplus.addresses import logger
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import combine_intervals
+
+logger = structlog.stdlib.get_logger()
 
 
 @alru_cache()

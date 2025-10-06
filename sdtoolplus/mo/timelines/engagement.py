@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 from uuid import UUID
 
+import structlog
 from more_itertools import one
 from more_itertools import only
 
@@ -18,7 +19,6 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.mo.timelines.common import get_class_user_key
 from sdtoolplus.mo.timelines.common import get_patch_validity
-from sdtoolplus.mo.timelines.common import logger
 from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
 from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.models import Active
@@ -32,6 +32,8 @@ from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
+
+logger = structlog.stdlib.get_logger()
 
 
 async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]:
