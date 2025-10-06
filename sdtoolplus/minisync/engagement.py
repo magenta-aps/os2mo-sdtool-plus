@@ -20,7 +20,6 @@ from sdtoolplus.exceptions import EngagementNotFoundError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
-from sdtoolplus.mo.timeline import get_engagement_filter
 from sdtoolplus.mo.timeline import get_patch_validity
 from sdtoolplus.mo.timeline import mo_end_to_datetime
 from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
@@ -28,6 +27,7 @@ from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
 from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 from sdtoolplus.types import CPRNumber
 
+from ..mo.timelines.engagement import get_engagement_filter
 from .models import EngagementMovePayload
 
 logger = structlog.stdlib.get_logger()
