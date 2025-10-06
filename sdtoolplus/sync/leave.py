@@ -19,7 +19,7 @@ from sdtoolplus.mo.timelines.leave import create_leave
 from sdtoolplus.mo.timelines.leave import terminate_leave
 from sdtoolplus.mo.timelines.leave import update_leave
 from sdtoolplus.models import LeaveTimeline
-from sdtoolplus.timeline import _prefix_eng_user_key
+from sdtoolplus.timeline import prefix_eng_user_key
 
 logger = structlog.stdlib.get_logger()
 
@@ -34,7 +34,7 @@ async def _sync_leave_intervals(
     settings: SDToolPlusSettings,
     dry_run: bool,
 ) -> None:
-    user_key = _prefix_eng_user_key(
+    user_key = prefix_eng_user_key(
         settings, employment_identifier, institution_identifier
     )
 

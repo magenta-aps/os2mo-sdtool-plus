@@ -52,9 +52,9 @@ from sdtoolplus.sd.timelines.employment import (
 )
 from sdtoolplus.sync.association import sync_associations
 from sdtoolplus.sync.leave import _sync_leave_intervals
-from sdtoolplus.timeline import _prefix_eng_user_key
-from sdtoolplus.timeline import _split_engagement_user_key
 from sdtoolplus.timeline import logger
+from sdtoolplus.timeline import prefix_eng_user_key
+from sdtoolplus.timeline import split_engagement_user_key
 from sdtoolplus.types import CPRNumber
 
 
@@ -69,7 +69,7 @@ async def _sync_eng_intervals(
     settings: SDToolPlusSettings,
     dry_run: bool,
 ) -> None:
-    user_key = _prefix_eng_user_key(
+    user_key = prefix_eng_user_key(
         settings, employment_identifier, institution_identifier
     )
 
@@ -569,7 +569,7 @@ async def sync_engagement(
     mo_eng_timeline = await get_engagement_timeline(
         gql_client=gql_client,
         person=person.uuid,
-        user_key=_prefix_eng_user_key(
+        user_key=prefix_eng_user_key(
             settings, employment_identifier, institution_identifier
         ),
     )
@@ -590,7 +590,7 @@ async def sync_engagement(
     mo_leave_timeline = await get_mo_leave_timeline(
         gql_client=gql_client,
         person=person.uuid,
-        user_key=_prefix_eng_user_key(
+        user_key=prefix_eng_user_key(
             settings, employment_identifier, institution_identifier
         ),
     )
@@ -671,7 +671,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
         next_cursor = mo_engagement_batch.page_info.next_cursor
 
         for obj in mo_engagement_batch.objects:
-            inst_id, emp_id = _split_engagement_user_key(
+            inst_id, emp_id = split_engagement_user_key(
                 settings=settings,
                 user_key=first(obj.validities).user_key,
             )

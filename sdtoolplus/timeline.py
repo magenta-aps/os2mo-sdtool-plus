@@ -16,7 +16,7 @@ def _sd_inst_id_prefix(key: str, inst_id: str) -> str:
     return f"{inst_id}-{key}"
 
 
-def _prefix_eng_user_key(
+def prefix_eng_user_key(
     settings: SDToolPlusSettings, user_key: str, inst_id: str
 ) -> str:
     if settings.mode == Mode.MUNICIPALITY:
@@ -24,7 +24,7 @@ def _prefix_eng_user_key(
     return _sd_inst_id_prefix(user_key, inst_id)
 
 
-def _split_engagement_user_key(
+def split_engagement_user_key(
     settings: SDToolPlusSettings, user_key: str
 ) -> tuple[str, str]:
     if settings.mode == Mode.MUNICIPALITY:
