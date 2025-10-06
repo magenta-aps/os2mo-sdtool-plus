@@ -51,10 +51,10 @@ from sdtoolplus.sd.timelines.employment import (
     get_leave_timeline as get_sd_leave_timeline,
 )
 from sdtoolplus.sync.association import sync_associations
+from sdtoolplus.sync.common import logger
+from sdtoolplus.sync.common import prefix_eng_user_key
+from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.sync.leave import _sync_leave_intervals
-from sdtoolplus.timeline import logger
-from sdtoolplus.timeline import prefix_eng_user_key
-from sdtoolplus.timeline import split_engagement_user_key
 from sdtoolplus.types import CPRNumber
 
 

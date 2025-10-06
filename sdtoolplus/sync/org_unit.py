@@ -46,8 +46,8 @@ from sdtoolplus.sd.timelines.org_unit import (
 from sdtoolplus.sd.timelines.org_unit import (
     get_postal_address_timeline as get_sd_postal_address_timeline,
 )
-from sdtoolplus.timeline import logger
-from sdtoolplus.timeline import prefix_unit_id_with_inst_id
+from sdtoolplus.sync.common import logger
+from sdtoolplus.sync.common import prefix_unit_id_with_inst_id
 
 
 def patch_missing_parents(

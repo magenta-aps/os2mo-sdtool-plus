@@ -19,7 +19,7 @@ from sdtoolplus.mo.timelines.leave import create_leave
 from sdtoolplus.mo.timelines.leave import terminate_leave
 from sdtoolplus.mo.timelines.leave import update_leave
 from sdtoolplus.models import LeaveTimeline
-from sdtoolplus.timeline import prefix_eng_user_key
+from sdtoolplus.sync.common import prefix_eng_user_key
 
 logger = structlog.stdlib.get_logger()
 
