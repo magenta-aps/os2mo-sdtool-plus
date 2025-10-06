@@ -38,7 +38,6 @@ from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.mo.person import create_person
 from sdtoolplus.mo.person import update_person
 from sdtoolplus.mo.timeline import get_class
-from sdtoolplus.mo.timeline import related_units
 from sdtoolplus.mo.timelines.association import create_association
 from sdtoolplus.mo.timelines.association import get_association_filter
 from sdtoolplus.mo.timelines.association import (
@@ -75,6 +74,7 @@ from sdtoolplus.mo.timelines.org_unit import (
 )
 from sdtoolplus.mo.timelines.org_unit import terminate_ou
 from sdtoolplus.mo.timelines.org_unit import update_ou
+from sdtoolplus.mo.timelines.related_unit import related_units
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import Engagement
