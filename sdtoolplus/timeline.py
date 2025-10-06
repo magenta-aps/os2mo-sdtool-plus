@@ -35,10 +35,10 @@ from sdtoolplus.exceptions import HolesInDepartmentParentsTimelineError
 from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import NoValueError
-from sdtoolplus.mo.timeline import create_person
+from sdtoolplus.mo.person import create_person
+from sdtoolplus.mo.person import update_person
 from sdtoolplus.mo.timeline import get_class
 from sdtoolplus.mo.timeline import related_units
-from sdtoolplus.mo.timeline import update_person
 from sdtoolplus.mo.timelines.association import create_association
 from sdtoolplus.mo.timelines.association import get_association_filter
 from sdtoolplus.mo.timelines.association import (
