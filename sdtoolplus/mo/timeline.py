@@ -33,7 +33,7 @@ def datetime_to_mo_end(end_datetime: datetime) -> datetime | None:
     return None if end_datetime == POSITIVE_INFINITY else end_datetime
 
 
-def _mo_end_to_timeline_end(mo_end: datetime | None) -> datetime:
+def mo_end_to_timeline_end(mo_end: datetime | None) -> datetime:
     """
     Convert a MO end datetime to the end date required by our timeline objects.
     """
