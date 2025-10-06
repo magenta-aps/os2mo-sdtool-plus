@@ -30,11 +30,11 @@ from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
 from sdtoolplus.exceptions import MoreThanOnePostalAddressError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
-from sdtoolplus.mo.timeline import _mo_end_to_timeline_end
-from sdtoolplus.mo.timeline import get_class
-from sdtoolplus.mo.timeline import get_patch_validity
-from sdtoolplus.mo.timeline import logger
-from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
+from sdtoolplus.mo.timelines.common import get_class
+from sdtoolplus.mo.timelines.common import get_patch_validity
+from sdtoolplus.mo.timelines.common import logger
+from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
+from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import MOPhoneNumberTimelineObj
@@ -79,7 +79,7 @@ async def get_ou_timeline(
             start=obj.validity.from_,
             # TODO (#61435): MOs GraphQL subtracts one day from the validity end dates
             # when reading, compared to what was written.
-            end=_mo_end_to_timeline_end(obj.validity.to),
+            end=mo_end_to_timeline_end(obj.validity.to),
             value=True,
         )
         for obj in validities
@@ -88,7 +88,7 @@ async def get_ou_timeline(
     id_intervals = tuple(
         UnitId(
             start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
+            end=mo_end_to_timeline_end(obj.validity.to),
             value=obj.user_key,
         )
         for obj in validities
@@ -97,7 +97,7 @@ async def get_ou_timeline(
     level_intervals = tuple(
         UnitLevel(
             start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
+            end=mo_end_to_timeline_end(obj.validity.to),
             value=obj.org_unit_level.name if obj.org_unit_level is not None else None,
         )
         for obj in validities
@@ -106,7 +106,7 @@ async def get_ou_timeline(
     name_intervals = tuple(
         UnitName(
             start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
+            end=mo_end_to_timeline_end(obj.validity.to),
             value=obj.name,
         )
         for obj in validities
@@ -115,7 +115,7 @@ async def get_ou_timeline(
     parent_intervals = tuple(
         UnitParent(
             start=obj.validity.from_,
-            end=_mo_end_to_timeline_end(obj.validity.to),
+            end=mo_end_to_timeline_end(obj.validity.to),
             value=obj.parent_uuid,
         )
         for obj in validities
@@ -166,7 +166,7 @@ async def get_pnumber_timeline(
                 tuple(
                     UnitPNumber(
                         start=obj.validity.from_,
-                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        end=mo_end_to_timeline_end(obj.validity.to),
                         value=obj.value,
                     )
                     for obj in object_.validities
@@ -216,7 +216,7 @@ async def get_postal_address_timeline(
                 tuple(
                     UnitPostalAddress(
                         start=obj.validity.from_,
-                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        end=mo_end_to_timeline_end(obj.validity.to),
                         value=obj.value,
                     )
                     for obj in object_.validities
@@ -263,7 +263,7 @@ async def get_phone_number_timeline(
                 tuple(
                     UnitPhoneNumber(
                         start=obj.validity.from_,
-                        end=_mo_end_to_timeline_end(obj.validity.to),
+                        end=mo_end_to_timeline_end(obj.validity.to),
                         value=obj.value,
                     )
                     for obj in object_.validities

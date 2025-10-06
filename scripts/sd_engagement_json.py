@@ -15,7 +15,7 @@ from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 
 from sdtoolplus.depends import SDClient
-from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
+from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.models import Engagement
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.sd.timelines.employment import get_employment_timeline
