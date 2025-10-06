@@ -59,9 +59,9 @@ from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
+from .sync.org_unit import sync_ou
 from .timeline import queue_mo_engagements_for_sd_unit_sync
 from .timeline import sync_engagement
-from .timeline import sync_ou
 from .timeline import sync_person
 from .tree_tools import tree_as_string
 
