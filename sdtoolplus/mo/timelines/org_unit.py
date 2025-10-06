@@ -30,11 +30,11 @@ from sdtoolplus.exceptions import MoreThanOnePhoneNumberError
 from sdtoolplus.exceptions import MoreThanOnePNumberError
 from sdtoolplus.exceptions import MoreThanOnePostalAddressError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
-from sdtoolplus.mo.timeline import get_class
-from sdtoolplus.mo.timeline import get_patch_validity
-from sdtoolplus.mo.timeline import logger
-from sdtoolplus.mo.timeline import mo_end_to_timeline_end
-from sdtoolplus.mo.timeline import timeline_interval_to_mo_validity
+from sdtoolplus.mo.timelines.common import get_class
+from sdtoolplus.mo.timelines.common import get_patch_validity
+from sdtoolplus.mo.timelines.common import logger
+from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
+from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import MOPhoneNumberTimelineObj
