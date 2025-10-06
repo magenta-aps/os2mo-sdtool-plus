@@ -27,7 +27,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
-from sdtoolplus.timeline import engagement_ou_strategy_elevate_to_ny_level
+from sdtoolplus.sync.engagement import engagement_ou_strategy_elevate_to_ny_level
 
 
 async def test_engagement_ou_strategy_elevate_to_ny_level(respx_mock: MockRouter):

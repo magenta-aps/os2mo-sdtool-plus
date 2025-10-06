@@ -19,8 +19,8 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
+from sdtoolplus.sync.engagement import sync_engagement
 from sdtoolplus.sync.org_unit import patch_missing_parents
-from sdtoolplus.timeline import sync_engagement
 from tests.integration.conftest import UNKNOWN_UNIT
 
 SOME_UNIT_UUID = uuid4()

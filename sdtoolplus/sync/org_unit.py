@@ -4,28 +4,50 @@ from itertools import pairwise
 
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from sdclient.client import SDClient
-
 from sdclient.responses import GetDepartmentResponse
 
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import NoValueError
-from sdtoolplus.mo.timelines.org_unit import terminate_ou, update_ou, create_ou, \
-    get_pnumber_timeline as get_mo_pnumber_timeline, delete_address, \
-    create_pnumber_address, \
-    get_postal_address_timeline as get_mo_postal_address_timeline, \
-    create_postal_address, get_phone_number_timeline as get_mo_phone_number_timeline, \
-    create_phone_number, get_ou_timeline
+from sdtoolplus.mo.timelines.org_unit import create_ou
+from sdtoolplus.mo.timelines.org_unit import create_phone_number
+from sdtoolplus.mo.timelines.org_unit import create_pnumber_address
+from sdtoolplus.mo.timelines.org_unit import create_postal_address
+from sdtoolplus.mo.timelines.org_unit import delete_address
+from sdtoolplus.mo.timelines.org_unit import get_ou_timeline
+from sdtoolplus.mo.timelines.org_unit import (
+    get_phone_number_timeline as get_mo_phone_number_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import (
+    get_pnumber_timeline as get_mo_pnumber_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import (
+    get_postal_address_timeline as get_mo_postal_address_timeline,
+)
+from sdtoolplus.mo.timelines.org_unit import terminate_ou
+from sdtoolplus.mo.timelines.org_unit import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
-from sdtoolplus.models import UnitTimeline, UnitParent, Timeline, combine_intervals, \
-    UnitPNumber, UnitPostalAddress, UnitPhoneNumber
+from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitParent
+from sdtoolplus.models import UnitPhoneNumber
+from sdtoolplus.models import UnitPNumber
+from sdtoolplus.models import UnitPostalAddress
+from sdtoolplus.models import UnitTimeline
+from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.timelines.address import sd_postal_address_strategy
-from sdtoolplus.sd.timelines.org_unit import \
-    get_pnumber_timeline as get_sd_pnumber_timeline, \
-    get_postal_address_timeline as get_sd_postal_address_timeline, \
-    get_phone_number_timeline as get_sd_phone_number_timeline, get_department, \
-    get_department_timeline
-from sdtoolplus.timeline import logger, prefix_unit_id_with_inst_id
+from sdtoolplus.sd.timelines.org_unit import get_department
+from sdtoolplus.sd.timelines.org_unit import get_department_timeline
+from sdtoolplus.sd.timelines.org_unit import (
+    get_phone_number_timeline as get_sd_phone_number_timeline,
+)
+from sdtoolplus.sd.timelines.org_unit import (
+    get_pnumber_timeline as get_sd_pnumber_timeline,
+)
+from sdtoolplus.sd.timelines.org_unit import (
+    get_postal_address_timeline as get_sd_postal_address_timeline,
+)
+from sdtoolplus.timeline import logger
+from sdtoolplus.timeline import prefix_unit_id_with_inst_id
 
 
 def patch_missing_parents(

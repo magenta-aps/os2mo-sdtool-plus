@@ -7,7 +7,7 @@ from starlette.status import HTTP_200_OK
 
 from .. import depends
 from ..exceptions import EngagementSyncTemporarilyDisabled
-from ..timeline import sync_engagement
+from ..sync.engagement import sync_engagement
 from ..timeline import sync_person
 from .engagement import move_engagement
 from .models import EngagementMovePayload
