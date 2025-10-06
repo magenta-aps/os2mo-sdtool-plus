@@ -62,7 +62,7 @@ from .sd.person import get_sd_person_engagements
 from .sync.engagement import queue_mo_engagements_for_sd_unit_sync
 from .sync.engagement import sync_engagement
 from .sync.org_unit import sync_ou
-from .timeline import sync_person
+from .sync.person import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()

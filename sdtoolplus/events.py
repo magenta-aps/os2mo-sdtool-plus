@@ -43,8 +43,8 @@ from sdtoolplus.models import PersonAMQPEvent
 from sdtoolplus.models import PersonGraphQLEvent
 from sdtoolplus.sync.engagement import sync_engagement
 from sdtoolplus.sync.org_unit import sync_ou
+from sdtoolplus.sync.person import sync_person
 from sdtoolplus.timeline import _split_engagement_user_key
-from sdtoolplus.timeline import sync_person
 
 logger = structlog.stdlib.get_logger()
 
