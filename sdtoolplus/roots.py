@@ -22,7 +22,7 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
-from sdtoolplus.timeline import sync_ou_intervals
+from sdtoolplus.sync.org_unit import sync_ou_intervals
 
 logger = structlog.stdlib.get_logger()
 

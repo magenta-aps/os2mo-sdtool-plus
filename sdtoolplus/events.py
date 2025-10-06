@@ -41,10 +41,10 @@ from sdtoolplus.models import OrgAMQPEvent
 from sdtoolplus.models import OrgGraphQLEvent
 from sdtoolplus.models import PersonAMQPEvent
 from sdtoolplus.models import PersonGraphQLEvent
-from sdtoolplus.timeline import _split_engagement_user_key
-from sdtoolplus.timeline import sync_engagement
-from sdtoolplus.timeline import sync_ou
-from sdtoolplus.timeline import sync_person
+from sdtoolplus.sync.common import split_engagement_user_key
+from sdtoolplus.sync.engagement import sync_engagement
+from sdtoolplus.sync.org_unit import sync_ou
+from sdtoolplus.sync.person import sync_person
 
 logger = structlog.stdlib.get_logger()
 
@@ -256,7 +256,7 @@ async def _mo_engagement(
             if person.cpr_number is not None
         }
     )
-    institution_identifier, employment_identifier = _split_engagement_user_key(
+    institution_identifier, employment_identifier = split_engagement_user_key(
         settings, mo_engagement_user_key
     )
     await sync_engagement(

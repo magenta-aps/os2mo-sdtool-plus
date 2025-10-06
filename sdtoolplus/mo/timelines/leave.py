@@ -5,6 +5,7 @@ from datetime import timedelta
 from itertools import pairwise
 from uuid import UUID
 
+import structlog
 from more_itertools import one
 from more_itertools import only
 
@@ -18,13 +19,14 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import MoreThanOneLeaveError
 from sdtoolplus.exceptions import NoValueError
 from sdtoolplus.mo.timelines.common import get_patch_validity
-from sdtoolplus.mo.timelines.common import logger
 from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
 from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.models import Active
 from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
+
+logger = structlog.stdlib.get_logger()
 
 
 async def get_leave_timeline(

@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import structlog
 from more_itertools import only
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
@@ -19,9 +20,10 @@ from sdtoolplus.models import LeaveTimeline
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
 from sdtoolplus.sd.employment import EmploymentStatusCode
-from sdtoolplus.sd.timelines.common import logger
 from sdtoolplus.sd.timelines.common import sd_end_to_timeline_end
 from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
+
+logger = structlog.stdlib.get_logger()
 
 
 def _sd_employment_type(worktime: WorkingTime) -> EngType:

@@ -5,6 +5,7 @@ from datetime import timedelta
 from typing import cast
 from uuid import UUID
 
+import structlog
 from more_itertools import first
 from more_itertools import one
 
@@ -32,7 +33,6 @@ from sdtoolplus.exceptions import MoreThanOnePostalAddressError
 from sdtoolplus.exceptions import OrgUnitNotFoundError
 from sdtoolplus.mo.timelines.common import get_class
 from sdtoolplus.mo.timelines.common import get_patch_validity
-from sdtoolplus.mo.timelines.common import logger
 from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
 from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
@@ -51,6 +51,8 @@ from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
+
+logger = structlog.stdlib.get_logger()
 
 
 async def get_ou_timeline(
