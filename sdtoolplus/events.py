@@ -26,6 +26,7 @@ from fastapi import HTTPException
 from fastramqpi.context import Context
 from fastramqpi.events import Event
 from more_itertools import one
+from more_itertools import only
 from pydantic import Json
 
 from sdtoolplus import depends
@@ -238,7 +239,10 @@ async def _mo_engagement(
             uuids=[mo_engagement_uuid],
         )
     )
-    mo_engagement = one(mo_engagements.objects)
+    mo_engagement = only(mo_engagements.objects)
+    if mo_engagement is None:
+        logger.info("Engagement not found", mo_engagement_uuid=str(mo_engagement_uuid))
+        return
     # The engagement user key is used to map between MO and SD, and thus is not
     # allowed to change over time.
     mo_engagement_user_key = one(
