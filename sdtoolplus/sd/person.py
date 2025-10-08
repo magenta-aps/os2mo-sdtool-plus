@@ -81,6 +81,7 @@ async def get_all_sd_persons(
             InstitutionIdentifier=institution_identifier,
             PersonCivilRegistrationIdentifier=None,
             EffectiveDate=effective_date,
+            StatusPassiveIndicator=True,
             ContactInformationIndicator=contact_information,
             PostalAddressIndicator=postal_address,
         ),
