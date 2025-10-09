@@ -10,6 +10,7 @@ import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
 from more_itertools import one
+from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
@@ -25,6 +26,7 @@ from sdtoolplus.exceptions import DepartmentParentsNotFoundError
 from sdtoolplus.exceptions import DepartmentValidityExceedsParentsValiditiesError
 from sdtoolplus.exceptions import HolesInDepartmentParentsTimelineError
 from sdtoolplus.exceptions import NoValueError
+from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timelines.engagement import create_engagement
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
 from sdtoolplus.mo.timelines.engagement import get_engagement_timeline
@@ -42,6 +44,7 @@ from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import PersonGraphQLEvent
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import combine_intervals
@@ -558,15 +561,36 @@ async def sync_engagement(
     # Get the person
     r_person = await gql_client.get_person(CPRNumber(cpr))
     try:
-        person = one(r_person.objects)
+        person = only(r_person.objects)
     except ValueError as error:
         logger.error(
-            "Not exactly one person found",
+            "More than one person found in MO",
             institution_identifier=institution_identifier,
             cpr=cpr,
             error=error,
         )
         raise error
+    if person is None:
+        # We would like to avoid this person queuing in order to keep the engagement
+        # code and the person code separated, but in sometimes we cannot find the person
+        # in MO even though (s)he should be there, so for now we queue the person to
+        # make the integration more robust.
+        logger.warning(
+            "Cannot find person in MO. Queuing person",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        await gql_client.send_event(
+            EventSendInput(
+                namespace="sd",
+                routing_key="person",
+                subject=PersonGraphQLEvent(
+                    institution_identifier=institution_identifier,
+                    cpr=cpr,
+                ).json(),
+            )
+        )
+        raise PersonNotFoundError()
 
     mo_eng_timeline = await get_engagement_timeline(
         gql_client=gql_client,
