@@ -883,6 +883,170 @@ async def test_eng_timeline_create_new_engagement(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+    }
+)
+async def test_eng_timeline_create_new_engagement_for_missing_person(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_9000: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the case where we receive and engagement event and the engagement
+    person does not exist in MO even though (s)he should. In this case, we queue the
+    person for creation in MO.
+
+    Time  --------t1---------------------------------------------------------------->
+
+    Person not in MO!
+    MO (engagement does not exist)
+
+    SD (active)   |--------------------------------1---------------------------------
+    (other attributes not interesting)
+
+    "Assert"      |--------------------------------1---------------------------------
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    sd_emp_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>9000</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    sd_person_resp = f"""<?xml version="1.0" encoding="UTF-8" ?>
+        <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+            <RequestStructure>
+                <InstitutionIdentifier>II</InstitutionIdentifier>
+                <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+                <EffectiveDate>2020-01-01</EffectiveDate>
+                <StatusActiveIndicator>true</StatusActiveIndicator>
+                <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                <ContactInformationIndicator>false</ContactInformationIndicator>
+                <PostalAddressIndicator>false</PostalAddressIndicator>
+            </RequestStructure>
+            <Person>
+                <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                <PersonGivenName>Chuck</PersonGivenName>
+                <PersonSurnameName>Norris</PersonSurnameName>
+                <Employment>
+                    <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                </Employment>
+            </Person>
+        </GetPerson20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_emp_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.01.2020&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_person_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 404
+
+    @retry()
+    async def verify() -> None:
+        # Make sure the person has been created
+        r_person = await graphql_client.get_person(CPRNumber(cpr))
+        person = one(r_person.objects)
+
+        # Check the engagement
+        updated_eng = await graphql_client.get_engagement_timeline(
+            get_engagement_filter(
+                person=person.uuid, user_key=emp_id, from_date=None, to_date=None
+            )
+        )
+
+        interval_1 = one(one(updated_eng.objects).validities)
+        assert interval_1.validity.from_ == t1
+        assert mo_end_to_timeline_end(interval_1.validity.to) == POSITIVE_INFINITY
+
+    await verify()
+
+
+@pytest.mark.integration_test
 async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
