@@ -28,7 +28,7 @@ logger = structlog.stdlib.get_logger()
 
 
 @asynccontextmanager
-async def ensure_sd_institution_units(
+async def ensure_sd_institution_units_and_unknown_unit(
     settings: SDToolPlusSettings, sd_client: SDClient, context: Context
 ) -> AsyncIterator[None]:
     logger.info("Ensuring SD institution units...")
