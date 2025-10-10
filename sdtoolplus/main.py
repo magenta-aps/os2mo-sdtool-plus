@@ -30,7 +30,7 @@ from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
-from sdtoolplus.roots import ensure_sd_institution_units
+from sdtoolplus.roots import ensure_sd_institution_units_and_unknown_unit
 
 from . import depends
 from .addresses import AddressFixer
@@ -222,7 +222,7 @@ def create_fastramqpi() -> FastRAMQPI:
 
     if settings.ensure_sd_institution_units:
         fastramqpi.add_lifespan_manager(
-            ensure_sd_institution_units(
+            ensure_sd_institution_units_and_unknown_unit(
                 settings=settings,
                 sd_client=sd_client,
                 context=fastramqpi.get_context(),
