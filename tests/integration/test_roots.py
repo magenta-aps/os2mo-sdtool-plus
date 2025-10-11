@@ -23,6 +23,7 @@ from sdtoolplus.models import POSITIVE_INFINITY
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"AA": ["12121212-1212-1212-1212-121212121212", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"], "BB": ["12121212-1212-1212-1212-121212121212", "20000000-0000-0000-0000-000000000000"], "CC": ["12121212-1212-1212-1212-121212121212", "cccccccc-cccc-cccc-cccc-cccccccccccc"]}',
         "ENSURE_SD_INSTITUTION_UNITS": "true",
         "SD_REGION_IDENTIFIER": "RI",
+        "UNKNOWN_UNIT": "0d505112-1241-4caa-8b8f-a9db5d6d5442",
     }
 )
 async def test_roots(
@@ -33,8 +34,9 @@ async def test_roots(
     respx_mock: MockRouter,
 ):
     """
-    We are testing the function to ensure the SD institutions are present in the
-    top of the OU-tree. The following subtree paths for root are considered:
+    We are testing the function to ensure the SD institutions (and the unknown unit)
+    are present in the top of the OU-tree. The following subtree paths for root are
+    considered:
 
     SD institution: AA
     Subtree path: 12121212-1212-1212-1212-121212121212/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
@@ -178,3 +180,20 @@ async def test_roots(
     assert validity.org_unit_level is not None
     assert validity.org_unit_level.name == "TOP"
     assert validity.parent_uuid == root_uuid
+
+    # Unknown unit
+    unknown = await graphql_client.get_org_unit_timeline(
+        unit_uuid=OrgUnitUUID("0d505112-1241-4caa-8b8f-a9db5d6d5442"),
+        from_date=None,
+        to_date=None,
+    )
+    validity = one(one(unknown.objects).validities)
+
+    org = await graphql_client.get_organization()
+
+    assert validity.validity.from_ == min_mo_datetime
+    assert mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
+    assert validity.name == "Ukendt"
+    assert validity.user_key == "Ukendt"
+    assert validity.org_unit_level is None
+    assert validity.parent_uuid == org.uuid
