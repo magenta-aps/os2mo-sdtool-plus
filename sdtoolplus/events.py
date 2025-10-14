@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import math
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextlib import suppress
@@ -197,7 +198,7 @@ async def sd_api_open() -> None:
     raise HTTPException(
         status_code=503,
         detail="SD API CLOSED",
-        headers={"Retry-After": str(open_remaining.seconds)},
+        headers={"Retry-After": str(math.ceil(open_remaining.total_seconds()))},
     )
 
 
