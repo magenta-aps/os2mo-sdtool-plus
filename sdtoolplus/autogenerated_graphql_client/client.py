@@ -72,6 +72,8 @@ from .get_person_timeline import GetPersonTimeline
 from .get_person_timeline import GetPersonTimelineEmployees
 from .get_related_units import GetRelatedUnits
 from .get_related_units import GetRelatedUnitsRelatedUnits
+from .get_unit import GetUnit
+from .get_unit import GetUnitOrgUnits
 from .input_types import AddressCreateInput
 from .input_types import AddressFilter
 from .input_types import AddressTerminateInput
@@ -374,6 +376,23 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return UpdateClass.parse_obj(data).class_update
+
+    async def get_unit(self, uuid: UUID) -> GetUnitOrgUnits:
+        query = gql(
+            """
+            query GetUnit($uuid: UUID!) {
+              org_units(filter: {uuids: [$uuid]}) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetUnit.parse_obj(data).org_units
 
     async def get_org_unit_timeline(
         self,
