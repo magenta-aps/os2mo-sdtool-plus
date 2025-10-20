@@ -136,6 +136,13 @@ mutation UpdateClass($input: ClassUpdateInput!) {
   }
 }
 
+query GetUnit($uuid: UUID!) {
+  org_units(filter: { uuids: [$uuid] }) {
+    objects {
+      uuid
+    }
+  }
+}
 
 query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: DateTime) {
   org_units(filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }) {
