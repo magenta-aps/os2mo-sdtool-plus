@@ -132,12 +132,8 @@ async def ensure_sd_institution_units_and_unknown_unit(
     logger.info("Ensuring 'Unknown' unit")
     assert settings.unknown_unit is not None
 
-    mo_unknown_unit_timeline = await get_ou_timeline(
-        gql_client=graphql_client,
-        unit_uuid=settings.unknown_unit,
-    )
-
-    if mo_unknown_unit_timeline == UnitTimeline():
+    mo_unknown_unit = await graphql_client.get_unit(uuid=settings.unknown_unit)
+    if not mo_unknown_unit.objects:
         ou_type_uuid = await get_class(
             gql_client=graphql_client,
             facet_user_key="org_unit_type",
