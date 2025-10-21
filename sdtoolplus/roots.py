@@ -129,11 +129,12 @@ async def ensure_sd_institution_units_and_unknown_unit(
         )
 
     # Ensure the "Unknown" unit is present
-    logger.info("Ensuring 'Unknown' unit")
+    logger.info("Ensuring unknown unit")
     assert settings.unknown_unit is not None
 
     mo_unknown_unit = await graphql_client.get_unit(uuid=settings.unknown_unit)
     if not mo_unknown_unit.objects:
+        logger.info("Unknown unit not found - creating")
         ou_type_uuid = await get_class(
             gql_client=graphql_client,
             facet_user_key="org_unit_type",
