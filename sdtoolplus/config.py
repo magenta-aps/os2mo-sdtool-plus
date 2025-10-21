@@ -218,6 +218,11 @@ class SDToolPlusSettings(BaseSettings):
                 "MO_SUBTREE_PATHS_FOR_ROOT must be set when ENSURE_SD_INSTITUTION_UNITS is true"
             )
 
+        if values["unknown_unit"] is None:
+            raise ValueError(
+                "UNKNOWN_UNIT must be set when ENSURE_SD_INSTITUTION_UNITS is true"
+            )
+
         return values
 
 
