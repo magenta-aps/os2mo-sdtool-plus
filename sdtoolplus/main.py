@@ -486,14 +486,21 @@ def create_fastramqpi() -> FastRAMQPI:
         )
         return {"msg": "success"}
 
-    @fastapi_router.post("/timeline/sync/engagement/all", status_code=HTTP_200_OK)
-    async def full_timeline_sync_engagements(
+    @fastapi_router.post("/timeline/sync/engagement/all/sd", status_code=HTTP_200_OK)
+    async def full_timeline_sync_sd_engagements(
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         institution_identifier: str,
         only_active_persons: bool = False,
         dry_run: bool = False,
     ) -> dict:
+        """
+        Sync engagements of all SD persons, i.e.
+
+        1) Read all persons from SD
+        2) Loop through these and for each get a list of their SD employments
+        3) Loop through the list of SD employments and queue these for sync
+        """
         logger.info(f"Syncing all SD employments in {institution_identifier}")
 
         sd_persons = await get_all_sd_persons(
