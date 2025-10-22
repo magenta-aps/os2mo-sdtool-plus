@@ -71,6 +71,7 @@ async def get_all_sd_persons(
     sd_client: SDClient,
     institution_identifier: str,
     effective_date: date,
+    only_active_persons: bool,
     contact_information: bool = False,
     postal_address: bool = False,
 ) -> list[Person]:
@@ -81,7 +82,7 @@ async def get_all_sd_persons(
             InstitutionIdentifier=institution_identifier,
             PersonCivilRegistrationIdentifier=None,
             EffectiveDate=effective_date,
-            StatusPassiveIndicator=True,
+            StatusPassiveIndicator=not only_active_persons,
             ContactInformationIndicator=contact_information,
             PostalAddressIndicator=postal_address,
         ),

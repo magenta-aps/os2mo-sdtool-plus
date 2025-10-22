@@ -428,6 +428,7 @@ def create_fastramqpi() -> FastRAMQPI:
         sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
+        only_active_persons: bool = False,
     ) -> dict:
         """
         Sync all persons in SD
@@ -438,6 +439,7 @@ def create_fastramqpi() -> FastRAMQPI:
             sd_client=sd_client,
             institution_identifier=institution_identifier,
             effective_date=datetime.date.today(),
+            only_active_persons=only_active_persons,
         )
 
         events = [
@@ -490,6 +492,7 @@ def create_fastramqpi() -> FastRAMQPI:
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         institution_identifier: str,
+        only_active_persons: bool = False,
         dry_run: bool = False,
     ) -> dict:
         logger.info(f"Syncing all SD employments in {institution_identifier}")
@@ -498,6 +501,7 @@ def create_fastramqpi() -> FastRAMQPI:
             sd_client=sd_client,
             institution_identifier=institution_identifier,
             effective_date=datetime.date.today(),
+            only_active_persons=only_active_persons,
         )
 
         if dry_run:
