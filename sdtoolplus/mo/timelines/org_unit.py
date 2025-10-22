@@ -183,6 +183,7 @@ async def get_pnumber_timeline(
 
 async def get_postal_address_timeline(
     gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
     unit_uuid: OrgUnitUUID,
 ) -> MOPostalAddressTimelineObj:
     logger.info("Get MO postal address timeline", org_unit=str(unit_uuid))
@@ -192,9 +193,11 @@ async def get_postal_address_timeline(
             org_unit=OrganisationUnitFilter(uuids=[unit_uuid]),
             address_type=ClassFilter(
                 facet=FacetFilter(user_keys=["org_unit_address_type"]),
-                # TODO: use both keys for now as it has changed in the APOS importer?
-                # TODO: handle the municipality case
-                user_keys=["AdresseSDOrgUnit"],
+                user_keys=[
+                    "AddressMailUnit"
+                    if settings.use_dar_addresses
+                    else "AdresseSDOrgUnit"
+                ],
             ),
             from_date=None,
             to_date=None,

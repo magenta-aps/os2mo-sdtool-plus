@@ -236,6 +236,7 @@ async def _sync_ou_postal_address(
     )
     mo_postal_address_timeline_obj = await get_mo_postal_address_timeline(
         gql_client=gql_client,
+        settings=settings,
         unit_uuid=org_unit,
     )
 
