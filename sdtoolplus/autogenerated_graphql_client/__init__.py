@@ -51,12 +51,16 @@ from .delete_address import DeleteAddress
 from .delete_address import DeleteAddressAddressDelete
 from .enums import AccessLogModel
 from .enums import FileStore
+from .enums import HardcodedActor
 from .enums import OwnerInferencePriority
 from .exceptions import GraphQLClientError
 from .exceptions import GraphQLClientGraphQLError
 from .exceptions import GraphQLClientGraphQLMultiError
 from .exceptions import GraphQLClientHttpError
 from .exceptions import GraphQlClientInvalidResponseError
+from .get_actor import GetActor
+from .get_actor import GetActorMe
+from .get_actor import GetActorMeActor
 from .get_address_timeline import GetAddressTimeline
 from .get_address_timeline import GetAddressTimelineAddresses
 from .get_address_timeline import GetAddressTimelineAddressesObjects
@@ -185,6 +189,7 @@ from .input_types import EmployeesBoundLeaveFilter
 from .input_types import EmployeesBoundManagerFilter
 from .input_types import EmployeeTerminateInput
 from .input_types import EmployeeUpdateInput
+from .input_types import EngagementBoundITUserFilter
 from .input_types import EngagementCreateInput
 from .input_types import EngagementFilter
 from .input_types import EngagementRegistrationFilter
@@ -207,6 +212,7 @@ from .input_types import HealthFilter
 from .input_types import ITAssociationCreateInput
 from .input_types import ITAssociationTerminateInput
 from .input_types import ITAssociationUpdateInput
+from .input_types import ItSystemboundclassfilter
 from .input_types import ITSystemCreateInput
 from .input_types import ITSystemFilter
 from .input_types import ITSystemRegistrationFilter
@@ -259,11 +265,13 @@ from .input_types import OrgUnitsboundmanagerfilter
 from .input_types import OrgUnitsboundrelatedunitfilter
 from .input_types import OwnerCreateInput
 from .input_types import OwnerFilter
+from .input_types import OwnersBoundListenerFilter
+from .input_types import OwnersBoundNamespaceFilter
 from .input_types import OwnerTerminateInput
 from .input_types import OwnerUpdateInput
+from .input_types import ParentBoundOrganisationUnitFilter
 from .input_types import ParentsBoundClassFilter
 from .input_types import ParentsBoundFacetFilter
-from .input_types import ParentsBoundOrganisationUnitFilter
 from .input_types import RAOpenValidityInput
 from .input_types import RAValidityInput
 from .input_types import RegistrationFilter
@@ -283,6 +291,8 @@ from .input_types import UuidsBoundITUserFilter
 from .input_types import UuidsBoundLeaveFilter
 from .input_types import UuidsBoundOrganisationUnitFilter
 from .input_types import ValidityInput
+from .refresh_engagements import RefreshEngagements
+from .refresh_engagements import RefreshEngagementsEngagementRefresh
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
@@ -370,6 +380,7 @@ __all__ = [
     "EmployeesBoundITUserFilter",
     "EmployeesBoundLeaveFilter",
     "EmployeesBoundManagerFilter",
+    "EngagementBoundITUserFilter",
     "EngagementCreateInput",
     "EngagementFilter",
     "EngagementRegistrationFilter",
@@ -389,6 +400,9 @@ __all__ = [
     "FileFilter",
     "FileStore",
     "FullEventFilter",
+    "GetActor",
+    "GetActorMe",
+    "GetActorMeActor",
     "GetAddressTimeline",
     "GetAddressTimelineAddresses",
     "GetAddressTimelineAddressesObjects",
@@ -477,6 +491,7 @@ __all__ = [
     "GraphQLClientGraphQLMultiError",
     "GraphQLClientHttpError",
     "GraphQlClientInvalidResponseError",
+    "HardcodedActor",
     "HealthFilter",
     "ITAssociationCreateInput",
     "ITAssociationTerminateInput",
@@ -491,6 +506,7 @@ __all__ = [
     "ITUserRegistrationFilter",
     "ITUserTerminateInput",
     "ITUserUpdateInput",
+    "ItSystemboundclassfilter",
     "ItuserBoundAddressFilter",
     "ItuserBoundRoleBindingFilter",
     "KLECreateInput",
@@ -536,11 +552,15 @@ __all__ = [
     "OwnerInferencePriority",
     "OwnerTerminateInput",
     "OwnerUpdateInput",
+    "OwnersBoundListenerFilter",
+    "OwnersBoundNamespaceFilter",
+    "ParentBoundOrganisationUnitFilter",
     "ParentsBoundClassFilter",
     "ParentsBoundFacetFilter",
-    "ParentsBoundOrganisationUnitFilter",
     "RAOpenValidityInput",
     "RAValidityInput",
+    "RefreshEngagements",
+    "RefreshEngagementsEngagementRefresh",
     "RegistrationFilter",
     "RelatedUnitFilter",
     "RelatedUnitsUpdateInput",
