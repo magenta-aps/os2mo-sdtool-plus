@@ -1,6 +1,14 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 
+query GetActor {
+  me {
+    actor {
+      uuid
+    }
+  }
+}
+
 query GetOrganization {
   org {
     uuid
@@ -105,6 +113,7 @@ query GetFacetUuid($user_key: String!) {
     }
   }
 }
+
 query GetClass($class_filter: ClassFilter!, $at: DateTime) {
   classes(filter: $class_filter) {
     objects {
@@ -365,6 +374,15 @@ mutation UpdateEngagement($input: EngagementUpdateInput!) {
 mutation TerminateEngagement($input: EngagementTerminateInput!) {
   engagement_terminate(input: $input) {
     uuid
+  }
+}
+
+mutation RefreshEngagements($filter: EngagementFilter, $owner: UUID!) {
+  engagement_refresh(
+    filter: $filter,
+    owner: $owner
+  ) {
+    objects
   }
 }
 
