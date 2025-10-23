@@ -617,7 +617,6 @@ def create_fastramqpi() -> FastRAMQPI:
     )
     async def timeline_sync_engagement_mo_sd_unit(
         settings: depends.Settings,
-        sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         background_tasks: BackgroundTasks,
         cpr: str | None = None,
@@ -641,7 +640,6 @@ def create_fastramqpi() -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
     async def full_timeline_sync_ous(
-        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         institution_identifier: str,
