@@ -38,6 +38,8 @@ from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
 from .delete_address import DeleteAddress
 from .delete_address import DeleteAddressAddressDelete
+from .get_actor import GetActor
+from .get_actor import GetActorMe
 from .get_address_timeline import GetAddressTimeline
 from .get_address_timeline import GetAddressTimelineAddresses
 from .get_association_timeline import GetAssociationTimeline
@@ -104,6 +106,8 @@ from .input_types import OrganisationUnitTerminateInput
 from .input_types import OrganisationUnitUpdateInput
 from .input_types import RelatedUnitFilter
 from .input_types import RelatedUnitsUpdateInput
+from .refresh_engagements import RefreshEngagements
+from .refresh_engagements import RefreshEngagementsEngagementRefresh
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
@@ -136,6 +140,23 @@ def gql(q: str) -> str:
 
 
 class GraphQLClient(AsyncBaseClient):
+    async def get_actor(self) -> GetActorMe:
+        query = gql(
+            """
+            query GetActor {
+              me {
+                actor {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetActor.parse_obj(data).me
+
     async def get_organization(self) -> GetOrganizationOrg:
         query = gql(
             """
@@ -805,6 +826,23 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateEngagement.parse_obj(data).engagement_terminate
+
+    async def refresh_engagements(
+        self, owner: UUID, filter: Union[Optional[EngagementFilter], UnsetType] = UNSET
+    ) -> RefreshEngagementsEngagementRefresh:
+        query = gql(
+            """
+            mutation RefreshEngagements($filter: EngagementFilter, $owner: UUID!) {
+              engagement_refresh(filter: $filter, owner: $owner) {
+                objects
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"filter": filter, "owner": owner}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return RefreshEngagements.parse_obj(data).engagement_refresh
 
     async def get_leave(self, filter: LeaveFilter) -> GetLeaveLeaves:
         query = gql(
