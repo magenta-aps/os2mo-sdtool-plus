@@ -1459,6 +1459,7 @@ async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_mis
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_related_units(
@@ -1842,6 +1843,7 @@ async def test_eng_timeline_related_units(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
@@ -2068,6 +2070,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_related_units_single_day_relation(
@@ -2298,6 +2301,7 @@ async def test_eng_timeline_related_units_single_day_relation(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
@@ -2494,6 +2498,7 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED": "false",
         "EVENT_BASED_SYNC": "true",
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
@@ -2724,6 +2729,7 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED": "false",
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_eng_timeline_sync_temporarily_blocked(
@@ -2764,6 +2770,7 @@ async def test_eng_timeline_sync_temporarily_blocked(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_sync_eng_sd_unit_returns_http_422(
