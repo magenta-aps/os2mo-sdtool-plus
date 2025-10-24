@@ -86,15 +86,16 @@ class SDToolPlusSettings(BaseSettings):
 
     # Whether to run in "municipality" mode or "region" mode.
     # In "municipality" mode, we
-    # 1) Do not prefix engagement user keys with the SD institution identifier
-    # 2) Do not prefix unitIDs with the SD institution identifier
-    # 3) May (or may not) apply the NY-logic, which elevates engagement from
+    # 1) Do not prefix unitIDs with the SD institution identifier
+    # 2) May (or may not) apply the NY-logic, which elevates engagement from
     #    "Afdelings-niveau" to the parent "NY-niveau" - see the APPLY_NY_LOGIC flag.
     # In "region" mode, we
-    # 1) Prefix engagement user keys with the SD institution identifier
-    # 2) Prefix unitIDs with the SD institution identifier
-    # 3) Apply the special engagement OU strategy for the regions.
+    # 1) Prefix unitIDs with the SD institution identifier
+    # 2) Apply the special engagement OU strategy for the regions.
     mode: Mode = Mode.MUNICIPALITY
+
+    # If true, we prefix the engagement user keys in "municipality" mode
+    prefix_engagement_user_keys: bool = False
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
@@ -199,6 +200,8 @@ class SDToolPlusSettings(BaseSettings):
             raise ValueError("Apply NY logic not allowed to be enabled in region mode")
         if values["mo_subtree_paths_for_root"] is None:
             raise ValueError("MO_SUBTREE_PATHS_FOR_ROOT must be set in region mode")
+        if values["prefix_engagement_user_keys"] is False:
+            raise ValueError("prefix_engagement_user_keys must be true in region mode")
 
         return values
 

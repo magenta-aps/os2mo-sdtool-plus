@@ -37,6 +37,7 @@ def settings(sdtoolplus_settings: SDToolPlusSettings) -> SDToolPlusSettings:
             "mo_subtree_paths_for_root": {
                 "II": [SOME_UNIT_UUID],
             },
+            "prefix_engagement_user_keys": True,
         }
     )
     return SDToolPlusSettings.parse_obj(settings)

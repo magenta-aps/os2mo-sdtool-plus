@@ -39,6 +39,7 @@ from tests.integration.conftest import UNKNOWN_UNIT
         "APPLY_NY_LOGIC": "false",
         "EVENT_BASED_SYNC": "true",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 @pytest.mark.integration_test
@@ -218,6 +219,7 @@ async def test_reconcile_person_and_related_objects(
         "APPLY_NY_LOGIC": "false",
         "EVENT_BASED_SYNC": "true",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 @pytest.mark.integration_test

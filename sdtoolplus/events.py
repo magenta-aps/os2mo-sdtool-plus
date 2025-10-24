@@ -233,6 +233,8 @@ async def _mo_engagement(
     event: Event[UUID],
 ) -> None:
     mo_engagement_uuid = event.subject
+    logger.info("Received MO engagement event", uuid=str(mo_engagement_uuid))
+
     mo_engagements = await gql_client.get_engagements(
         input=EngagementFilter(
             from_date=None,

@@ -38,6 +38,7 @@ from tests.integration.conftest import UNKNOWN_UNIT
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
@@ -288,6 +289,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_sd_unit_should_extend_mo_unit(
@@ -420,6 +422,7 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_sd_unit_priority_sync(
@@ -623,6 +626,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancestors(
@@ -915,6 +919,7 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
@@ -1156,6 +1161,7 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phone(
@@ -1379,6 +1385,7 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
@@ -1695,6 +1702,7 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_address_intervals_are_combined(
@@ -1975,6 +1983,7 @@ async def test_ou_timeline_address_intervals_are_combined(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_update_addresses_for_unit_in_past(
@@ -2237,6 +2246,7 @@ async def test_ou_timeline_update_addresses_for_unit_in_past(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
@@ -2446,6 +2456,7 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "ENABLE_OU_ADDRESS_SYNC": "false",
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_no_address_sync_when_disabled(
@@ -2793,6 +2804,7 @@ async def test_ou_timeline_postal_dar_address(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
@@ -2894,6 +2906,7 @@ async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_sync_filter(
@@ -2958,6 +2971,7 @@ async def test_ou_timeline_sync_filter(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_ou_timeline_sync_filter_unit_below_payroll_root(

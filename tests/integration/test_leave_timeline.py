@@ -32,6 +32,7 @@ from tests.integration.conftest import UNKNOWN_UNIT
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_leave_timeline(
@@ -232,6 +233,7 @@ async def test_leave_timeline(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
@@ -382,6 +384,7 @@ async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
 async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
