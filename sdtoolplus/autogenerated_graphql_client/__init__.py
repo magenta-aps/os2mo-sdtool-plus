@@ -293,6 +293,7 @@ from .input_types import UuidsBoundOrganisationUnitFilter
 from .input_types import ValidityInput
 from .refresh_engagements import RefreshEngagements
 from .refresh_engagements import RefreshEngagementsEngagementRefresh
+from .refresh_engagements import RefreshEngagementsEngagementRefreshPageInfo
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
@@ -561,6 +562,7 @@ __all__ = [
     "RAValidityInput",
     "RefreshEngagements",
     "RefreshEngagementsEngagementRefresh",
+    "RefreshEngagementsEngagementRefreshPageInfo",
     "RegistrationFilter",
     "RelatedUnitFilter",
     "RelatedUnitsUpdateInput",

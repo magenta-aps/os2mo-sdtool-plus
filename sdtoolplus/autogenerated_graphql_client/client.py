@@ -828,18 +828,35 @@ class GraphQLClient(AsyncBaseClient):
         return TerminateEngagement.parse_obj(data).engagement_terminate
 
     async def refresh_engagements(
-        self, owner: UUID, filter: Union[Optional[EngagementFilter], UnsetType] = UNSET
+        self,
+        owner: UUID,
+        cursor: Union[Optional[Any], UnsetType] = UNSET,
+        limit: Union[Optional[Any], UnsetType] = UNSET,
+        filter: Union[Optional[EngagementFilter], UnsetType] = UNSET,
     ) -> RefreshEngagementsEngagementRefresh:
         query = gql(
             """
-            mutation RefreshEngagements($filter: EngagementFilter, $owner: UUID!) {
-              engagement_refresh(filter: $filter, owner: $owner) {
+            mutation RefreshEngagements($cursor: Cursor, $limit: int, $filter: EngagementFilter, $owner: UUID!) {
+              engagement_refresh(
+                cursor: $cursor
+                limit: $limit
+                filter: $filter
+                owner: $owner
+              ) {
                 objects
+                page_info {
+                  next_cursor
+                }
               }
             }
             """
         )
-        variables: dict[str, object] = {"filter": filter, "owner": owner}
+        variables: dict[str, object] = {
+            "cursor": cursor,
+            "limit": limit,
+            "filter": filter,
+            "owner": owner,
+        }
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return RefreshEngagements.parse_obj(data).engagement_refresh
