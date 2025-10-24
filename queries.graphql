@@ -377,12 +377,22 @@ mutation TerminateEngagement($input: EngagementTerminateInput!) {
   }
 }
 
-mutation RefreshEngagements($filter: EngagementFilter, $owner: UUID!) {
+mutation RefreshEngagements(
+  $cursor: Cursor,
+  $limit: int,
+  $filter: EngagementFilter,
+  $owner: UUID!
+) {
   engagement_refresh(
+    cursor: $cursor,
+    limit: $limit,
     filter: $filter,
     owner: $owner
   ) {
     objects
+    page_info {
+      next_cursor
+    }
   }
 }
 
