@@ -556,6 +556,7 @@ def create_fastramqpi() -> FastRAMQPI:
     async def full_timeline_sync_mo_engagements(
         gql_client: depends.GraphQLClient,
         engagement_uuid: UUID | None = None,
+        limit: int = 500,
     ) -> dict:
         """
         Sync all engagements in MO (and only the ones that already exist in MO).
@@ -584,10 +585,23 @@ def create_fastramqpi() -> FastRAMQPI:
         }
         if engagement_uuid is not None:
             eng_filter["uuids"] = [engagement_uuid]
-        await gql_client.refresh_engagements(
-            filter=EngagementFilter(**eng_filter),
-            owner=me.actor.uuid,
-        )
+
+        next_cursor = None
+        engagements_refreshed = 0
+        while True:
+            batch = await gql_client.refresh_engagements(
+                cursor=next_cursor,
+                limit=limit,
+                filter=EngagementFilter(**eng_filter),
+                owner=me.actor.uuid,
+            )
+            next_cursor = batch.page_info.next_cursor
+
+            engagements_refreshed += len(batch.objects)
+            logger.debug("Engagements refreshed", n=engagements_refreshed)
+
+            if next_cursor is None:
+                break
 
         logger.info("Done queueing all MO engagements")
 
