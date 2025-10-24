@@ -19,7 +19,7 @@ def _sd_inst_id_prefix(key: str, inst_id: str) -> str:
 def prefix_eng_user_key(
     settings: SDToolPlusSettings, user_key: str, inst_id: str
 ) -> str:
-    if settings.mode == Mode.MUNICIPALITY:
+    if not settings.prefix_engagement_user_keys:
         return user_key
     return _sd_inst_id_prefix(user_key, inst_id)
 
@@ -27,7 +27,7 @@ def prefix_eng_user_key(
 def split_engagement_user_key(
     settings: SDToolPlusSettings, user_key: str
 ) -> tuple[str, str]:
-    if settings.mode == Mode.MUNICIPALITY:
+    if not settings.prefix_engagement_user_keys:
         return settings.sd_institution_identifier, user_key
     institution_identifier, employment_id = user_key.split("-")
     return institution_identifier, employment_id
