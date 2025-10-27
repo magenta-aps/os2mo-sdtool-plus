@@ -218,13 +218,13 @@ tz = ["tzdata"]
 
 [[package]]
 name = "another-sd-client"
-version = "3.2.1"
+version = "3.2.2"
 description = "Client for communicating with SD Løn"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "another_sd_client-3.2.1-py3-none-any.whl", hash = "sha256:9b394a6fc48dee45d3c929dcac8751d13b88a1be180576485ccf30dc08972cc9"},
-    {file = "another_sd_client-3.2.1.tar.gz", hash = "sha256:d6a9c5bd845c066359f382111f8f0eaa3363ef58804551c33c013ceed3e8b9cc"},
+    {file = "another_sd_client-3.2.2-py3-none-any.whl", hash = "sha256:1c30265ba8754f1d8e29ea26732f7f26b4043fde24345a07abc1e920d11d2328"},
+    {file = "another_sd_client-3.2.2.tar.gz", hash = "sha256:7627a5d83fb08f923e10d6fb1a5a2583e0c0d1d23a28d07981f188ab7caa826e"},
 ]
 
 [package.dependencies]
