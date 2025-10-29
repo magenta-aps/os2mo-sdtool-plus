@@ -302,6 +302,8 @@ async def _mo_org_unit(
     event: Event[UUID],
 ) -> None:
     mo_org_unit_uuid = event.subject
+    logger.info("Received MO OU event", uuid=str(mo_org_unit_uuid))
+
     mo_org_units = await gql_client.get_org_unit_user_keys(
         input=OrganisationUnitFilter(
             uuids=[mo_org_unit_uuid],
@@ -357,6 +359,8 @@ async def _mo_person(
     event: Event[UUID],
 ) -> None:
     mo_person_uuid = event.subject
+    logger.info("Received MO person event", uuid=str(mo_person_uuid))
+
     mo_persons = await gql_client.get_person_cpr(mo_person_uuid)
     mo_person = one(mo_persons.objects)
     # The CPR-number is used to map between MO and SD, and thus is not allowed
