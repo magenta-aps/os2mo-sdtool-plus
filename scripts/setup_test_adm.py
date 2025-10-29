@@ -91,14 +91,14 @@ query FindUnitUUID($user_key: String!) {
     "--auth-server",
     "auth_server",
     type=click.STRING,
-    default="http://keycloak-service:8080/auth",
+    default="http://keycloak:8080/auth",
     help="Keycloak auth server URL",
 )
 @click.option(
     "--client-id",
     "client_id",
     type=click.STRING,
-    default="developer",
+    default="sdtool_plus",
     help="Keycloak client id",
 )
 @click.option(
@@ -106,20 +106,27 @@ query FindUnitUUID($user_key: String!) {
     "client_secret",
     type=click.STRING,
     required=True,
+    envvar="FASTRAMQPI__CLIENT_SECRET",
     help="Keycloak client secret",
 )
 @click.option(
     "--mo-base-url",
     "mo_base_url",
     type=click.STRING,
-    default="http://mo-service:5000",
+    default="http://mo:5000",
     help="Base URL for calling MO",
+)
+@click.option(
+    "--institution-identifier",
+    required=True,
+    help="The test institution to use (7N, 7U, 7V)",
 )
 def main(
     auth_server: AnyHttpUrl,
     client_id: str,
     client_secret: str,
     mo_base_url: str,
+    institution_identifier: str,
 ):
     with open("/tmp/adm_org.json", "r") as file:
         units = json.load(file)
@@ -149,7 +156,7 @@ def main(
             unit_uuids = set()
             for r in current["related_units"]:
                 user_key = one(r["org_units"])["user_key"]
-                user_key = "7N" + user_key[2:]
+                user_key = institution_identifier + user_key[2:]
                 if user_key not in pay_unit_cache:
                     resp = await gql_client.execute(
                         find_unit_query, variables={"user_key": user_key}
