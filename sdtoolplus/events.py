@@ -26,6 +26,7 @@ from fastapi import Depends
 from fastapi import HTTPException
 from fastramqpi.context import Context
 from fastramqpi.events import Event
+from more_itertools import last
 from more_itertools import one
 from more_itertools import only
 from pydantic import Json
@@ -304,12 +305,24 @@ async def _mo_org_unit(
     mo_org_unit_uuid = event.subject
     logger.info("Received MO OU event", uuid=str(mo_org_unit_uuid))
 
+    assert settings.mo_subtree_paths_for_root is not None
     mo_org_units = await gql_client.get_org_unit_user_keys(
         input=OrganisationUnitFilter(
+            from_date=None,
+            to_date=None,
             uuids=[mo_org_unit_uuid],
+            ancestor=OrganisationUnitFilter(
+                # Ensure that we only process units from SD
+                uuids=[
+                    last(path) for path in settings.mo_subtree_paths_for_root.values()
+                ],
+            ),
         )
     )
-    mo_org_unit = one(mo_org_units.objects)
+    mo_org_unit = only(mo_org_units.objects)
+    if mo_org_unit is None:
+        logger.debug("Non-SD unit: ignoring", uuid=str(mo_org_unit_uuid))
+        return
 
     # Even though we have the org unit's SD UUID, we also need an institution
     # identifier to look it up in the SD API. Assume that the user-key does not
@@ -322,7 +335,7 @@ async def _mo_org_unit(
     except ValueError:
         logger.warning(
             "Org unit has no institution identifier prefix: ignoring",
-            uuid=mo_org_unit_uuid,
+            uuid=str(mo_org_unit_uuid),
         )
         return
 
