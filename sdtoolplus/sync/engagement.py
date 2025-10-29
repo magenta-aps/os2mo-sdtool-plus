@@ -12,6 +12,7 @@ from more_itertools import first
 from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
+from sdclient.exceptions import SDEmploymentNotFound
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
@@ -408,6 +409,9 @@ async def engagement_ou_strategy(
     Combined state/strategy pattern choosing an OU timeline strategy based on
     the state specified in the application settings.
     """
+    if sd_eng_timeline == EngagementTimeline():
+        return sd_eng_timeline
+
     if settings.mode == Mode.MUNICIPALITY:
         if settings.apply_ny_logic:
             return await engagement_ou_strategy_elevate_to_ny_level(
@@ -548,6 +552,15 @@ async def sync_engagement(
                 emp_id=employment_identifier,
             )
             return
+    except SDEmploymentNotFound:
+        logger.warning(
+            "SD employment not found. Terminating engagement in MO",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            emp_id=employment_identifier,
+        )
+        sd_eng_timeline = EngagementTimeline()
+        sd_leave_timeline = LeaveTimeline()
     except SDRootElementNotFound as sd_error:
         logger.warning(
             "Could not read employment from SD",
