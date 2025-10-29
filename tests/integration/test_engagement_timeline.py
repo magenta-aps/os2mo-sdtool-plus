@@ -3016,7 +3016,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
 
 
 @pytest.mark.integration_test
-async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
+async def test_eng_timeline_delete_engagement_and_leave_not_found_in_sd(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
@@ -3037,6 +3037,8 @@ async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
     MO (ext_7)              |----v1----|
     MO (active)             |----------|
     MO (eng_type)           |---full---|
+
+    MO (leave)              |----------|
 
     "Arrange" intervals     |-----1----|
 
@@ -3070,17 +3072,34 @@ async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
     )
 
     # Create engagement (arrange interval 1)
-    await graphql_client.create_engagement(
-        EngagementCreateInput(
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(start=t1, end=t2),
+                extension_1="name4",
+                extension_4="dep1",
+                extension_7="v1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Leave type
+    r_leave_type = await graphql_client.get_class(ClassFilter(user_keys=["Orlov"]))
+    leave_type = one(r_leave_type.objects).uuid
+
+    # Create leave (arrange interval 1)
+    await graphql_client.create_leave(
+        LeaveCreateInput(
             user_key=emp_id,
-            validity=timeline_interval_to_mo_validity(start=t1, end=t2),
-            extension_1="name4",
-            extension_4="dep1",
-            extension_7="v1",
             person=person_uuid,
-            org_unit=dep1_uuid,
-            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
-            job_function=job_function_1234,
+            engagement=eng_uuid,
+            leave_type=leave_type,
+            validity=timeline_interval_to_mo_validity(start=t1, end=t2),
         )
     )
 
@@ -3117,7 +3136,7 @@ async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
     )
 
     # Assert
-    assert r.status_code == 500
+    assert r.status_code == 200
 
     updated_eng = await graphql_client.get_engagement_timeline(
         get_engagement_filter(
@@ -3125,8 +3144,15 @@ async def test_eng_timeline_do_not_delete_engagement_not_found_in_sd(
         )
     )
 
-    # Make sure the MO engagement has not been deleted
-    assert updated_eng.objects
+    updated_leave = await graphql_client.get_leave(
+        LeaveFilter(
+            employees=[person_uuid], user_keys=[emp_id], from_date=None, to_date=None
+        )
+    )
+
+    # Make sure the MO engagement and leave has been deleted
+    assert not updated_eng.objects
+    assert not updated_leave.objects
 
 
 @pytest.mark.integration_test
