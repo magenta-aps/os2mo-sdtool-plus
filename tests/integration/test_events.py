@@ -3,6 +3,8 @@
 
 from datetime import date
 from datetime import datetime
+from unittest.mock import AsyncMock
+from unittest.mock import patch
 from uuid import UUID
 from uuid import uuid4
 
@@ -315,6 +317,57 @@ async def test_reconcile_org_unit_and_related_objects(
     await verify()
 
     # TODO: verify address sync
+
+
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "EVENT_BASED_SYNC": "true",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+@pytest.mark.integration_test
+@patch("sdtoolplus.events.sync_ou")
+async def test__mo_org_unit_only_process_sd_units(
+    mock_sync_ou: AsyncMock,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    org_unit_type: UUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+) -> None:
+    """
+    Make sure we only process the unit event if we are in the SD part
+    of the OU tree.
+    """
+    org_unit_uuid = uuid4()
+
+    # Create non-SD org unit
+    org_unit_uuid = (
+        await graphql_client.create_org_unit(
+            input=OrganisationUnitCreateInput(
+                uuid=org_unit_uuid,
+                validity=RAValidityInput(from_=datetime(2000, 1, 1), to=None),
+                name="Not an SD unit",
+                user_key="II-make-sure-we-would-pass-the-hyphen-filter",
+                parent=None,
+                org_unit_type=org_unit_type,
+                org_unit_level=org_unit_levels["Afdelings-niveau"],
+            )
+        )
+    ).uuid
+
+    # Ensure the unit is created before we assert
+    @retry()
+    async def verify() -> None:
+        mo_org_unit = await graphql_client.get_unit(org_unit_uuid)
+        assert mo_org_unit.objects
+
+    await verify()
+
+    mock_sync_ou.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
