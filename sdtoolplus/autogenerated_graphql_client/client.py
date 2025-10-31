@@ -737,6 +737,7 @@ class GraphQLClient(AsyncBaseClient):
                     person {
                       cpr_number
                     }
+                    engagement_type_uuid
                   }
                 }
               }
