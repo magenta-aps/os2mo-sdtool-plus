@@ -3186,6 +3186,7 @@ async def test_eng_timeline_only_process_sd_engagements(
 
     t1 = datetime(2001, 1, 1, tzinfo=tz)
     t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
 
     # Units
     dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
@@ -3241,6 +3242,20 @@ async def test_eng_timeline_only_process_sd_engagements(
             )
         )
     ).uuid
+
+    # Make sure the SD engagement has multiple engagement types (introduced
+    # due to a regression in the code)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=sd_eng_uuid,
+            user_key=sd_user_key,
+            validity=timeline_interval_to_mo_validity(start=t2, end=t3),
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=sd_eng_types[EngType.MONTHLY_PART_TIME],
+            job_function=job_function_1234,
+        )
+    )
 
     sd_resp = """<?xml version="1.0" encoding="UTF-8"?>
         <Envelope>
