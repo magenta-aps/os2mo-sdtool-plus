@@ -74,6 +74,9 @@ facets:
     timelønnet:
       title: "Timelønnet"
       scope: "TEXT"
+    nonSD:
+      title: "Non-SD"
+      scope: "TEXT"
   engagement_job_function:
     Ninja:
       title: "Ninja"

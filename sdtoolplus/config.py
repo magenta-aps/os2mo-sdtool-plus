@@ -97,6 +97,9 @@ class SDToolPlusSettings(BaseSettings):
     # If true, we prefix the engagement user keys in "municipality" mode
     prefix_engagement_user_keys: bool = False
 
+    # A list of engagement type user keys which the application is allowed to process
+    engagement_types_to_process: list[str] = ["timelønnet", "deltid", "fuldtid"]
+
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
     # If true, we only process SD events and not MO events

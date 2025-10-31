@@ -32,6 +32,7 @@ class GetEngagementsEngagementsObjectsValidities(BaseModel):
     user_key: str
     validity: "GetEngagementsEngagementsObjectsValiditiesValidity"
     person: List["GetEngagementsEngagementsObjectsValiditiesPerson"]
+    engagement_type_uuid: UUID
 
 
 class GetEngagementsEngagementsObjectsValiditiesValidity(BaseModel):
