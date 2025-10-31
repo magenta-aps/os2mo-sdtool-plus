@@ -249,11 +249,13 @@ async def _mo_engagement(
         logger.info("Engagement not found", mo_engagement_uuid=str(mo_engagement_uuid))
         return
 
-    mo_engagement_engagement_type_uuid = one(
-        {validity.engagement_type_uuid for validity in mo_engagement.validities}
+    mo_engagement_engagement_type_uuids = set(
+        validity.engagement_type_uuid for validity in mo_engagement.validities
     )
-    allowed_engagement_types = await get_engagement_types(gql_client=gql_client)
-    if mo_engagement_engagement_type_uuid not in allowed_engagement_types.values():
+    allowed_engagement_types = set(
+        (await get_engagement_types(gql_client=gql_client)).values()
+    )
+    if mo_engagement_engagement_type_uuids.difference(allowed_engagement_types):
         logger.info(
             "Non-SD engagement type. Skipping",
             mo_engagement_uuid=str(mo_engagement_uuid),
