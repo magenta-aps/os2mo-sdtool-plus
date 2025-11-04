@@ -42,14 +42,14 @@ async def get_engagement_types(gql_client: GraphQLClient) -> dict[EngType, UUID]
     Get map from engagement type (Enum) to MO engagement type class UUID
     """
     r_eng_types = await gql_client.get_class(
-        ClassFilter(facet=FacetFilter(user_keys=["engagement_type"]))
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_type"]),
+            user_keys=[eng_type.value for eng_type in EngType],
+        )
     )
 
     relevant_classes = (
-        obj.current
-        for obj in r_eng_types.objects
-        if obj.current is not None
-        and obj.current.user_key in (eng_type.value for eng_type in EngType)
+        obj.current for obj in r_eng_types.objects if obj.current is not None
     )
 
     return {EngType(clazz.user_key): clazz.uuid for clazz in relevant_classes}
@@ -65,14 +65,14 @@ async def get_engagement_types_to_process(
     variable.
     """
     r_eng_types = await gql_client.get_class(
-        ClassFilter(facet=FacetFilter(user_keys=["engagement_type"]))
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_type"]),
+            user_keys=settings.engagement_types_to_process,
+        )
     )
 
     relevant_classes = (
-        obj.current
-        for obj in r_eng_types.objects
-        if obj.current is not None
-        and obj.current.user_key in settings.engagement_types_to_process
+        obj.current for obj in r_eng_types.objects if obj.current is not None
     )
 
     return set(clazz.uuid for clazz in relevant_classes)
