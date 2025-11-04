@@ -98,7 +98,12 @@ class SDToolPlusSettings(BaseSettings):
     prefix_engagement_user_keys: bool = False
 
     # A list of engagement type user keys which the application is allowed to process
-    engagement_types_to_process: list[str] = ["timelønnet", "deltid", "fuldtid"]
+    engagement_types_to_process: list[str] = [
+        "timelønnet",
+        "deltid",
+        "fuldtid",
+        "recalculate",
+    ]
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
