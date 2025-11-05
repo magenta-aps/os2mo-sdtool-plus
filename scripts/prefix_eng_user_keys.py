@@ -36,6 +36,21 @@ async def update_engagement(
         facet_user_key="engagement_type",
         class_user_key="timeløn",
     )
+    eng_type_new_hourly_paid_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="engagement_type",
+        class_user_key="timelønnet",
+    )
+    eng_type_part_time_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="engagement_type",
+        class_user_key="deltid",
+    )
+    eng_type_full_time_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="engagement_type",
+        class_user_key="fuldtid",
+    )
 
     next_cursor = None
     while True:
@@ -85,6 +100,9 @@ async def update_engagement(
                     if validity.engagement_type_uuid not in [
                         eng_type_monthly_paid_uuid,
                         eng_type_hourly_paid_uuid,
+                        eng_type_new_hourly_paid_uuid,
+                        eng_type_part_time_uuid,
+                        eng_type_full_time_uuid,
                     ]:
                         break
                     if not dry_run:
