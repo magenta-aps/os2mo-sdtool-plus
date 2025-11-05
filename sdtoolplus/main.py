@@ -3,7 +3,6 @@
 import asyncio
 import datetime
 import re
-from copy import copy
 from typing import Any
 from uuid import UUID
 
@@ -72,59 +71,80 @@ from .tree_tools import tree_as_string
 logger = structlog.stdlib.get_logger()
 
 
-MO_LISTENERS = [
-    Listener(
-        namespace="mo",
-        user_key="engagement",
-        routing_key="engagement",
-        path="/events/mo/engagement",
-        parallelism=3,
-    ),
-    Listener(
-        namespace="mo",
-        user_key="org_unit",
-        routing_key="org_unit",
-        path="/events/mo/org-unit",
-        # The org unit handler requeues its parent/children with priority
-        # +1/-1. We don't understand the implications of doing this in
-        # parallel.
-        parallelism=1,
-    ),
-    Listener(
-        namespace="mo",
-        user_key="person",
-        routing_key="person",
-        path="/events/mo/person",
-        parallelism=3,
-    ),
-]
+def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
+    listeners: list[Listener] = []
+    if not settings.event_based_sync:
+        return listeners
+    if not settings.disable_sd_events:
+        if not settings.disable_sd_ou_events:
+            listeners.append(
+                Listener(
+                    namespace="sd",
+                    user_key="org",
+                    routing_key="org",
+                    path="/events/sd/org",
+                    # The org unit handler requeues its parent/children with priority
+                    # +1/-1. We don't understand the implications of doing this in
+                    # parallel.
+                    parallelism=1,
+                )
+            )
+        if not settings.disable_sd_person_events:
+            listeners.append(
+                Listener(
+                    namespace="sd",
+                    user_key="person",
+                    routing_key="person",
+                    path="/events/sd/person",
+                    parallelism=3,
+                )
+            )
+        if not settings.disable_sd_engagement_events:
+            listeners.append(
+                Listener(
+                    namespace="sd",
+                    user_key="employment",
+                    routing_key="employment",
+                    path="/events/sd/employment",
+                    parallelism=3,
+                )
+            )
+    if not settings.disable_mo_events:
+        if not settings.disable_mo_ou_events:
+            listeners.append(
+                Listener(
+                    namespace="mo",
+                    user_key="org_unit",
+                    routing_key="org_unit",
+                    path="/events/mo/org-unit",
+                    # The org unit handler requeues its parent/children with priority
+                    # +1/-1. We don't understand the implications of doing this in
+                    # parallel.
+                    parallelism=1,
+                )
+            )
+        if not settings.disable_mo_person_events:
+            listeners.append(
+                Listener(
+                    namespace="mo",
+                    user_key="person",
+                    routing_key="person",
+                    path="/events/mo/person",
+                    parallelism=3,
+                )
+            )
+        if not settings.disable_mo_engagement_events:
+            listeners.append(
+                Listener(
+                    namespace="mo",
+                    user_key="engagement",
+                    routing_key="engagement",
+                    path="/events/mo/engagement",
+                    parallelism=3,
+                )
+            )
 
-SD_LISTENERS = [
-    Listener(
-        namespace="sd",
-        user_key="employment",
-        routing_key="employment",
-        path="/events/sd/employment",
-        parallelism=3,
-    ),
-    Listener(
-        namespace="sd",
-        user_key="org",
-        routing_key="org",
-        path="/events/sd/org",
-        # The org unit handler requeues its parent/children with priority
-        # +1/-1. We don't understand the implications of doing this in
-        # parallel.
-        parallelism=1,
-    ),
-    Listener(
-        namespace="sd",
-        user_key="person",
-        routing_key="person",
-        path="/events/sd/person",
-        parallelism=3,
-    ),
-]
+    return listeners
 
 
 async def run_db_start_operations(
@@ -196,10 +216,6 @@ async def background_run(
 def create_fastramqpi() -> FastRAMQPI:
     settings = SDToolPlusSettings()
 
-    listeners = copy(SD_LISTENERS)
-    if not settings.disable_mo_events:
-        listeners.extend(MO_LISTENERS)
-
     fastramqpi = FastRAMQPI(
         application_name="os2mo-sdtool-plus",
         settings=settings.fastramqpi,
@@ -209,7 +225,7 @@ def create_fastramqpi() -> FastRAMQPI:
             declare_namespaces=[
                 Namespace(name="sd"),
             ],
-            declare_listeners=listeners if settings.event_based_sync else [],
+            declare_listeners=_configure_listeners(settings),
         ),
     )
     fastramqpi.add_context(settings=settings)
