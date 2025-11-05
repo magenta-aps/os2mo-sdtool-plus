@@ -16,6 +16,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sdtoolplus.app import App
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.db.rundb import Status
+from sdtoolplus.main import _configure_listeners
 from sdtoolplus.main import background_run
 from sdtoolplus.main import create_app
 
@@ -338,3 +339,108 @@ async def test_background_run(
             mock_persist_status.assert_called_once_with(mock_engine, Status.COMPLETED)
         else:
             mock_persist_status.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "event_based_sync,"
+    "disable_sd_events,"
+    "disable_sd_ou_events,"
+    "disable_sd_person_events,"
+    "disable_sd_engagement_events,"
+    "disable_mo_events,"
+    "disable_mo_ou_events,"
+    "disable_mo_person_events,"
+    "disable_mo_engagement_events,"
+    "expected",
+    [
+        (False, False, False, False, False, False, False, False, False, []),
+        (
+            True,
+            True,
+            False,
+            False,
+            False,
+            False,
+            True,
+            True,
+            False,
+            [{"namespace": "mo", "routing_key": "engagement"}],
+        ),
+        (
+            True,
+            False,
+            False,
+            True,
+            False,
+            True,
+            True,
+            True,
+            True,
+            [
+                {"namespace": "sd", "routing_key": "org"},
+                {"namespace": "sd", "routing_key": "employment"},
+            ],
+        ),
+        (
+            True,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            False,
+            [
+                {"namespace": "sd", "routing_key": "org"},
+                {"namespace": "sd", "routing_key": "person"},
+                {"namespace": "sd", "routing_key": "employment"},
+                {"namespace": "mo", "routing_key": "org_unit"},
+                {"namespace": "mo", "routing_key": "person"},
+                {"namespace": "mo", "routing_key": "engagement"},
+            ],
+        ),
+    ],
+)
+def test__configure_listeners(
+    event_based_sync: bool,
+    disable_sd_events: bool,
+    disable_sd_ou_events: bool,
+    disable_sd_person_events: bool,
+    disable_sd_engagement_events: bool,
+    disable_mo_events: bool,
+    disable_mo_ou_events: bool,
+    disable_mo_person_events: bool,
+    disable_mo_engagement_events: bool,
+    expected: list[dict[str, str]],
+    sdtoolplus_settings: SDToolPlusSettings,
+) -> None:
+    # Arrange
+    settings = sdtoolplus_settings.dict()
+    settings.update(
+        {
+            "event_based_sync": event_based_sync,
+            "disable_sd_events": disable_sd_events,
+            "disable_sd_ou_events": disable_sd_ou_events,
+            "disable_sd_person_events": disable_sd_person_events,
+            "disable_sd_engagement_events": disable_sd_engagement_events,
+            "disable_mo_events": disable_mo_events,
+            "disable_mo_ou_events": disable_mo_ou_events,
+            "disable_mo_person_events": disable_mo_person_events,
+            "disable_mo_engagement_events": disable_mo_engagement_events,
+        }
+    )
+
+    # Act
+    listerners = _configure_listeners(SDToolPlusSettings.parse_obj(settings))
+
+    # Assert
+    listeners_dicts = [
+        {
+            "namespace": listener.namespace,
+            "routing_key": listener.routing_key,
+        }
+        for listener in listerners
+    ]
+
+    assert listeners_dicts == expected

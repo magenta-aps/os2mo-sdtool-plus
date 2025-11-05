@@ -107,8 +107,24 @@ class SDToolPlusSettings(BaseSettings):
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
-    # If true, we only process SD events and not MO events
+
+    # TODO: remove all these and use a list of Literals or Enums instead
+    # If true, we disable all SD events
+    disable_sd_events: bool = False
+    # If true, we disable all SD org unit events
+    disable_sd_ou_events: bool = False
+    # If true, we disable all SD person events
+    disable_sd_person_events: bool = False
+    # If true, we disable all SD engagement events
+    disable_sd_engagement_events: bool = False
+    # If true, we disable all MO events
     disable_mo_events: bool = False
+    # If true, we disable all MO org unit events
+    disable_mo_ou_events: bool = False
+    # If true, we disable all MO person events
+    disable_mo_person_events: bool = False
+    # If true, we disable all MO engagement events
+    disable_mo_engagement_events: bool = False
 
     # SD AMQP
     sd_amqp: SDAMQPSettings | None = None
