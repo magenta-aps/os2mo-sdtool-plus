@@ -107,6 +107,8 @@ class SDToolPlusSettings(BaseSettings):
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False
+
+    # TODO: remove all these and use a list of Literals or Enums instead
     # If true, we disable all SD events
     disable_sd_events: bool = False
     # If true, we disable all SD org unit events
