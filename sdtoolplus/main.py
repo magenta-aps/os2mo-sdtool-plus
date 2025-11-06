@@ -236,7 +236,8 @@ def create_fastramqpi() -> FastRAMQPI:
     sd_client = SDClient(
         sd_username=settings.sd_username,
         sd_password=settings.sd_password.get_secret_value(),
-        use_test_env=settings.sd_use_test_env,
+        url_subpath_xml_endpoints=settings.sd_url_subpath_xml_endpoints,
+        url_subpath_json_endpoints=settings.sd_url_subpath_json_endpoints,
     )
     fastramqpi.add_context(sd_client=sd_client)
 

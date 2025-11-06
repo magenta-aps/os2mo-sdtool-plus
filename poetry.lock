@@ -218,13 +218,13 @@ tz = ["tzdata"]
 
 [[package]]
 name = "another-sd-client"
-version = "3.2.4"
+version = "4.0.0"
 description = "Client for communicating with SD Løn"
 optional = false
 python-versions = "<4.0,>=3.11"
 files = [
-    {file = "another_sd_client-3.2.4-py3-none-any.whl", hash = "sha256:baf89241747a7fb6d3aff422869b9864a3aa5afc247603e0ae72a8d5fbd8af6c"},
-    {file = "another_sd_client-3.2.4.tar.gz", hash = "sha256:5215af149cddcae4e0e8d197fecf56cac35916253b3bd90f45f2ecfed8c30bbc"},
+    {file = "another_sd_client-4.0.0-py3-none-any.whl", hash = "sha256:b06888e0b3fab6353f19450c5e7bdfca1f4f71f165a0b0ac8276b08f9e9276f4"},
+    {file = "another_sd_client-4.0.0.tar.gz", hash = "sha256:5f2b6f232106670deb2fa074a49cc8817027db5a495a0359580716c32e2d4f9c"},
 ]
 
 [package.dependencies]
@@ -1442,17 +1442,16 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "hypothesis"
-version = "6.144.1"
+version = "6.146.0"
 description = "A library for property-based testing"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "hypothesis-6.144.1-py3-none-any.whl", hash = "sha256:18aef956f5105483cde4288e2385047cae987be67ea20efff7b77815ed95c858"},
-    {file = "hypothesis-6.144.1.tar.gz", hash = "sha256:c8d625ec37b43518c042adb93b59ec56ee8c14016699a165de5e5d5926c5a691"},
+    {file = "hypothesis-6.146.0-py3-none-any.whl", hash = "sha256:aef4a9cd82cdb51173decfc37c16a71c8f89e4b60111bafe39615a4c19de5f57"},
+    {file = "hypothesis-6.146.0.tar.gz", hash = "sha256:542b8a6b7c4ab15a3a259893cd646b4e324ac332b4d19901abd68a79790dd963"},
 ]
 
 [package.dependencies]
-attrs = ">=22.2.0"
 sortedcontainers = ">=2.1.0,<3.0.0"
 
 [package.extras]
@@ -1673,13 +1672,13 @@ testing = ["pytest"]
 
 [[package]]
 name = "markdown"
-version = "3.9"
+version = "3.10"
 description = "Python implementation of John Gruber's Markdown."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 files = [
-    {file = "markdown-3.9-py3-none-any.whl", hash = "sha256:9f4d91ed810864ea88a6f32c07ba8bee1346c0cc1f6b1f9f6c822f2a9667d280"},
-    {file = "markdown-3.9.tar.gz", hash = "sha256:d2900fe1782bd33bdbbd56859defef70c2e78fc46668f8eb9df3128138f2cb6a"},
+    {file = "markdown-3.10-py3-none-any.whl", hash = "sha256:b5b99d6951e2e4948d939255596523444c0e677c669700b1d17aa4a8a464cb7c"},
+    {file = "markdown-3.10.tar.gz", hash = "sha256:37062d4f2aa4b2b6b32aefb80faa300f82cc790cb949a35b8caede34f2b68c0e"},
 ]
 
 [package.extras]
@@ -2637,13 +2636,13 @@ six = ">=1.5"
 
 [[package]]
 name = "pytokens"
-version = "0.2.0"
-description = "A Fast, spec compliant Python 3.13+ tokenizer that runs on older Pythons."
+version = "0.3.0"
+description = "A Fast, spec compliant Python 3.14+ tokenizer that runs on older Pythons."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytokens-0.2.0-py3-none-any.whl", hash = "sha256:74d4b318c67f4295c13782ddd9abcb7e297ec5630ad060eb90abf7ebbefe59f8"},
-    {file = "pytokens-0.2.0.tar.gz", hash = "sha256:532d6421364e5869ea57a9523bf385f02586d4662acbcc0342afd69511b4dd43"},
+    {file = "pytokens-0.3.0-py3-none-any.whl", hash = "sha256:95b2b5eaf832e469d141a378872480ede3f251a5a5041b8ec6e581d3ac71bbf3"},
+    {file = "pytokens-0.3.0.tar.gz", hash = "sha256:2f932b14ed08de5fcf0b391ace2642f858f1394c0857202959000b68ed7a458a"},
 ]
 
 [package.extras]
@@ -3469,4 +3468,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "32a3ce4103ad4818f0f31f5fbc4ec4437e6786b51648398b27f7993168ef54a0"
+content-hash = "657da634680d2dbf590e01aadb038cca8d748e728aaa5f8c36df207e95617b9c"
