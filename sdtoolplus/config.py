@@ -82,7 +82,8 @@ class SDToolPlusSettings(BaseSettings):
     sd_institution_identifier: str
     sd_region_identifier: str | None = None
     sd_password: SecretStr
-    sd_use_test_env: bool = False
+    sd_url_subpath_xml_endpoints: str = ""
+    sd_url_subpath_json_endpoints: str = ""
 
     # Whether to run in "municipality" mode or "region" mode.
     # In "municipality" mode, we

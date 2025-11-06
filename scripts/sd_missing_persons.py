@@ -43,7 +43,8 @@ async def missing_persons(
     sd_client = SDClient(
         settings.sd_username,
         settings.sd_password.get_secret_value(),
-        use_test_env=settings.sd_use_test_env,
+        url_subpath_xml_endpoints=settings.sd_url_subpath_xml_endpoints,
+        url_subpath_json_endpoints=settings.sd_url_subpath_json_endpoints,
     )
 
     logger.info("Getting person events")
