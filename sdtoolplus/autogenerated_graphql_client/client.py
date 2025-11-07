@@ -357,6 +357,10 @@ class GraphQLClient(AsyncBaseClient):
                       user_key
                       scope
                     }
+                    validity {
+                      from
+                      to
+                    }
                   }
                 }
               }
