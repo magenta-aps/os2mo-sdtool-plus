@@ -306,8 +306,9 @@ def create_fastramqpi() -> FastRAMQPI:
         sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
-    ) -> None:
+    ) -> dict:
         await sync_professions(sd_client, graphql_client, institution_identifier)
+        return {"msg": "Job function sync completed!"}
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(
