@@ -128,6 +128,10 @@ query GetClass($class_filter: ClassFilter!, $at: DateTime) {
           user_key
           scope
         }
+        validity {
+          from
+          to
+        }
       }
     }
   }
