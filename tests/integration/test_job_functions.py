@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from unittest import TestCase
 from unittest.mock import ANY
 
@@ -197,3 +198,105 @@ async def test_sync_job_positions(
         ),
     ]
     TestCase().assertCountEqual(actual.objects, expected)
+
+
+@pytest.mark.integration_test
+async def test_sync_job_positions_force_class_start_date(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    # Arrange
+    engagement_job_function_uuid = one(
+        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
+    ).uuid
+
+    doctors_9001_3 = await graphql_client.create_class(
+        ClassCreateInput(
+            facet_uuid=engagement_job_function_uuid,
+            user_key="9001",
+            name="wrong name",
+            scope="3",
+            parent_uuid=None,
+            validity=ValidityInput(
+                from_="2000-01-01T00:00:00+00:00",
+                to=None,
+            ),
+        )
+    )
+    await graphql_client.create_class(
+        ClassCreateInput(
+            facet_uuid=engagement_job_function_uuid,
+            user_key="95",
+            name="3F, SL, FOA",
+            scope="0",
+            parent_uuid=doctors_9001_3.uuid,  # wrong parent
+            validity=ValidityInput(
+                from_="2000-01-01T00:00:00+00:00",
+                to=None,
+            ),
+        )
+    )
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content="""<?xml version="1.0" encoding="UTF-8"?>
+          <GetProfession20080201 creationTime="2025-03-19T11:10:16">
+            <RequestKey>
+              <InstitutionIdentifier>II</InstitutionIdentifier>
+            </RequestKey>
+            <Profession>
+              <JobPositionIdentifier>9001</JobPositionIdentifier>
+              <JobPositionName>Lægepersonale</JobPositionName>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
+            </Profession>
+            <Profession>
+              <JobPositionIdentifier>9001</JobPositionIdentifier>
+              <JobPositionName>Lægepersonale</JobPositionName>
+              <JobPositionLevelCode>3</JobPositionLevelCode>
+              <Profession>
+                <JobPositionIdentifier>9020</JobPositionIdentifier>
+                <JobPositionName>Lægepersonale</JobPositionName>
+                <JobPositionLevelCode>2</JobPositionLevelCode>
+                <Profession>
+                  <JobPositionIdentifier>6030</JobPositionIdentifier>
+                  <JobPositionName>Lægevagt</JobPositionName>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
+                </Profession>
+                <Profession>
+                  <JobPositionIdentifier>9021</JobPositionIdentifier>
+                  <JobPositionName>Lægelig chef</JobPositionName>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
+                </Profession>
+              </Profession>
+            </Profession>
+            <Profession>
+              <JobPositionIdentifier>95</JobPositionIdentifier>
+              <JobPositionName>3F, SL, FOA</JobPositionName>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
+            </Profession>
+          </GetProfession20080201>
+        """,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/job-functions/sync?force_class_start_date=1930-01-01",
+        params={"institution_identifier": "II"},
+    )
+    assert r.status_code == 200
+
+    # Assert
+    job_function_classes = await graphql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
+            user_keys=["9001", "9020", "9021", "6030", "95"],
+        )
+    )
+
+    for obj in job_function_classes.objects:
+        assert obj.current is not None
+        assert obj.current.validity.from_ is not None
+        assert obj.current.validity.from_.date() == date(1930, 1, 1)
