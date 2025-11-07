@@ -103,6 +103,7 @@ class SDToolPlusSettings(BaseSettings):
         "timelønnet",
         "deltid",
         "fuldtid",
+        "ekstern",
         "recalculate",
     ]
 

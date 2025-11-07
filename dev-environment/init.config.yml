@@ -74,6 +74,9 @@ facets:
     timelønnet:
       title: "Timelønnet"
       scope: "TEXT"
+    ekstern:
+      title: "Ekstern, ikke lønnet"
+      scope: "TEXT"
     nonSD:
       title: "Non-SD"
       scope: "TEXT"

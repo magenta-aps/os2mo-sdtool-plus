@@ -111,6 +111,7 @@ class EngType(Enum):
     MONTHLY_FULL_TIME = "fuldtid"
     MONTHLY_PART_TIME = "deltid"
     HOURLY = "timelønnet"
+    EXTERNAL = "ekstern"
     # Work-around due to a bad class state in MO where multiple engagement type classes
     # have been in use. The recalculate key/value can be removed once go into production
     RECALCULATE = "recalculate"
