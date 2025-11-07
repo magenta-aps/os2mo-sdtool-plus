@@ -125,6 +125,7 @@ async def test_sync_job_positions(
                 name="Lægepersonale",
                 scope="0",
                 parent=None,
+                validity=ANY,
             ),
         ),
         Class.construct(
@@ -135,6 +136,7 @@ async def test_sync_job_positions(
                 name="Lægepersonale",
                 scope="3",
                 parent=None,
+                validity=ANY,
             ),
         ),
         Class.construct(
@@ -149,6 +151,7 @@ async def test_sync_job_positions(
                     user_key="9001",
                     scope="3",
                 ),
+                validity=ANY,
             ),
         ),
         Class.construct(
@@ -163,6 +166,7 @@ async def test_sync_job_positions(
                     user_key="9020",
                     scope="2",
                 ),
+                validity=ANY,
             ),
         ),
         Class.construct(
@@ -177,6 +181,7 @@ async def test_sync_job_positions(
                     user_key="9020",
                     scope="2",
                 ),
+                validity=ANY,
             ),
         ),
         Class.construct(
@@ -187,6 +192,7 @@ async def test_sync_job_positions(
                 name="3F, SL, FOA",
                 scope="0",
                 parent=None,
+                validity=ANY,
             ),
         ),
     ]
