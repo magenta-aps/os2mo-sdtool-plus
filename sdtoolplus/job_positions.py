@@ -203,6 +203,7 @@ async def sync_professions(
     sd_client: SDClient,
     graphql_client: GraphQLClient,
     institution_identifier: str,
+    force_class_start_date: date | None = None,
 ) -> None:
     logger.info("Synchronising professions")
     mo_engagement_job_function_uuid = one(
@@ -220,4 +221,5 @@ async def sync_professions(
             mo_engagement_job_function_uuid,
             sd_parent,
             sd_profession,
+            force_class_start_date,
         )
