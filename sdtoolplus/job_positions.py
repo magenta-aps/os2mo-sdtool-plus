@@ -143,8 +143,8 @@ async def sync(
         return
 
     # MO does not support datetimes with a time 🥲
-    now = datetime.now(tz=TIMEZONE)
-    now = datetime.combine(now, time.min, now.tzinfo)
+    class_from = datetime.now(tz=TIMEZONE)
+    class_from = datetime.combine(class_from, time.min, class_from.tzinfo)
 
     # Class is missing; create
     if actual is None:
@@ -155,7 +155,7 @@ async def sync(
             name=desired.name,
             scope=desired.scope,
             parent_uuid=desired.parent,
-            validity=ValidityInput(from_=now, to=None),
+            validity=ValidityInput(from_=class_from, to=None),
         )
         logger.info("Creating missing job function", input=create_input)
         await graphql_client.create_class(create_input)
@@ -169,7 +169,7 @@ async def sync(
         name=desired.name,
         scope=desired.scope,
         parent_uuid=desired.parent,
-        validity=ValidityInput(from_=now, to=None),
+        validity=ValidityInput(from_=class_from, to=None),
     )
     logger.info("Updating incorrect job function", input=update_input)
     await graphql_client.update_class(update_input)
