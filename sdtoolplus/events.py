@@ -217,6 +217,8 @@ async def _sd_employment(
     event: Event[Json[EmploymentGraphQLEvent]],
 ) -> None:
     engagement = event.subject
+    logger.info("Received SD engagement event", subject=engagement)
+
     await sync_engagement(
         sd_client=sd_client,
         gql_client=gql_client,
@@ -305,6 +307,8 @@ async def _sd_org(
     event: Event[Json[OrgGraphQLEvent]],
 ) -> None:
     org = event.subject
+    logger.info("Received SD org event", subject=org)
+
     await sync_ou(
         sd_client=sd_client,
         gql_client=gql_client,
@@ -376,6 +380,8 @@ async def _sd_person(
     event: Event[Json[PersonGraphQLEvent]],
 ) -> None:
     person = event.subject
+    logger.info("Received SD person event", subject=person)
+
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
