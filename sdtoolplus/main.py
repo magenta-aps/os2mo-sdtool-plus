@@ -306,8 +306,11 @@ def create_fastramqpi() -> FastRAMQPI:
         sd_client: depends.SDClient,
         graphql_client: depends.GraphQLClient,
         institution_identifier: str,
+        force_class_start_date: datetime.date | None = None,
     ) -> None:
-        await sync_professions(sd_client, graphql_client, institution_identifier)
+        await sync_professions(
+            sd_client, graphql_client, institution_identifier, force_class_start_date
+        )
 
     @fastapi_router.post("/trigger", status_code=HTTP_200_OK)
     async def trigger(

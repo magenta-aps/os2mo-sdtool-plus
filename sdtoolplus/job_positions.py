@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import Iterator
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import date
 from datetime import datetime
 from datetime import time
 from uuid import UUID
@@ -118,7 +119,19 @@ async def sync(
     mo_engagement_job_function_uuid: UUID,
     sd_parent: ProfessionObj | None,
     sd_profession: ProfessionObj,
+    force_class_start_date: date | None = None,
 ) -> None:
+    """
+    Sync job functions.
+
+    Args:
+        force_class_start_date: Rewind the job function classes start date to this date.
+            Old instances of MO may be missing job function classes in the early parts
+            of an engagement timeline, since the job function sync per default is
+            syncing job functions per todays date. This argument can be used to force
+            job function classes to start from the given date. When set, all existing
+            job function class validities will be rewinded too.
+    """
     logger.info(
         "Synchronising job function",
         sd_parent=sd_parent.dict() if sd_parent is not None else None,
@@ -138,13 +151,15 @@ async def sync(
     )
     logger.debug(actual=actual, desired=desired)
 
-    if actual == desired:
+    if actual == desired and force_class_start_date is None:
         logger.info("Already up to date")
         return
 
     # MO does not support datetimes with a time 🥲
-    now = datetime.now(tz=TIMEZONE)
-    now = datetime.combine(now, time.min, now.tzinfo)
+    class_from = datetime.now(tz=TIMEZONE)
+    class_from = datetime.combine(class_from, time.min, class_from.tzinfo)
+    if force_class_start_date is not None:
+        class_from = datetime.combine(force_class_start_date, time.min, TIMEZONE)
 
     # Class is missing; create
     if actual is None:
@@ -155,7 +170,7 @@ async def sync(
             name=desired.name,
             scope=desired.scope,
             parent_uuid=desired.parent,
-            validity=ValidityInput(from_=now, to=None),
+            validity=ValidityInput(from_=class_from, to=None),
         )
         logger.info("Creating missing job function", input=create_input)
         await graphql_client.create_class(create_input)
@@ -169,7 +184,7 @@ async def sync(
         name=desired.name,
         scope=desired.scope,
         parent_uuid=desired.parent,
-        validity=ValidityInput(from_=now, to=None),
+        validity=ValidityInput(from_=class_from, to=None),
     )
     logger.info("Updating incorrect job function", input=update_input)
     await graphql_client.update_class(update_input)
@@ -188,6 +203,7 @@ async def sync_professions(
     sd_client: SDClient,
     graphql_client: GraphQLClient,
     institution_identifier: str,
+    force_class_start_date: date | None = None,
 ) -> None:
     logger.info("Synchronising professions")
     mo_engagement_job_function_uuid = one(
@@ -205,4 +221,5 @@ async def sync_professions(
             mo_engagement_job_function_uuid,
             sd_parent,
             sd_profession,
+            force_class_start_date,
         )

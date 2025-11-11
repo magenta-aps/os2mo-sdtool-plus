@@ -83,6 +83,7 @@ from .get_class import GetClassClasses
 from .get_class import GetClassClassesObjects
 from .get_class import GetClassClassesObjectsCurrent
 from .get_class import GetClassClassesObjectsCurrentParent
+from .get_class import GetClassClassesObjectsCurrentValidity
 from .get_engagement_timeline import GetEngagementTimeline
 from .get_engagement_timeline import GetEngagementTimelineEngagements
 from .get_engagement_timeline import GetEngagementTimelineEngagementsObjects
@@ -420,6 +421,7 @@ __all__ = [
     "GetClassClassesObjects",
     "GetClassClassesObjectsCurrent",
     "GetClassClassesObjectsCurrentParent",
+    "GetClassClassesObjectsCurrentValidity",
     "GetEngagementTimeline",
     "GetEngagementTimelineEngagements",
     "GetEngagementTimelineEngagementsObjects",
