@@ -38,6 +38,8 @@ from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
 from .delete_address import DeleteAddress
 from .delete_address import DeleteAddressAddressDelete
+from .delete_org_function import DeleteOrgFunction
+from .delete_org_function import DeleteOrgFunctionEngagementDelete
 from .get_actor import GetActor
 from .get_actor import GetActorMe
 from .get_address_timeline import GetAddressTimeline
@@ -939,6 +941,23 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TerminateLeave.parse_obj(data).leave_terminate
+
+    async def delete_org_function(
+        self, uuid: UUID
+    ) -> DeleteOrgFunctionEngagementDelete:
+        query = gql(
+            """
+            mutation DeleteOrgFunction($uuid: UUID!) {
+              engagement_delete(uuid: $uuid) {
+                uuid
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return DeleteOrgFunction.parse_obj(data).engagement_delete
 
     async def get_association_timeline(
         self, input: AssociationFilter

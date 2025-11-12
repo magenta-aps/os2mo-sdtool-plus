@@ -49,6 +49,8 @@ from .create_person import CreatePerson
 from .create_person import CreatePersonEmployeeCreate
 from .delete_address import DeleteAddress
 from .delete_address import DeleteAddressAddressDelete
+from .delete_org_function import DeleteOrgFunction
+from .delete_org_function import DeleteOrgFunctionEngagementDelete
 from .enums import AccessLogModel
 from .enums import FileStore
 from .enums import HardcodedActor
@@ -370,6 +372,8 @@ __all__ = [
     "CreatePersonEmployeeCreate",
     "DeleteAddress",
     "DeleteAddressAddressDelete",
+    "DeleteOrgFunction",
+    "DeleteOrgFunctionEngagementDelete",
     "DescendantParentBoundOrganisationUnitFilter",
     "EmployeeCreateInput",
     "EmployeeFilter",

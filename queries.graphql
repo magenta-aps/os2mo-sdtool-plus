@@ -437,6 +437,12 @@ mutation TerminateLeave($input: LeaveTerminateInput!) {
   }
 }
 
+mutation DeleteOrgFunction($uuid: UUID!) {
+  engagement_delete(uuid: $uuid) {
+    uuid
+  }
+}
+
 query GetAssociationTimeline($input: AssociationFilter!) {
   associations(filter: $input) {
     objects {
