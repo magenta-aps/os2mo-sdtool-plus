@@ -150,7 +150,7 @@ def main(
             create_org_hierarchy_class,
             variables={
                 "name": "Lønorganisation",
-                "user_key": "PAY_org",
+                "user_key": "PAY_ORG",
                 "uuid": pay_hierarchy_uuid,
                 "facet_uuid": hierarchy_facet_uuid,
             },
