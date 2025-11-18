@@ -141,7 +141,7 @@ def main(
             create_org_hierarchy_class,
             variables={
                 "name": "Administrativ organisation",
-                "user_key": "ADM_org",
+                "user_key": "ADM_ORG",
                 "uuid": adm_hierarchy_uuid,
                 "facet_uuid": hierarchy_facet_uuid,
             },
