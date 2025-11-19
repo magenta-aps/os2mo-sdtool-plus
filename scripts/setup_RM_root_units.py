@@ -58,35 +58,28 @@ def main(
     mo_base_url: str,
 ):
     """This script is intended to be run on an empty installation of MO and sets up the top units required for RSDs user-tests"""
-    hierarchy_facet_uuid = "4bfc9d5f-c910-4a90-9076-7f777aa516b1"
+    hierarchy_facet_uuid = "c27d67c0-6098-4500-9b41-dbee8481632d"
     # Fixed uuids to enable the same script to be run twice without creating duplicates
     adm_hierarchy_uuid = "ac085f9f-d611-4bae-8606-55972a4d1f69"
     pay_hierarchy_uuid = "55d5a67c-a87c-43c6-a9a5-d515298bc054"
 
     # RH units to create:
-    pay_8H_uuid = "3e8a13c1-fbbd-486a-aec6-997c9b3dc85f"
-    adm_org_uuid = "00923955-db6e-49fc-a191-ec36ff151ec7"
+    pay_8M_uuid = "85d7d079-8b49-494f-b4fa-a4c723b9c1ca"
+    adm_org_uuid = "a31465ad-e45c-4038-b91f-109d816e2d9e"
 
     units = [
         {
-            "uuid": pay_8H_uuid,
-            "name": "8H",
+            "uuid": pay_8M_uuid,
+            "name": "8M",
             "user_key": "-",
             "parent": None,
             "org_unit_hierarchy": pay_hierarchy_uuid,
         },
         {
             "uuid": adm_org_uuid,
-            "name": "Region Hovedstaden",
+            "name": "Region Midt",
             "user_key": "-",
             "parent": None,
-            "org_unit_hierarchy": adm_hierarchy_uuid,
-        },
-        {
-            "uuid": "81c77ebb-eb13-4d19-99d0-3507d023acd5",
-            "name": "Direktørområde 1",
-            "user_key": "-",  # Good enough for this test
-            "parent": adm_org_uuid,
             "org_unit_hierarchy": adm_hierarchy_uuid,
         },
     ]
