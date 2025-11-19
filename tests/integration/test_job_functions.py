@@ -101,6 +101,11 @@ async def test_sync_job_positions(
               <JobPositionName>3F, SL, FOA</JobPositionName>
               <JobPositionLevelCode>0</JobPositionLevelCode>
             </Profession>
+            <Profession>
+              <JobPositionIdentifier>9022</JobPositionIdentifier>
+              <JobPositionName/>
+              <JobPositionLevelCode>0</JobPositionLevelCode>
+            </Profession>
           </GetProfession20080201>
         """,
     )
@@ -114,7 +119,7 @@ async def test_sync_job_positions(
     actual = await graphql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=["9001", "9020", "9021", "6030", "95"],
+            user_keys=["9001", "9020", "9021", "9022", "6030", "95"],
         )
     )
     expected = [
@@ -191,6 +196,17 @@ async def test_sync_job_positions(
                 uuid=unions_95_0.uuid,
                 user_key="95",
                 name="3F, SL, FOA",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9022",
+                name="Ingen",
                 scope="0",
                 parent=None,
                 validity=ANY,
