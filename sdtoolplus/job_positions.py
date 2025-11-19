@@ -79,9 +79,6 @@ async def get_desired(
     sd_profession: ProfessionObj,
 ) -> Class:
     """Construct desired class based on SD profession."""
-    # A name is required at level 0. It can be empty at other levels.
-    assert sd_profession.JobPositionName is not None
-
     if sd_parent is None:
         mo_parent_uuid = None
     else:
@@ -108,7 +105,9 @@ async def get_desired(
     return Class(
         uuid=uuid4(),  # UUIDs are not imported from SD
         user_key=sd_profession.JobPositionIdentifier,
-        name=sd_profession.JobPositionName,
+        name=sd_profession.JobPositionName
+        if sd_profession.JobPositionName is not None
+        else "Ingen",
         scope=sd_profession.JobPositionLevelCode,
         parent=mo_parent_uuid,
     )
