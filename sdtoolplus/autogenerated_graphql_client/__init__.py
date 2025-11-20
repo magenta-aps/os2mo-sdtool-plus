@@ -111,6 +111,12 @@ from .get_leave import GetLeaveLeaves
 from .get_leave import GetLeaveLeavesObjects
 from .get_leave import GetLeaveLeavesObjectsValidities
 from .get_leave import GetLeaveLeavesObjectsValiditiesValidity
+from .get_org_unit import GetOrgUnit
+from .get_org_unit import GetOrgUnitOrgUnits
+from .get_org_unit import GetOrgUnitOrgUnitsObjects
+from .get_org_unit import GetOrgUnitOrgUnitsObjectsValidities
+from .get_org_unit import GetOrgUnitOrgUnitsObjectsValiditiesChildren
+from .get_org_unit import GetOrgUnitOrgUnitsObjectsValiditiesValidity
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnitsObjects
@@ -449,9 +455,15 @@ __all__ = [
     "GetLeaveLeavesObjects",
     "GetLeaveLeavesObjectsValidities",
     "GetLeaveLeavesObjectsValiditiesValidity",
+    "GetOrgUnit",
     "GetOrgUnitChildren",
     "GetOrgUnitChildrenOrgUnits",
     "GetOrgUnitChildrenOrgUnitsObjects",
+    "GetOrgUnitOrgUnits",
+    "GetOrgUnitOrgUnitsObjects",
+    "GetOrgUnitOrgUnitsObjectsValidities",
+    "GetOrgUnitOrgUnitsObjectsValiditiesChildren",
+    "GetOrgUnitOrgUnitsObjectsValiditiesValidity",
     "GetOrgUnitTimeline",
     "GetOrgUnitTimelineOrgUnits",
     "GetOrgUnitTimelineOrgUnitsObjects",

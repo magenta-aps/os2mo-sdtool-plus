@@ -58,6 +58,8 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_org_unit import GetOrgUnit
+from .get_org_unit import GetOrgUnitOrgUnits
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
@@ -596,6 +598,34 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrgUnitChildren.parse_obj(data).org_units
+
+    async def get_org_unit(self, filter: OrganisationUnitFilter) -> GetOrgUnitOrgUnits:
+        query = gql(
+            """
+            query GetOrgUnit($filter: OrganisationUnitFilter!) {
+              org_units(filter: $filter) {
+                objects {
+                  uuid
+                  validities {
+                    name
+                    user_key
+                    children {
+                      uuid
+                    }
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetOrgUnit.parse_obj(data).org_units
 
     async def get_person(self, cpr: CPRNumber) -> GetPersonEmployees:
         query = gql(
