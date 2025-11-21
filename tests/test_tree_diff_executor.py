@@ -22,6 +22,7 @@ from sdtoolplus.tree_diff_executor import TreeDiffExecutor
 from sdtoolplus.tree_diff_executor import UpdateOrgUnitMutation
 from sdtoolplus.tree_diff_executor import _truncate_start_date
 
+from .conftest import SharedIdentifier
 from .conftest import _MockGraphQLSession
 
 
@@ -57,6 +58,7 @@ class TestAddOrgUnitMutation:
         unit_uuid = uuid.uuid4()
         parent_uuid = uuid.uuid4()
         org_unit_level_uuid = uuid.uuid4()
+        org_uuid = uuid.uuid4()
 
         parent = OrgUnitNode(
             uuid=parent_uuid,
@@ -80,6 +82,7 @@ class TestAddOrgUnitMutation:
             mock_graphql_session,
             org_unit_node,
             mock_mo_org_unit_type,
+            org_uuid,
         )
 
         # Act
@@ -114,6 +117,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
         async for org_unit_node, mutation, result in tree_diff_executor.execute():
             assert org_unit_node is not None
@@ -153,6 +157,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff_move_afd_from_ny_to_ny,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
 
         # Act
@@ -192,6 +197,7 @@ class TestTreeDiffExecutor:
                 sdtoolplus_settings.sd_institution_identifier,
                 mock_org_tree_diff,
                 mock_mo_org_unit_type,
+                SharedIdentifier.root_org_uuid,
             )
             async for org_unit_node, mutation, result in tree_diff_executor.execute(
                 dry_run=True
@@ -215,6 +221,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
 
         # Act
@@ -246,6 +253,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
 
         # Act
@@ -273,6 +281,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
 
         # Act
@@ -298,6 +307,7 @@ class TestTreeDiffExecutor:
             sdtoolplus_settings.sd_institution_identifier,
             mock_org_tree_diff,
             mock_mo_org_unit_type,
+            SharedIdentifier.root_org_uuid,
         )
 
         # Act

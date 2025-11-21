@@ -409,7 +409,12 @@ class TestApp:
     ):
         # Arrange
         app_: App = self._get_app_instance(sdtoolplus_settings)
-        mutation = AddOrgUnitMutation(mock_graphql_session, MagicMock(), MagicMock())  # type: ignore
+        mutation = AddOrgUnitMutation(
+            mock_graphql_session,  # type: ignore
+            MagicMock(),
+            MagicMock(),
+            uuid4(),
+        )
 
         # Assert
         assert not app_._should_apply_ny_logic(mutation, MagicMock(), False)
@@ -447,7 +452,7 @@ class TestApp:
             sd_tree, UUID("40000000-0000-0000-0000-000000000000"), "uuid"
         )
 
-        mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4)  # type: ignore
+        mutation = UpdateOrgUnitMutation(mock_graphql_session, dep4, uuid4())  # type: ignore
 
         # Assert
         assert app_._should_apply_ny_logic(mutation, dep4, False) == expected  # type: ignore
