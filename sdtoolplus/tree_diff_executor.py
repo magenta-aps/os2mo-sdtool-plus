@@ -271,12 +271,14 @@ class TreeDiffExecutor:
         current_inst_id: str,
         tree_diff: OrgTreeDiff,
         mo_org_unit_type: MOClass,
+        mo_org_uuid: OrgUUID,
     ):
         self._session = session
         self.settings = settings
         self.current_inst_id = current_inst_id
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
+        self.mo_org_uuid = mo_org_uuid
 
         self.sd_client = SDClient(
             self.settings.sd_username,
@@ -332,7 +334,7 @@ class TreeDiffExecutor:
             _truncate_start_date(unit, self.settings.min_mo_datetime)
 
             add_mutation = AddOrgUnitMutation(
-                self._session, unit, self.mo_org_unit_type
+                self._session, unit, self.mo_org_unit_type, self.mo_org_uuid
             )
             if not dry_run:
                 # TODO: remove if-clause below once the integration test
@@ -357,7 +359,9 @@ class TreeDiffExecutor:
             )
         for unit in units_to_update:
             logger.info("Update unit", unit=str(unit.uuid), name=unit.name)
-            update_mutation = UpdateOrgUnitMutation(self._session, unit)
+            update_mutation = UpdateOrgUnitMutation(
+                self._session, unit, self.mo_org_uuid
+            )
             if not dry_run:
                 result = update_mutation.execute()
             else:
