@@ -400,3 +400,129 @@ async def test_build_tree_date_range_errors(
     # Act again - no operations should be performed
     r = await test_client.post("/trigger")
     assert r.json() == []
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"XY": []}',
+        "USE_MO_ROOT_UUID_AS_SD_ROOT_UUID": "true",
+    }
+)
+@patch("sdtoolplus.main.get_engine")
+@patch("sdtoolplus.sd.importer.get_sd_departments")
+@patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.main.run_db_end_operations")
+@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+async def test_modify_root_unit(
+    mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
+    mock_get_sd_organization: MagicMock,
+    mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+    org_unit_type: OrgUnitTypeUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+) -> None:
+    """
+    Modify a root unit. This test covers the special case where a root unit is
+    altered. When reading a root unit from MO, the parent_uuid is the MO org
+    UUID, but when writing the unit back to MO, the unit parent must be set to
+    None. This scenario is tested here.
+    """
+    # Arrange
+
+    now = datetime(1999, 1, 1, tzinfo=ZoneInfo("Europe/Copenhagen"))
+
+    sd_org_json = {
+        "RegionIdentifier": "RI",
+        "InstitutionIdentifier": "II",
+        "InstitutionUUIDIdentifier": str(SharedIdentifier.root_org_uuid),
+        "DepartmentStructureName": "Dep structure name",
+        "OrganizationStructure": {
+            "DepartmentLevelIdentifier": "Afdelings-niveau",
+            "DepartmentLevelReference": {
+                "DepartmentLevelIdentifier": "NY0-niveau",
+                "DepartmentLevelReference": {"DepartmentLevelIdentifier": "NY1-niveau"},
+            },
+        },
+        "Organization": [
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "2000-01-01",
+                "DepartmentReference": [
+                    {
+                        "DepartmentIdentifier": "NY1",
+                        "DepartmentUUIDIdentifier": str(
+                            SharedIdentifier.child_org_unit_uuid
+                        ),
+                        "DepartmentLevelIdentifier": "NY1-niveau",
+                    }
+                ],
+            }
+        ],
+    }
+    sd_org = GetOrganizationResponse.parse_obj(sd_org_json)
+
+    sd_departments_json = {
+        "RegionIdentifier": "RI",
+        "InstitutionIdentifier": "II",
+        "Department": [
+            {
+                "ActivationDate": "1999-01-01",
+                "DeactivationDate": "9999-12-31",
+                "DepartmentIdentifier": "dep1",
+                "DepartmentLevelIdentifier": "NY1-niveau",
+                # This modifies the root unit!
+                "DepartmentName": "New name for root unit",
+                "DepartmentUUIDIdentifier": str(SharedIdentifier.child_org_unit_uuid),
+                "PostalAddress": {
+                    "StandardAddressIdentifier": "Baggesensvej 14",
+                    "PostalCode": 6000,
+                    "DistrictName": "Kolding",
+                    "MunicipalityCode": 2000,
+                },
+                "ProductionUnitIdentifier": 1234567890,
+            },
+        ],
+    }
+    sd_departments = GetDepartmentResponse.parse_obj(sd_departments_json)
+
+    mock_get_sd_organization.return_value = sd_org
+    mock_get_sd_departments.return_value = sd_departments
+
+    respx_mock.post(
+        "http://sdlon:8000/trigger/apply-ny-logic/10000000-0000-0000-0000-000000000000"
+    ).mock(return_value=Response(200))
+
+    # Build basic MO tree (only one unit)
+
+    await graphql_client._testing__create_org_unit(
+        UUID("10000000-0000-0000-0000-000000000000"),
+        name="Department 1",
+        user_key="dep1",
+        org_unit_type=org_unit_type,
+        org_unit_level=org_unit_levels["NY1-niveau"],
+        from_date=now,
+        parent=None,
+    )
+
+    # Act
+    await test_client.post("/trigger")
+
+    # Assert
+    @retry()
+    async def verify() -> None:
+        # Verify Department 1 is correct
+        dep1 = await graphql_client._testing__get_org_unit(
+            UUID("10000000-0000-0000-0000-000000000000")
+        )
+        current = one(dep1.objects).current
+        assert current is not None
+        assert current.uuid == UUID("10000000-0000-0000-0000-000000000000")
+        assert current.name == "New name for root unit"
+        assert current.parent is None
+
+    await verify()

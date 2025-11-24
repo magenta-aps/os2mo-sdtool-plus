@@ -29,6 +29,7 @@ from .graphql import UPDATE_ORG_UNIT
 from .mo_class import MOClass
 from .mo_org_unit_importer import OrgUnitNode
 from .mo_org_unit_importer import OrgUnitUUID
+from .mo_org_unit_importer import OrgUUID
 
 V_DATE_OUTSIDE_ORG_UNIT_RANGE = "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE"
 
@@ -72,8 +73,11 @@ class Mutation(abc.ABC):
 
 
 class UpdateOrgUnitMutation(Mutation):
-    def __init__(self, session: GraphQLClient, org_unit_node: OrgUnitNode):
+    def __init__(
+        self, session: GraphQLClient, org_unit_node: OrgUnitNode, mo_org_uuid: OrgUUID
+    ):
         super().__init__(session, org_unit_node)
+        self.mo_org_uuid = mo_org_uuid
 
     @property
     def dsl_mutation(self) -> DSLMutation:
@@ -85,11 +89,16 @@ class UpdateOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation_input(self) -> dict[str, Any]:
+        parent = (
+            str(self.org_unit_node.parent.uuid)
+            if not self.org_unit_node.parent.uuid == self.mo_org_uuid
+            else None
+        )
         return {
             "uuid": str(self.org_unit_node.uuid),  # type: ignore
             "name": self.org_unit_node.name,  # type: ignore
             "user_key": self.org_unit_node.user_key,  # type: ignore
-            "parent": str(self.org_unit_node.parent.uuid),
+            "parent": parent,
             "validity": {
                 "from": datetime.datetime.now().date().strftime("%Y-%m-%d"),
                 "to": self.org_unit_node.validity.to_date.date().strftime("%Y-%m-%d")  # type: ignore
@@ -109,9 +118,11 @@ class AddOrgUnitMutation(Mutation):
         session: GraphQLClient,
         org_unit_node: OrgUnitNode,
         mo_org_unit_type: MOClass,
+        mo_org_uuid: OrgUUID,
     ):
         super().__init__(session, org_unit_node)
         self.mo_org_unit_type = mo_org_unit_type
+        self.mo_org_uuid = mo_org_uuid
 
     @property
     def dsl_mutation(self) -> DSLMutation:
@@ -124,9 +135,14 @@ class AddOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation_input(self) -> dict[str, Any]:
+        parent = (
+            str(self.org_unit_node.parent.uuid)
+            if not self.org_unit_node.parent.uuid == self.mo_org_uuid
+            else None
+        )
         return {
             "uuid": str(self.org_unit_node.uuid),  # type: ignore
-            "parent": str(self.org_unit_node.parent.uuid),  # type: ignore
+            "parent": parent,  # type: ignore
             "user_key": self.org_unit_node.user_key,
             "name": self.org_unit_node.name,  # type: ignore
             "org_unit_type": str(self.mo_org_unit_type.uuid),  # type: ignore
@@ -255,12 +271,14 @@ class TreeDiffExecutor:
         current_inst_id: str,
         tree_diff: OrgTreeDiff,
         mo_org_unit_type: MOClass,
+        mo_org_uuid: OrgUUID,
     ):
         self._session = session
         self.settings = settings
         self.current_inst_id = current_inst_id
         self._tree_diff = tree_diff
         self.mo_org_unit_type = mo_org_unit_type
+        self.mo_org_uuid = mo_org_uuid
 
         self.sd_client = SDClient(
             self.settings.sd_username,
@@ -316,7 +334,7 @@ class TreeDiffExecutor:
             _truncate_start_date(unit, self.settings.min_mo_datetime)
 
             add_mutation = AddOrgUnitMutation(
-                self._session, unit, self.mo_org_unit_type
+                self._session, unit, self.mo_org_unit_type, self.mo_org_uuid
             )
             if not dry_run:
                 # TODO: remove if-clause below once the integration test
@@ -341,7 +359,9 @@ class TreeDiffExecutor:
             )
         for unit in units_to_update:
             logger.info("Update unit", unit=str(unit.uuid), name=unit.name)
-            update_mutation = UpdateOrgUnitMutation(self._session, unit)
+            update_mutation = UpdateOrgUnitMutation(
+                self._session, unit, self.mo_org_uuid
+            )
             if not dry_run:
                 result = update_mutation.execute()
             else:

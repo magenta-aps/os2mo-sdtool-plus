@@ -211,6 +211,8 @@ class App:
             self.settings,
         )
 
+        org_uuid = self.mo_org_tree_import.get_org_uuid()
+
         # Construct tree diff executor
         return TreeDiffExecutor(
             self.session,
@@ -218,6 +220,7 @@ class App:
             self.current_inst_id,
             self.tree_diff,
             mo_org_unit_type,
+            org_uuid,
         )
 
     async def execute(
