@@ -141,7 +141,7 @@ class Person(BaseModel):
     given_name: str
     surname: str
     emails: list[str] | None
-    phone_numbers: list[str] | None
+    phone_numbers: list[str]
     address: str | None
 
 

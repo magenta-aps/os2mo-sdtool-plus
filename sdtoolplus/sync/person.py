@@ -73,8 +73,8 @@ async def _sync_person_addresses(
     person_uuid: UUID,
     sd_person: Person,
 ) -> None:
-    """Persons are not temporal objects in SD and are handled differently than orgunits and engagements.
-    In stead of the full timeline checks we only check the data from `now` to infinity.
+    """Persons are not temporal objects in SD and are handled differently than org units and engagements.
+    Instead of the full timeline checks we only check the data from `now` to infinity.
     """
     # TODO: Cache this result as it rarely changes
     address_types_res = await gql_client.get_class(

@@ -53,15 +53,14 @@ async def get_sd_person(
         too_short=PersonNotFoundError,
         too_long=MoreThanOnePersonError,
     )
-    if (
-        sd_response_person.ContactInformation
-        and sd_response_person.ContactInformation.TelephoneNumberIdentifier
-    ):
-        phone_numbers = [
-            p
-            for p in sd_response_person.ContactInformation.TelephoneNumberIdentifier
-            if p != "00000000"
-        ]
+
+    sd_phone_numbers = [
+        phone_number
+        for phone_number in sd_response_person.ContactInformation.TelephoneNumberIdentifier  # type: ignore
+        if sd_response_person.ContactInformation is not None
+        and sd_response_person.ContactInformation.TelephoneNumberIdentifier is not None
+        and phone_number != "0000000"
+    ]
 
     person = Person(
         cpr=sd_response_person.PersonCivilRegistrationIdentifier,
@@ -70,12 +69,12 @@ async def get_sd_person(
         emails=sd_response_person.ContactInformation.EmailAddressIdentifier
         if sd_response_person.ContactInformation
         else None,
-        phone_numbers=phone_numbers if sd_response_person.ContactInformation else None,
         address=f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
         if sd_response_person.PostalAddress
         and sd_response_person.PostalAddress.StandardAddressIdentifier
         != "**ADRESSEBESKYTTELSE**"
         else None,
+        phone_numbers=sd_phone_numbers,
     )
     logger.debug("SD person", person=person.dict())
 
