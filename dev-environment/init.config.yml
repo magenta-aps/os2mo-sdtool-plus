@@ -61,6 +61,19 @@ facets:
     lokation_telefon_lokal:
       title: "Telefon lokal"
       scope: "PHONE"
+  employee_address_type:
+    engagement_email:
+      title: "E-mail"
+      scope: "EMAIL"
+    engagement_telefon:
+      title: "Telefon"
+      scope: "PHONE"
+    engagement_telefon_anden:
+      title: "Anden Telefon"
+      scope: "PHONE"
+    AdresseAPOSOrgUnit:
+      title: "Postadresse fra SD"
+      scope: "TEXT"
   engagement_type:
     TestAnsat:
       title: "TestAnsat"

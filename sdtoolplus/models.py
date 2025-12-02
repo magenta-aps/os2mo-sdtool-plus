@@ -140,9 +140,9 @@ class Person(BaseModel):
     cpr: str
     given_name: str
     surname: str
-    emails: list[str]
-    phone_numbers: list[str]
-    addresses: list[str]
+    emails: list[str] | None
+    phone_numbers: list[str] | None
+    address: str | None
 
 
 class Engagement(BaseModel):
