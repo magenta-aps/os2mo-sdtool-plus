@@ -60,14 +60,14 @@ async def _sync_person(
     else:
         # No changes to person, now check addresses
         person_uuid = one(mo_person.objects).uuid
-    await sync_person_addresses(
+    await _sync_person_addresses(
         gql_client=gql_client,
         person_uuid=person_uuid,
         sd_person=sd_person,
     )
 
 
-async def sync_person_addresses(
+async def _sync_person_addresses(
     gql_client: GraphQLClient,
     person_uuid: UUID,
     sd_person: Person,
@@ -86,7 +86,7 @@ async def sync_person_addresses(
     )
 
     desired_emails = sd_person.emails if sd_person.emails else []
-    await handle_address(
+    await _handle_address(
         gql_client,
         desired_emails,
         person_uuid,
@@ -97,7 +97,7 @@ async def sync_person_addresses(
         if sd_person.phone_numbers
         else []
     )
-    await handle_address(
+    await _handle_address(
         gql_client,
         desired_phone_numbers,
         person_uuid,
@@ -105,7 +105,7 @@ async def sync_person_addresses(
     )
     desired_post_adresses = [sd_person.address] if sd_person.address else []
     # TODO: Addresses should have the scope DAR, but this is not the case everywhere right now.
-    await handle_address(
+    await _handle_address(
         gql_client,
         desired_post_adresses,
         person_uuid,
@@ -113,7 +113,7 @@ async def sync_person_addresses(
     )
 
 
-def find_address_actions(
+def _find_address_actions(
     mo_values: GetAddressTimelineAddresses, desired_addresses: list[str]
 ) -> tuple[set[str], set[UUID]]:
     terminate: set[UUID] = set()
@@ -145,7 +145,7 @@ def find_address_actions(
     return create, terminate
 
 
-async def handle_address(
+async def _handle_address(
     gql_client: GraphQLClient,
     desired_addresses: list[str],
     person_uuid: UUID,
@@ -159,7 +159,7 @@ async def handle_address(
             to_date=None,
         )
     )
-    create, terminate = find_address_actions(mo_person_addresses, desired_addresses)
+    create, terminate = _find_address_actions(mo_person_addresses, desired_addresses)
     # TODO: cache this as it _never_ changes.
     visibility_internal = await gql_client.get_class(
         class_filter=ClassFilter(
