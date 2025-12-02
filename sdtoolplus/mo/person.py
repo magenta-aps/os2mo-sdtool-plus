@@ -31,6 +31,7 @@ async def create_person(
 
     logger.debug("Create person payload", payload=employee_input.dict())
     person = await gql_client.create_person(input=employee_input)
+    logger.info("Person created", cpr=cpr)
 
     return person.uuid
 
