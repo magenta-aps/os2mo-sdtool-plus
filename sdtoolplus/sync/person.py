@@ -36,7 +36,6 @@ async def _sync_person(
     gql_client: GraphQLClient,
     sd_person: Person,
     mo_person: GetPersonTimelineEmployees,
-    dry_run: bool,
 ) -> None:
     mo_objects = only(mo_person.objects, too_long=MoreThanOnePersonError)
     if mo_objects is None:
@@ -45,7 +44,6 @@ async def _sync_person(
             cpr=sd_person.cpr,
             givenname=sd_person.given_name,
             lastname=sd_person.surname,
-            dry_run=dry_run,
         )
     elif (
         len(mo_objects.validities) > 1
@@ -58,7 +56,6 @@ async def _sync_person(
             uuid=person_uuid,
             start=datetime.today(),
             person=sd_person,
-            dry_run=dry_run,
         )
     else:
         # No changes to person, now check addresses
@@ -67,7 +64,6 @@ async def _sync_person(
         gql_client=gql_client,
         person_uuid=person_uuid,
         sd_person=sd_person,
-        dry_run=dry_run,
     )
 
 
@@ -75,7 +71,6 @@ async def sync_person_addresses(
     gql_client: GraphQLClient,
     person_uuid: UUID,
     sd_person: Person,
-    dry_run: bool,
 ) -> None:
     """Persons are not temporal objects in SD and are handled differently than orgunits and engagements.
     In stead of the full timeline checks we only check the data from `now` to infinity.
@@ -96,7 +91,6 @@ async def sync_person_addresses(
         desired_emails,
         person_uuid,
         one(address_types["engagement_email"]).uuid,
-        dry_run,
     )
     desired_phone_numbers = (
         [phone_number for phone_number in sd_person.phone_numbers]
@@ -108,7 +102,6 @@ async def sync_person_addresses(
         desired_phone_numbers,
         person_uuid,
         one(address_types["engagement_telefon"]).uuid,
-        dry_run,
     )
     desired_post_adresses = [sd_person.address] if sd_person.address else []
     # TODO: Addresses should have the scope DAR, but this is not the case everywhere right now.
@@ -117,7 +110,6 @@ async def sync_person_addresses(
         desired_post_adresses,
         person_uuid,
         one(address_types["AdresseSDEmployee"]).uuid,
-        dry_run,
     )
 
 
@@ -158,7 +150,6 @@ async def handle_address(
     desired_addresses: list[str],
     person_uuid: UUID,
     address_type_uuid: UUID,
-    dry_run: bool,
 ):
     mo_person_addresses = await gql_client.get_address_timeline(
         input=AddressFilter(
@@ -184,29 +175,26 @@ async def handle_address(
             value=value,
             person=person_uuid,
             address_type_uuid=address_type_uuid,
-            dry_run=dry_run,
         )
-        if not dry_run:
-            await gql_client.create_address(
-                input=AddressCreateInput(
-                    person=person_uuid,
-                    validity={"from": datetime.today(), "to": None},
-                    value=value,
-                    address_type=address_type_uuid,
-                    visibility=visibility_uuid,
-                )
+        await gql_client.create_address(
+            input=AddressCreateInput(
+                person=person_uuid,
+                validity={"from": datetime.today(), "to": None},
+                value=value,
+                address_type=address_type_uuid,
+                visibility=visibility_uuid,
             )
+        )
     # Check for removed emails
     for address_uuid in terminate:
-        logger.info("terminate address", person=person_uuid, dry_run=dry_run)
-        if not dry_run:
-            await gql_client.terminate_address(
-                AddressTerminateInput(
-                    uuid=address_uuid,
-                    to=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-                    - timedelta(days=1),
-                )
+        logger.info("terminate address", person=person_uuid)
+        await gql_client.terminate_address(
+            AddressTerminateInput(
+                uuid=address_uuid,
+                to=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                - timedelta(days=1),
             )
+        )
 
 
 @handle_exclusively_decorator(
@@ -217,13 +205,11 @@ async def sync_person(
     gql_client: GraphQLClient,
     institution_identifier: str,
     cpr: str,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Sync person",
         inst_id=institution_identifier,
         cpr=cpr,
-        dry_run=dry_run,
     )
 
     if cpr.endswith("0000"):
@@ -252,7 +238,6 @@ async def sync_person(
         gql_client=gql_client,
         mo_person=mo_person,
         sd_person=sd_person,
-        dry_run=dry_run,
     )
 
     logger.info(

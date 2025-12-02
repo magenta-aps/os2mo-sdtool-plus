@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from uuid import UUID
-from uuid import uuid4
 
 import structlog
 
@@ -20,7 +19,6 @@ async def create_person(
     cpr: str,
     givenname: str,
     lastname: str,
-    dry_run: bool = False,
 ) -> UUID:
     logger.info("Create new person", cpr=cpr, givenname=givenname, lastname=lastname)
 
@@ -29,11 +27,10 @@ async def create_person(
         given_name=givenname,
         surname=lastname,
     )
-    logger.debug("Create person payload", payload=employee_input.dict())
-    if dry_run:
-        return uuid4()
 
+    logger.debug("Create person payload", payload=employee_input.dict())
     person = await gql_client.create_person(input=employee_input)
+
     return person.uuid
 
 
@@ -42,7 +39,6 @@ async def update_person(
     uuid: UUID,
     start: datetime,
     person: Person,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Update person")
 
@@ -53,7 +49,7 @@ async def update_person(
         surname=person.surname,
         validity=RAValidityInput(from_=start, to=None),
     )
+
     logger.debug("Update person payload", payload=payload.dict())
-    if not dry_run:
-        await gql_client.update_person(payload)
+    await gql_client.update_person(payload)
     logger.debug("Person updated", cpr=person.cpr)
