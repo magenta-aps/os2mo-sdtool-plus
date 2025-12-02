@@ -71,7 +71,7 @@ facets:
     engagement_telefon_anden:
       title: "Anden Telefon"
       scope: "PHONE"
-    AdresseAPOSOrgUnit:
+    AdresseSDEmployee:
       title: "Postadresse fra SD"
       scope: "TEXT"
   engagement_type:

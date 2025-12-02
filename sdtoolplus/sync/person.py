@@ -116,7 +116,7 @@ async def sync_person_addresses(
         gql_client,
         desired_post_adresses,
         person_uuid,
-        one(address_types["AdresseAPOSOrgUnit"]).uuid,
+        one(address_types["AdresseSDEmployee"]).uuid,
         dry_run,
     )
 
