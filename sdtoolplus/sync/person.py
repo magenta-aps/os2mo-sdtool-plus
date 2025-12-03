@@ -84,32 +84,25 @@ async def _sync_person_addresses(
 
     address_types = bucket(
         address_types_res.objects,
-        key=lambda x: x.current.user_key if x.current else None,
+        key=lambda obj: obj.current.user_key if obj.current else None,
     )
 
-    desired_emails = sd_person.emails if sd_person.emails else []
     await _handle_address(
         gql_client,
-        desired_emails,
+        sd_person.emails,
         person_uuid,
         one(address_types["engagement_email"]).uuid,
     )
-    desired_phone_numbers = (
-        [phone_number for phone_number in sd_person.phone_numbers]
-        if sd_person.phone_numbers
-        else []
-    )
     await _handle_address(
         gql_client,
-        desired_phone_numbers,
+        sd_person.phone_numbers,
         person_uuid,
         one(address_types["engagement_telefon"]).uuid,
     )
-    desired_post_adresses = [sd_person.address] if sd_person.address else []
     # TODO: Addresses should have the scope DAR, but this is not the case everywhere right now.
     await _handle_address(
         gql_client,
-        desired_post_adresses,
+        [sd_person.address] if sd_person.address is not None else [],
         person_uuid,
         one(address_types["AdresseSDEmployee"]).uuid,
     )
