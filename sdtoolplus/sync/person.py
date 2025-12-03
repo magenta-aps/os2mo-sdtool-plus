@@ -109,14 +109,14 @@ async def _sync_person_addresses(
 
 
 def _find_address_actions(
-    mo_values: GetAddressTimelineAddresses, desired_addresses: list[str]
+    mo_addresses: GetAddressTimelineAddresses, desired_addresses: list[str]
 ) -> tuple[set[str], set[UUID]]:
     terminate: set[UUID] = set()
     create: set[str] = set()
     existing: set[str] = set()
-    if not mo_values.objects:
+    if not mo_addresses.objects:
         return set(desired_addresses), terminate
-    for address in mo_values.objects:
+    for address in mo_addresses.objects:
         uuid = address.uuid
         # For each address check that there are only one validity,
         # that the wanted value exists in MO and in the correct timeframe
