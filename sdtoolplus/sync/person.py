@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from datetime import timedelta
-from typing import cast
 from uuid import UUID
 
 import structlog
@@ -59,8 +58,10 @@ async def _sync_person(
             person=sd_person,
         )
     else:
-        # No changes to person, now check addresses
+        # No changes to person
         person_uuid = one(mo_person.objects).uuid
+
+    # Sync person addresses (postal address, emails and phone numbers)
     await _sync_person_addresses(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -232,7 +233,9 @@ async def sync_person(
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
-            cpr_numbers=[cast(CPRNumber, cpr)], from_date=datetime.today(), to_date=None
+            cpr_numbers=[CPRNumber(cpr)],
+            from_date=datetime.now(tz=TIMEZONE),
+            to_date=None,
         )
     )
     logger.debug("MO person", mo_person=mo_person.dict())
