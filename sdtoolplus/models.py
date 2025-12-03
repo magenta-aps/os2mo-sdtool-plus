@@ -140,7 +140,7 @@ class Person(BaseModel):
     cpr: str
     given_name: str
     surname: str
-    emails: list[str] | None
+    emails: list[str]
     phone_numbers: list[str]
     address: str | None
 
