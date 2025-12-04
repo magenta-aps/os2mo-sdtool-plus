@@ -122,6 +122,8 @@ async def _sync_person_addresses(
         one(address_types["AdresseSDEmployee"]).uuid,
     )
 
+    logger.info("Done syncing person addresses", person=str(person_uuid))
+
 
 def _find_address_actions(
     mo_addresses: GetAddressTimelineAddresses, desired_addresses: list[str]
@@ -148,6 +150,9 @@ def _find_address_actions(
 
     # Create any address from desired_addresses not in MO yet.
     create = {c for c in desired_addresses if c not in existing}
+
+    logger.info("Addresses to process", create=create, terminate=terminate)
+
     return create, terminate
 
 
@@ -157,6 +162,13 @@ async def _handle_address(
     person_uuid: UUID,
     address_type_uuid: UUID,
 ):
+    logger.info(
+        "Sync person addresses",
+        person=str(person_uuid),
+        address_type_uuid=str(address_type_uuid),
+        desired_addresses=desired_addresses,
+    )
+
     mo_person_addresses = await gql_client.get_address_timeline(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
@@ -174,7 +186,6 @@ async def _handle_address(
     )
     visibility_uuid = one(visibility_internal.objects).uuid
 
-    # Check for new emails:
     for value in create:
         logger.info(
             "Create new address",
@@ -191,9 +202,14 @@ async def _handle_address(
                 visibility=visibility_uuid,
             )
         )
-    # Check for removed emails
+
     for address_uuid in terminate:
-        logger.info("terminate address", person=person_uuid)
+        logger.info(
+            "Terminate address",
+            person=person_uuid,
+            address_uuid=address_uuid,
+            address_type_uuid=address_type_uuid,
+        )
         await gql_client.terminate_address(
             AddressTerminateInput(
                 uuid=address_uuid,
