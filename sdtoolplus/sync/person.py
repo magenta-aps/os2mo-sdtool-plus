@@ -132,7 +132,6 @@ def _find_address_actions(
     if not mo_addresses.objects:
         return set(desired_addresses), terminate
     for address in mo_addresses.objects:
-        uuid = address.uuid
         # For each address check that there are only one validity,
         # that the wanted value exists in MO and in the correct timeframe
         if (
@@ -142,12 +141,12 @@ def _find_address_actions(
             or one(address.validities).validity.to is not None
         ):
             # If any of the above reasons are met we terminate the address
-            terminate.add(uuid)
+            terminate.add(address.uuid)
         else:
             # If not it is because it exists in MO
             # Check for duplicates:
             if one(address.validities).value in existing:
-                terminate.add(uuid)
+                terminate.add(address.uuid)
             existing.add(one(address.validities).value)
 
     # Create any address from desired_addresses not in MO yet.
