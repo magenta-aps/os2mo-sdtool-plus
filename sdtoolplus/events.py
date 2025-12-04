@@ -375,6 +375,7 @@ async def _mo_org_unit(
 
 @router.post("/events/sd/person", dependencies=[Depends(sd_api_open)])
 async def _sd_person(
+    settings: depends.Settings,
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     event: Event[Json[PersonGraphQLEvent]],
@@ -385,6 +386,7 @@ async def _sd_person(
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
+        settings=settings,
         institution_identifier=person.institution_identifier,
         cpr=person.cpr,
     )
@@ -422,6 +424,7 @@ async def _mo_person(
             await sync_person(
                 sd_client=sd_client,
                 gql_client=gql_client,
+                settings=settings,
                 institution_identifier=institution_identifier,
                 cpr=mo_person_cpr,
             )

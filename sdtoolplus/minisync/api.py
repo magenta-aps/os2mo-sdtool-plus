@@ -60,6 +60,7 @@ async def sync_person_and_engagement(
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
+        settings=settings,
         institution_identifier=payload.institution_identifier,
         cpr=payload.cpr,
     )

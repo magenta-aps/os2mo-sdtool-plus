@@ -433,12 +433,14 @@ def create_fastramqpi() -> FastRAMQPI:
     async def timeline_sync_person(
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
+        settings: depends.Settings,
         payload: PersonSyncPayload,
     ) -> dict:
         """Sync the person with the given CPR from the given institution identifier."""
         await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
+            settings=settings,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
         )
