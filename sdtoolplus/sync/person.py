@@ -127,16 +127,16 @@ def _find_address_actions(
     mo_addresses: GetAddressTimelineAddresses, desired_addresses: list[str]
 ) -> tuple[set[str], set[UUID]]:
     terminate: set[UUID] = set()
-    create: set[str] = set()
     existing: set[str] = set()
     if not mo_addresses.objects:
         return set(desired_addresses), terminate
     for address in mo_addresses.objects:
-        # For each address check that there are only one validity,
+        # For each address check that there is only one validity,
         # that the wanted value exists in MO and in the correct timeframe
         if (
             len(address.validities) > 1
             or one(address.validities).value not in desired_addresses
+            or one(address.validities).value in existing
             or one(address.validities).validity.from_ > datetime.now(tz=TIMEZONE)
             or one(address.validities).validity.to is not None
         ):
@@ -144,9 +144,6 @@ def _find_address_actions(
             terminate.add(address.uuid)
         else:
             # If not it is because it exists in MO
-            # Check for duplicates:
-            if one(address.validities).value in existing:
-                terminate.add(address.uuid)
             existing.add(one(address.validities).value)
 
     # Create any address from desired_addresses not in MO yet.
