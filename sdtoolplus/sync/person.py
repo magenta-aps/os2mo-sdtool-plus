@@ -65,6 +65,7 @@ async def _sync_person(
         person_uuid = one(mo_person.objects).uuid
 
     # Sync person addresses (postal address, emails and phone numbers)
+    # TODO: introduce feature flag
     await _sync_person_addresses(
         gql_client=gql_client,
         settings=settings,
@@ -179,6 +180,7 @@ async def _handle_address(
     )
     create, terminate = _find_address_actions(mo_person_addresses, desired_addresses)
     # TODO: cache this as it _never_ changes.
+    # TODO: use get class
     visibility_internal = await gql_client.get_class(
         class_filter=ClassFilter(
             facet=FacetFilter(user_keys=["visibility"]), scope=["INTERNAL"]
@@ -196,6 +198,7 @@ async def _handle_address(
         await gql_client.create_address(
             input=AddressCreateInput(
                 person=person_uuid,
+                user_key=value,
                 validity=RAValidityInput(from_=datetime.now(tz=TIMEZONE)),
                 value=value,
                 address_type=address_type_uuid,
@@ -222,7 +225,7 @@ async def _handle_address(
 
 
 @handle_exclusively_decorator(
-    key=lambda sd_client, gql_client, institution_identifier, cpr, dry_run=False: cpr
+    key=lambda sd_client, gql_client, settings, institution_identifier, cpr: cpr
 )
 async def sync_person(
     sd_client: SDClient,

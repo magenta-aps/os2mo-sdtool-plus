@@ -75,7 +75,7 @@ async def get_sd_person(
 
     sd_email_addresses = [
         email
-        for email in sd_response_person.ContactInformation.EmailAddresses  # type: ignore
+        for email in sd_response_person.ContactInformation.EmailAddressIdentifier  # type: ignore
         if sd_response_person.ContactInformation is not None
         and sd_response_person.ContactInformation.EmailAddressIdentifier is not None
     ]

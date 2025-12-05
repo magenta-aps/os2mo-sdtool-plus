@@ -431,9 +431,9 @@ def create_fastramqpi() -> FastRAMQPI:
 
     @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
     async def timeline_sync_person(
+        settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
-        settings: depends.Settings,
         payload: PersonSyncPayload,
     ) -> dict:
         """Sync the person with the given CPR from the given institution identifier."""
