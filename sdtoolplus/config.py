@@ -175,6 +175,11 @@ class SDToolPlusSettings(BaseSettings):
     # Whether to enable org unit address sync. NOTE: this flag is not used in
     # the legacy part of the SDTool+ integration.
     enable_ou_address_sync: bool = True
+    # Whether to enable person address sync. NOTE: this flag is not used in
+    # the legacy part of the SDTool+ integration.
+    # TODO: change default to True when we are in production everywhere
+    enable_person_address_sync: bool = False
+    # TODO: also allow DAR addresses for persons
     # If true, OU addresses will be persisted to MO as DAR address UUIDs
     use_dar_addresses: bool = False
     # If true, only the postal addresses from the line management
