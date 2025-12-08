@@ -60,7 +60,7 @@ async def get_sd_person(
         surname=sd_response_person.PersonSurnameName,
         emails=[],
         phone_numbers=[],
-        addresses=[],
+        address=None,
     )
     logger.debug("SD person", person=person.dict())
 
@@ -96,7 +96,7 @@ async def get_all_sd_persons(
                 surname=str(sd_response_person.PersonSurnameName),
                 emails=[],
                 phone_numbers=[],
-                addresses=[],
+                address=None,
             )
         except ValueError as error:
             logger.error("Could not parse person", person=sd_response_person)
