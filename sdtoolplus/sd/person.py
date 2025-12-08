@@ -54,13 +54,39 @@ async def get_sd_person(
         too_long=MoreThanOnePersonError,
     )
 
+    sd_phone_numbers = [
+        phone_number
+        for phone_number in sd_response_person.ContactInformation.TelephoneNumberIdentifier  # type: ignore
+        if sd_response_person.ContactInformation is not None
+        and sd_response_person.ContactInformation.TelephoneNumberIdentifier is not None
+        and phone_number != "00000000"
+    ]
+
+    sd_postal_address = (
+        f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
+        if sd_response_person.PostalAddress is not None
+        and sd_response_person.PostalAddress.StandardAddressIdentifier is not None
+        and sd_response_person.PostalAddress.PostalCode is not None
+        and sd_response_person.PostalAddress.DistrictName is not None
+        and sd_response_person.PostalAddress.StandardAddressIdentifier
+        != "**ADRESSEBESKYTTELSE**"
+        else None
+    )
+
+    sd_email_addresses = [
+        email
+        for email in sd_response_person.ContactInformation.EmailAddressIdentifier  # type: ignore
+        if sd_response_person.ContactInformation is not None
+        and sd_response_person.ContactInformation.EmailAddressIdentifier is not None
+    ]
+
     person = Person(
         cpr=sd_response_person.PersonCivilRegistrationIdentifier,
         given_name=sd_response_person.PersonGivenName,
         surname=sd_response_person.PersonSurnameName,
-        emails=[],
-        phone_numbers=[],
-        address=None,
+        emails=sd_email_addresses,
+        phone_numbers=sd_phone_numbers,
+        address=sd_postal_address,
     )
     logger.debug("SD person", person=person.dict())
 
