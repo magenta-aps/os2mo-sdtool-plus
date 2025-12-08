@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 from uuid import UUID
 
@@ -98,7 +99,7 @@ async def update_address(
     await gql_client.update_address(
         AddressUpdateInput(
             uuid=address_uuid,
-            person_uuid=person_uuid,
+            person=person_uuid,
             visibility=visibility_uuid,
             user_key=value,
             value=value,
@@ -120,7 +121,7 @@ async def terminate_address(
     await gql_client.terminate_address(
         AddressTerminateInput(
             uuid=address_uuid,
-            to=terminate_from - timedelta(days=1),
+            to=datetime.combine(terminate_from.date(), time.min) - timedelta(days=1),
         )
     )
     logger.debug("Address terminated", address_uuid=str(address_uuid))
