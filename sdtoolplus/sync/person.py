@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from typing import cast
+from uuid import UUID
 
 import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
@@ -28,17 +29,17 @@ async def _sync_person(
     sd_person: Person,
     mo_person: GetPersonTimelineEmployees,
     dry_run: bool,
-) -> None:
+) -> UUID:
     mo_objects = only(mo_person.objects, too_long=MoreThanOnePersonError)
     if mo_objects is None:
-        await create_person(
+        person_uuid = await create_person(
             gql_client=gql_client,
             cpr=sd_person.cpr,
             givenname=sd_person.given_name,
             lastname=sd_person.surname,
             dry_run=dry_run,
         )
-        return
+        return person_uuid
     mo_validities = mo_objects.validities
 
     if (
@@ -53,6 +54,8 @@ async def _sync_person(
             person=sd_person,
             dry_run=dry_run,
         )
+
+    return mo_objects.uuid
 
 
 @handle_exclusively_decorator(
