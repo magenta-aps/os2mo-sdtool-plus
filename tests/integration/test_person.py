@@ -381,7 +381,7 @@ async def test_person_addresses(
     visibility_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="visibility",
-        class_user_key="Intern",
+        class_user_key="Public",
     )
 
     # Create phone 1
