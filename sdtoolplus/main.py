@@ -435,7 +435,6 @@ def create_fastramqpi() -> FastRAMQPI:
         gql_client: depends.GraphQLClient,
         settings: depends.Settings,
         payload: PersonSyncPayload,
-        dry_run: bool = False,
     ) -> dict:
         """Sync the person with the given CPR from the given institution identifier."""
         await sync_person(
@@ -444,7 +443,6 @@ def create_fastramqpi() -> FastRAMQPI:
             settings=settings,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
-            dry_run=dry_run,
         )
 
         return {"msg": "success"}

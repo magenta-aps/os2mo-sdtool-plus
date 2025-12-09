@@ -195,7 +195,6 @@ async def _sync_person(
     gql_client: GraphQLClient,
     sd_person: Person,
     mo_person: GetPersonTimelineEmployees,
-    dry_run: bool,
 ) -> UUID:
     mo_objects = only(mo_person.objects, too_long=MoreThanOnePersonError)
     if mo_objects is None:
@@ -204,7 +203,6 @@ async def _sync_person(
             cpr=sd_person.cpr,
             givenname=sd_person.given_name,
             lastname=sd_person.surname,
-            dry_run=dry_run,
         )
         return person_uuid
     mo_validities = mo_objects.validities
@@ -219,19 +217,13 @@ async def _sync_person(
             uuid=one(mo_person.objects).uuid,
             start=datetime.today(),
             person=sd_person,
-            dry_run=dry_run,
         )
 
     return mo_objects.uuid
 
 
 @handle_exclusively_decorator(
-    key=lambda sd_client,
-    gql_client,
-    settings,
-    institution_identifier,
-    cpr,
-    dry_run=False: cpr
+    key=lambda sd_client, gql_client, settings, institution_identifier, cpr: cpr
 )
 async def sync_person(
     sd_client: SDClient,
@@ -239,13 +231,11 @@ async def sync_person(
     settings: SDToolPlusSettings,
     institution_identifier: str,
     cpr: str,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Sync person",
         inst_id=institution_identifier,
         cpr=cpr,
-        dry_run=dry_run,
     )
 
     if cpr.endswith("0000"):
@@ -274,7 +264,6 @@ async def sync_person(
         gql_client=gql_client,
         mo_person=mo_person,
         sd_person=sd_person,
-        dry_run=dry_run,
     )
 
     logger.info(
