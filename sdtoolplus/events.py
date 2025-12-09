@@ -184,9 +184,10 @@ async def process_sd_amqp_person_event(
 
 
 async def sd_api_open() -> None:
-    # The SD API SLA is defined in Copenhagen time
+    # The SD API SLA is defined in Copenhagen time. We add/subtract five
+    # minutes to be really sure.
     now = datetime.now(tz=ZoneInfo("Europe/Copenhagen"))
-    open, close = time(6, 0), time(22, 0)
+    open, close = time(6, 5), time(21, 55)
 
     # The SD API is open
     if open < now.time() < close:
