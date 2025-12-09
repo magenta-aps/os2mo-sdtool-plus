@@ -73,33 +73,33 @@ async def get_sd_person(
         )
         raise PersonNotFoundError()
 
-    sd_response_person = one(
+    sd_person_response = one(
         sd_response.Person,
         too_short=PersonNotFoundError,
         too_long=MoreThanOnePersonError,
     )
 
-    sd_phone_numbers = _get_phone_numbers(sd_response_person)
+    sd_phone_numbers = _get_phone_numbers(sd_person_response)
     assert len(sd_phone_numbers) <= 2, "More than two SD person phone numbers"
 
     sd_postal_address = (
-        f"{sd_response_person.PostalAddress.StandardAddressIdentifier}, {sd_response_person.PostalAddress.PostalCode}, {sd_response_person.PostalAddress.DistrictName}"
-        if sd_response_person.PostalAddress is not None
-        and sd_response_person.PostalAddress.StandardAddressIdentifier is not None
-        and sd_response_person.PostalAddress.PostalCode is not None
-        and sd_response_person.PostalAddress.DistrictName is not None
-        and sd_response_person.PostalAddress.StandardAddressIdentifier
+        f"{sd_person_response.PostalAddress.StandardAddressIdentifier}, {sd_person_response.PostalAddress.PostalCode}, {sd_person_response.PostalAddress.DistrictName}"
+        if sd_person_response.PostalAddress is not None
+        and sd_person_response.PostalAddress.StandardAddressIdentifier is not None
+        and sd_person_response.PostalAddress.PostalCode is not None
+        and sd_person_response.PostalAddress.DistrictName is not None
+        and sd_person_response.PostalAddress.StandardAddressIdentifier
         != "**ADRESSEBESKYTTELSE**"
         else None
     )
 
-    sd_email_addresses = _get_emails(sd_response_person)
+    sd_email_addresses = _get_emails(sd_person_response)
     assert len(sd_email_addresses) <= 2, "More than two SD person email addresses"
 
     person = Person(
-        cpr=sd_response_person.PersonCivilRegistrationIdentifier,
-        given_name=sd_response_person.PersonGivenName,
-        surname=sd_response_person.PersonSurnameName,
+        cpr=sd_person_response.PersonCivilRegistrationIdentifier,
+        given_name=sd_person_response.PersonGivenName,
+        surname=sd_person_response.PersonSurnameName,
         emails=sd_email_addresses,
         phone_numbers=sd_phone_numbers,
         address=sd_postal_address,
