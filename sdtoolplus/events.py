@@ -378,6 +378,7 @@ async def _mo_org_unit(
 async def _sd_person(
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
+    settings: depends.Settings,
     event: Event[Json[PersonGraphQLEvent]],
 ) -> None:
     person = event.subject
@@ -386,6 +387,7 @@ async def _sd_person(
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
+        sync_addresses=settings.enable_person_address_sync,
         institution_identifier=person.institution_identifier,
         cpr=person.cpr,
     )
@@ -423,6 +425,7 @@ async def _mo_person(
             await sync_person(
                 sd_client=sd_client,
                 gql_client=gql_client,
+                sync_addresses=settings.enable_person_address_sync,
                 institution_identifier=institution_identifier,
                 cpr=mo_person_cpr,
             )

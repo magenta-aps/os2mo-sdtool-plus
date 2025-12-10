@@ -36,7 +36,6 @@ async def sync_person_and_engagement(
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     payload: EngagementSyncPayload,
-    dry_run: bool = False,
 ) -> dict:
     """
     Sync the person with the given CPR from the given institution identifier and the
@@ -63,9 +62,9 @@ async def sync_person_and_engagement(
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
+        sync_addresses=settings.enable_person_address_sync,
         institution_identifier=payload.institution_identifier,
         cpr=payload.cpr,
-        dry_run=dry_run,
     )
 
     await sync_engagement(
@@ -75,7 +74,6 @@ async def sync_person_and_engagement(
         cpr=payload.cpr,
         employment_identifier=payload.employment_identifier,
         settings=settings,
-        dry_run=dry_run,
     )
 
     return {"msg": "success"}

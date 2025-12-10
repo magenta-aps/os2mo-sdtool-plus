@@ -10,12 +10,37 @@ from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
 from sdclient.responses import GetEmploymentChangedResponse
+from sdclient.responses import Person as SDPersonResponse
 
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.models import Person
 
 logger = structlog.stdlib.get_logger()
+
+
+def _get_phone_numbers(sd_person_response: SDPersonResponse) -> list[str]:
+    """Get the (maximum) two SD person phone numbers"""
+    if (
+        sd_person_response.ContactInformation is not None
+        and sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
+    ):
+        return [
+            phone_number
+            for phone_number in sd_person_response.ContactInformation.TelephoneNumberIdentifier
+            if phone_number != "00000000"
+        ]
+    return []
+
+
+def _get_emails(sd_person_response: SDPersonResponse) -> list[str]:
+    """Get the (maximum) two SD person emails"""
+    if (
+        sd_person_response.ContactInformation is not None
+        and sd_person_response.ContactInformation.EmailAddressIdentifier is not None
+    ):
+        return sd_person_response.ContactInformation.EmailAddressIdentifier  # type: ignore
+    return []
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
@@ -48,19 +73,36 @@ async def get_sd_person(
         )
         raise PersonNotFoundError()
 
-    sd_response_person = one(
+    sd_person_response = one(
         sd_response.Person,
         too_short=PersonNotFoundError,
         too_long=MoreThanOnePersonError,
     )
 
+    sd_phone_numbers = _get_phone_numbers(sd_person_response)
+    assert len(sd_phone_numbers) <= 2, "More than two SD person phone numbers"
+
+    sd_postal_address = (
+        f"{sd_person_response.PostalAddress.StandardAddressIdentifier}, {sd_person_response.PostalAddress.PostalCode}, {sd_person_response.PostalAddress.DistrictName}"
+        if sd_person_response.PostalAddress is not None
+        and sd_person_response.PostalAddress.StandardAddressIdentifier is not None
+        and sd_person_response.PostalAddress.PostalCode is not None
+        and sd_person_response.PostalAddress.DistrictName is not None
+        and sd_person_response.PostalAddress.StandardAddressIdentifier
+        != "**ADRESSEBESKYTTELSE**"
+        else None
+    )
+
+    sd_email_addresses = _get_emails(sd_person_response)
+    assert len(sd_email_addresses) <= 2, "More than two SD person email addresses"
+
     person = Person(
-        cpr=sd_response_person.PersonCivilRegistrationIdentifier,
-        given_name=sd_response_person.PersonGivenName,
-        surname=sd_response_person.PersonSurnameName,
-        emails=[],
-        phone_numbers=[],
-        addresses=[],
+        cpr=sd_person_response.PersonCivilRegistrationIdentifier,
+        given_name=sd_person_response.PersonGivenName,
+        surname=sd_person_response.PersonSurnameName,
+        emails=sd_email_addresses,
+        phone_numbers=sd_phone_numbers,
+        address=sd_postal_address,
     )
     logger.debug("SD person", person=person.dict())
 
@@ -96,7 +138,7 @@ async def get_all_sd_persons(
                 surname=str(sd_response_person.PersonSurnameName),
                 emails=[],
                 phone_numbers=[],
-                addresses=[],
+                address=None,
             )
         except ValueError as error:
             logger.error("Could not parse person", person=sd_response_person)
