@@ -4,7 +4,8 @@ WITH dublets AS (
     SELECT DISTINCT
         brugervendtnoegle AS user_key,
         brel.rel_maal_urn AS cpr,
-        reg.organisationfunktion_id AS eng
+        reg.organisationfunktion_id AS eng,
+        reg.id
     FROM
         organisationfunktion_registrering reg
     INNER JOIN
@@ -24,19 +25,29 @@ WITH dublets AS (
         breg.id = brel.bruger_registrering_id
     WHERE
         upper((reg.registrering).timeperiod) = 'infinity'
-        -- AND gyldighed = 'Aktiv'
         AND funktionsnavn = 'Engagement'
         AND rel.rel_type = 'tilknyttedebrugere'
         AND brel.rel_type = 'tilknyttedepersoner'
         AND brugervendtnoegle <> '-'
-    -- LIMIT 50
+), active_dublets AS (
+    SELECT DISTINCT
+        user_key,
+        cpr,
+        eng
+    FROM
+        dublets
+    INNER JOIN
+        organisationfunktion_tils_gyldighed tils2 ON
+        dublets.id = tils2.organisationfunktion_registrering_id
+    WHERE
+        gyldighed = 'Aktiv'
 )
 SELECT
     user_key,
     cpr,
     count(eng)
 FROM
-    dublets
+    active_dublets
 GROUP BY
     user_key,
     cpr
