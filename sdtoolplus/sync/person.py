@@ -7,7 +7,6 @@ from uuid import UUID
 import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
-from more_itertools import last
 from more_itertools import one
 from more_itertools import only
 from sdclient.client import SDClient
@@ -122,11 +121,11 @@ async def _sync_addresses(
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
-        sd_address=first(sd_person.phone_numbers, default=None),
+        sd_address=sd_person.person_phone_number1,
         address_type_uuid=await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon",
+            class_user_key="person_telefon",
         ),
         visibility_uuid=visibility_uuid,
     )
@@ -135,13 +134,11 @@ async def _sync_addresses(
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
-        sd_address=last(sd_person.phone_numbers, default=None)
-        if len(sd_person.phone_numbers) > 1
-        else None,
+        sd_address=sd_person.person_phone_number2,
         address_type_uuid=await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon_anden",
+            class_user_key="person_telefon_anden",
         ),
         visibility_uuid=visibility_uuid,
     )
@@ -150,11 +147,11 @@ async def _sync_addresses(
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
-        sd_address=first(sd_person.emails, default=None),
+        sd_address=sd_person.person_email1,
         address_type_uuid=await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_email",
+            class_user_key="person_email",
         ),
         visibility_uuid=visibility_uuid,
     )
@@ -163,13 +160,11 @@ async def _sync_addresses(
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
-        sd_address=last(sd_person.emails, default=None)
-        if len(sd_person.emails) > 1
-        else None,
+        sd_address=sd_person.person_email2,
         address_type_uuid=await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_email_anden",
+            class_user_key="person_email_anden",
         ),
         visibility_uuid=visibility_uuid,
     )

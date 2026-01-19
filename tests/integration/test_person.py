@@ -351,25 +351,25 @@ async def test_person_addresses(
     phone1_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="employee_address_type",
-        class_user_key="engagement_telefon",
+        class_user_key="person_telefon",
     )
 
     phone2_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="employee_address_type",
-        class_user_key="engagement_telefon_anden",
+        class_user_key="person_telefon_anden",
     )
 
     email1_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="employee_address_type",
-        class_user_key="engagement_email",
+        class_user_key="person_email",
     )
 
     email2_address_type_uuid = await get_class(
         gql_client=graphql_client,
         facet_user_key="employee_address_type",
-        class_user_key="engagement_email_anden",
+        class_user_key="person_email_anden",
     )
 
     postal_address_type_uuid = await get_class(

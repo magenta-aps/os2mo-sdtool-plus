@@ -4,6 +4,7 @@ import asyncio
 from datetime import date
 
 import structlog.stdlib
+from more_itertools import nth
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.exceptions import SDRootElementNotFound
@@ -19,28 +20,42 @@ from sdtoolplus.models import Person
 logger = structlog.stdlib.get_logger()
 
 
-def _get_phone_numbers(sd_person_response: SDPersonResponse) -> list[str]:
+def _get_phone_numbers(
+    sd_person_response: SDPersonResponse,
+) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person phone numbers"""
     if (
         sd_person_response.ContactInformation is not None
         and sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
     ):
-        return [
-            phone_number
-            for phone_number in sd_person_response.ContactInformation.TelephoneNumberIdentifier
-            if phone_number != "00000000"
-        ]
-    return []
+        assert (
+            sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
+        )
+        phone1 = nth(
+            sd_person_response.ContactInformation.TelephoneNumberIdentifier, 0, None
+        )
+        phone2 = nth(
+            sd_person_response.ContactInformation.TelephoneNumberIdentifier, 1, None
+        )
+        return phone1, phone2
+    return None, None
 
 
-def _get_emails(sd_person_response: SDPersonResponse) -> list[str]:
+def _get_emails(sd_person_response: SDPersonResponse) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person emails"""
     if (
         sd_person_response.ContactInformation is not None
         and sd_person_response.ContactInformation.EmailAddressIdentifier is not None
     ):
-        return sd_person_response.ContactInformation.EmailAddressIdentifier  # type: ignore
-    return []
+        assert sd_person_response.ContactInformation.EmailAddressIdentifier is not None
+        email1 = nth(
+            sd_person_response.ContactInformation.EmailAddressIdentifier, 0, None
+        )
+        email2 = nth(
+            sd_person_response.ContactInformation.EmailAddressIdentifier, 1, None
+        )
+        return email1, email2
+    return None, None
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
@@ -51,7 +66,7 @@ async def get_sd_person(
     effective_date: date,
     contact_information: bool = True,
     postal_address: bool = True,
-):
+) -> Person:
     try:
         sd_response = await asyncio.to_thread(
             sd_client.get_person,
@@ -79,8 +94,9 @@ async def get_sd_person(
         too_long=MoreThanOnePersonError,
     )
 
-    sd_phone_numbers = _get_phone_numbers(sd_person_response)
-    assert len(sd_phone_numbers) <= 2, "More than two SD person phone numbers"
+    sd_person_phone_number1, sd_person_phone_number2 = _get_phone_numbers(
+        sd_person_response
+    )
 
     sd_postal_address = (
         f"{sd_person_response.PostalAddress.StandardAddressIdentifier}, {sd_person_response.PostalAddress.PostalCode}, {sd_person_response.PostalAddress.DistrictName}"
@@ -93,15 +109,16 @@ async def get_sd_person(
         else None
     )
 
-    sd_email_addresses = _get_emails(sd_person_response)
-    assert len(sd_email_addresses) <= 2, "More than two SD person email addresses"
+    sd_person_email1, sd_person_email2 = _get_emails(sd_person_response)
 
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
         given_name=sd_person_response.PersonGivenName,
         surname=sd_person_response.PersonSurnameName,
-        emails=sd_email_addresses,
-        phone_numbers=sd_phone_numbers,
+        person_email1=sd_person_email1,
+        person_email2=sd_person_email2,
+        person_phone_number1=sd_person_phone_number1,
+        person_phone_number2=sd_person_phone_number2,
         address=sd_postal_address,
     )
     logger.debug("SD person", person=person.dict())
@@ -136,9 +153,6 @@ async def get_all_sd_persons(
                 cpr=sd_response_person.PersonCivilRegistrationIdentifier,
                 given_name=str(sd_response_person.PersonGivenName),
                 surname=str(sd_response_person.PersonSurnameName),
-                emails=[],
-                phone_numbers=[],
-                address=None,
             )
         except ValueError as error:
             logger.error("Could not parse person", person=sd_response_person)

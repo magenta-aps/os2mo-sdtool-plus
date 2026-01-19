@@ -140,21 +140,11 @@ class Person(BaseModel):
     cpr: str
     given_name: str
     surname: str
-    emails: list[str]
-    phone_numbers: list[str]
-    address: str | None
-
-    @validator("emails")
-    def max_two_emails(cls, v):
-        if len(v) > 2:
-            raise ValueError("More than two emails are not allowed")
-        return v
-
-    @validator("phone_numbers")
-    def max_two_phones(cls, v):
-        if len(v) > 2:
-            raise ValueError("More than two phone numbers are not allowed")
-        return v
+    person_email1: str | None = None
+    person_email2: str | None = None
+    person_phone_number1: str | None = None
+    person_phone_number2: str | None = None
+    address: str | None = None
 
 
 class Engagement(BaseModel):
