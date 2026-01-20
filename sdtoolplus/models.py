@@ -136,6 +136,22 @@ class OrgUnitSyncPayload(BaseModel):
     org_unit: OrgUnitUUID
 
 
+class Engagement(BaseModel):
+    institution_identifier: str
+    cpr: str
+    employment_identifier: str
+
+
+class EngagementAddresses(BaseModel):
+    """
+    Model for holding the SD person *engagement* phone or email addresses.
+    """
+
+    engagement: Engagement
+    address1: str | None
+    address2: str | None
+
+
 class Person(BaseModel):
     cpr: str
     given_name: str
@@ -145,12 +161,7 @@ class Person(BaseModel):
     person_phone_number1: str | None = None
     person_phone_number2: str | None = None
     address: str | None = None
-
-
-class Engagement(BaseModel):
-    institution_identifier: str
-    cpr: str
-    employment_identifier: str
+    engagement_phone_numbers: list[EngagementAddresses] = []
 
 
 class Interval(GenericModel, Generic[V], frozen=True):

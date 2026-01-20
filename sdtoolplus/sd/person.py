@@ -12,9 +12,12 @@ from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
 from sdclient.responses import ContactInformation
 from sdclient.responses import GetEmploymentChangedResponse
+from sdclient.responses import PersonEmployment
 
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
+from sdtoolplus.models import Engagement
+from sdtoolplus.models import EngagementAddresses
 from sdtoolplus.models import Person
 
 logger = structlog.stdlib.get_logger()
@@ -42,6 +45,31 @@ def _get_emails(
         email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
         return email1, email2
     return None, None
+
+
+def _get_employment_phone_numbers(
+    institution_identifier: str, cpr: str, employments: list[PersonEmployment]
+) -> list[EngagementAddresses]:
+    """Get the (maximum) two SD person employment phone numbers for each employment"""
+    engagement_phone_numbers = []
+    for employment in employments:
+        engagement = Engagement(
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            employment_identifier=employment.EmploymentIdentifier,
+        )
+        phone1, phone2 = _get_phone_numbers(employment.ContactInformation)
+        if phone1 is None and phone2 is None:
+            continue
+
+        engagement_phone_numbers.append(
+            EngagementAddresses(
+                engagement=engagement,
+                address1=phone1,
+                address2=phone2,
+            )
+        )
+    return engagement_phone_numbers
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
@@ -99,6 +127,10 @@ async def get_sd_person(
         sd_person_response.ContactInformation
     )
 
+    sd_eng_phone_numbers = _get_employment_phone_numbers(
+        institution_identifier, cpr, sd_person_response.Employment
+    )
+
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
         given_name=sd_person_response.PersonGivenName,
@@ -108,6 +140,7 @@ async def get_sd_person(
         person_phone_number1=sd_person_phone_number1,
         person_phone_number2=sd_person_phone_number2,
         address=sd_postal_address,
+        engagement_phone_numbers=sd_eng_phone_numbers,
     )
     logger.debug("SD person", person=person.dict())
 
