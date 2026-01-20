@@ -69,18 +69,30 @@ async def create_address(
     from_: datetime,
     visibility_uuid: UUID,
     address_type_uuid: UUID,
+    engagement_uuid: UUID | None = None,
 ) -> UUID:
     logger.info("Create address", address=value, from_=from_)
-    addr = await gql_client.create_address(
-        AddressCreateInput(
+
+    address_create_input = AddressCreateInput(
+        person=person_uuid,
+        visibility=visibility_uuid,
+        user_key=value,
+        value=value,
+        address_type=address_type_uuid,
+        validity=RAValidityInput(from_=from_),
+    )
+    if engagement_uuid is not None:
+        address_create_input = AddressCreateInput(
             person=person_uuid,
             visibility=visibility_uuid,
             user_key=value,
             value=value,
             address_type=address_type_uuid,
             validity=RAValidityInput(from_=from_),
+            engagement=engagement_uuid,
         )
-    )
+
+    addr = await gql_client.create_address(address_create_input)
     logger.info("Address created", address_uuid=str(addr.uuid))
     return addr.uuid
 
@@ -93,10 +105,21 @@ async def update_address(
     from_: datetime,
     visibility_uuid: UUID,
     address_type_uuid: UUID,
+    engagement_uuid: UUID | None = None,
 ) -> None:
     logger.info("Update address", value=value, from_=from_, address_uuid=address_uuid)
-    await gql_client.update_address(
-        AddressUpdateInput(
+
+    address_update_input = AddressUpdateInput(
+        uuid=address_uuid,
+        person=person_uuid,
+        visibility=visibility_uuid,
+        user_key=value,
+        value=value,
+        address_type=address_type_uuid,
+        validity=RAValidityInput(from_=from_),
+    )
+    if engagement_uuid is not None:
+        address_update_input = AddressUpdateInput(
             uuid=address_uuid,
             person=person_uuid,
             visibility=visibility_uuid,
@@ -104,8 +127,10 @@ async def update_address(
             value=value,
             address_type=address_type_uuid,
             validity=RAValidityInput(from_=from_),
+            engagement=engagement_uuid,
         )
-    )
+
+    await gql_client.update_address(address_update_input)
     logger.info("Address updated", address_uuid=str(address_uuid))
 
 
