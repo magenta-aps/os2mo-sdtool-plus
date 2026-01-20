@@ -127,7 +127,6 @@ async def _sync_engagement_addresses(
     settings: SDToolPlusSettings,
     person_uuid: UUID,
     engagement_addresses: list[EngagementAddresses],
-    address_type_uuid: UUID,
     visibility_uuid: UUID,
 ) -> None:
     logger.info(
@@ -161,20 +160,32 @@ async def _sync_engagement_addresses(
             raise EngagementNotFoundError()
         engagement_uuid = object_.uuid
 
+        eng_phone1_address_type_uuid = await get_class(
+            gql_client=gql_client,
+            facet_user_key="employee_address_type",
+            class_user_key="engagement_telefon",
+        )
+
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_address.address1,
-            address_type_uuid=address_type_uuid,
+            address_type_uuid=eng_phone1_address_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
+        )
+
+        eng_phone2_address_type_uuid = await get_class(
+            gql_client=gql_client,
+            facet_user_key="employee_address_type",
+            class_user_key="engagement_telefon_anden",
         )
 
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_address.address2,
-            address_type_uuid=address_type_uuid,
+            address_type_uuid=eng_phone2_address_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
@@ -194,7 +205,7 @@ async def _sync_addresses(
         class_user_key="Public",
     )
 
-    # Phone 1
+    # Person phone 1
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -207,7 +218,7 @@ async def _sync_addresses(
         visibility_uuid=visibility_uuid,
     )
 
-    # Phone 2
+    # Person phone 2
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -220,7 +231,7 @@ async def _sync_addresses(
         visibility_uuid=visibility_uuid,
     )
 
-    # Email 1
+    # Person email 1
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -233,7 +244,7 @@ async def _sync_addresses(
         visibility_uuid=visibility_uuid,
     )
 
-    # Email 2
+    # Person email 2
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -246,7 +257,7 @@ async def _sync_addresses(
         visibility_uuid=visibility_uuid,
     )
 
-    # Postal address
+    # Postal address (only present on the SD person object itself)
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
@@ -256,6 +267,15 @@ async def _sync_addresses(
             facet_user_key="employee_address_type",
             class_user_key="AdresseSDEmployee",
         ),
+        visibility_uuid=visibility_uuid,
+    )
+
+    # Engagement phone numbers
+    await _sync_engagement_addresses(
+        gql_client=gql_client,
+        settings=settings,
+        person_uuid=person_uuid,
+        engagement_addresses=sd_person.engagement_phone_numbers,
         visibility_uuid=visibility_uuid,
     )
 
