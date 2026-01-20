@@ -10,8 +10,8 @@ from sdclient.client import SDClient
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
+from sdclient.responses import ContactInformation
 from sdclient.responses import GetEmploymentChangedResponse
-from sdclient.responses import Person as SDPersonResponse
 
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
@@ -21,39 +21,25 @@ logger = structlog.stdlib.get_logger()
 
 
 def _get_phone_numbers(
-    sd_person_response: SDPersonResponse,
+    contact_info: ContactInformation | None,
 ) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person phone numbers"""
-    if (
-        sd_person_response.ContactInformation is not None
-        and sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
-    ):
-        assert (
-            sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
-        )
-        phone1 = nth(
-            sd_person_response.ContactInformation.TelephoneNumberIdentifier, 0, None
-        )
-        phone2 = nth(
-            sd_person_response.ContactInformation.TelephoneNumberIdentifier, 1, None
-        )
+    if contact_info is not None and contact_info.TelephoneNumberIdentifier is not None:
+        assert contact_info.TelephoneNumberIdentifier is not None
+        phone1 = nth(contact_info.TelephoneNumberIdentifier, 0, None)
+        phone2 = nth(contact_info.TelephoneNumberIdentifier, 1, None)
         return phone1, phone2
     return None, None
 
 
-def _get_emails(sd_person_response: SDPersonResponse) -> tuple[str | None, str | None]:
+def _get_emails(
+    contact_info: ContactInformation | None,
+) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person emails"""
-    if (
-        sd_person_response.ContactInformation is not None
-        and sd_person_response.ContactInformation.EmailAddressIdentifier is not None
-    ):
-        assert sd_person_response.ContactInformation.EmailAddressIdentifier is not None
-        email1 = nth(
-            sd_person_response.ContactInformation.EmailAddressIdentifier, 0, None
-        )
-        email2 = nth(
-            sd_person_response.ContactInformation.EmailAddressIdentifier, 1, None
-        )
+    if contact_info is not None and contact_info.EmailAddressIdentifier is not None:
+        assert contact_info.EmailAddressIdentifier is not None
+        email1 = nth(contact_info.EmailAddressIdentifier, 0, None)
+        email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
         return email1, email2
     return None, None
 
@@ -95,7 +81,7 @@ async def get_sd_person(
     )
 
     sd_person_phone_number1, sd_person_phone_number2 = _get_phone_numbers(
-        sd_person_response
+        sd_person_response.ContactInformation
     )
 
     sd_postal_address = (
@@ -109,7 +95,9 @@ async def get_sd_person(
         else None
     )
 
-    sd_person_email1, sd_person_email2 = _get_emails(sd_person_response)
+    sd_person_email1, sd_person_email2 = _get_emails(
+        sd_person_response.ContactInformation
+    )
 
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
