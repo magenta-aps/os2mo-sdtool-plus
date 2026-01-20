@@ -440,7 +440,7 @@ def create_fastramqpi() -> FastRAMQPI:
         await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
-            sync_addresses=settings.enable_person_address_sync,
+            settings=settings,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
         )

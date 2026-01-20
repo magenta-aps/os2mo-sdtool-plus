@@ -182,6 +182,7 @@ async def _sync_engagement_addresses(
 
 async def _sync_addresses(
     gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
     person_uuid: UUID,
     sd_person: Person,
 ) -> None:
@@ -293,12 +294,12 @@ async def _sync_person(
 
 
 @handle_exclusively_decorator(
-    key=lambda sd_client, gql_client, sync_addresses, institution_identifier, cpr: cpr
+    key=lambda sd_client, gql_client, settings, institution_identifier, cpr: cpr
 )
 async def sync_person(
     sd_client: SDClient,
     gql_client: GraphQLClient,
-    sync_addresses: bool,
+    settings: SDToolPlusSettings,
     institution_identifier: str,
     cpr: str,
 ) -> None:
@@ -340,9 +341,10 @@ async def sync_person(
         "Done syncing person!", institution_identifier=institution_identifier, cpr=cpr
     )
 
-    if sync_addresses:
+    if settings.enable_person_address_sync:
         await _sync_addresses(
             gql_client=gql_client,
+            settings=settings,
             person_uuid=person_uuid,
             sd_person=sd_person,
         )
