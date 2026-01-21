@@ -137,6 +137,10 @@ async def get_sd_person(
         institution_identifier, cpr, sd_person_response.Employment, _get_phone_numbers
     )
 
+    sd_eng_emails = _get_employment_addresses(
+        institution_identifier, cpr, sd_person_response.Employment, _get_emails
+    )
+
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
         given_name=sd_person_response.PersonGivenName,
@@ -147,6 +151,7 @@ async def get_sd_person(
         person_phone_number2=sd_person_phone_number2,
         address=sd_postal_address,
         engagement_phone_numbers=sd_eng_phone_numbers,
+        engagement_emails=sd_eng_emails,
     )
     logger.debug("SD person", person=person.dict())
 

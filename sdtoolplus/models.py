@@ -162,6 +162,7 @@ class Person(BaseModel):
     person_phone_number2: str | None = None
     address: str | None = None
     engagement_phone_numbers: list[EngagementAddresses] = []
+    engagement_emails: list[EngagementAddresses] = []
 
 
 class Interval(GenericModel, Generic[V], frozen=True):

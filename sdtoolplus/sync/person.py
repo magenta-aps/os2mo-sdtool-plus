@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from enum import Enum
 from typing import cast
 from uuid import UUID
 
@@ -36,6 +37,11 @@ from sdtoolplus.sync.common import prefix_eng_user_key
 from sdtoolplus.types import CPRNumber
 
 logger = structlog.stdlib.get_logger()
+
+
+class PersonEngagementAddressType(Enum):
+    phone = "telefon"
+    email = "email"
 
 
 async def _sync_address(
@@ -75,7 +81,7 @@ async def _sync_address(
     if sd_address is None and mo_address is None:
         return
 
-    # There can only one of each address type. If there are more than one,
+    # There can only be one of each address type. If there is more than one,
     # terminate all but the first
     for term_address in mo_addresses.objects[1:]:
         await terminate_address(gql_client, term_address.uuid, now)
@@ -128,6 +134,7 @@ async def _sync_engagement_addresses(
     person_uuid: UUID,
     engagement_addresses: list[EngagementAddresses],
     visibility_uuid: UUID,
+    address_type: PersonEngagementAddressType,
 ) -> None:
     logger.info(
         "Syncing engagement addresses",
@@ -160,32 +167,32 @@ async def _sync_engagement_addresses(
             raise EngagementNotFoundError()
         engagement_uuid = object_.uuid
 
-        eng_phone1_address_type_uuid = await get_class(
+        eng_address1_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon",
+            class_user_key=f"engagement_{address_type.value}",
         )
 
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_address.address1,
-            address_type_uuid=eng_phone1_address_type_uuid,
+            address_type_uuid=eng_address1_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
 
-        eng_phone2_address_type_uuid = await get_class(
+        eng_address2_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon_anden",
+            class_user_key=f"engagement_{address_type.value}_anden",
         )
 
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_address.address2,
-            address_type_uuid=eng_phone2_address_type_uuid,
+            address_type_uuid=eng_address2_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
@@ -277,6 +284,17 @@ async def _sync_addresses(
         person_uuid=person_uuid,
         engagement_addresses=sd_person.engagement_phone_numbers,
         visibility_uuid=visibility_uuid,
+        address_type=PersonEngagementAddressType.phone,
+    )
+
+    # Engagement phone numbers
+    await _sync_engagement_addresses(
+        gql_client=gql_client,
+        settings=settings,
+        person_uuid=person_uuid,
+        engagement_addresses=sd_person.engagement_emails,
+        visibility_uuid=visibility_uuid,
+        address_type=PersonEngagementAddressType.email,
     )
 
     logger.info("Done syncing person addresses", person_uuid=str(person_uuid))
