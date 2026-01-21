@@ -433,7 +433,7 @@ async def test_person_addresses(
         AddressUpdateInput(
             uuid=email1_uuid,
             person=person_uuid,
-            user_key="chuck@karate.org",
+            user_key="chuck@judo.org",
             value="chuck@judo.org",
             address_type=email1_address_type_uuid,
             visibility=visibility_uuid,
