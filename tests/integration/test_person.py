@@ -974,3 +974,243 @@ async def test_person_engagement_addresses(
     assert interval_1.value == "norris@hollywood.com"
     assert interval_1.visibility_uuid == visibility_uuid
     assert interval_1.address_type.uuid == email2_address_type_uuid
+
+
+@pytest.mark.integration_test
+@travel("2002-07-01")
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "ENABLE_PERSON_ADDRESS_SYNC": "true",
+    }
+)
+async def test_person_engagement_addresses_terminate(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Test that person *engagement* addresses are synced correctly.
+    We test the following for a given person:
+
+    Addresses in MO:
+
+    Time  --------------t1-------------------------------------------------------->
+
+    Phone1 (remove)     |----------------------12345678---------------------------
+    Email1 (update)     |-------------------chuck@karate.org----------------------
+    Email2 (remove)     |-----------------norris@hollywood.com--------------------
+
+    Addresses in SD (no timelines!):
+    Email1: norris@hollywood.com (update)
+    """
+
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=TIMEZONE)
+
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+    now = datetime.combine(datetime.today(), time.min, tzinfo=TIMEZONE)
+
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create engagement
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=f"II-{emp_id}",
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name4",
+                extension_4="dep1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Get the address types
+    phone1_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_telefon",
+    )
+
+    email1_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_email",
+    )
+
+    email2_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_email_anden",
+    )
+
+    visibility_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="visibility",
+        class_user_key="Public",
+    )
+
+    # Create phone 1
+    phone1_uuid = (
+        await graphql_client.create_address(
+            AddressCreateInput(
+                person=person_uuid,
+                user_key="12345678",
+                value="12345678",
+                address_type=phone1_address_type_uuid,
+                visibility=visibility_uuid,
+                engagement=eng_uuid,
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            )
+        )
+    ).uuid
+
+    # Create email 1
+    email1_uuid = (
+        await graphql_client.create_address(
+            AddressCreateInput(
+                person=person_uuid,
+                user_key="chuck@karate.org",
+                value="chuck@karate.org",
+                address_type=email1_address_type_uuid,
+                visibility=visibility_uuid,
+                engagement=eng_uuid,
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            )
+        )
+    ).uuid
+
+    # Create email 2
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="norris@hollywood.com",
+            value="norris@hollywood.com",
+            address_type=email2_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8" ?>
+        <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+            <RequestStructure>
+                <InstitutionIdentifier>II</InstitutionIdentifier>
+                <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+                <EffectiveDate>2002-07-01</EffectiveDate>
+                <StatusActiveIndicator>true</StatusActiveIndicator>
+                <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                <ContactInformationIndicator>true</ContactInformationIndicator>
+                <PostalAddressIndicator>true</PostalAddressIndicator>
+            </RequestStructure>
+            <Person>
+                <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                <PersonGivenName>Chuck</PersonGivenName>
+                <PersonSurnameName>Norris</PersonSurnameName>
+                <Employment>
+                    <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                    <ContactInformation>
+                        <EmailAddressIdentifier>norris@hollywood.com</EmailAddressIdentifier>
+                    </ContactInformation>
+                </Employment>
+            </Person>
+        </GetPerson20111201>
+    """
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # Phone 1
+    r_phone1 = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[phone1_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_uuid]),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    phone1 = one(r_phone1.objects)
+
+    interval_1 = one(phone1.validities)
+    assert phone1.uuid == phone1_uuid
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == now
+    assert interval_1.user_key == "12345678"
+    assert interval_1.value == "12345678"
+    assert interval_1.visibility_uuid == visibility_uuid
+    assert interval_1.address_type.uuid == phone1_address_type_uuid
+
+    # Email 1
+    r_email1 = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[email1_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_uuid]),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    email1 = one(r_email1.objects)
+
+    interval_1 = email1.validities[0]
+    assert email1.uuid == email1_uuid
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == now
+    assert interval_1.user_key == "chuck@karate.org"
+    assert interval_1.value == "chuck@karate.org"
+    assert interval_1.visibility_uuid == visibility_uuid
+    assert interval_1.address_type.uuid == email1_address_type_uuid
+
+    interval2 = email1.validities[1]
+    assert email1.uuid == email1_uuid
+    assert interval2.validity.from_ == now
+    assert mo_end_to_timeline_end(interval2.validity.to) == POSITIVE_INFINITY
+    assert interval2.user_key == "norris@hollywood.com"
+    assert interval2.value == "norris@hollywood.com"
+    assert interval2.visibility_uuid == visibility_uuid
+    assert interval2.address_type.uuid == email1_address_type_uuid
+
+    assert len(email1.validities) == 2

@@ -65,8 +65,6 @@ def _get_employment_addresses(
             employment_identifier=employment.EmploymentIdentifier,
         )
         address1, address2 = address_extractor(employment.ContactInformation)
-        if address1 is None and address2 is None:
-            continue
 
         engagement_phone_numbers.append(
             EngagementAddresses(
