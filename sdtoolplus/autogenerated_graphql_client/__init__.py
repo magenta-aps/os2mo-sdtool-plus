@@ -93,6 +93,9 @@ from .get_engagement_timeline import GetEngagementTimelineEngagementsObjectsVali
 from .get_engagement_timeline import (
     GetEngagementTimelineEngagementsObjectsValiditiesValidity,
 )
+from .get_engagement_uuids import GetEngagementUuids
+from .get_engagement_uuids import GetEngagementUuidsEngagements
+from .get_engagement_uuids import GetEngagementUuidsEngagementsObjects
 from .get_engagements import GetEngagements
 from .get_engagements import GetEngagementsEngagements
 from .get_engagements import GetEngagementsEngagementsObjects
@@ -437,6 +440,9 @@ __all__ = [
     "GetEngagementTimelineEngagementsObjects",
     "GetEngagementTimelineEngagementsObjectsValidities",
     "GetEngagementTimelineEngagementsObjectsValiditiesValidity",
+    "GetEngagementUuids",
+    "GetEngagementUuidsEngagements",
+    "GetEngagementUuidsEngagementsObjects",
     "GetEngagements",
     "GetEngagementsEngagements",
     "GetEngagementsEngagementsObjects",

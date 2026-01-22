@@ -50,6 +50,8 @@ from .get_class import GetClass
 from .get_class import GetClassClasses
 from .get_engagement_timeline import GetEngagementTimeline
 from .get_engagement_timeline import GetEngagementTimelineEngagements
+from .get_engagement_uuids import GetEngagementUuids
+from .get_engagement_uuids import GetEngagementUuidsEngagements
 from .get_engagements import GetEngagements
 from .get_engagements import GetEngagementsEngagements
 from .get_events import GetEvents
@@ -788,6 +790,25 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetEngagements.parse_obj(data).engagements
+
+    async def get_engagement_uuids(
+        self, filter: EngagementFilter
+    ) -> GetEngagementUuidsEngagements:
+        query = gql(
+            """
+            query GetEngagementUuids($filter: EngagementFilter!) {
+              engagements(filter: $filter) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """
+        )
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetEngagementUuids.parse_obj(data).engagements
 
     async def get_engagement_timeline(
         self, filter: EngagementFilter

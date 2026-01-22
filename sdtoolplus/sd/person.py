@@ -2,45 +2,76 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
 from datetime import date
+from typing import Callable
 
 import structlog.stdlib
+from more_itertools import nth
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 from sdclient.requests import GetPersonRequest
+from sdclient.responses import ContactInformation
 from sdclient.responses import GetEmploymentChangedResponse
-from sdclient.responses import Person as SDPersonResponse
+from sdclient.responses import PersonEmployment
 
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
+from sdtoolplus.models import Engagement
+from sdtoolplus.models import EngagementAddresses
 from sdtoolplus.models import Person
 
 logger = structlog.stdlib.get_logger()
 
 
-def _get_phone_numbers(sd_person_response: SDPersonResponse) -> list[str]:
+def _get_phone_numbers(
+    contact_info: ContactInformation | None,
+) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person phone numbers"""
-    if (
-        sd_person_response.ContactInformation is not None
-        and sd_person_response.ContactInformation.TelephoneNumberIdentifier is not None
-    ):
-        return [
-            phone_number
-            for phone_number in sd_person_response.ContactInformation.TelephoneNumberIdentifier
-            if phone_number != "00000000"
-        ]
-    return []
+    if contact_info is None or contact_info.TelephoneNumberIdentifier is None:
+        return None, None
+    phone1 = nth(contact_info.TelephoneNumberIdentifier, 0, None)
+    phone2 = nth(contact_info.TelephoneNumberIdentifier, 1, None)
+    return phone1, phone2
 
 
-def _get_emails(sd_person_response: SDPersonResponse) -> list[str]:
+def _get_emails(
+    contact_info: ContactInformation | None,
+) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person emails"""
-    if (
-        sd_person_response.ContactInformation is not None
-        and sd_person_response.ContactInformation.EmailAddressIdentifier is not None
-    ):
-        return sd_person_response.ContactInformation.EmailAddressIdentifier  # type: ignore
-    return []
+    if contact_info is None or contact_info.EmailAddressIdentifier is None:
+        return None, None
+    email1 = nth(contact_info.EmailAddressIdentifier, 0, None)
+    email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
+    return email1, email2
+
+
+def _get_employment_addresses(
+    institution_identifier: str,
+    cpr: str,
+    employments: list[PersonEmployment],
+    address_extractor: Callable[
+        [ContactInformation | None], tuple[str | None, str | None]
+    ],
+) -> list[EngagementAddresses]:
+    """Get the (maximum) two SD person employment addresses for each employment"""
+    engagement_phone_numbers = []
+    for employment in employments:
+        engagement = Engagement(
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            employment_identifier=employment.EmploymentIdentifier,
+        )
+        address1, address2 = address_extractor(employment.ContactInformation)
+
+        engagement_phone_numbers.append(
+            EngagementAddresses(
+                engagement=engagement,
+                address1=address1,
+                address2=address2,
+            )
+        )
+    return engagement_phone_numbers
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
@@ -51,7 +82,7 @@ async def get_sd_person(
     effective_date: date,
     contact_information: bool = True,
     postal_address: bool = True,
-):
+) -> Person:
     try:
         sd_response = await asyncio.to_thread(
             sd_client.get_person,
@@ -79,8 +110,9 @@ async def get_sd_person(
         too_long=MoreThanOnePersonError,
     )
 
-    sd_phone_numbers = _get_phone_numbers(sd_person_response)
-    assert len(sd_phone_numbers) <= 2, "More than two SD person phone numbers"
+    sd_person_phone_number1, sd_person_phone_number2 = _get_phone_numbers(
+        sd_person_response.ContactInformation
+    )
 
     sd_postal_address = (
         f"{sd_person_response.PostalAddress.StandardAddressIdentifier}, {sd_person_response.PostalAddress.PostalCode}, {sd_person_response.PostalAddress.DistrictName}"
@@ -93,16 +125,29 @@ async def get_sd_person(
         else None
     )
 
-    sd_email_addresses = _get_emails(sd_person_response)
-    assert len(sd_email_addresses) <= 2, "More than two SD person email addresses"
+    sd_person_email1, sd_person_email2 = _get_emails(
+        sd_person_response.ContactInformation
+    )
+
+    sd_eng_phone_numbers = _get_employment_addresses(
+        institution_identifier, cpr, sd_person_response.Employment, _get_phone_numbers
+    )
+
+    sd_eng_emails = _get_employment_addresses(
+        institution_identifier, cpr, sd_person_response.Employment, _get_emails
+    )
 
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
         given_name=sd_person_response.PersonGivenName,
         surname=sd_person_response.PersonSurnameName,
-        emails=sd_email_addresses,
-        phone_numbers=sd_phone_numbers,
-        address=sd_postal_address,
+        person_email1=sd_person_email1,
+        person_email2=sd_person_email2,
+        person_phone_number1=sd_person_phone_number1,
+        person_phone_number2=sd_person_phone_number2,
+        person_address=sd_postal_address,
+        engagement_phone_numbers=sd_eng_phone_numbers,
+        engagement_emails=sd_eng_emails,
     )
     logger.debug("SD person", person=person.dict())
 
@@ -136,9 +181,6 @@ async def get_all_sd_persons(
                 cpr=sd_response_person.PersonCivilRegistrationIdentifier,
                 given_name=str(sd_response_person.PersonGivenName),
                 surname=str(sd_response_person.PersonSurnameName),
-                emails=[],
-                phone_numbers=[],
-                address=None,
             )
         except ValueError as error:
             logger.error("Could not parse person", person=sd_response_person)

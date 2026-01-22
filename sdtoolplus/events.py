@@ -387,7 +387,7 @@ async def _sd_person(
     await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
-        sync_addresses=settings.enable_person_address_sync,
+        settings=settings,
         institution_identifier=person.institution_identifier,
         cpr=person.cpr,
     )
@@ -425,7 +425,7 @@ async def _mo_person(
             await sync_person(
                 sd_client=sd_client,
                 gql_client=gql_client,
-                sync_addresses=settings.enable_person_address_sync,
+                settings=settings,
                 institution_identifier=institution_identifier,
                 cpr=mo_person_cpr,
             )

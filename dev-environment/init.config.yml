@@ -62,6 +62,18 @@ facets:
       title: "Telefon lokal"
       scope: "PHONE"
   employee_address_type:
+    person_email:
+      title: "Privat e-mail"
+      scope: "EMAIL"
+    person_email_anden:
+      title: "Privat e-mail (sekundær)"
+      scope: "EMAIL"
+    person_telefon:
+      title: "Privat telefon"
+      scope: "PHONE"
+    person_telefon_anden:
+      title: "Privat telefon (sekundær)"
+      scope: "PHONE"
     engagement_email:
       title: "E-mail"
       scope: "EMAIL"
