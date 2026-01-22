@@ -145,7 +145,7 @@ async def get_sd_person(
         person_email2=sd_person_email2,
         person_phone_number1=sd_person_phone_number1,
         person_phone_number2=sd_person_phone_number2,
-        address=sd_postal_address,
+        person_address=sd_postal_address,
         engagement_phone_numbers=sd_eng_phone_numbers,
         engagement_emails=sd_eng_emails,
     )

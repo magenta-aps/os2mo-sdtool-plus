@@ -265,7 +265,7 @@ async def _sync_addresses(
     await _sync_address(
         gql_client=gql_client,
         person_uuid=person_uuid,
-        sd_address=sd_person.address,
+        sd_address=sd_person.person_address,
         address_type_uuid=await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",

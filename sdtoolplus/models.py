@@ -160,7 +160,7 @@ class Person(BaseModel):
     person_email2: str | None = None
     person_phone_number1: str | None = None
     person_phone_number2: str | None = None
-    address: str | None = None
+    person_address: str | None = None
     engagement_phone_numbers: list[EngagementAddresses] = []
     engagement_emails: list[EngagementAddresses] = []
 
