@@ -146,7 +146,7 @@ async def _sync_engagement_addresses(
             inst_id=eng_address.engagement.institution_identifier,
         )
 
-        engagement_timeline = await gql_client.get_engagement_timeline(
+        engagement_timeline = await gql_client.get_engagement_uuids(
             get_engagement_filter(
                 person=person_uuid, user_key=eng_user_key, from_date=None, to_date=None
             )
