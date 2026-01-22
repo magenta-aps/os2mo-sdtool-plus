@@ -355,6 +355,18 @@ query GetEngagements(
   }
 }
 
+query GetEngagementUuids(
+  $filter: EngagementFilter!
+) {
+  engagements(
+    filter: $filter
+  ) {
+    objects {
+      uuid
+    }
+  }
+}
+
 query GetEngagementTimeline(
   $filter: EngagementFilter!
 ) {
