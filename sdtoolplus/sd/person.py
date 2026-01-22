@@ -28,24 +28,22 @@ def _get_phone_numbers(
     contact_info: ContactInformation | None,
 ) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person phone numbers"""
-    if contact_info is not None and contact_info.TelephoneNumberIdentifier is not None:
-        assert contact_info.TelephoneNumberIdentifier is not None
-        phone1 = nth(contact_info.TelephoneNumberIdentifier, 0, None)
-        phone2 = nth(contact_info.TelephoneNumberIdentifier, 1, None)
-        return phone1, phone2
-    return None, None
+    if contact_info is None or contact_info.TelephoneNumberIdentifier is None:
+        return None, None
+    phone1 = nth(contact_info.TelephoneNumberIdentifier, 0, None)
+    phone2 = nth(contact_info.TelephoneNumberIdentifier, 1, None)
+    return phone1, phone2
 
 
 def _get_emails(
     contact_info: ContactInformation | None,
 ) -> tuple[str | None, str | None]:
     """Get the (maximum) two SD person emails"""
-    if contact_info is not None and contact_info.EmailAddressIdentifier is not None:
-        assert contact_info.EmailAddressIdentifier is not None
-        email1 = nth(contact_info.EmailAddressIdentifier, 0, None)
-        email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
-        return email1, email2
-    return None, None
+    if contact_info is None or contact_info.EmailAddressIdentifier is None:
+        return None, None
+    email1 = nth(contact_info.EmailAddressIdentifier, 0, None)
+    email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
+    return email1, email2
 
 
 def _get_employment_addresses(
