@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from enum import Enum
+from typing import Any
 from typing import cast
 from uuid import UUID
 
@@ -59,20 +60,17 @@ async def _sync_address(
 
     now = datetime.now(tz=TIMEZONE)
 
-    address_filter = AddressFilter(
-        employee=EmployeeFilter(uuids=[person_uuid]),
-        address_type=ClassFilter(uuids=[address_type_uuid]),
-        from_date=now,
-        to_date=None,
-    )
+    address_filter_kwargs: dict[str, Any] = {
+        "employee": EmployeeFilter(uuids=[person_uuid]),
+        "address_type": ClassFilter(uuids=[address_type_uuid]),
+        "from_date": now,
+        "to_date": None,
+    }
     if engagement_uuid is not None:
-        address_filter = AddressFilter(
-            employee=EmployeeFilter(uuids=[person_uuid]),
-            address_type=ClassFilter(uuids=[address_type_uuid]),
-            engagement=EngagementFilter(uuids=[engagement_uuid]),
-            from_date=now,
-            to_date=None,
+        address_filter_kwargs["engagement_uuid"] = EngagementFilter(
+            uuids=[engagement_uuid]
         )
+    address_filter = AddressFilter(**address_filter_kwargs)
 
     mo_addresses = await gql_client.get_address_timeline(address_filter)
     mo_address = first(mo_addresses.objects, default=None)
