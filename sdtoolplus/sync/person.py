@@ -356,6 +356,13 @@ async def sync_person(
         cpr=cpr,
         effective_date=datetime.today(),
     )
+    if sd_person is None:
+        logger.warning(
+            "Person not found in SD. Skipping",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(

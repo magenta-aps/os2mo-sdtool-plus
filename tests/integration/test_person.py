@@ -114,7 +114,7 @@ async def test_person_not_in_sd(
     )
 
     # Assert
-    assert r.status_code == 404
+    assert r.status_code == 200
 
 
 @pytest.mark.integration_test
