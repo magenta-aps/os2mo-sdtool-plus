@@ -6,7 +6,7 @@ from typing import Callable
 
 import structlog.stdlib
 from more_itertools import nth
-from more_itertools import one
+from more_itertools import only
 from sdclient.client import SDClient
 from sdclient.exceptions import SDPersonNotFound
 from sdclient.exceptions import SDRootElementNotFound
@@ -112,11 +112,12 @@ async def get_sd_person(
         )
         raise PersonNotFoundError()
 
-    sd_person_response = one(
+    sd_person_response = only(
         sd_response.Person,
-        too_short=PersonNotFoundError,
         too_long=MoreThanOnePersonError,
     )
+    if sd_person_response is None:
+        return None
 
     sd_person_phone_number1, sd_person_phone_number2 = _get_phone_numbers(
         sd_person_response.ContactInformation
