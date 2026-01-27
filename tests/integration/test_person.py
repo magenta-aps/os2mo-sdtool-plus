@@ -65,15 +65,15 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
 
 
 @pytest.mark.integration_test
-async def test_person_not_in_sd(
+async def test_person_not_in_sd_due_to_envelope_sd_response(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     respx_mock: MockRouter,
 ):
     """
-    We are testing the case where the person is not found in SD. We should return
-    HTTP 404. Note: if the person actually exists in MO, we will not terminate the
-    person in MO.
+    We are testing the case where the person is not found in SD due to an
+    <Envelope> error response from SD. Note: if the person actually exists
+    in MO, we will not terminate the person in MO.
     """
     # Arrange
 
@@ -115,6 +115,76 @@ async def test_person_not_in_sd(
 
     # Assert
     assert r.status_code == 200
+
+
+@pytest.mark.integration_test
+async def test_person_not_in_sd_due_to_missing_person_element(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the case where the person is not found in SD due to a missing
+    <Person> XML element in the SD response. Note: if the person actually exists
+    in MO, we will not terminate the person in MO.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(1901, 1, 1, tzinfo=tz)
+
+    cpr = "0101010101"
+    get_person_url = f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+
+    # Create person
+    person_uuid = uuid4()
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPR,
+            given_name="Bruce",
+            surname="Lee",
+        )
+    )
+
+    respx_mock.get(get_person_url).respond(
+        content_type="text/xml;charset=UTF-8",
+        content="""<?xml version="1.0" encoding="UTF-8" ?>
+        <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+            <RequestStructure>
+                <InstitutionIdentifier>II</InstitutionIdentifier>
+                <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+                <EffectiveDate>2002-07-01</EffectiveDate>
+                <StatusActiveIndicator>true</StatusActiveIndicator>
+                <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                <ContactInformationIndicator>true</ContactInformationIndicator>
+                <PostalAddressIndicator>true</PostalAddressIndicator>
+            </RequestStructure>
+        </GetPerson20111201>
+        """,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_person = await graphql_client.get_person_timeline(
+        EmployeeFilter(cpr_numbers=[CPR], from_date=None, to_date=None)
+    )
+    validity = one(one(mo_person.objects).validities)
+
+    assert validity.validity.from_ == t1
+    assert validity.validity.to is None
+    assert validity.cpr_number == CPR
+    assert validity.given_name == "Bruce"
+    assert validity.surname == "Lee"
 
 
 @pytest.mark.integration_test
