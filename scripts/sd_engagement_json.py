@@ -11,6 +11,7 @@ from typing import Any
 import click
 import structlog.stdlib
 from more_itertools import last
+from sdclient.exceptions import SDEmploymentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedRequest
 
@@ -176,7 +177,7 @@ def main(username: str, password: str) -> None:
                     UUIDIndicator=True,
                 ),
             )
-        except SDRootElementNotFound as error:
+        except (SDEmploymentNotFound, SDRootElementNotFound) as error:
             logger.warning("Could not find engagement in SD", eng=eng, error=error)
             sd_engagements_not_found[eng_key] = eng.dict()
             continue
