@@ -1,6 +1,6 @@
 -- SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 -- SPDX-License-Identifier: MPL-2.0
-COPY(
+\copy (
     SELECT DISTINCT
         brugervendtnoegle AS user_key,
         rel.rel_maal_uuid AS employee,
@@ -23,6 +23,4 @@ COPY(
         funktionsnavn = 'Engagement'
         AND rel.rel_type = 'tilknyttedebrugere'
         AND brel.rel_type = 'tilknyttedepersoner'
-        AND brugervendtnoegle <> '-'
-    -- LIMIT 5
-) TO '/tmp/engagements.csv' DELIMITER ',' CSV HEADER;
+        AND brugervendtnoegle <> '-') TO '/tmp/engagements.csv' DELIMITER ',' CSV HEADER;
