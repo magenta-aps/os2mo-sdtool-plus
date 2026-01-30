@@ -536,7 +536,10 @@ async def sync_engagement(
                 UUIDIndicator=True,
             ),
         )
-        sd_eng_timeline = get_employment_timeline(r_employment)
+        sd_eng_timeline = get_employment_timeline(
+            sd_get_employment_changed_resp=r_employment,
+            use_sd_status_codes_as_engagement_types=settings.use_sd_status_codes_as_engagement_types,
+        )
         sd_leave_timeline = get_sd_leave_timeline(r_employment)
 
         # Work-around for bug in SDs API (see https://redmine.magenta.dk/issues/64950)
