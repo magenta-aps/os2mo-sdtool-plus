@@ -19,7 +19,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
-from sdtoolplus.sd.timelines.employment import _sd_employment_type
+from sdtoolplus.sd.timelines.employment import _sd_employment_type_monthly_hourly
 from sdtoolplus.sd.timelines.employment import get_employment_timeline
 from sdtoolplus.sd.timelines.employment import get_leave_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
@@ -50,7 +50,7 @@ def test__sd_employment_type(
     )
 
     # Act
-    eng_type = _sd_employment_type(worktime)
+    eng_type = _sd_employment_type_monthly_hourly(worktime)
 
     # Assert
     assert eng_type == expected_eng_type
