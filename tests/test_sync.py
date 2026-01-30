@@ -211,6 +211,9 @@ async def test_skip_missing_sd_employment_timelines(
 
     mock_gql_client = AsyncMock()
 
+    settings = MagicMock(spec=SDToolPlusSettings)
+    settings.use_sd_status_codes_as_engagement_types = False
+
     # Act
     await sync_engagement(
         sd_client=mock_sd_client,
@@ -218,7 +221,7 @@ async def test_skip_missing_sd_employment_timelines(
         institution_identifier="II",
         cpr="0101011234",
         employment_identifier="12345",
-        settings=MagicMock(spec=SDToolPlusSettings),
+        settings=settings,
     )
 
     # Assert
