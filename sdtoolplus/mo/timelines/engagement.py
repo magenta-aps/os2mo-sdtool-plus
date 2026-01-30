@@ -217,6 +217,8 @@ async def get_engagement_timeline(
             EngagementType(
                 start=obj.validity.from_,
                 end=mo_end_to_timeline_end(obj.validity.to),
+                # The value will be set to EngType.RECALCULATE if type_user_key is not
+                # a known EngType
                 value=EngType(type_user_key),
             )
         )
