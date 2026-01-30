@@ -50,11 +50,11 @@ async def get_department(
             ),
         )
         if not department.Department:
-            logger.debug("Empty department response from SD!")
+            logger.warning("Empty department response from SD!")
             return None
         return department
     except SDRootElementNotFound as error:
-        logger.debug("Error getting department from SD", error=error)
+        logger.error("Error getting department from SD", error=error)
         return None
 
 
@@ -75,7 +75,7 @@ async def get_department_timeline(
             sd_client.get_department_parent_history, unit_uuid
         )
     except SDParentNotFound as error:
-        logger.debug("Error getting department parent(s) from SD", error=error)
+        logger.warning("Error getting department parent(s) from SD", error=error)
         return UnitTimeline()
 
     active_intervals = tuple(
@@ -132,7 +132,7 @@ async def get_department_timeline(
         name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
-    logger.debug("SD OU timeline", timeline=timeline.dict())
+    logger.info("SD OU timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -151,7 +151,7 @@ def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNum
             )
         )
     )
-    logger.debug("SD P-number timeline", timeline=timeline.dict())
+    logger.info("SD P-number timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -175,7 +175,7 @@ def get_postal_address_timeline(
             )
         )
     )
-    logger.debug("SD postal address timeline", timeline=timeline.dict())
+    logger.info("SD postal address timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -201,6 +201,6 @@ def get_phone_number_timeline(
             )
         )
     )
-    logger.debug("SD phone number timeline", timeline=timeline.dict())
+    logger.info("SD phone number timeline", timeline=timeline.dict())
 
     return timeline

@@ -129,7 +129,7 @@ class OrgTreeDiff:
         )
 
         units_to_move_to_obsolete_subtree_list = list(units_to_move_to_obsolete_subtree)
-        logger.debug(
+        logger.info(
             "Units to potentially move to obsolete units",
             units=units_to_move_to_obsolete_subtree_list,
         )
@@ -143,8 +143,8 @@ class OrgTreeDiff:
         self.units_to_update = list(units_to_update) + list(units_to_move)
         self.subtrees_with_engs = list(units_not_to_move)
 
-        logger.debug("Units to update", units_to_update=self.units_to_update)
-        logger.debug("Subtrees with engagements", subtrees=self.subtrees_with_engs)
+        logger.info("Units to update", units_to_update=self.units_to_update)
+        logger.info("Subtrees with engagements", subtrees=self.subtrees_with_engs)
 
     @staticmethod
     def _should_be_updated(sd_nodes: Nodes, mo_nodes: Nodes) -> bool:
@@ -163,14 +163,14 @@ class OrgTreeDiff:
 
         # For debugging
         if parent_should_be_updated:
-            logger.debug(
+            logger.info(
                 "Should update unit parent",
                 old_parent=str(mo_nodes.parent.uuid),
                 new_parent=str(sd_nodes.parent.uuid),
                 unit_uuid=str(mo_nodes.unit.uuid),
             )
         if name_should_be_updated:
-            logger.debug(
+            logger.info(
                 "Should update unit name",
                 old_name=mo_nodes.unit.name,
                 new_name=sd_nodes.unit.name,

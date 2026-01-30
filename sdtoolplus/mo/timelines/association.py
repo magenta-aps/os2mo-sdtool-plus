@@ -60,7 +60,6 @@ async def get_association_timeline(
     if not objects:
         return AssociationTimeline()
 
-    logger.debug("ass", objects=objects)
     validities = one(objects, too_long=MoreThanOneAssociationError).validities
 
     active_intervals = tuple(
@@ -89,7 +88,7 @@ async def get_association_timeline(
             intervals=combine_intervals(unit_intervals)
         ),
     )
-    logger.debug("MO association timeline", timeline=timeline.dict())
+    logger.info("MO association timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -119,11 +118,11 @@ async def create_association(
         association_type=association_type,
         validity=timeline_interval_to_mo_validity(start, end),
     )
-    logger.debug("Create association payload", payload=payload.dict())
+    logger.info("Create association payload", payload=payload.dict())
 
     if not dry_run:
         await gql_client.create_association(payload)
-    logger.debug("Association created", person=str(person), user_key=user_key)
+    logger.info("Association created", person=str(person), user_key=user_key)
 
 
 async def update_association(
@@ -145,7 +144,6 @@ async def update_association(
     )
 
     mo_validity = timeline_interval_to_mo_validity(start, end)
-    logger.debug("mo_validity", mo_validity=mo_validity)
 
     association = await gql_client.get_association_timeline(
         get_association_filter(
@@ -158,7 +156,6 @@ async def update_association(
     if obj:
         # The association already exists in this validity period
         for validity in one(objects).validities:
-            logger.debug("validity", validity=validity)
             payload = AssociationUpdateInput(
                 uuid=obj.uuid,
                 user_key=user_key,
@@ -171,10 +168,10 @@ async def update_association(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
             )
-            logger.debug("Update association", payload=payload.dict())
+            logger.info("Update association payload", payload=payload.dict())
             if not dry_run:
                 await gql_client.update_association(payload)
-            logger.debug("Association updated", person=str(person), user_key=user_key)
+            logger.info("Association updated", person=str(person), user_key=user_key)
         return
 
     # The association does not already exist in this validity period
@@ -191,11 +188,11 @@ async def update_association(
         association_type=association_type,
         validity=mo_validity,
     )
-    logger.debug("Update association payload", payload=payload.dict())
+    logger.info("Update association payload", payload=payload.dict())
 
     if not dry_run:
         await gql_client.update_association(payload)
-    logger.debug("Association updated", person=str(person), user_key=user_key)
+    logger.info("Association updated", person=str(person), user_key=user_key)
 
 
 async def terminate_association(
@@ -233,8 +230,8 @@ async def terminate_association(
             # Converting from "from" to "to" due to the wierd way terminations in MO work
             to=mo_validity.from_ - timedelta(days=1),
         )
-    logger.debug("Terminate association", payload=payload.dict())
+    logger.info("Terminate association payload", payload=payload.dict())
 
     if not dry_run:
         await gql_client.terminate_association(payload)
-    logger.debug("Association terminated", person=str(person), user_key=user_key)
+    logger.info("Association terminated", person=str(person), user_key=user_key)

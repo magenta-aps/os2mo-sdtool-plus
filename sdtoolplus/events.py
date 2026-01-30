@@ -346,7 +346,7 @@ async def _mo_org_unit(
     )
     mo_org_unit = only(mo_org_units.objects)
     if mo_org_unit is None:
-        logger.debug("Non-SD unit: ignoring", uuid=str(mo_org_unit_uuid))
+        logger.info("Non-SD unit: ignoring", uuid=str(mo_org_unit_uuid))
         return
 
     # Even though we have the org unit's SD UUID, we also need an institution

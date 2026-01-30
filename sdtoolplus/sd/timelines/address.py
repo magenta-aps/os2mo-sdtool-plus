@@ -20,7 +20,7 @@ async def _get_dar_address(dar_client: AsyncDARClient, address: str) -> UUID | N
     try:
         r = await dar_client.cleanse_single(address)
         value = r["id"]
-        logger.debug("Found address in DAR", dar_uuid_address=value)
+        logger.info("Found address in DAR", dar_uuid_address=value)
         return value
     except ValueError:
         logger.warning("No DAR address match", addr=address)
@@ -42,7 +42,7 @@ async def sd_postal_dar_address_strategy(
     dar_uuid_intervals = []
     async with dar_client:
         for interval in sd_postal_address_timeline.intervals:
-            logger.debug("Processing postal address interval", interval=interval.dict())
+            logger.info("Processing postal address interval", interval=interval.dict())
 
             interval_value = cast(str, interval.value)  # To make mypy happy...
             dar_uuid_address = await _get_dar_address(dar_client, interval_value)
@@ -62,7 +62,7 @@ async def sd_postal_dar_address_strategy(
         intervals=combine_intervals(tuple(dar_uuid_intervals)),
     )
 
-    logger.debug(
+    logger.info(
         "Desired DAR address timeline",
         desired_address_timeline=desired_address_timeline.dict(),
     )

@@ -369,7 +369,7 @@ async def sync_person(
             cpr_numbers=[cast(CPRNumber, cpr)], from_date=datetime.today(), to_date=None
         )
     )
-    logger.debug("MO person", mo_person=mo_person.dict())
+    logger.info("MO person", mo_person=mo_person.dict())
 
     person_uuid = await _sync_person(
         gql_client=gql_client,

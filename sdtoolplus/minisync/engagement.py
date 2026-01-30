@@ -144,7 +144,7 @@ async def move_engagement(
             engagement_type=validity.engagement_type_uuid,
             job_function=validity.job_function_uuid,
         )
-        logger.debug("Moving engagement...", payload=update_payload.dict())
+        logger.info("Moving engagement...", payload=update_payload.dict())
         if not dry_run:
             await gql_client.update_engagement(update_payload)
-    logger.debug("Engagement moved successfully")
+    logger.info("Engagement moved successfully")

@@ -34,9 +34,9 @@ async def create_person(
         surname=lastname,
     )
 
-    logger.debug("Create person payload", payload=employee_input.dict())
+    logger.info("Create person payload", payload=employee_input.dict())
     mo_person = await gql_client.create_person(input=employee_input)
-    logger.debug("Person created", cpr=cpr)
+    logger.info("Person created", cpr=cpr)
 
     return mo_person.uuid
 
@@ -57,9 +57,9 @@ async def update_person(
         validity=RAValidityInput(from_=start, to=None),
     )
 
-    logger.debug("Update person payload", payload=payload.dict())
+    logger.info("Update person payload", payload=payload.dict())
     await gql_client.update_person(payload)
-    logger.debug("Person updated", cpr=person.cpr)
+    logger.info("Person updated", cpr=person.cpr)
 
 
 async def create_address(
@@ -129,4 +129,4 @@ async def terminate_address(
             to=datetime.combine(terminate_from.date(), time.min) - timedelta(days=1),
         )
     )
-    logger.debug("Address terminated", address_uuid=str(address_uuid))
+    logger.info("Address terminated", address_uuid=str(address_uuid))

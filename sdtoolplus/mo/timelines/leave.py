@@ -61,7 +61,7 @@ async def get_leave_timeline(
     timeline = LeaveTimeline(
         leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
     )
-    logger.debug("MO leave timeline", timeline=timeline.dict())
+    logger.info("MO leave timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -89,7 +89,7 @@ async def create_leave(
         leave_type=leave_type,
         validity=timeline_interval_to_mo_validity(start, end),
     )
-    logger.debug("Create leave payload", payload=payload.dict())
+    logger.info("Create leave payload", payload=payload.dict())
 
     if not dry_run:
         try:
@@ -105,7 +105,7 @@ async def create_leave(
             )
             return
 
-    logger.debug("Leave created", person=str(person), user_key=user_key)
+    logger.info("Leave created", person=str(person), user_key=user_key)
 
 
 async def update_leave(
@@ -150,7 +150,7 @@ async def update_leave(
                     validity.validity.from_, validity.validity.to, mo_validity
                 ),
             )
-            logger.debug("Update leave", payload=payload.dict())
+            logger.info("Update leave payload", payload=payload.dict())
             if not dry_run:
                 try:
                     await gql_client.update_leave(payload)
@@ -168,7 +168,7 @@ async def update_leave(
                     )
                     return
 
-            logger.debug("Leave updated", person=str(person), user_key=user_key)
+            logger.info("Leave updated", person=str(person), user_key=user_key)
         return
 
     # The leave does not already exist in this validity period
@@ -188,7 +188,7 @@ async def update_leave(
         leave_type=leave_type,
         validity=mo_validity,
     )
-    logger.debug("Update leave payload", payload=payload.dict())
+    logger.info("Update leave payload", payload=payload.dict())
 
     if not dry_run:
         try:
@@ -204,7 +204,7 @@ async def update_leave(
             )
             return
 
-    logger.debug("Leave updated", person=str(person), user_key=user_key)
+    logger.info("Leave updated", person=str(person), user_key=user_key)
 
 
 async def terminate_leave(
@@ -245,11 +245,11 @@ async def terminate_leave(
             # Converting from "from" to "to" due to the wierd way terminations in MO work
             to=mo_validity.from_ - timedelta(days=1),
         )
-    logger.debug("Terminate leave", payload=payload.dict())
+    logger.info("Terminate leave payload", payload=payload.dict())
 
     if not dry_run:
         await gql_client.terminate_leave(payload)
-    logger.debug("Leave terminated", person=str(person), user_key=user_key)
+    logger.info("Leave terminated", person=str(person), user_key=user_key)
 
 
 async def terminate_leave_before_engagement_termination(
@@ -260,7 +260,7 @@ async def terminate_leave_before_engagement_termination(
     person: UUID,
     user_key: str,
 ) -> None:
-    logger.debug(
+    logger.info(
         "Terminate leave prior to engagement termination",
         person=str(person),
         user_key=user_key,
@@ -279,7 +279,7 @@ async def terminate_leave_before_engagement_termination(
         try:
             mo_leave_timeline.leave_active.entity_at(start)
         except NoValueError:
-            logger.debug(
+            logger.info(
                 "No leave to terminate in this interval",
                 person=str(person),
                 user_key=user_key,
@@ -294,7 +294,7 @@ async def terminate_leave_before_engagement_termination(
             start=start,
             end=end,
         )
-        logger.debug(
+        logger.info(
             "Terminated leave prior to engagement termination",
             person=str(person),
             user_key=user_key,

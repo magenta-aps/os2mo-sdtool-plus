@@ -112,20 +112,20 @@ async def sync_ou_intervals(
     # to delete OUs in SD, but in that case we don't receive an AMQP event
     # anyway due to limitations in SD.
     if desired_unit_timeline == UnitTimeline():
-        logger.debug("Skipping sync of OU")
+        logger.info("Skipping sync of OU")
         return False
 
     sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
 
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
-    logger.debug("List of endpoints", endpoints=endpoints)
+    logger.info("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
-        logger.debug("Processing endpoint pair", start=start, end=end)
+        logger.info("Processing endpoint pair", start=start, end=end)
 
         if desired_unit_timeline.equal_at(start, mo_unit_timeline):
-            logger.debug("SD and MO equal")
+            logger.info("SD and MO equal")
             continue
 
         try:
@@ -198,7 +198,7 @@ async def _sync_ou_pnumber(
     )
 
     if sd_pnumber_timeline == mo_pnumber_timeline_obj.pnumber:
-        logger.debug("P-number timelines identical")
+        logger.info("P-number timelines identical")
         return
 
     if mo_pnumber_timeline_obj.uuid is not None:
@@ -241,7 +241,7 @@ async def _sync_ou_postal_address(
     )
 
     if desired_postal_address_timeline == mo_postal_address_timeline_obj.postal_address:
-        logger.debug("Postal address timelines identical")
+        logger.info("Postal address timelines identical")
         return
 
     if mo_postal_address_timeline_obj.uuid is not None:
@@ -279,7 +279,7 @@ async def _sync_ou_phone_number(
     )
 
     if sd_phone_number_timeline == mo_phone_number_timeline_obj.phone_number:
-        logger.debug("Phone number timelines identical")
+        logger.info("Phone number timelines identical")
         return
 
     if mo_phone_number_timeline_obj.uuid is not None:

@@ -118,7 +118,7 @@ class App:
             base_url=str(self.settings.sd_lon_base_url),
             timeout=Timeout(timeout=self.settings.httpx_timeout_ny_logic),
         )
-        logger.debug("Configured HTTPX client", base_url=self.client.base_url)
+        logger.info("Configured HTTPX client", base_url=self.client.base_url)
 
     def set_inst_id(self, inst_id: str) -> None:
         self.current_inst_id = inst_id
@@ -160,7 +160,7 @@ class App:
             self.mo_subtree_path_for_root,
         )
 
-        logger.debug(
+        logger.info(
             "Getting MO tree...",
             mo_root_uuid=str(mo_root_uuid),
             mo_subtree_path_for_root=mo_subtree_path_for_root,
@@ -177,7 +177,7 @@ class App:
         self.mo_org_tree_import.get_org_units.cache_clear()
 
     async def get_tree_diff_executor(self) -> TreeDiffExecutor:
-        logger.debug("Getting TreeDiffExecutor")
+        logger.info("Getting TreeDiffExecutor")
 
         # Get relevant MO facet/class data
         mo_org_unit_type_map = MOOrgUnitTypeMap(self.session)
@@ -188,7 +188,7 @@ class App:
         # Get the SD tree
         logger.info(event="Fetching SD org tree ...")
         sd_org_tree = await self.get_sd_tree(mo_org_unit_level_map)
-        logger.debug(
+        logger.info(
             "SD tree",
             sd_org_tree=repr(sd_org_tree),
             children=[repr(child) for child in sd_org_tree.children],
@@ -197,7 +197,7 @@ class App:
         # Get the MO tree
         logger.info(event="Fetching MO org tree ...")
         mo_org_tree_as_single = self.get_mo_tree()
-        logger.debug(
+        logger.info(
             "MO tree",
             mo_org_tree=repr(mo_org_tree_as_single),
             children=[repr(child) for child in mo_org_tree_as_single.children],

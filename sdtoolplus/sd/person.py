@@ -158,7 +158,7 @@ async def get_sd_person(
         engagement_phone_numbers=sd_eng_phone_numbers,
         engagement_emails=sd_eng_emails,
     )
-    logger.debug("SD person", person=person.dict())
+    logger.info("SD person", person=person.dict())
 
     return person
 

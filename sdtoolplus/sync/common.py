@@ -55,7 +55,7 @@ def prefix_unit_id_with_inst_id(
         unit_level=unit_timeline.unit_level,
         parent=unit_timeline.parent,
     )
-    logger.debug(
+    logger.info(
         "SD timeline with prefixed unit_id", timeline=prefixed_unit_timeline.dict()
     )
 
