@@ -122,7 +122,7 @@ async def test_eng_timeline_http_triggered_sync(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -462,7 +462,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -716,7 +716,7 @@ async def test_eng_timeline_create_new_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -943,7 +943,7 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1156,7 +1156,7 @@ async def test_association_create_update_terminate(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1378,7 +1378,7 @@ async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_mis
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1548,7 +1548,7 @@ async def test_eng_timeline_related_units(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1917,7 +1917,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2139,7 +2139,7 @@ async def test_eng_timeline_related_units_single_day_relation(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2573,7 +2573,7 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2839,7 +2839,7 @@ async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2959,7 +2959,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3070,7 +3070,7 @@ async def test_eng_timeline_delete_engagement_and_leave_not_found_in_sd(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3378,7 +3378,7 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3583,7 +3583,7 @@ async def test_eng_timeline_handle_termination_of_sd_status_8_engagements(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
