@@ -48,8 +48,20 @@ def _get_engagement_type(
     # since we are only choosing a strategy based on a boolean.
 
     if use_sd_status_codes_as_engagement_types:
-        # TODO: implement
-        pass
+        # Strategy for calculating the engagement type based on the SD status
+        # codes
+        return (
+            tuple(
+                EngagementType(
+                    start=sd_start_to_timeline_start(status.ActivationDate),
+                    end=sd_end_to_timeline_end(status.DeactivationDate),
+                    value=EngType(f"status{status.EmploymentStatusCode}"),
+                )
+                for status in employment.EmploymentStatus
+            )
+            if employment.EmploymentStatus
+            else tuple()
+        )
 
     # Strategy for calculating the engagement type based on the EngTypes
     # MONTHLY_FULL_TIME, MONTHLY_PART_TIME and HOURLY.
