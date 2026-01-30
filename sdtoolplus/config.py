@@ -104,7 +104,15 @@ class SDToolPlusSettings(BaseSettings):
         "deltid",
         "fuldtid",
         "recalculate",
+        "status0",
+        "status1",
+        "status3",
+        "status4",
     ]
+
+    # If true, we will use the "status0,..., status4" engagement types
+    # instead of "timelønnet", "deltid" and "fuldtid".
+    use_sd_status_codes_as_engagement_types: bool = False
 
     # Enable new event-based timeline-sync
     event_based_sync: bool = False

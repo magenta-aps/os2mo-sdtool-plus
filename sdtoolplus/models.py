@@ -115,6 +115,13 @@ class EngType(Enum):
     # have been in use. The recalculate key/value can be removed once go into production
     RECALCULATE = "recalculate"
 
+    STATUS_0 = "status0"
+    STATUS_1 = "status1"
+    STATUS_3 = "status3"
+    STATUS_4 = "status4"
+    # Note: we do not need the SD statuses 7, 8, 9, and S since they do not
+    # correspond to active statuses.
+
     @classmethod
     def _missing_(cls, value):
         return cls.RECALCULATE
