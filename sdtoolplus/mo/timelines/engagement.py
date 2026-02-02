@@ -238,7 +238,7 @@ async def get_engagement_timeline(
             intervals=combine_intervals(tuple(type_intervals))
         ),
     )
-    logger.debug("MO engagement timeline", timeline=timeline.dict())
+    logger.info("MO engagement timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -281,10 +281,10 @@ async def create_engagement(
         # TODO: introduce job_function strategy
         job_function=job_function_uuid,
     )
-    logger.debug("Create engagement payload", payload=payload.dict())
+    logger.info("Create engagement payload", payload=payload.dict())
     if not dry_run:
         await gql_client.create_engagement(payload)
-    logger.debug("Engagement created", person=str(person), emp_id=user_key)
+    logger.info("Engagement created", person=str(person), emp_id=user_key)
 
 
 async def update_engagement(
@@ -352,14 +352,14 @@ async def update_engagement(
                 ],
                 job_function=job_function_uuid,
             )
-            logger.debug(
+            logger.info(
                 "Update engagement in validity interval",
                 payload=payload.dict(),
                 validity=validity,
             )
             if not dry_run:
                 await gql_client.update_engagement(payload)
-            logger.debug("Engagement updated", person=str(person), emp_id=user_key)
+            logger.info("Engagement updated", person=str(person), emp_id=user_key)
         return
 
     # The engagement does not already exist in this validity period
@@ -381,12 +381,12 @@ async def update_engagement(
         engagement_type=eng_types[desired_eng_timeline.eng_type.entity_at(start).value],  # type: ignore
         job_function=job_function_uuid,
     )
-    logger.debug(
+    logger.info(
         "Update engagement in interval", payload=payload.dict(), mo_validity=mo_validity
     )
     if not dry_run:
         await gql_client.update_engagement(payload)
-    logger.debug("Engagement updated", person=str(person), emp_id=user_key)
+    logger.info("Engagement updated", person=str(person), emp_id=user_key)
 
 
 async def terminate_engagement(
@@ -434,8 +434,8 @@ async def terminate_engagement(
             # Converting from "from" to "to" due to the wierd way terminations in MO work
             to=mo_validity.from_ - timedelta(days=1),
         )
-    logger.debug("Terminate engagement", payload=payload.dict())
+    logger.info("Terminate engagement payload", payload=payload.dict())
 
     if not dry_run:
         await gql_client.terminate_engagement(payload)
-    logger.debug("Engagement terminated", person=str(person), user_key=user_key)
+    logger.info("Engagement terminated", person=str(person), user_key=user_key)

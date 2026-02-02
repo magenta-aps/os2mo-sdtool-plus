@@ -67,7 +67,7 @@ async def get_ou_timeline(
     objects = gql_timelime.objects
 
     if not objects:
-        logger.debug("MO OU timeline is empty")
+        logger.info("MO OU timeline is empty")
         return UnitTimeline()
 
     validities = one(
@@ -130,7 +130,7 @@ async def get_ou_timeline(
         unit_level=Timeline[UnitLevel](intervals=combine_intervals(level_intervals)),
         parent=Timeline[UnitParent](intervals=combine_intervals(parent_intervals)),
     )
-    logger.debug("MO OU timeline", timeline=timeline.dict())
+    logger.info("MO OU timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -156,7 +156,7 @@ async def get_pnumber_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        logger.debug("MO P-number timeline is empty")
+        logger.info("MO P-number timeline is empty")
         return MOPNumberTimelineObj(uuid=None, pnumber=Timeline[UnitPNumber]())
 
     object_ = one(objects, too_long=MoreThanOnePNumberError)
@@ -176,7 +176,7 @@ async def get_pnumber_timeline(
             )
         ),
     )
-    logger.debug("MO P-number timeline", timeline=timeline.dict())
+    logger.info("MO P-number timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -207,7 +207,7 @@ async def get_postal_address_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        logger.debug("MO postal address timeline is empty")
+        logger.info("MO postal address timeline is empty")
         return MOPostalAddressTimelineObj(
             uuid=None, pnumber=Timeline[UnitPostalAddress]()
         )
@@ -229,7 +229,7 @@ async def get_postal_address_timeline(
             )
         ),
     )
-    logger.debug("MO postal address timeline", timeline=timeline.dict())
+    logger.info("MO postal address timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -256,7 +256,7 @@ async def get_phone_number_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        logger.debug("MO phone number timeline is empty")
+        logger.info("MO phone number timeline is empty")
         return MOPhoneNumberTimelineObj(uuid=None, pnumber=Timeline[UnitPhoneNumber]())
 
     object_ = one(objects, too_long=MoreThanOnePhoneNumberError)
@@ -276,7 +276,7 @@ async def get_phone_number_timeline(
             )
         ),
     )
-    logger.debug("MO phone number timeline", timeline=timeline.dict())
+    logger.info("MO phone number timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -287,7 +287,7 @@ async def _queue_ou_parent(
     institution_identifier: str,
     priority: int,
 ) -> None:
-    logger.debug("Queuing OU parent", parent=str(parent))
+    logger.info("Queuing OU parent", parent=str(parent))
     await gql_client.send_event(
         input=EventSendInput(
             namespace="sd",
@@ -315,7 +315,7 @@ async def _queue_ou_children(
     child_uuids = [child.uuid for child in ou.objects]
 
     for child_uuid in child_uuids:
-        logger.debug("Queuing OU child", child_uuid=str(child_uuid))
+        logger.info("Queuing OU child", child_uuid=str(child_uuid))
         await gql_client.send_event(
             input=EventSendInput(
                 namespace="sd",
@@ -374,7 +374,7 @@ async def create_ou(
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )
-    logger.debug("OU create payload", payload=payload.dict())
+    logger.info("OU create payload", payload=payload.dict())
     if not dry_run:
         try:
             await gql_client.create_org_unit(payload)
@@ -403,7 +403,7 @@ async def create_ou(
             )
             raise CannotProcessOrgUnitError()
 
-    logger.debug("OU created", uuid=str(org_unit))
+    logger.info("OU created", uuid=str(org_unit))
 
 
 async def update_ou(
@@ -465,7 +465,7 @@ async def update_ou(
                 org_unit_hierarchy=validity.org_unit_hierarchy,
                 time_planning=validity.time_planning_uuid,
             )
-            logger.debug("OU update payload", payload=payload.dict())
+            logger.info("OU update payload", payload=payload.dict())
             if not dry_run:
                 try:
                     await gql_client.update_org_unit(payload)
@@ -495,7 +495,7 @@ async def update_ou(
                     )
                     raise CannotProcessOrgUnitError()
 
-            logger.debug("OU updated", uuid=str(org_unit))
+            logger.info("OU updated", uuid=str(org_unit))
         return
 
     # The OU does not already exist in this validity period
@@ -508,7 +508,7 @@ async def update_ou(
         org_unit_type=ou_type_uuid,
         org_unit_level=ou_level_uuid,
     )
-    logger.debug("OU update payload", payload=payload.dict())
+    logger.info("OU update payload", payload=payload.dict())
     if not dry_run:
         try:
             await gql_client.update_org_unit(payload)
@@ -538,7 +538,7 @@ async def update_ou(
             )
             raise CannotProcessOrgUnitError()
 
-    logger.debug("OU updated", uuid=str(org_unit))
+    logger.info("OU updated", uuid=str(org_unit))
 
 
 async def terminate_ou(
@@ -599,11 +599,11 @@ async def terminate_ou(
             # work
             to=mo_validity.from_ - timedelta(days=1),
         )
-    logger.debug(
+    logger.info(
         "OU address termination payloads",
         payloads=[payload.dict() for payload in addr_term_payloads],
     )
-    logger.debug("OU terminate payload", payload=payload.dict())
+    logger.info("OU terminate payload", payload=payload.dict())
     if not dry_run:
         for addr_term_payload in addr_term_payloads:
             await gql_client.terminate_address(addr_term_payload)
@@ -633,13 +633,13 @@ async def terminate_ou(
             )
             raise CannotProcessOrgUnitError()
 
-    logger.debug("OU terminated", org_unit=str(org_unit))
+    logger.info("OU terminated", org_unit=str(org_unit))
 
 
 async def delete_address(
     gql_client: GraphQLClient, address_uuid: UUID, dry_run: bool
 ) -> None:
-    logger.debug("Delete address in MO", addr_uuid=str(address_uuid))
+    logger.info("Delete address in MO", addr_uuid=str(address_uuid))
     if not dry_run:
         await gql_client.delete_address(address_uuid)
 
@@ -651,7 +651,7 @@ async def create_pnumber_address(
     sd_pnumber_timeline: Timeline[UnitPNumber],
     dry_run: bool,
 ) -> None:
-    logger.debug("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
+    logger.info("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
 
     # Get the address visibility UUID
     visibility_class_uuid = await get_class(
@@ -680,7 +680,7 @@ async def create_pnumber_address(
         value=first_sd_pnumber.value,
         address_type=p_number_address_type_uuid,
     )
-    logger.debug("Create address", payload=create_address_payload.dict())
+    logger.info("Create address", payload=create_address_payload.dict())
     if not dry_run:
         created_address_uuid = (
             await gql_client.create_address(create_address_payload)
@@ -698,7 +698,7 @@ async def create_pnumber_address(
             value=sd_pnumber.value,
             address_type=p_number_address_type_uuid,
         )
-        logger.debug("Update address", payload=update_address_payload.dict())
+        logger.info("Update address payload", payload=update_address_payload.dict())
         if not dry_run:
             await gql_client.update_address(update_address_payload)
 
@@ -711,7 +711,7 @@ async def create_postal_address(
     desired_postal_address_timeline: Timeline[UnitPostalAddress],
     dry_run: bool,
 ) -> None:
-    logger.debug(
+    logger.info(
         "Create postal address in MO",
         postal_address_timeline=desired_postal_address_timeline.dict(),
     )
@@ -754,7 +754,7 @@ async def create_postal_address(
         value=first_sd_postal_address.value,
         address_type=postal_address_type_uuid,
     )
-    logger.debug("Create address", payload=create_address_payload.dict())
+    logger.info("Create address payload", payload=create_address_payload.dict())
     if not dry_run:
         created_address_uuid = (
             await gql_client.create_address(create_address_payload)
@@ -774,7 +774,7 @@ async def create_postal_address(
             value=sd_postal_address.value,
             address_type=postal_address_type_uuid,
         )
-        logger.debug("Update address", payload=update_address_payload.dict())
+        logger.info("Update address payload", payload=update_address_payload.dict())
         if not dry_run:
             await gql_client.update_address(update_address_payload)
 
@@ -786,7 +786,7 @@ async def create_phone_number(
     sd_phone_number_timeline: Timeline[UnitPhoneNumber],
     dry_run: bool,
 ) -> None:
-    logger.debug(
+    logger.info(
         "Create phone number in MO",
         phone_number_timeline=sd_phone_number_timeline.dict(),
     )
@@ -820,7 +820,7 @@ async def create_phone_number(
         value=first_sd_phone_number.value,
         address_type=phone_number_type_uuid,
     )
-    logger.debug("Create address", payload=create_address_payload.dict())
+    logger.info("Create address payload", payload=create_address_payload.dict())
     if not dry_run:
         created_address_uuid = (
             await gql_client.create_address(create_address_payload)
@@ -840,6 +840,6 @@ async def create_phone_number(
             value=sd_phone_number.value,
             address_type=phone_number_type_uuid,
         )
-        logger.debug("Update address", payload=update_address_payload.dict())
+        logger.info("Update address payload", payload=update_address_payload.dict())
         if not dry_run:
             await gql_client.update_address(update_address_payload)

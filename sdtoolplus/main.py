@@ -477,7 +477,7 @@ def create_fastramqpi() -> FastRAMQPI:
             )
             for person in sd_persons
         ]
-        logger.debug(
+        logger.info(
             "Syncing persons",
             events=len(events),
         )
@@ -546,7 +546,7 @@ def create_fastramqpi() -> FastRAMQPI:
                     institution_identifier=institution_identifier,
                     cpr=person.cpr,
                 )
-                logger.debug("Found engagements", engagements=res)
+                logger.info("Found engagements", engagements=res)
             except SDRootElementNotFound:
                 logger.info(
                     "Person could not be found in sd",
@@ -618,7 +618,7 @@ def create_fastramqpi() -> FastRAMQPI:
             next_cursor = batch.page_info.next_cursor
 
             engagements_refreshed += len(batch.objects)
-            logger.debug("Engagements refreshed", n=engagements_refreshed)
+            logger.info("Engagements refreshed", n=engagements_refreshed)
 
             if next_cursor is None:
                 break
@@ -734,7 +734,7 @@ def create_fastramqpi() -> FastRAMQPI:
                 )
             )
 
-        logger.debug("Syncing units", events=len(events))
+        logger.info("Syncing units", events=len(events))
         for e in events:
             await gql_client.send_event(input=e)
 

@@ -70,13 +70,13 @@ async def _sync_leave_intervals(
     mo_interval_endpoints = mo_leave_timeline.get_interval_endpoints()
 
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
-    logger.debug("List of endpoints", endpoints=endpoints)
+    logger.info("List of endpoints", endpoints=endpoints)
 
     for start, end in pairwise(endpoints):
-        logger.debug("Processing endpoint pair", start=start, end=end)
+        logger.info("Processing endpoint pair", start=start, end=end)
 
         if sd_leave_timeline.equal_at(start, mo_leave_timeline):
-            logger.debug("SD and MO equal")
+            logger.info("SD and MO equal")
             continue
 
         try:

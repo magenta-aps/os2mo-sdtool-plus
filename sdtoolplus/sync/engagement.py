@@ -98,13 +98,13 @@ async def _sync_eng_intervals(
     endpoints = sorted(
         desired_interval_endpoints.union(mo_interval_endpoints), reverse=True
     )
-    logger.debug("List of endpoints", endpoints=endpoints)
+    logger.info("List of endpoints", endpoints=endpoints)
 
     for end, start in pairwise(endpoints):
-        logger.debug("Processing endpoint pair", start=start, end=end)
+        logger.info("Processing endpoint pair", start=start, end=end)
 
         if desired_eng_timeline.equal_at(start, mo_eng_timeline):
-            logger.debug("SD and MO equal")
+            logger.info("SD and MO equal")
             continue
 
         try:
@@ -279,7 +279,7 @@ async def engagement_ou_strategy_elevate_to_ny_level(
         eng_type=sd_eng_timeline.eng_type,
     )
 
-    logger.debug(
+    logger.info(
         "Desired engagement timeline", desired_eng_timeline=desired_eng_timeline.dict()
     )
 
@@ -329,15 +329,13 @@ async def engagement_ou_strategy_region(
     mo_interval_endpoints = mo_ou_only_timeline.get_interval_endpoints()
 
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
-    logger.debug("List of engagement unit endpoints", endpoints=endpoints)
+    logger.info("List of engagement unit endpoints", endpoints=endpoints)
 
     # Get the MO unit for each endpoint interval or set to "Unknown", if no value is
     # found in MO in the interval
     unit_intervals = []
     for start, end in pairwise(endpoints):
-        logger.debug(
-            "Processing OU region strategy endpoint pair", start=start, end=end
-        )
+        logger.info("Processing OU region strategy endpoint pair", start=start, end=end)
         try:
             entity = mo_eng_timeline.eng_unit.entity_at(start)
             unit = entity.value
@@ -353,7 +351,7 @@ async def engagement_ou_strategy_region(
             unit = settings.unknown_unit  # type: ignore
         unit_intervals.append(EngagementUnit(start=start, end=end, value=unit))
 
-    logger.debug("Unit intervals", unit_intervals=unit_intervals)
+    logger.info("Unit intervals", unit_intervals=unit_intervals)
 
     # Find the engagement unit(s) in all intervals
     related_unit_intervals = []
@@ -374,7 +372,7 @@ async def engagement_ou_strategy_region(
                     unknown_unit_uuid=settings.unknown_unit,
                 )
             )
-    logger.debug(
+    logger.info(
         "Updated engagement units", related_unit_intervals=related_unit_intervals
     )
 
@@ -389,9 +387,7 @@ async def engagement_ou_strategy_region(
         eng_unit_id=sd_eng_timeline.eng_unit_id,
         eng_type=sd_eng_timeline.eng_type,
     )
-    logger.debug(
-        "Desired engagement timeline", desired_timeline=desired_timeline.dict()
-    )
+    logger.info("Desired engagement timeline", desired_timeline=desired_timeline.dict())
 
     logger.info("Done applying OU region strategy")
 
@@ -442,7 +438,7 @@ async def fix_missing_job_functions(
             if not str(error).startswith("too few items in iterable"):
                 raise error
 
-            logger.debug(
+            logger.warning(
                 "Job function not found. Defaulting to unknown",
                 job_function_user_key=job_function_user_key,
             )
@@ -461,7 +457,7 @@ async def fix_missing_job_functions(
     eng_key_timeline = Timeline[EngagementKey](
         intervals=combine_intervals(tuple(eng_key_intervals))
     )
-    logger.debug("Engagement key timeline", eng_key_timeline=eng_key_timeline)
+    logger.info("Engagement key timeline", eng_key_timeline=eng_key_timeline)
 
     desired_eng_timeline = EngagementTimeline(
         eng_active=sd_eng_timeline.eng_active,
@@ -734,7 +730,7 @@ async def queue_mo_engagements_for_sd_unit_sync(
             break
 
     for eng in engagements:
-        logger.debug(
+        logger.info(
             "Queuing engagement for SD unit (extension_5) sync", engagement=eng.dict()
         )
         event = EventSendInput(

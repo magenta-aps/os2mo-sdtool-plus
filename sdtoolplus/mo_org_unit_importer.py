@@ -162,7 +162,7 @@ class MOOrgTreeImport:
     @cache
     def get_org_units(self, org_unit: OrgUnitUUID | None = None) -> list[OrgUnit]:
         # TODO: fix this and use the auto-generated GraphQL client instead
-        logger.debug("Getting OUs from MO...")
+        logger.info("Getting OUs from MO...")
 
         filter_str = (
             "" if org_unit is None else f'(filter: {{uuids: ["{str(org_unit)}"]}})'
@@ -201,7 +201,7 @@ class MOOrgTreeImport:
             if n["current"] is not None
         ]
 
-        logger.debug("Got OUs from MO")
+        logger.info("Got OUs from MO")
 
         return parse_obj_as(list[OrgUnit], org_units)
 
@@ -234,7 +234,7 @@ class MOOrgTreeImport:
         If 'path' is the empty string, the whole tree is returned
         """
 
-        logger.debug("Build MO tree")
+        logger.info("Build MO tree")
 
         if children is None:
             children = self._build_trees(self.get_org_units())
@@ -259,7 +259,7 @@ class MOOrgTreeImport:
                 org_unit_level_uuid=None,
             )
 
-        logger.debug("MO root", path=path, root=root)
+        logger.info("MO root", path=path, root=root)
 
         return root, children
 

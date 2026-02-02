@@ -376,7 +376,7 @@ async def build_extra_tree(
     sd_departments_map = _get_sd_departments_map(sd_departments)
     extra_node_uuids = _get_extra_nodes(sd_org, sd_departments)
 
-    logger.debug(
+    logger.info(
         "Extra nodes",
         # extra_node_uuids={str(uuid) for uuid in extra_node_uuids},
         extra_nodes=len(extra_node_uuids),

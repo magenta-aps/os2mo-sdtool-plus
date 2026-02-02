@@ -27,7 +27,7 @@ def build_email_body(
     )
 
     for unit in subtrees_with_engs:
-        logger.debug("Add org unit to email body", name=unit.name, uuid=str(unit.uuid))
+        logger.info("Add org unit to email body", name=unit.name, uuid=str(unit.uuid))
         body += f"{unit.name} ({str(unit.uuid)})\n"
 
     units = list(units_with_engs)

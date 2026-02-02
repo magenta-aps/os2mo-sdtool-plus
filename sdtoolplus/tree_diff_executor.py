@@ -81,7 +81,7 @@ class UpdateOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
-        logger.debug("Updating org unit...", input=self.dsl_mutation_input)
+        logger.info("Updating org unit...", input=self.dsl_mutation_input)
         expr = self._dsl_schema_mutation.org_unit_update.args(
             input=self.dsl_mutation_input,
         )
@@ -126,7 +126,7 @@ class AddOrgUnitMutation(Mutation):
 
     @property
     def dsl_mutation(self) -> DSLMutation:
-        logger.debug("Creating org unit...", input=self.dsl_mutation_input)
+        logger.info("Creating org unit...", input=self.dsl_mutation_input)
         return DSLMutation(
             self._dsl_schema_mutation.org_unit_create.args(
                 input=self.dsl_mutation_input,
@@ -169,7 +169,7 @@ async def _fix_parent_unit_validity(
         logger.warning("Parent is None. No-op")
         return
 
-    logger.debug(
+    logger.info(
         "Fixing validity for parent unit",
         unit=str(org_unit_node.uuid),
         parent=str(org_unit_node.parent.uuid),
@@ -200,7 +200,7 @@ async def _fix_parent_unit_validity(
     #       than the end date for the org unit itself
     end_date = max(dep.DeactivationDate for dep in r_get_department.Department)
 
-    logger.debug(
+    logger.info(
         "Update parent org unit with new dates",
         start_date=start_date,
         end_date=end_date,
@@ -285,7 +285,7 @@ class TreeDiffExecutor:
             self.settings.sd_password.get_secret_value(),
         )
 
-        logger.debug(
+        logger.info(
             "Regexs for units to remove by name",
             regexs=self.settings.regex_unit_names_to_remove,
         )

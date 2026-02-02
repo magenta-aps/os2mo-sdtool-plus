@@ -87,17 +87,17 @@ async def get_sd_tree(
     # TODO: add docstring
     today = date.today()
 
-    logger.debug("Get SD organization...")
+    logger.info("Get SD organization...")
     sd_org = await get_sd_organization(sd_client, institution_identifier, today, today)
     # print(sd_org)
 
-    logger.debug("Get SD departments...")
+    logger.info("Get SD departments...")
     sd_departments = await get_sd_departments(
         sd_client, institution_identifier, today, today
     )
     # print(sd_departments)
 
-    logger.debug("Build SD tree...")
+    logger.info("Build SD tree...")
     root_node = build_tree(sd_org, sd_departments, mo_org_unit_level_map, sd_root_uuid)
 
     if build_full_tree:
