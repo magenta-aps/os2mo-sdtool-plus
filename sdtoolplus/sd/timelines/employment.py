@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import structlog
 from more_itertools import only
+from sdclient.responses import EmploymentWithLists
 from sdclient.responses import GetEmploymentChangedResponse
 from sdclient.responses import WorkingTime
 
@@ -11,6 +12,7 @@ from sdtoolplus.models import Active
 from sdtoolplus.models import AssociationTimeline
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
+from sdtoolplus.models import EngagementSDUnit
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementType
 from sdtoolplus.models import EngagementUnit
@@ -26,7 +28,7 @@ from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 logger = structlog.stdlib.get_logger()
 
 
-def _sd_employment_type(worktime: WorkingTime) -> EngType:
+def _sd_employment_type_monthly_hourly(worktime: WorkingTime) -> EngType:
     if not worktime.SalariedIndicator:
         return EngType.HOURLY
     if worktime.FullTimeIndicator:
@@ -34,8 +36,52 @@ def _sd_employment_type(worktime: WorkingTime) -> EngType:
     return EngType.MONTHLY_PART_TIME
 
 
+def _get_engagement_type(
+    employment: EmploymentWithLists,
+    use_sd_status_codes_as_engagement_types: bool,
+) -> tuple[EngagementType, ...]:
+    """
+    Calculating the engagement type from the SD employment data.
+    """
+    # NOTE: introduce proper state/strategy pattern if more variability
+    # arise later. We will settle with this parametric solution for now,
+    # since we are only choosing a strategy based on a boolean.
+
+    if use_sd_status_codes_as_engagement_types:
+        # Strategy for calculating the engagement type based on the SD status
+        # codes
+        return (
+            tuple(
+                EngagementType(
+                    start=sd_start_to_timeline_start(status.ActivationDate),
+                    end=sd_end_to_timeline_end(status.DeactivationDate),
+                    value=EngType(f"status{status.EmploymentStatusCode}"),
+                )
+                for status in employment.EmploymentStatus
+            )
+            if employment.EmploymentStatus
+            else tuple()
+        )
+
+    # Strategy for calculating the engagement type based on the EngTypes
+    # MONTHLY_FULL_TIME, MONTHLY_PART_TIME and HOURLY.
+    return (
+        tuple(
+            EngagementType(
+                start=sd_start_to_timeline_start(working_time.ActivationDate),
+                end=sd_end_to_timeline_end(working_time.DeactivationDate),
+                value=_sd_employment_type_monthly_hourly(working_time),
+            )
+            for working_time in employment.WorkingTime
+        )
+        if employment.WorkingTime
+        else tuple()
+    )
+
+
 def get_employment_timeline(
     sd_get_employment_changed_resp: GetEmploymentChangedResponse,
+    use_sd_status_codes_as_engagement_types: bool,
 ) -> EngagementTimeline:
     logger.info("Get SD employment timeline")
 
@@ -101,6 +147,19 @@ def get_employment_timeline(
         else tuple()
     )
 
+    eng_sd_unit_intervals = (
+        tuple(
+            EngagementSDUnit(
+                start=sd_start_to_timeline_start(dep.ActivationDate),
+                end=sd_end_to_timeline_end(dep.DeactivationDate),
+                value=dep.DepartmentUUIDIdentifier,
+            )
+            for dep in employment.EmploymentDepartment
+        )
+        if employment.EmploymentDepartment
+        else tuple()
+    )
+
     eng_unit_id_intervals = (
         tuple(
             EngagementUnitId(
@@ -114,17 +173,9 @@ def get_employment_timeline(
         else tuple()
     )
 
-    eng_type_intervals = (
-        tuple(
-            EngagementType(
-                start=sd_start_to_timeline_start(working_time.ActivationDate),
-                end=sd_end_to_timeline_end(working_time.DeactivationDate),
-                value=_sd_employment_type(working_time),
-            )
-            for working_time in employment.WorkingTime
-        )
-        if employment.WorkingTime
-        else tuple()
+    eng_type_intervals = _get_engagement_type(
+        employment=employment,
+        use_sd_status_codes_as_engagement_types=use_sd_status_codes_as_engagement_types,
     )
 
     timeline = EngagementTimeline(
@@ -136,8 +187,8 @@ def get_employment_timeline(
         eng_unit=Timeline[EngagementUnit](
             intervals=combine_intervals(eng_unit_intervals)
         ),
-        eng_sd_unit=Timeline[EngagementUnit](
-            intervals=combine_intervals(eng_unit_intervals)
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=combine_intervals(eng_sd_unit_intervals)
         ),
         eng_unit_id=Timeline[EngagementUnitId](
             intervals=combine_intervals(eng_unit_id_intervals)

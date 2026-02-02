@@ -19,7 +19,7 @@ from sdtoolplus.models import EngagementUnit
 from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
-from sdtoolplus.sd.timelines.employment import _sd_employment_type
+from sdtoolplus.sd.timelines.employment import _sd_employment_type_monthly_hourly
 from sdtoolplus.sd.timelines.employment import get_employment_timeline
 from sdtoolplus.sd.timelines.employment import get_leave_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
@@ -50,7 +50,7 @@ def test__sd_employment_type(
     )
 
     # Act
-    eng_type = _sd_employment_type(worktime)
+    eng_type = _sd_employment_type_monthly_hourly(worktime)
 
     # Assert
     assert eng_type == expected_eng_type
@@ -59,7 +59,10 @@ def test__sd_employment_type(
 async def test_get_engagement_timeline(mock_sd_employment_response_dict):
     # Act
     engagement_timeline = get_employment_timeline(
-        GetEmploymentChangedResponse.parse_obj(mock_sd_employment_response_dict)
+        sd_get_employment_changed_resp=GetEmploymentChangedResponse.parse_obj(
+            mock_sd_employment_response_dict
+        ),
+        use_sd_status_codes_as_engagement_types=False,
     )
 
     # Assert
@@ -142,7 +145,10 @@ async def test_get_engagement_timeline(mock_sd_employment_response_dict):
 async def test_get_engagement_timeline_no_person_found():
     # Act
     engagement_timeline = get_employment_timeline(
-        GetEmploymentChangedResponse.parse_obj({"Person": []})
+        sd_get_employment_changed_resp=GetEmploymentChangedResponse.parse_obj(
+            {"Person": []}
+        ),
+        use_sd_status_codes_as_engagement_types=False,
     )
 
     # Assert
@@ -168,7 +174,10 @@ async def test_get_engagement_timeline_no_employment_found():
     )
 
     # Act
-    engagement_timeline = get_employment_timeline(sd_resp)
+    engagement_timeline = get_employment_timeline(
+        sd_get_employment_changed_resp=sd_resp,
+        use_sd_status_codes_as_engagement_types=False,
+    )
 
     # Assert
     assert engagement_timeline == EngagementTimeline(

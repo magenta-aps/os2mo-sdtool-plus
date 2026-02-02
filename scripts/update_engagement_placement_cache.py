@@ -12,6 +12,7 @@ import structlog
 from fastramqpi.ra_utils.asyncio_utils import gather_with_concurrency
 from pydantic import BaseSettings
 from sdclient.client import SDClient
+from sdclient.exceptions import SDEmploymentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedAtDateRequest
 from sdclient.requests import GetEmploymentChangedRequest
@@ -49,6 +50,7 @@ async def lookup_employment_timeline(
     institution_identifier: str,
     cpr: str,
     employment_identifier: str,
+    use_sd_status_codes_as_engagement_types: bool,
 ) -> list[dict[str, str]]:
     try:
         r_employment = await asyncio.to_thread(
@@ -66,7 +68,7 @@ async def lookup_employment_timeline(
                 UUIDIndicator=True,
             ),
         )
-    except SDRootElementNotFound:
+    except (SDEmploymentNotFound, SDRootElementNotFound):
         logger.warning(
             "SD employment not found!",
             institution_identifier=institution_identifier,
@@ -74,7 +76,10 @@ async def lookup_employment_timeline(
             employment_identifier=employment_identifier,
         )
         return []
-    sd_eng_timeline = get_employment_timeline(r_employment)
+    sd_eng_timeline = get_employment_timeline(
+        sd_get_employment_changed_resp=r_employment,
+        use_sd_status_codes_as_engagement_types=use_sd_status_codes_as_engagement_types,
+    )
     eng_list = _engagement_timeline_to_json(sd_eng_timeline)
     return eng_list
 
@@ -105,11 +110,17 @@ async def lookup_employment_timeline(
     required=True,
     help="Update file with engagements since this date",
 )
+@click.option(
+    "--use_sd_status_codes_as_engagement_types",
+    is_flag=True,
+    help="Use SD status codes as engagement_types",
+)
 def main(
     username: str,
     password: str,
     filepath: Path,
     since: datetime,
+    use_sd_status_codes_as_engagement_types: bool,
 ):
     logger.info("Generating engagement JSON file for the APOS importer")
 
@@ -148,6 +159,7 @@ def main(
                         institution_identifier=institution_identifier,
                         cpr=person.PersonCivilRegistrationIdentifier,
                         employment_identifier=eng.EmploymentIdentifier,
+                        use_sd_status_codes_as_engagement_types=use_sd_status_codes_as_engagement_types,
                     )
                 )
 

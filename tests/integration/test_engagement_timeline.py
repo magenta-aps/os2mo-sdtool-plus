@@ -122,7 +122,7 @@ async def test_eng_timeline_http_triggered_sync(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -462,7 +462,7 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -716,7 +716,7 @@ async def test_eng_timeline_create_new_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -943,7 +943,7 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1156,7 +1156,7 @@ async def test_association_create_update_terminate(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1378,7 +1378,7 @@ async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_mis
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1548,7 +1548,7 @@ async def test_eng_timeline_related_units(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -1917,7 +1917,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2139,7 +2139,7 @@ async def test_eng_timeline_related_units_single_day_relation(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2573,7 +2573,7 @@ async def test_eng_timeline_related_units_populate_mo_with_sd_unit(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2839,7 +2839,7 @@ async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -2959,7 +2959,7 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3070,7 +3070,7 @@ async def test_eng_timeline_delete_engagement_and_leave_not_found_in_sd(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3378,7 +3378,7 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3583,7 +3583,7 @@ async def test_eng_timeline_handle_termination_of_sd_status_8_engagements(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -3925,3 +3925,232 @@ async def test_get_allowed_engagement_types(graphql_client: GraphQLClient):
 
     # Assert
     assert engs_to_process == {eng_type_uuid, eng_type2_uuid}
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "USE_SD_STATUS_CODES_AS_ENGAGEMENT_TYPES": "true",
+    }
+)
+async def test_eng_timeline_status_code_engagement_types(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    job_function_5678: UUID,
+    job_function_9000: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario. The engagement type is the important part of this
+    test.
+
+    Time  --------t1--------t2---------t3-------------t4-----t5------------t6------->
+
+    MO (name)               |----------------------name1-----------------------------
+    MO (key)                |----------------------1234------------------------------
+    MO (unit)               |----------------------dep1------------------------------
+    MO (unit ID)            |----------------------dep1------------------------------
+    MO (active)             |--------------------------------------------------------
+    MO (eng_type)           |---full---|-----------------part------------------------
+    (the default engagement types should be removed with the SD status code ones)
+
+    "Arrange" intervals     |-----1----|-------------------2-------------------------
+
+    SD (name)     |-------------------------------name1------------------------------
+    SD (key)      |-------------------------------1234-------------------------------
+    SD (unit)     |-------------------------------dep1-------------------------------
+    SD (unit ID)  |-------------------------------dep1-------------------------------
+    SD (active)   |---------0----------|-------3------|---8--|-------1-----|----4----
+    SD (eng_type) |---------0----------|-------3------|--re--|-------1-----|----4----
+    (the eng_type line is the important one in this test!)
+
+    "Assert"      |---------1----------|-------2------|      |------3------|----4----
+    intervals
+
+    In SD: name = EmploymentName, key = JobPositionIdentifier
+           active = EmploymentStatusCode
+    In MO: name = extension_1, key = job_function
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+    t6 = datetime(2006, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange intervals 1-5)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t2, POSITIVE_INFINITY),
+                extension_1="name4",
+                extension_4="dep3",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Update engagement (arrange interval 2)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t3, POSITIVE_INFINITY),
+            extension_1="name4",
+            extension_4="dep3",
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_PART_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <EmploymentStatusCode>0</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2003-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <EmploymentStatusCode>3</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2004-01-01</ActivationDate>
+                <DeactivationDate>2004-12-31</DeactivationDate>
+                <EmploymentStatusCode>8</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2005-01-01</ActivationDate>
+                <DeactivationDate>2005-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <EmploymentStatus>
+                <ActivationDate>2006-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>4</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t3
+    assert interval_1.engagement_type_uuid == eng_types[EngType.STATUS_0]
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t3
+    assert mo_end_to_timeline_end(interval_2.validity.to) == t4
+    assert interval_2.engagement_type_uuid == eng_types[EngType.STATUS_3]
+
+    interval_3 = validities[2]
+    assert interval_3.validity.from_ == t5
+    assert mo_end_to_timeline_end(interval_3.validity.to) == t6
+    assert interval_3.engagement_type_uuid == eng_types[EngType.STATUS_1]
+
+    interval_4 = validities[3]
+    assert interval_4.validity.from_ == t6
+    assert mo_end_to_timeline_end(interval_4.validity.to) == POSITIVE_INFINITY
+    assert interval_4.engagement_type_uuid == eng_types[EngType.STATUS_4]
+
+    assert len(validities) == 4

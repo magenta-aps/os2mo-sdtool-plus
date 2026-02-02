@@ -102,6 +102,19 @@ facets:
     timelønnet:
       title: "Timelønnet"
       scope: "TEXT"
+    status0:
+      title: "Ikke i løn"
+      scope: "TEXT"
+    status1:
+      title: "I løn"
+      scope: "TEXT"
+    status3:
+      title: "Orlov"
+      scope: "TEXT"
+    status4:
+      # According to SD this should really be "Ansat i konflikt"
+      title: "Statuskode 4"
+      scope: "TEXT"
     nonSD:
       title: "Non-SD"
       scope: "TEXT"

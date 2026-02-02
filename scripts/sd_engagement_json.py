@@ -121,7 +121,16 @@ def _get_eng_key(eng: Engagement) -> str:
     required=True,
     help="SD password",
 )
-def main(username: str, password: str) -> None:
+@click.option(
+    "--use_sd_status_codes_as_engagement_types",
+    is_flag=True,
+    help="Use SD status codes as engagement_types",
+)
+def main(
+    username: str,
+    password: str,
+    use_sd_status_codes_as_engagement_types: bool,
+) -> None:
     """
     Generate a CSV file with all MO engagements and their SD unit placement
     for the entire timeline. The data is stored in a local CSV file to be used
@@ -187,7 +196,10 @@ def main(username: str, password: str) -> None:
             _write_json(sd_engagements_not_found, "/tmp/engagements-not-found.json")
             raise error
 
-        sd_eng_timeline = get_employment_timeline(r_employment)
+        sd_eng_timeline = get_employment_timeline(
+            sd_get_employment_changed_resp=r_employment,
+            use_sd_status_codes_as_engagement_types=use_sd_status_codes_as_engagement_types,
+        )
         eng_list = _engagement_timeline_to_json(sd_eng_timeline)
 
         sd_engagements[eng_key] = eng_list
