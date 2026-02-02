@@ -12,6 +12,7 @@ import structlog
 from fastramqpi.ra_utils.asyncio_utils import gather_with_concurrency
 from pydantic import BaseSettings
 from sdclient.client import SDClient
+from sdclient.exceptions import SDEmploymentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetEmploymentChangedAtDateRequest
 from sdclient.requests import GetEmploymentChangedRequest
@@ -67,7 +68,7 @@ async def lookup_employment_timeline(
                 UUIDIndicator=True,
             ),
         )
-    except SDRootElementNotFound:
+    except (SDEmploymentNotFound, SDRootElementNotFound):
         logger.warning(
             "SD employment not found!",
             institution_identifier=institution_identifier,
