@@ -189,9 +189,7 @@ class Interval(GenericModel, Generic[V], frozen=True):
     def ensure_timezones(cls, values: dict[str, Any]) -> dict[str, Any]:
         start = values["start"]
         end = values["end"]
-        if not (
-            isinstance(start.tzinfo, ZoneInfo) and isinstance(end.tzinfo, ZoneInfo)
-        ):
+        if start.tzinfo is None or end.tzinfo is None:
             raise ValueError("Timezone must be provided")
         return values
 
