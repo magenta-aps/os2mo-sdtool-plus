@@ -15,6 +15,7 @@ from pydantic import Field
 from pydantic import PositiveInt
 from pydantic import SecretStr
 from pydantic import root_validator
+from pydantic import validator
 
 from .mo_org_unit_importer import OrgUnitUUID
 
@@ -226,6 +227,10 @@ class SDToolPlusSettings(BaseSettings):
 
     class Config:
         env_nested_delimiter = "__"
+
+    @validator("min_mo_datetime")
+    def ensure_min_mo_datetime_timezone(cls, value):
+        return value.astimezone(TIMEZONE)
 
     @root_validator
     def check_region_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
