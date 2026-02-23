@@ -733,6 +733,195 @@ async def test_person_addresses(
         "ENABLE_PERSON_ADDRESS_SYNC": "true",
     }
 )
+async def test_person_addresses_all_zero_phone_number(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Test that person addresses are synced correctly. We test the following for
+    a given person:
+
+    Addresses in MO:
+    Time  --------------t1--------------t2---------------------------------------->
+
+    Phone1 (no-op)      |----12345678---|----------23456789-----------------------
+
+    Addresses in SD (no timelines!):
+    Phone1: 23456789 (no-op)
+    Phone2: 00000000 (skip)
+    """
+
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=TIMEZONE)
+    t2 = datetime(2002, 1, 1, tzinfo=TIMEZONE)
+
+    person_uuid = uuid4()
+    cpr = "0101011234"
+
+    # Create person
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Get the address types
+    phone1_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="person_telefon",
+    )
+
+    phone2_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="person_telefon_anden",
+    )
+
+    visibility_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="visibility",
+        class_user_key="Public",
+    )
+
+    # Create phone 1
+    phone1_uuid = (
+        await graphql_client.create_address(
+            AddressCreateInput(
+                person=person_uuid,
+                user_key="12345678",
+                value="12345678",
+                address_type=phone1_address_type_uuid,
+                visibility=visibility_uuid,
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            )
+        )
+    ).uuid
+
+    await graphql_client.update_address(
+        AddressUpdateInput(
+            uuid=phone1_uuid,
+            person=person_uuid,
+            user_key="23456789",
+            value="23456789",
+            address_type=phone1_address_type_uuid,
+            visibility=visibility_uuid,
+            validity=timeline_interval_to_mo_validity(t2, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8" ?>
+        <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+            <RequestStructure>
+                <InstitutionIdentifier>II</InstitutionIdentifier>
+                <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+                <EffectiveDate>2002-07-01</EffectiveDate>
+                <StatusActiveIndicator>true</StatusActiveIndicator>
+                <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                <ContactInformationIndicator>true</ContactInformationIndicator>
+                <PostalAddressIndicator>true</PostalAddressIndicator>
+            </RequestStructure>
+            <Person>
+                <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                <PersonGivenName>Chuck</PersonGivenName>
+                <PersonSurnameName>Norris</PersonSurnameName>
+                <PostalAddress>
+                    <StandardAddressIdentifier>Fasanvænget 11</StandardAddressIdentifier>
+                    <PostalCode>2000</PostalCode>
+                    <DistrictName>Gåserød</DistrictName>
+                    <MunicipalityCode>1234</MunicipalityCode>
+                    <CountryIdentificationCode scheme="iso3166-alpha2">DK</CountryIdentificationCode>
+                </PostalAddress>
+                <ContactInformation>
+                    <TelephoneNumberIdentifier>23456789</TelephoneNumberIdentifier>
+                    <TelephoneNumberIdentifier>00000000</TelephoneNumberIdentifier>
+                </ContactInformation>
+                <Employment>
+                    <EmploymentIdentifier>12345</EmploymentIdentifier>
+                </Employment>
+            </Person>
+        </GetPerson20111201>
+    """
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # Phone 1
+    r_phone1 = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[phone1_address_type_uuid]),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    phone1 = one(r_phone1.objects)
+
+    interval_1 = phone1.validities[0]
+    assert phone1.uuid == phone1_uuid
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.user_key == "12345678"
+    assert interval_1.value == "12345678"
+    assert interval_1.visibility_uuid == visibility_uuid
+    assert interval_1.address_type.uuid == phone1_address_type_uuid
+
+    interval_2 = phone1.validities[1]
+    assert interval_2.validity.from_ == t2
+    assert mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
+    assert interval_2.user_key == "23456789"
+    assert interval_2.value == "23456789"
+    assert interval_2.visibility_uuid == visibility_uuid
+    assert interval_2.address_type.uuid == phone1_address_type_uuid
+
+    assert len(phone1.validities) == 2
+
+    # Phone 2
+    r_phone2 = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[phone2_address_type_uuid]),
+            from_date=None,
+            to_date=None,
+        )
+    )
+
+    assert len(r_phone2.objects) == 0
+
+
+@pytest.mark.integration_test
+@travel("2002-07-01")
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "ENABLE_PERSON_ADDRESS_SYNC": "true",
+    }
+)
 async def test_person_engagement_addresses(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
