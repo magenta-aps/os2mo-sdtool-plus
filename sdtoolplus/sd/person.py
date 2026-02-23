@@ -33,6 +33,10 @@ def _get_phone_numbers(
         return None, None
     phone1 = nth(contact_info.TelephoneNumberIdentifier, 0, None)
     phone2 = nth(contact_info.TelephoneNumberIdentifier, 1, None)
+
+    phone1 = phone1 if phone1 != "00000000" else None
+    phone2 = phone2 if phone2 != "00000000" else None
+
     return phone1, phone2
 
 
