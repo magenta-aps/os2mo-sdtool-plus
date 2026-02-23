@@ -148,6 +148,8 @@ def get_pnumber_timeline(department: GetDepartmentResponse) -> Timeline[UnitPNum
                 )
                 for dep in department.Department
                 if dep.ProductionUnitIdentifier is not None
+                # P-number zero is not allowed by MO
+                and dep.ProductionUnitIdentifier != 0
             )
         )
     )

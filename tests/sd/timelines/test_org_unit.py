@@ -344,3 +344,28 @@ def test_get_phone_number_should_return_empty_timeline(
 
     # Assert
     assert timeline == Timeline[UnitPhoneNumber]()
+
+
+def test_get_pnumber_timeline_when_pnumber_is_zero():
+    # Arrange
+    department = GetDepartmentResponse.parse_obj(
+        {
+            "RegionIdentifier": "RI",
+            "InstitutionIdentifier": "II",
+            "Department": [
+                {
+                    "ActivationDate": "2000-01-01",
+                    "DeactivationDate": "2000-12-31",
+                    "DepartmentIdentifier": "ABCD",
+                    "DepartmentLevelIdentifier": "Afdelings-niveau",
+                    "ProductionUnitIdentifier": 0,
+                }
+            ],
+        }
+    )
+
+    # Act
+    timeline = get_phone_number_timeline(department)
+
+    # Assert
+    assert timeline == Timeline[UnitPhoneNumber]()
