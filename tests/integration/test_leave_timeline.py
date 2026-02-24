@@ -48,7 +48,7 @@ async def test_leave_timeline(
     Time  --------t1--------t2---------t3-------------t5-----t6--------------------->
 
     MO (leave)                         |--------leave--------|
-    SD (status)   |----3----|-------------1-----------|--4---|-----------1-----------
+    SD (status)   |----3----|-------------1-----------|--3---|-----------1-----------
 
     "Assert"      |----1----|                         |--2---|
     intervals
@@ -164,7 +164,7 @@ async def test_leave_timeline(
               <EmploymentStatus>
                 <ActivationDate>2005-01-01</ActivationDate>
                 <DeactivationDate>2005-12-31</DeactivationDate>
-                <EmploymentStatusCode>4</EmploymentStatusCode>
+                <EmploymentStatusCode>3</EmploymentStatusCode>
               </EmploymentStatus>
               <EmploymentStatus>
                 <ActivationDate>2006-01-01</ActivationDate>
@@ -406,7 +406,7 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
     MO (eng)                          (empty)
     MO (leave)                        (empty)
 
-    SD (status)   |-----3-----|-------------1-----------|----------4-----------
+    SD (status)   |-----3-----|-------------1-----------|----------3-----------
     SD (dep)      |---------------dep1------------------|      (missing!)
     """
     # Arrange
@@ -472,7 +472,7 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
               <EmploymentStatus>
                 <ActivationDate>2003-01-01</ActivationDate>
                 <DeactivationDate>9999-12-31</DeactivationDate>
-                <EmploymentStatusCode>4</EmploymentStatusCode>
+                <EmploymentStatusCode>3</EmploymentStatusCode>
               </EmploymentStatus>
               <EmploymentDepartment>
                 <ActivationDate>2001-01-01</ActivationDate>
