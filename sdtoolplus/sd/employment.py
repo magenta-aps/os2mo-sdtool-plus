@@ -9,8 +9,9 @@ class EmploymentStatusCode(Enum):
     EMPLOYED_NO_PAY = "0"
     EMPLOYED_WITH_PAY = "1"
     # For unknown reasons there are two leave statuses in SD
-    LEAVE_1 = "3"
-    LEAVE_2 = "4"
+    LEAVE = "3"
+    # Used for strikes and lockouts etc.
+    CONFLICT = "4"
     MIGRATED_OR_DEAD = "7"
     RESIGNED = "8"
     RETIRED = "9"
@@ -20,9 +21,9 @@ class EmploymentStatusCode(Enum):
         return self in (
             EmploymentStatusCode.EMPLOYED_NO_PAY,
             EmploymentStatusCode.EMPLOYED_WITH_PAY,
-            EmploymentStatusCode.LEAVE_1,
-            EmploymentStatusCode.LEAVE_2,
+            EmploymentStatusCode.LEAVE,
+            EmploymentStatusCode.CONFLICT,
         )
 
     def is_leave(self) -> bool:
-        return self in (EmploymentStatusCode.LEAVE_1, EmploymentStatusCode.LEAVE_2)
+        return self == EmploymentStatusCode.LEAVE
