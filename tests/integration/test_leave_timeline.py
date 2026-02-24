@@ -85,7 +85,7 @@ async def test_leave_timeline(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -278,7 +278,7 @@ async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -434,7 +434,7 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
     await graphql_client.create_person(
         EmployeeCreateInput(
             uuid=person_uuid,
-            cpr_number=cpr,
+            cpr_number=CPRNumber(cpr),
             given_name="Chuck",
             surname="Norris",
         )
@@ -538,7 +538,7 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
     # all SD engagement data is available
     leave = await graphql_client.get_leave(
         LeaveFilter(
-            employees=[person_uuid], user_key=user_key, from_date=None, to_date=None
+            employees=[person_uuid], user_keys=[user_key], from_date=None, to_date=None
         )
     )
 
