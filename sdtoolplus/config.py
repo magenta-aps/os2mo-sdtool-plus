@@ -105,6 +105,7 @@ class SDToolPlusSettings(BaseSettings):
         "deltid",
         "fuldtid",
         "recalculate",
+        # User keys used when USE_SD_STATUS_CODES_AS_ENGAGEMENT_TYPES is true
         "status0",
         "status1",
         "status3",

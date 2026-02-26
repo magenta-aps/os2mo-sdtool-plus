@@ -575,6 +575,7 @@ def create_fastramqpi() -> FastRAMQPI:
     @fastapi_router.post("/timeline/sync/engagement/all/mo", status_code=HTTP_200_OK)
     async def full_timeline_sync_mo_engagements(
         gql_client: depends.GraphQLClient,
+        settings: depends.Settings,
         engagement_uuid: UUID | None = None,
         limit: int = 500,
     ) -> dict:
@@ -591,14 +592,12 @@ def create_fastramqpi() -> FastRAMQPI:
             "engagement_type": ClassFilter(
                 facet=FacetFilter(user_keys=["engagement_type"]),
                 user_keys=[
+                    # TODO: remove when new integration is deployed everywhere
                     # User keys from the old SD integration
                     "timeløn",
                     "månedsløn",
-                    # User keys from the new SD integration
-                    "timelønnet",
-                    "deltid",
-                    "fuldtid",
-                ],
+                ]
+                + settings.engagement_types_to_process,
             ),
             "from_date": None,
             "to_date": None,
