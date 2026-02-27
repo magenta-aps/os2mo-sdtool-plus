@@ -22,7 +22,7 @@ logger = structlog.stdlib.get_logger()
 
 
 async def sync_all_mo_engagements(
-    gql_client: GraphQLClient, engagements_csv_file: Path
+    gql_client: GraphQLClient, engagements_csv_file: Path, priority: int
 ) -> None:
     with open(engagements_csv_file, newline="") as fp:
         reader = csv.DictReader(fp)
@@ -48,6 +48,7 @@ async def sync_all_mo_engagements(
                         cpr=cpr,
                         employment_identifier=employment_identifier,
                     ).json(),
+                    priority=priority,
                 )
             )
 
@@ -59,13 +60,20 @@ async def sync_all_mo_engagements(
     default=Path("/tmp/engagements.csv"),
     help="Path to the CSV file containing the engagements to sync",
 )
+@click.option(
+    "--priority",
+    type=click.INT,
+    default=20_000,
+    help="The queue priority",
+)
 def main(
     engagements_csv_file: Path,
+    priority: int,
 ) -> None:
     logger.info("Script started")
 
     gql_client = get_gql_client()
-    asyncio.run(sync_all_mo_engagements(gql_client, engagements_csv_file))
+    asyncio.run(sync_all_mo_engagements(gql_client, engagements_csv_file, priority))
 
     logger.info("Script finished")
 
