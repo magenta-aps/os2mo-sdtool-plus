@@ -417,13 +417,15 @@ mutation RefreshEngagements(
   $cursor: Cursor,
   $limit: int,
   $filter: EngagementFilter,
-  $owner: UUID!
+  $owner: UUID!,
+  $priority: int
 ) {
   engagement_refresh(
     cursor: $cursor,
     limit: $limit,
     filter: $filter,
-    owner: $owner
+    owner: $owner,
+    priority: $priority
   ) {
     objects
     page_info {
