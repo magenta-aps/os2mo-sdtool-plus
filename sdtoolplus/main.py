@@ -578,6 +578,7 @@ def create_fastramqpi() -> FastRAMQPI:
         settings: depends.Settings,
         engagement_uuid: UUID | None = None,
         limit: int = 500,
+        priority: int = 20_000,
     ) -> dict:
         """
         Sync all engagements in MO (and only the ones that already exist in MO).
@@ -613,6 +614,7 @@ def create_fastramqpi() -> FastRAMQPI:
                 limit=limit,
                 filter=EngagementFilter(**eng_filter),
                 owner=me.actor.uuid,
+                priority=priority,
             )
             next_cursor = batch.page_info.next_cursor
 
