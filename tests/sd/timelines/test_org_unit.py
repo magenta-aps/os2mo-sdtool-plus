@@ -27,7 +27,7 @@ from sdtoolplus.sd.timelines.org_unit import get_phone_number_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
-async def test_get_department_timeline():
+async def test_get_department_timeline(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -97,7 +97,7 @@ async def test_get_department_timeline():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert
@@ -189,7 +189,7 @@ async def test_get_department_timeline():
     )
 
 
-async def test_get_department_timeline_department_not_found():
+async def test_get_department_timeline_department_not_found(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -201,14 +201,14 @@ async def test_get_department_timeline_department_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert
     assert department_timeline == UnitTimeline()
 
 
-async def test_get_department_timeline_parent_not_found():
+async def test_get_department_timeline_parent_not_found(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -240,7 +240,7 @@ async def test_get_department_timeline_parent_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert

@@ -11,6 +11,7 @@ from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import GetDepartmentResponse
 
+from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Active
 from sdtoolplus.models import Timeline
@@ -63,7 +64,7 @@ async def get_department_timeline(
     sd_client: SDClient,
     inst_id: str,
     unit_uuid: OrgUnitUUID,
-    sd_institution_to_mo_root_ou_uuid_map: dict[OrgUnitUUID, OrgUnitUUID],
+    settings: SDToolPlusSettings,
 ) -> UnitTimeline:
     logger.info("Get SD department timeline", inst_id=inst_id, unit_uuid=str(unit_uuid))
 
@@ -118,7 +119,7 @@ async def get_department_timeline(
         UnitParent(
             start=sd_start_to_timeline_start(parent.startDate),
             end=sd_end_to_timeline_end(parent.endDate),
-            value=sd_institution_to_mo_root_ou_uuid_map.get(
+            value=settings.sd_institution_to_mo_root_ou_uuid_map.get(
                 parent.parentUuid, parent.parentUuid
             ),
         )
