@@ -282,7 +282,7 @@ async def _sync_addresses(
         address_type=PersonEngagementAddressType.phone,
     )
 
-    # Engagement phone numbers
+    # Engagement email addresses
     await _sync_engagement_addresses(
         gql_client=gql_client,
         settings=settings,
