@@ -338,7 +338,7 @@ async def sync_ou(
         sd_client=sd_client,
         inst_id=institution_identifier,
         unit_uuid=org_unit,
-        sd_institution_to_mo_root_ou_uuid_map=settings.sd_institution_to_mo_root_ou_uuid_map,
+        settings=settings,
     )
     desired_unit_timeline = prefix_unit_id_with_inst_id(
         settings, sd_unit_timeline, institution_identifier

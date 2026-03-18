@@ -172,6 +172,10 @@ class SDToolPlusSettings(BaseSettings):
     # List of UUIDs of "Udgåede afdelinger" (there can be several of these)
     obsolete_unit_roots: list[OrgUnitUUID]
 
+    # If true, we replace any overlapping SD department parents with the "unknown" unit
+    # in the overlapping intervals when building the SD OU timelines.
+    condense_multiple_ou_parents_to_unknown_unit: bool = False
+
     # Extend parent validities recursively if the validity of a unit
     # exceeds that of the parent unit
     extend_parent_validities: bool = False

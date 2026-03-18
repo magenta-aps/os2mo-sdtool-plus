@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from typing import Any
+from typing import cast
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -21,13 +22,109 @@ from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitTimeline
+from sdtoolplus.sd.timelines.org_unit import condense_multiple_parents_to_unknown_unit
 from sdtoolplus.sd.timelines.org_unit import get_department
 from sdtoolplus.sd.timelines.org_unit import get_department_timeline
 from sdtoolplus.sd.timelines.org_unit import get_phone_number_timeline
 from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 
-async def test_get_department_timeline():
+def test_condense_multiple_parents_to_unknown_unit_case_with_no_overlaps() -> None:
+    """
+    Ensure that the function condense_multiple_parents_to_unknown_unit does change
+    anything when there are no SD department parent overlaps.
+    """
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t2 = datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t3 = datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t4 = datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+
+    parent1 = cast(OrgUnitUUID, uuid4())
+    parent2 = cast(OrgUnitUUID, uuid4())
+    parent3 = cast(OrgUnitUUID, uuid4())
+    unknown_unit = cast(OrgUnitUUID, uuid4())
+
+    # No overlaps in this one
+    parent_intervals = (
+        UnitParent(start=t1, end=t2, value=parent1),
+        UnitParent(start=t2, end=t3, value=parent2),
+        UnitParent(start=t3, end=t4, value=parent3),
+    )
+
+    # Act
+    condensed_parent_intervals = condense_multiple_parents_to_unknown_unit(
+        parent_intervals=parent_intervals,
+        unknown_unit=unknown_unit,
+    )
+
+    # Assert
+    assert condensed_parent_intervals == parent_intervals
+
+
+def test_condense_multiple_parents_to_unknown_unit_case_with_overlaps() -> None:
+    """
+    Ensure the function condense_multiple_parents_to_unknown_unit replaces the multiple
+    parents with the "unknown" unit in the intervals where the SD parents are
+    overlapping.
+
+    The test uses the complicated SD get-department-history-response below.
+    p1, p2, p3 etc. indicates parent1, parent2, parent3 and so on.
+    U indicates the unknown unit.
+
+    Time  ----t1-----t2-----t3-----t4-----t5-----t6-----t7-----t8-----t9----->
+              |------p1-----|------p2-----|      |------p3-----|--p4--|
+                     |------p5-----|                    |------p6-----|
+
+    Which should result in:
+              |--p1--|------U------|--p2--|      |--p3--|------U------|
+    """
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t2 = datetime(2002, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t3 = datetime(2003, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t4 = datetime(2004, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t5 = datetime(2005, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t6 = datetime(2006, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t7 = datetime(2007, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t8 = datetime(2008, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+    t9 = datetime(2009, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE)
+
+    parent1 = OrgUnitUUID(int=1)
+    parent2 = OrgUnitUUID(int=2)
+    parent3 = OrgUnitUUID(int=3)
+    parent4 = OrgUnitUUID(int=4)
+    parent5 = OrgUnitUUID(int=5)
+    parent6 = OrgUnitUUID(int=6)
+    unknown_unit = OrgUnitUUID(int=0)
+
+    # Lots of overlaps in this one
+    parent_intervals = (
+        UnitParent(start=t1, end=t3, value=parent1),
+        UnitParent(start=t3, end=t5, value=parent2),
+        UnitParent(start=t6, end=t8, value=parent3),
+        UnitParent(start=t8, end=t9, value=parent4),
+        UnitParent(start=t2, end=t4, value=parent5),
+        UnitParent(start=t7, end=t9, value=parent6),
+    )
+
+    # Act
+    condensed_parent_intervals = condense_multiple_parents_to_unknown_unit(
+        parent_intervals=parent_intervals,
+        unknown_unit=unknown_unit,
+    )
+
+    # Assert
+    assert condensed_parent_intervals == (
+        UnitParent(start=t1, end=t2, value=parent1),
+        UnitParent(start=t2, end=t4, value=unknown_unit),
+        UnitParent(start=t4, end=t5, value=parent2),
+        UnitParent(start=t6, end=t7, value=parent3),
+        UnitParent(start=t7, end=t9, value=unknown_unit),
+    )
+
+
+async def test_get_department_timeline(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -97,7 +194,7 @@ async def test_get_department_timeline():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert
@@ -189,7 +286,7 @@ async def test_get_department_timeline():
     )
 
 
-async def test_get_department_timeline_department_not_found():
+async def test_get_department_timeline_department_not_found(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -201,14 +298,14 @@ async def test_get_department_timeline_department_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert
     assert department_timeline == UnitTimeline()
 
 
-async def test_get_department_timeline_parent_not_found():
+async def test_get_department_timeline_parent_not_found(sdtoolplus_settings):
     # Arrange
     dep_uuid = uuid4()
 
@@ -240,7 +337,7 @@ async def test_get_department_timeline_parent_not_found():
         sd_client=mock_sd_client,
         inst_id="II",
         unit_uuid=dep_uuid,
-        sd_institution_to_mo_root_ou_uuid_map=dict(),
+        settings=sdtoolplus_settings,
     )
 
     # Assert
