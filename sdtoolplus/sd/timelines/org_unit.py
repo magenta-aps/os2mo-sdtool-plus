@@ -30,6 +30,13 @@ from sdtoolplus.sd.timelines.common import sd_start_to_timeline_start
 logger = structlog.stdlib.get_logger()
 
 
+def condense_multiple_parents_to_unknown_unit(
+    parent_intervals: tuple[UnitParent, ...],
+) -> tuple[UnitParent, ...]:
+    # TODO: implement!
+    return tuple()
+
+
 async def get_department(
     sd_client: SDClient,
     institution_identifier: str,
@@ -125,6 +132,9 @@ async def get_department_timeline(
         )
         for parent in parents
     )
+    # Introduce proper state/strategy pattern if more variability is needed later
+    if settings.condense_multiple_ou_parents_to_unknown_unit:
+        parent_intervals = condense_multiple_parents_to_unknown_unit(parent_intervals)
 
     timeline = UnitTimeline(
         active=Timeline[Active](intervals=combine_intervals(active_intervals)),
