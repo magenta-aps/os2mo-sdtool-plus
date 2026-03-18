@@ -208,89 +208,94 @@ async def _sync_addresses(
     )
 
     # Person phone 1
-    await _sync_address(
-        gql_client=gql_client,
-        person_uuid=person_uuid,
-        sd_address=sd_person.person_phone_number1,
-        address_type_uuid=await get_class(
+    if not settings.disable_person_phone_number_sync:
+        await _sync_address(
             gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="person_telefon",
-        ),
-        visibility_uuid=visibility_uuid,
-    )
+            person_uuid=person_uuid,
+            sd_address=sd_person.person_phone_number1,
+            address_type_uuid=await get_class(
+                gql_client=gql_client,
+                facet_user_key="employee_address_type",
+                class_user_key="person_telefon",
+            ),
+            visibility_uuid=visibility_uuid,
+        )
 
-    # Person phone 2
-    await _sync_address(
-        gql_client=gql_client,
-        person_uuid=person_uuid,
-        sd_address=sd_person.person_phone_number2,
-        address_type_uuid=await get_class(
+        # Person phone 2
+        await _sync_address(
             gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="person_telefon_anden",
-        ),
-        visibility_uuid=visibility_uuid,
-    )
+            person_uuid=person_uuid,
+            sd_address=sd_person.person_phone_number2,
+            address_type_uuid=await get_class(
+                gql_client=gql_client,
+                facet_user_key="employee_address_type",
+                class_user_key="person_telefon_anden",
+            ),
+            visibility_uuid=visibility_uuid,
+        )
 
-    # Person email 1
-    await _sync_address(
-        gql_client=gql_client,
-        person_uuid=person_uuid,
-        sd_address=sd_person.person_email1,
-        address_type_uuid=await get_class(
+    if not settings.disable_person_email_address_sync:
+        # Person email 1
+        await _sync_address(
             gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="person_email",
-        ),
-        visibility_uuid=visibility_uuid,
-    )
+            person_uuid=person_uuid,
+            sd_address=sd_person.person_email1,
+            address_type_uuid=await get_class(
+                gql_client=gql_client,
+                facet_user_key="employee_address_type",
+                class_user_key="person_email",
+            ),
+            visibility_uuid=visibility_uuid,
+        )
 
-    # Person email 2
-    await _sync_address(
-        gql_client=gql_client,
-        person_uuid=person_uuid,
-        sd_address=sd_person.person_email2,
-        address_type_uuid=await get_class(
+        # Person email 2
+        await _sync_address(
             gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="person_email_anden",
-        ),
-        visibility_uuid=visibility_uuid,
-    )
+            person_uuid=person_uuid,
+            sd_address=sd_person.person_email2,
+            address_type_uuid=await get_class(
+                gql_client=gql_client,
+                facet_user_key="employee_address_type",
+                class_user_key="person_email_anden",
+            ),
+            visibility_uuid=visibility_uuid,
+        )
 
-    # Postal address (only present on the SD person object itself)
-    await _sync_address(
-        gql_client=gql_client,
-        person_uuid=person_uuid,
-        sd_address=sd_person.person_address,
-        address_type_uuid=await get_class(
+    if not settings.disable_person_postal_address_sync:
+        # Postal address (only present on the SD person object itself)
+        await _sync_address(
             gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="AdresseSDEmployee",
-        ),
-        visibility_uuid=visibility_uuid,
-    )
+            person_uuid=person_uuid,
+            sd_address=sd_person.person_address,
+            address_type_uuid=await get_class(
+                gql_client=gql_client,
+                facet_user_key="employee_address_type",
+                class_user_key="AdresseSDEmployee",
+            ),
+            visibility_uuid=visibility_uuid,
+        )
 
-    # Engagement phone numbers
-    await _sync_engagement_addresses(
-        gql_client=gql_client,
-        settings=settings,
-        person_uuid=person_uuid,
-        engagement_addresses=sd_person.engagement_phone_numbers,
-        visibility_uuid=visibility_uuid,
-        address_type=PersonEngagementAddressType.phone,
-    )
+    if not settings.disable_engagement_phone_number_sync:
+        # Engagement phone numbers
+        await _sync_engagement_addresses(
+            gql_client=gql_client,
+            settings=settings,
+            person_uuid=person_uuid,
+            engagement_addresses=sd_person.engagement_phone_numbers,
+            visibility_uuid=visibility_uuid,
+            address_type=PersonEngagementAddressType.phone,
+        )
 
-    # Engagement email addresses
-    await _sync_engagement_addresses(
-        gql_client=gql_client,
-        settings=settings,
-        person_uuid=person_uuid,
-        engagement_addresses=sd_person.engagement_emails,
-        visibility_uuid=visibility_uuid,
-        address_type=PersonEngagementAddressType.email,
-    )
+    if not settings.disable_engagement_email_address_sync:
+        # Engagement email addresses
+        await _sync_engagement_addresses(
+            gql_client=gql_client,
+            settings=settings,
+            person_uuid=person_uuid,
+            engagement_addresses=sd_person.engagement_emails,
+            visibility_uuid=visibility_uuid,
+            address_type=PersonEngagementAddressType.email,
+        )
 
     logger.info("Done syncing person addresses", person_uuid=str(person_uuid))
 
