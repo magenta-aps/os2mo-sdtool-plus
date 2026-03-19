@@ -299,10 +299,13 @@ async def engagement_ou_strategy_region(
 
     1) If the engagement already exists in MO, and if the unit is not "Unknown", the
        engagement will stay in the MO unit for the given interval.
-    2) If the engagement is placed in "Unknown" in MO, we will attempt to place the
-       engagement in a (random) related unit in the given interval.
+    2) If the engagement already exists in MO and is placed in "Unknown", we will
+       attempt to place the engagement in a (random) related unit in the given interval.
+    3) If the engagement does not already exist in MO, we will attempt to place the
+       engagement in a (random) related unit in the given interval. If there are no
+       related units in the interval, we will place the engagement in "Unknown".
 
-    These two rules apply apart from the following exception. If the engagement SD unit
+    These rules apply apart from the following exception. If the engagement SD unit
     UUID value changes (stored in MOs engagement attribute "extension_5"), we will
     re-calculate the engagement placement according to 2) above. As a consequence, *any*
     manual engagement changes in MO are overwritten in the given interval! This happens
