@@ -219,7 +219,7 @@ class UnitLevel(Interval[Optional[str]]):
     pass
 
 
-class UnitName(Interval[str]):
+class UnitName(Interval[Optional[str]]):
     pass
 
 

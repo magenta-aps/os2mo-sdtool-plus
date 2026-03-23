@@ -29,6 +29,7 @@ from sdtoolplus.mo.timelines.org_unit import terminate_ou
 from sdtoolplus.mo.timelines.org_unit import update_ou
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import Timeline
+from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitPhoneNumber
 from sdtoolplus.models import UnitPNumber
@@ -88,6 +89,35 @@ def patch_missing_parents(
         parent=Timeline[UnitParent](
             intervals=combine_intervals(tuple(parent_intervals))
         ),
+    )
+
+
+def patch_missing_names(
+    desired_unit_timeline: UnitTimeline,
+) -> UnitTimeline:
+    """
+    In some cases, an SD unit does not have a name in certain validity intervals. This
+    function sets the unit name to "(intet navn)" in these periods.
+
+    Args:
+         desired_unit_timeline: The unit timeline to patch
+
+    Returns:
+        The patched unit timeline.
+    """
+    name_intervals = tuple(
+        unit_name
+        if unit_name.value is not None
+        else UnitName(start=unit_name.start, end=unit_name.end, value="(intet navn)")
+        for unit_name in desired_unit_timeline.name.intervals
+    )
+
+    return UnitTimeline(
+        active=desired_unit_timeline.active,
+        name=Timeline[UnitName](intervals=combine_intervals(name_intervals)),
+        unit_id=desired_unit_timeline.unit_id,
+        unit_level=desired_unit_timeline.unit_level,
+        parent=desired_unit_timeline.parent,
     )
 
 
@@ -344,6 +374,7 @@ async def sync_ou(
         settings, sd_unit_timeline, institution_identifier
     )
     desired_unit_timeline = patch_missing_parents(settings, desired_unit_timeline)
+    desired_unit_timeline = patch_missing_names(desired_unit_timeline)
 
     mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
 
