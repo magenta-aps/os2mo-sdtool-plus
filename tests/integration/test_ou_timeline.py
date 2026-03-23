@@ -127,7 +127,6 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
         )
     )
 
-    # Update unit (arrange interval 4)
     await graphql_client.update_org_unit(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
@@ -143,6 +142,7 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     )
 
     # Update unit (arrange interval 5)
+    # Update unit (arrange interval 4)
     await graphql_client.update_org_unit(
         OrganisationUnitUpdateInput(
             uuid=unit_uuid,
@@ -3029,6 +3029,110 @@ async def test_ou_timeline_condense_multiple_sd_parents_to_unknown_unit(
     assert interval_3.parent_uuid == dep4
 
     assert len(validities) == 3
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_ou_timeline_patch_with_no_name_for_missing_sd_name(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    sd_parent_history_resp: list[dict[str, str]],
+    respx_mock: MockRouter,
+):
+    """
+    We are testing the scenario where an org unit is missing a name in SD.
+
+    Time  ------------------------------------------------------------------------->
+
+    MO (unit does not exist)
+
+    SD (name)                             MISSING!
+    SD (id)       |-------------------------ABCD------------------------------------
+    SD (level)    |-------------------------NY0-------------------------------------
+    SD (parent)   |-------------------------dep3-------------------------------------
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+    dep3 = OrgUnitUUID("30000000-0000-0000-0000-000000000000")
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>false</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName/>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "9999-12-31",
+                "parentUuid": str(dep3),
+            },
+        ],
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    validity = one(one(created_unit.objects).validities)
+
+    assert validity.validity.from_ == t1
+    assert mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
+    assert validity.name == "(intet navn)"
 
 
 @pytest.mark.integration_test
