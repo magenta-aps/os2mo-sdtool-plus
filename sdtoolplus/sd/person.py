@@ -87,6 +87,7 @@ async def get_sd_person(
     effective_date: date,
     contact_information: bool = True,
     postal_address: bool = True,
+    include_passive_persons: bool = True,
 ) -> Person | None:
     try:
         sd_response = await asyncio.to_thread(
@@ -96,7 +97,7 @@ async def get_sd_person(
                 PersonCivilRegistrationIdentifier=cpr,
                 EffectiveDate=effective_date,
                 ContactInformationIndicator=contact_information,
-                StatusPassiveIndicator=True,
+                StatusPassiveIndicator=include_passive_persons,
                 PostalAddressIndicator=postal_address,
             ),
         )

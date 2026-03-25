@@ -593,6 +593,13 @@ async def test_person_addresses(
         content_type="text/xml;charset=UTF-8",
         content=sd_resp,
     )
+    # TODO: remove!
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
 
     # Act
     r = await test_client.post(
@@ -849,6 +856,13 @@ async def test_person_addresses_all_zero_phone_number(
     """
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+    # TODO: remove!
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_resp,
@@ -1120,6 +1134,13 @@ async def test_person_engagement_addresses(
     """
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+    # TODO: remove!
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_resp,
@@ -1402,6 +1423,13 @@ async def test_person_engagement_addresses_terminate(
     """
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+    # TODO: remove!
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_resp,

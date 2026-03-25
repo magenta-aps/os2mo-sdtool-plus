@@ -387,6 +387,22 @@ async def sync_person(
     )
 
     if settings.enable_person_address_sync:
+        # TODO: make proper fix!
+        sd_person = await get_sd_person(
+            sd_client=sd_client,
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            effective_date=datetime.today(),
+            include_passive_persons=False,
+        )
+        if sd_person is None:
+            logger.warning(
+                "Person not found in SD. Skipping address sync",
+                institution_identifier=institution_identifier,
+                cpr=cpr,
+            )
+            return
+
         await _sync_addresses(
             gql_client=gql_client,
             settings=settings,
