@@ -1,9 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import re
-from unittest.mock import ANY
 from unittest.mock import MagicMock
-from unittest.mock import call
 from unittest.mock import patch
 from uuid import UUID
 
@@ -17,7 +15,6 @@ from sdtoolplus.app import App
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.db.rundb import Status
 from sdtoolplus.main import _configure_listeners
-from sdtoolplus.main import background_run
 from sdtoolplus.main import create_app
 
 
@@ -70,101 +67,6 @@ class TestFastAPIApp:
                 == str(engine2.url)
                 == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
             )
-
-    @pytest.mark.envvar(
-        {
-            "MO_SUBTREE_PATHS_FOR_ROOT": '{"AB": [], "CD": []}',
-        }
-    )
-    @patch("sdtoolplus.main.get_engine")
-    @patch("sdtoolplus.main.background_run")
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
-    def test_post_trigger_all_inst_ids(
-        self,
-        mock_get_status: MagicMock,
-        mock_persist_status: MagicMock,
-        mock_background_run: MagicMock,
-        mock_get_engine: MagicMock,
-    ) -> None:
-        # Arrange
-        mock_sdtoolplus_app = MagicMock(spec=App)
-
-        mock_engine = MagicMock()
-        mock_get_engine.return_value = mock_engine
-
-        with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app()) as client,
-        ):
-            # Act
-            response: Response = client.post("/trigger-all-inst-ids")
-
-            # Assert
-            mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
-            mock_background_run.assert_called_once_with(
-                ANY, mock_engine, ["AB", "CD"], None, False
-            )
-            assert response.json() == {"msg": "Org tree sync started in background"}
-
-    @pytest.mark.envvar(
-        {
-            "MO_SUBTREE_PATHS_FOR_ROOT": '{"AB": [], "CD": []}',
-        }
-    )
-    @pytest.mark.parametrize(
-        "org_unit, inst_id, dry_run, expected_inst_id_list",
-        [
-            (UUID("10000000-0000-0000-0000-000000000000"), "AB", False, ["AB"]),
-            (UUID("20000000-0000-0000-0000-000000000000"), "CD", True, ["CD"]),
-        ],
-    )
-    @patch("sdtoolplus.main.get_engine")
-    @patch("sdtoolplus.main.background_run")
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
-    def test_post_trigger_all_inst_ids_dry_and_inst_id(
-        self,
-        mock_get_status: MagicMock,
-        mock_persist_status: MagicMock,
-        mock_background_run: MagicMock,
-        mock_get_engine: MagicMock,
-        org_unit: UUID | None,
-        inst_id: str | None,
-        dry_run: bool,
-        expected_inst_id_list: list[str],
-    ) -> None:
-        # Arrange
-        mock_sdtoolplus_app = MagicMock(spec=App)
-
-        mock_engine = MagicMock()
-        mock_get_engine.return_value = mock_engine
-
-        with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
-            TestClient(create_app()) as client,
-        ):
-            # Act
-            response: Response = client.post(
-                "/trigger-all-inst-ids",
-                params={
-                    "org_unit": str(org_unit),
-                    "inst_id": inst_id,
-                    "dry_run": dry_run,
-                },
-            )
-
-            # Assert
-            if not dry_run:
-                mock_persist_status.assert_called_once_with(mock_engine, Status.RUNNING)
-            mock_background_run.assert_called_once_with(
-                ANY,
-                mock_engine,
-                expected_inst_id_list,
-                org_unit,
-                dry_run,
-            )
-            assert response.json() == {"msg": "Org tree sync started in background"}
 
     @patch("sdtoolplus.main.persist_status")
     @patch("sdtoolplus.main.get_status", return_value=Status.RUNNING)
@@ -296,49 +198,6 @@ class TestFastAPIApp:
         )
         val: float = float(match.groupdict()["val"])
         return val
-
-
-@pytest.mark.integration_test
-@pytest.mark.parametrize(
-    "org_unit, dry_run",
-    [
-        (None, False),
-        (UUID("10000000-0000-0000-0000-000000000000"), False),
-        (UUID("10000000-0000-0000-0000-000000000000"), True),
-        (UUID("10000000-0000-0000-0000-000000000000"), True),
-    ],
-)
-@patch("sdtoolplus.main.persist_status")
-async def test_background_run(
-    mock_persist_status: MagicMock,
-    org_unit: UUID | None,
-    dry_run: bool,
-):
-    # Arrange
-    mock_sdtoolplus_app = MagicMock(spec=App)
-    mock_engine = MagicMock()
-
-    with patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app) as m_app:
-        # Act
-        settings = SDToolPlusSettings()
-        await background_run(settings, mock_engine, ["AB", "CD"], org_unit, dry_run)
-
-        # Assert
-
-        # Make sure the constructor is called once with the correct args
-        assert m_app.call_count == 1
-        call1 = m_app.call_args_list[0]
-        assert call1 == call(settings, "AB")
-
-        call1, call2 = mock_sdtoolplus_app.set_inst_id.call_args_list
-        assert call1 == call("AB")
-        assert call2 == call("CD")
-
-        # Careful here - no logic in the test code!
-        if not dry_run:
-            mock_persist_status.assert_called_once_with(mock_engine, Status.COMPLETED)
-        else:
-            mock_persist_status.assert_not_called()
 
 
 @pytest.mark.parametrize(

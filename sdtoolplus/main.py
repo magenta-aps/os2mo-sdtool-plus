@@ -8,9 +8,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter
-from fastapi import BackgroundTasks
 from fastapi import FastAPI
-from fastapi import HTTPException
 from fastapi import Response
 from fastramqpi.events import GraphQLEvents
 from fastramqpi.events import Listener
@@ -18,7 +16,6 @@ from fastramqpi.events import Namespace
 from fastramqpi.main import FastRAMQPI
 from fastramqpi.metrics import dipex_last_success_timestamp  # a Prometheus `Gauge`
 from fastramqpi.os2mo_dar_client import AsyncDARClient
-from more_itertools import first
 from more_itertools import one
 from sdclient.client import SDClient
 from sdclient.exceptions import SDRootElementNotFound
@@ -26,7 +23,6 @@ from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import Department
 from sqlalchemy import Engine
 from starlette.status import HTTP_200_OK
-from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.job_positions import sync_professions
@@ -50,7 +46,6 @@ from .events import EmploymentGraphQLEvent
 from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
-from .exceptions import EngagementSyncTemporarilyDisabled
 from .exceptions import UnknownNYLevel
 from .middleware import ExceptionLoggerMiddleware
 from .middleware import RequestIDMiddleware
@@ -62,7 +57,6 @@ from .models import OrgUnitSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
-from .sync.engagement import queue_mo_engagements_for_sd_unit_sync
 from .sync.engagement import sync_engagement
 from .sync.org_unit import sync_ou
 from .sync.person import sync_person
@@ -170,47 +164,6 @@ async def run_db_end_operations(engine: Engine, dry_run: bool) -> None:
     if not dry_run:
         await persist_status(engine, Status.COMPLETED)
     dipex_last_success_timestamp.set_to_current_time()
-
-
-async def background_run(
-    settings: SDToolPlusSettings,
-    engine: Engine,
-    inst_ids: list[str],
-    org_unit: UUID | None = None,
-    dry_run: bool = False,
-) -> None:
-    """
-    Run org tree sync in background for all institutions.
-
-    Args:
-        settings: the SDToolPlusSettings
-        engine: the SQLAlchemy DB engine
-        inst_ids: list of the SD InstitutionIdentifiers
-        org_unit: if not None, only run for this unit
-        dry_run: if True, no changes will be written in MO
-    """
-    sdtoolplus: App = App(settings, first(inst_ids))
-
-    for ii in inst_ids:
-        logger.info("Starting background run", inst_id=ii)
-        sdtoolplus.set_inst_id(ii)
-        async for org_unit_node, mutation, result in sdtoolplus.execute(
-            org_unit=org_unit, dry_run=dry_run
-        ):
-            logger.info(
-                "Processed unit",
-                org_unit_name=org_unit_node.name,
-                org_unit_uuid=str(org_unit_node.uuid),
-            )
-
-        logger.info("Finished background run", inst_id=ii)
-
-        # Send email notifications for illegal moves
-        if settings.email_notifications_enabled and not dry_run:
-            sdtoolplus.send_email_notification()
-
-    await run_db_end_operations(engine, dry_run)
-    logger.info("Run completed!")
 
 
 def create_fastramqpi() -> FastRAMQPI:
@@ -352,36 +305,6 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return results
 
-    @fastapi_router.post("/trigger-all-inst-ids", status_code=HTTP_200_OK)
-    async def trigger_all_inst_ids(
-        settings: depends.Settings,
-        engine: depends.Engine,
-        response: Response,
-        background_tasks: BackgroundTasks,
-        org_unit: UUID | None = None,
-        inst_id: str | None = None,
-        dry_run: bool = False,
-    ) -> dict[str, str]:
-        logger.info("Starting run", org_unit=str(org_unit), dry_run=dry_run)
-
-        run_db_start_operations_resp = await run_db_start_operations(
-            engine, dry_run, response
-        )
-        if run_db_start_operations_resp is not None:
-            return run_db_start_operations_resp
-
-        if inst_id is not None:
-            inst_ids = [inst_id]
-        else:
-            assert settings.mo_subtree_paths_for_root is not None
-            inst_ids = list(settings.mo_subtree_paths_for_root.keys())
-
-        background_tasks.add_task(
-            background_run, settings, engine, inst_ids, org_unit, dry_run
-        )
-
-        return {"msg": "Org tree sync started in background"}
-
     @fastapi_router.post("/trigger/addresses", status_code=HTTP_200_OK)
     async def trigger_addresses(
         settings: depends.Settings,
@@ -496,9 +419,6 @@ def create_fastramqpi() -> FastRAMQPI:
         payload: EngagementSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        if not settings.recalc_mo_unit_when_sd_employment_moved:
-            raise EngagementSyncTemporarilyDisabled()
-
         await sync_engagement(
             sd_client=sd_client,
             gql_client=gql_client,
@@ -646,32 +566,6 @@ def create_fastramqpi() -> FastRAMQPI:
             dry_run=dry_run,
         )
         return {"msg": "success"}
-
-    @fastapi_router.post(
-        "/timeline/sync/engagement/mo-sd-units", status_code=HTTP_200_OK
-    )
-    async def timeline_sync_engagement_mo_sd_unit(
-        settings: depends.Settings,
-        gql_client: depends.GraphQLClient,
-        background_tasks: BackgroundTasks,
-        cpr: str | None = None,
-        dry_run: bool = False,
-    ) -> dict:
-        if settings.recalc_mo_unit_when_sd_employment_moved:
-            raise HTTPException(
-                status_code=HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="MO SD unit sync not allowed when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is true",
-            )
-
-        background_tasks.add_task(
-            queue_mo_engagements_for_sd_unit_sync,
-            gql_client=gql_client,
-            settings=settings,
-            cpr=cpr,
-            dry_run=dry_run,
-        )
-
-        return {"msg": "Sync started in background"}
 
     @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
     async def full_timeline_sync_ous(
