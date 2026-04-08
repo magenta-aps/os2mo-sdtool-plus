@@ -6,7 +6,6 @@ from fastapi import Response
 from starlette.status import HTTP_200_OK
 
 from .. import depends
-from ..exceptions import EngagementSyncTemporarilyDisabled
 from ..sync.engagement import sync_engagement
 from ..sync.person import sync_person
 from .engagement import move_engagement
@@ -54,9 +53,6 @@ async def sync_person_and_engagement(
     Returns:
         Dictionary with status
     """
-    if not settings.recalc_mo_unit_when_sd_employment_moved:
-        raise EngagementSyncTemporarilyDisabled()
-
     # TODO: add integration test when endpoint fully implemented.
 
     await sync_person(

@@ -3,7 +3,6 @@
 from fastapi import HTTPException
 from starlette.status import HTTP_404_NOT_FOUND
 from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
-from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 
@@ -54,19 +53,6 @@ class MoreThanOnePersonError(HTTPException):
         super().__init__(
             status_code=HTTP_422_UNPROCESSABLE_ENTITY,
             detail="More than one person found in MO",
-        )
-
-
-class EngagementSyncTemporarilyDisabled(HTTPException):
-    """
-    Only raised when RECALC_MO_UNIT_WHEN_SD_EMPLOYMENT_MOVED is set to False
-    (see comment about this setting in config.py)
-    """
-
-    def __init__(self) -> None:
-        super().__init__(
-            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Engagement sync temporarily disabled!",
         )
 
 
