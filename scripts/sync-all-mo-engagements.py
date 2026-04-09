@@ -53,7 +53,12 @@ async def sync_all_mo_engagements(
             )
 
 
-@click.command()
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
 @click.option(
     "--engagements-csv-file",
     type=click.Path(exists=True),
@@ -66,7 +71,7 @@ async def sync_all_mo_engagements(
     default=20_000,
     help="The queue priority",
 )
-def main(
+def sd_sync(
     engagements_csv_file: Path,
     priority: int,
 ) -> None:
@@ -79,4 +84,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    cli(obj={})
