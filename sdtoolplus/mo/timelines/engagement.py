@@ -135,7 +135,9 @@ async def get_engagement_timeline(
     objects = gql_timeline.objects
 
     if not objects:
-        return EngagementTimeline()
+        timeline = EngagementTimeline()
+        logger.info("MO engagement timeline", timeline=timeline.dict())
+        return timeline
 
     object_ = one(objects, too_long=MoreThanOneEngagementError)
     validities = object_.validities
