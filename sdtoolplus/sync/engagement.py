@@ -133,6 +133,7 @@ async def _sync_eng_intervals(
                 person=person, user_key=user_key, from_date=None, to_date=None
             )
         )
+        assert settings.unknown_unit is not None
         if mo_eng.objects:
             await update_engagement(
                 gql_client=gql_client,
@@ -142,6 +143,7 @@ async def _sync_eng_intervals(
                 end=end,
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
+                unknown_unit=settings.unknown_unit,
                 dry_run=dry_run,
             )
         else:
@@ -153,6 +155,7 @@ async def _sync_eng_intervals(
                 end=end,
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
+                unknown_unit=settings.unknown_unit,
                 dry_run=dry_run,
             )
 
