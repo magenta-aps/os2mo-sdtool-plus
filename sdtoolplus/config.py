@@ -227,6 +227,14 @@ class SDToolPlusSettings(BaseSettings):
     # UUID of the unit "Ukendt" (only used when running in "region" mode)
     unknown_unit: OrgUnitUUID | None = None
 
+    # TODO: Person sync is a temporary change which can be removed when the code
+    #       for handling the new SD event types has been implemented. Soon SD will stop
+    #       sending person events and only send engagement events, when employment
+    #       addresses are updated. For now, we therefore need to sync the engagement
+    #       person too, when syncing the engagement, since the employment addresses
+    #       are stored on the Person object in SD.
+    sync_person_when_syncing_sd_engagement: bool = False
+
     class Config:
         env_nested_delimiter = "__"
 

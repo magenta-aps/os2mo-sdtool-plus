@@ -419,6 +419,21 @@ def create_fastramqpi() -> FastRAMQPI:
         payload: EngagementSyncPayload,
         dry_run: bool = False,
     ) -> dict:
+        # TODO: This person sync is a temporary change which can be removed when the code
+        #       for handling the new SD event types has been implemented. Soon SD will stop
+        #       sending person events and only send engagement events, when employment
+        #       addresses are updated. For now, we therefore need to sync the engagement
+        #       person too, when syncing the engagement, since the employment addresses
+        #       are stored on the Person object in SD.
+        if settings.sync_person_when_syncing_sd_engagement:
+            await sync_person(
+                sd_client=sd_client,
+                gql_client=gql_client,
+                settings=settings,
+                institution_identifier=payload.institution_identifier,
+                cpr=payload.cpr,
+            )
+
         await sync_engagement(
             sd_client=sd_client,
             gql_client=gql_client,
