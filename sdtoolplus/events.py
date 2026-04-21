@@ -137,6 +137,24 @@ async def process_sd_amqp_employment_event(
     message: AbstractIncomingMessage, graphql_client: GraphQLClient
 ) -> None:
     event = EmploymentAMQPEvent.parse_raw(message.body)
+
+    # In SD, employment addresses changes are relayed via employment events even
+    # though the SD person object holds the relevant address info for the employment
+    # address. We therefore need to map the "EMPLOYMENT_CONTACT_INFO_CHANGED" to a
+    # MO person event
+    if event.eventType == "EMPLOYMENT_CONTACT_INFO_CHANGED":
+        await graphql_client.send_event(
+            input=EventSendInput(
+                namespace="sd",
+                routing_key="person",
+                subject=PersonGraphQLEvent(
+                    institution_identifier=event.instCode,
+                    cpr=event.cpr,
+                ).json(),
+            )
+        )
+        return
+
     await graphql_client.send_event(
         input=EventSendInput(
             namespace="sd",
