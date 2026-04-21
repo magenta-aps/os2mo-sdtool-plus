@@ -107,20 +107,27 @@ def uuid_sync(
     with open(engagements_csv_file, newline="") as fp:
         reader = csv.DictReader(fp)
         for i, row in enumerate(reader):
-            eng_uuid = row["eng_uuid"]
-            r = httpx.post(
-                ENGAGEMENT_UUID_SYNC_URL,
-                json={
-                    "subject": eng_uuid,
-                    "priority": priority,
-                },
-            )
+            eng_uuid = row["eng_uuid"].strip()
             try:
-                r.raise_for_status()
-            except httpx.HTTPStatusError as error:
-                logger.error(
-                    "Could not sync engagement", eng_uuid=eng_uuid, error=error
+                r = httpx.post(
+                    ENGAGEMENT_UUID_SYNC_URL,
+                    json={
+                        "subject": eng_uuid,
+                        "priority": priority,
+                    },
+                    timeout=60,
                 )
+            except httpx.ReadTimeout as error:
+                # Some engagements take forever (~30-60 minutes) to sync, so we
+                # will skip these and handle them by alternative methods
+                logger.error("Timeout", eng_uuid=eng_uuid, error=error)
+            else:
+                try:
+                    r.raise_for_status()
+                except httpx.HTTPStatusError as error:
+                    logger.error(
+                        "Could not sync engagement", eng_uuid=eng_uuid, error=error
+                    )
             logger.info("Synced engagement", eng_uuid=eng_uuid, count=i)
 
     logger.info("Script finished")
