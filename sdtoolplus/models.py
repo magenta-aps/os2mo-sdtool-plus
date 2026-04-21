@@ -58,6 +58,7 @@ class EmploymentAMQPEvent(BaseModel):
     }
     """
 
+    eventType: str
     instCode: str
     tjnr: str
     cpr: str
