@@ -53,6 +53,8 @@ async def sync_person_and_engagement(
     Returns:
         Dictionary with status
     """
+    logger.info("Minisync person and engagement", payload=payload.dict())
+
     # TODO: add integration test when endpoint fully implemented.
 
     await sync_person(
