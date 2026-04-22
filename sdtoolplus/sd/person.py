@@ -19,7 +19,7 @@ from sdclient.responses import PersonEmployment
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.models import Engagement
-from sdtoolplus.models import EngagementAddresses
+from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 
 logger = structlog.stdlib.get_logger()
@@ -52,14 +52,14 @@ def _get_email(
     return only(contact_info.EmailAddressIdentifier)
 
 
-def _get_employment_addresses(
+def _get_employment_phone_numbers(
     institution_identifier: str,
     cpr: str,
     employments: list[PersonEmployment],
     address_extractor: Callable[
         [ContactInformation | None], tuple[str | None, str | None]
     ],
-) -> list[EngagementAddresses]:
+) -> list[EngagementPhoneNumbers]:
     """Get the (maximum) two SD person employment addresses for each employment"""
     engagement_phone_numbers = []
     for employment in employments:
@@ -68,13 +68,13 @@ def _get_employment_addresses(
             cpr=cpr,
             employment_identifier=employment.EmploymentIdentifier,
         )
-        address1, address2 = address_extractor(employment.ContactInformation)
+        phone1, phone2 = address_extractor(employment.ContactInformation)
 
         engagement_phone_numbers.append(
-            EngagementAddresses(
+            EngagementPhoneNumbers(
                 engagement=engagement,
-                address1=address1,
-                address2=address2,
+                phone1=phone1,
+                phone2=phone2,
             )
         )
     return engagement_phone_numbers
@@ -142,12 +142,12 @@ async def get_sd_person(
 
     sd_person_email = _get_email(sd_person_response.ContactInformation)
 
-    sd_eng_phone_numbers = _get_employment_addresses(
+    sd_eng_phone_numbers = _get_employment_phone_numbers(
         institution_identifier, cpr, sd_person_response.Employment, _get_phone_numbers
     )
 
     # TODO: fix
-    sd_eng_emails = _get_employment_addresses(
+    sd_eng_emails = _get_employment_phone_numbers(
         institution_identifier, cpr, sd_person_response.Employment, _get_email
     )
 

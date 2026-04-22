@@ -150,14 +150,14 @@ class Engagement(BaseModel):
     employment_identifier: str
 
 
-class EngagementAddresses(BaseModel):
+class EngagementPhoneNumbers(BaseModel):
     """
-    Model for holding the SD person *engagement* phone or email addresses.
+    Model for holding the SD person *engagement* phone numbers
     """
 
     engagement: Engagement
-    address1: str | None
-    address2: str | None
+    phone1: str | None
+    phone2: str | None
 
 
 class Person(BaseModel):
@@ -168,8 +168,9 @@ class Person(BaseModel):
     person_phone_number1: str | None = None
     person_phone_number2: str | None = None
     person_address: str | None = None
-    engagement_phone_numbers: list[EngagementAddresses] = []
-    engagement_emails: list[EngagementAddresses] = []
+    engagement_phone_numbers: list[EngagementPhoneNumbers] = []
+    # TODO: fix
+    engagement_emails: list[EngagementPhoneNumbers] = []
 
 
 class Interval(GenericModel, Generic[V], frozen=True):

@@ -30,7 +30,7 @@ from sdtoolplus.mo.person import update_address
 from sdtoolplus.mo.person import update_person
 from sdtoolplus.mo.timelines.common import get_class
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
-from sdtoolplus.models import EngagementAddresses
+from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 from sdtoolplus.sd.person import get_sd_person
 from sdtoolplus.sync.common import prefix_eng_user_key
@@ -129,7 +129,7 @@ async def _sync_engagement_addresses(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     person_uuid: UUID,
-    engagement_addresses: list[EngagementAddresses],
+    engagement_addresses: list[EngagementPhoneNumbers],
     visibility_uuid: UUID,
     address_type: PersonEngagementAddressType,
 ) -> None:
@@ -171,7 +171,7 @@ async def _sync_engagement_addresses(
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.address1,
+            sd_address=eng_address.phone1,
             address_type_uuid=eng_address1_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
@@ -186,7 +186,7 @@ async def _sync_engagement_addresses(
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.address2,
+            sd_address=eng_address.phone2,
             address_type_uuid=eng_address2_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
