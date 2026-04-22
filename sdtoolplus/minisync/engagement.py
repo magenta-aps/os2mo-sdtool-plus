@@ -80,7 +80,7 @@ async def move_engagement(
     """
     Move engagement to the location specified in the payload in the given time period.
     """
-    logger.info("Move engagement", payload=payload.dict())
+    logger.info("Minisync move engagement", payload=payload.dict())
 
     user_key = f"{payload.institution_identifier}-{payload.employment_identifier}"
 
