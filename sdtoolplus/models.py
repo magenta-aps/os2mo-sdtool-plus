@@ -164,8 +164,7 @@ class Person(BaseModel):
     cpr: str
     given_name: str
     surname: str
-    person_email1: str | None = None
-    person_email2: str | None = None
+    person_email: str | None = None
     person_phone_number1: str | None = None
     person_phone_number2: str | None = None
     person_address: str | None = None

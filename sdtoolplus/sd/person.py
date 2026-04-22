@@ -40,15 +40,16 @@ def _get_phone_numbers(
     return phone1, phone2
 
 
-def _get_emails(
+def _get_email(
     contact_info: ContactInformation | None,
-) -> tuple[str | None, str | None]:
-    """Get the (maximum) two SD person emails"""
+) -> str | None:
+    """
+    Get the SD person email (maximum one is allowed in SD even though the
+    XML schema allows many).
+    """
     if contact_info is None or contact_info.EmailAddressIdentifier is None:
-        return None, None
-    email1 = nth(contact_info.EmailAddressIdentifier, 0, None)
-    email2 = nth(contact_info.EmailAddressIdentifier, 1, None)
-    return email1, email2
+        return None
+    return only(contact_info.EmailAddressIdentifier)
 
 
 def _get_employment_addresses(
@@ -139,24 +140,22 @@ async def get_sd_person(
         else None
     )
 
-    sd_person_email1, sd_person_email2 = _get_emails(
-        sd_person_response.ContactInformation
-    )
+    sd_person_email = _get_email(sd_person_response.ContactInformation)
 
     sd_eng_phone_numbers = _get_employment_addresses(
         institution_identifier, cpr, sd_person_response.Employment, _get_phone_numbers
     )
 
+    # TODO: fix
     sd_eng_emails = _get_employment_addresses(
-        institution_identifier, cpr, sd_person_response.Employment, _get_emails
+        institution_identifier, cpr, sd_person_response.Employment, _get_email
     )
 
     person = Person(
         cpr=sd_person_response.PersonCivilRegistrationIdentifier,
         given_name=sd_person_response.PersonGivenName,
         surname=sd_person_response.PersonSurnameName,
-        person_email1=sd_person_email1,
-        person_email2=sd_person_email2,
+        person_email=sd_person_email,
         person_phone_number1=sd_person_phone_number1,
         person_phone_number2=sd_person_phone_number2,
         person_address=sd_postal_address,

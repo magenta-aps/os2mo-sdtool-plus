@@ -235,28 +235,15 @@ async def _sync_addresses(
         )
 
     if not settings.disable_person_email_address_sync:
-        # Person email 1
+        # Person email
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=sd_person.person_email1,
+            sd_address=sd_person.person_email,
             address_type_uuid=await get_class(
                 gql_client=gql_client,
                 facet_user_key="employee_address_type",
                 class_user_key="person_email",
-            ),
-            visibility_uuid=visibility_uuid,
-        )
-
-        # Person email 2
-        await _sync_address(
-            gql_client=gql_client,
-            person_uuid=person_uuid,
-            sd_address=sd_person.person_email2,
-            address_type_uuid=await get_class(
-                gql_client=gql_client,
-                facet_user_key="employee_address_type",
-                class_user_key="person_email_anden",
             ),
             visibility_uuid=visibility_uuid,
         )
