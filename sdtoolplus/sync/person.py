@@ -387,7 +387,8 @@ async def sync_person(
     )
 
     if settings.enable_person_address_sync:
-        # TODO: make proper fix!
+        # We have to look up the person once again in order to exclude addresses
+        # from passive engagements
         sd_person = await get_sd_person(
             sd_client=sd_client,
             institution_identifier=institution_identifier,
