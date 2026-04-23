@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
 from datetime import date
-from typing import Callable
 
 import structlog.stdlib
 from more_itertools import nth
@@ -56,9 +55,6 @@ def _get_employment_phone_numbers(
     institution_identifier: str,
     cpr: str,
     employments: list[PersonEmployment],
-    address_extractor: Callable[
-        [ContactInformation | None], tuple[str | None, str | None]
-    ],
 ) -> list[EngagementPhoneNumbers]:
     """Get the (maximum) two SD person employment addresses for each employment"""
     engagement_phone_numbers = []
@@ -68,7 +64,7 @@ def _get_employment_phone_numbers(
             cpr=cpr,
             employment_identifier=employment.EmploymentIdentifier,
         )
-        phone1, phone2 = address_extractor(employment.ContactInformation)
+        phone1, phone2 = _get_phone_numbers(employment.ContactInformation)
 
         engagement_phone_numbers.append(
             EngagementPhoneNumbers(
@@ -143,7 +139,7 @@ async def get_sd_person(
     sd_person_email = _get_email(sd_person_response.ContactInformation)
 
     sd_eng_phone_numbers = _get_employment_phone_numbers(
-        institution_identifier, cpr, sd_person_response.Employment, _get_phone_numbers
+        institution_identifier, cpr, sd_person_response.Employment
     )
 
     # TODO: fix
