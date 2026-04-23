@@ -29,6 +29,7 @@ from sdtoolplus.mo.person import update_address
 from sdtoolplus.mo.person import update_person
 from sdtoolplus.mo.timelines.common import get_class
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
+from sdtoolplus.models import EngagementEmails
 from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 from sdtoolplus.sd.person import get_sd_person
@@ -186,6 +187,58 @@ async def _sync_engagement_phone_numbers(
         )
 
 
+async def _sync_engagement_emails(
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    person_uuid: UUID,
+    engagement_emails: list[EngagementEmails],
+    visibility_uuid: UUID,
+) -> None:
+    logger.info(
+        "Syncing engagement emails",
+        person_uuid=str(person_uuid),
+        engagement_emails=[addr.dict() for addr in engagement_emails],
+    )
+
+    for eng_email in engagement_emails:
+        eng_user_key = prefix_eng_user_key(
+            settings=settings,
+            user_key=eng_email.engagement.employment_identifier,
+            inst_id=eng_email.engagement.institution_identifier,
+        )
+
+        engagement_timeline = await gql_client.get_engagement_uuids(
+            get_engagement_filter(
+                person=person_uuid, user_key=eng_user_key, from_date=None, to_date=None
+            )
+        )
+
+        object_ = only(engagement_timeline.objects, too_long=MoreThanOneEngagementError)
+        if object_ is None:
+            logger.info(
+                "Cannot sync engagement email since engagement not found",
+                person_uuid=str(person_uuid),
+                user_key=eng_user_key,
+            )
+            continue
+        engagement_uuid = object_.uuid
+
+        eng_email_type_uuid = await get_class(
+            gql_client=gql_client,
+            facet_user_key="employee_address_type",
+            class_user_key="engagement_email",
+        )
+
+        await _sync_address(
+            gql_client=gql_client,
+            person_uuid=person_uuid,
+            sd_address=eng_email.email,
+            address_type_uuid=eng_email_type_uuid,
+            visibility_uuid=visibility_uuid,
+            engagement_uuid=engagement_uuid,
+        )
+
+
 async def _sync_addresses(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
@@ -267,12 +320,11 @@ async def _sync_addresses(
 
     if not settings.disable_engagement_email_address_sync:
         # Engagement email addresses
-        # TODO: fix
-        await _sync_engagement_phone_numbers(
+        await _sync_engagement_emails(
             gql_client=gql_client,
             settings=settings,
             person_uuid=person_uuid,
-            engagement_phone_numbers=sd_person.engagement_emails,
+            engagement_emails=sd_person.engagement_emails,
             visibility_uuid=visibility_uuid,
         )
 
