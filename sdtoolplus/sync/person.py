@@ -51,6 +51,8 @@ async def _sync_address(
         "Syncing address",
         person_uuid=str(person_uuid),
         sd_address=sd_address,
+        address_type_uuid=str(address_type_uuid),
+        engagement_uuid=str(engagement_uuid),
     )
 
     now = datetime.now(tz=TIMEZONE)
@@ -68,12 +70,15 @@ async def _sync_address(
     mo_addresses = await gql_client.get_address_timeline(address_filter)
     mo_address = first(mo_addresses.objects, default=None)
 
+    logger.info("MO addresses", mo_addresses=mo_addresses.dict())
+
     if sd_address is None and mo_address is None:
         return
 
     # There can only be one of each address type. If there is more than one,
     # terminate all but the first
     for term_address in mo_addresses.objects[1:]:
+        logger.info("Terminate redundant addresses")
         await terminate_address(gql_client, term_address.uuid, now)
 
     # Terminate the address if it is found in MO, but not in SD
@@ -115,7 +120,7 @@ async def _sync_address(
             engagement_uuid=engagement_uuid,
         )
 
-    logger.info("Done syncing person address", person_uuid=str(person_uuid))
+    logger.info("Done syncing address", person_uuid=str(person_uuid))
 
 
 async def _sync_engagement_phone_numbers(
@@ -184,6 +189,8 @@ async def _sync_engagement_phone_numbers(
             engagement_uuid=engagement_uuid,
         )
 
+    logger.info("Done syncing engagement phone numbers")
+
 
 async def _sync_engagement_emails(
     gql_client: GraphQLClient,
@@ -236,6 +243,8 @@ async def _sync_engagement_emails(
             engagement_uuid=engagement_uuid,
         )
 
+        logger.info("Done syncing engagement emails")
+
 
 async def _sync_addresses(
     gql_client: GraphQLClient,
@@ -253,6 +262,7 @@ async def _sync_addresses(
 
     # Person phone 1
     if not settings.disable_person_phone_number_sync:
+        logger.info("Syncing person phone1")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -264,8 +274,10 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person phone1")
 
         # Person phone 2
+        logger.info("Syncing person phone2")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -277,9 +289,11 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person phone2")
 
     if not settings.disable_person_email_address_sync:
         # Person email
+        logger.info("Syncing person email")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -291,9 +305,11 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person email")
 
     if not settings.disable_person_postal_address_sync:
         # Postal address (only present on the SD person object itself)
+        logger.info("Syncing person postal address")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -305,6 +321,7 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person postal address")
 
     if not settings.disable_engagement_phone_number_sync:
         # Engagement phone numbers
