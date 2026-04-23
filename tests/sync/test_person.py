@@ -62,7 +62,7 @@ async def test_person_address_sync_flags(
 @patch("sdtoolplus.sync.person._sync_address")
 @patch("sdtoolplus.sync.person._sync_engagement_phone_numbers")
 @patch("sdtoolplus.sync.person.get_class")
-async def test_engagement_address_sync_flags(
+async def test_engagement_disable_engagement_phone_number_sync_flag(
     mock_get_class: AsyncMock,
     mock__sync_engagement_phone_numbers: AsyncMock,
     mock__sync_address: AsyncMock,
@@ -90,3 +90,36 @@ async def test_engagement_address_sync_flags(
 
     # Assert
     mock__sync_engagement_phone_numbers.assert_not_awaited()
+
+
+@patch("sdtoolplus.sync.person._sync_address")
+@patch("sdtoolplus.sync.person._sync_engagement_emails")
+@patch("sdtoolplus.sync.person.get_class")
+async def test_engagement_disable_engagement_email_address_sync_flag(
+    mock_get_class: AsyncMock,
+    mock__sync_engagement_emails: AsyncMock,
+    mock__sync_address: AsyncMock,
+    sdtoolplus_settings: SDToolPlusSettings,
+) -> None:
+    # Arrange
+    mock_gql_client = AsyncMock(spec=GraphQLClient)
+
+    settings = sdtoolplus_settings.dict()
+    settings.update({"disable_engagement_email_address_sync": True})
+
+    sd_person = Person(
+        cpr="2711401111",
+        given_name="Bruce",
+        surname="Lee",
+    )
+
+    # Act
+    await _sync_addresses(
+        gql_client=mock_gql_client,
+        settings=SDToolPlusSettings.parse_obj(settings),
+        person_uuid=uuid4(),
+        sd_person=sd_person,
+    )
+
+    # Assert
+    mock__sync_engagement_emails.assert_not_awaited()
