@@ -133,11 +133,11 @@ async def _sync_engagement_phone_numbers(
         engagement_phone_numbers=[addr.dict() for addr in engagement_phone_numbers],
     )
 
-    for eng_address in engagement_phone_numbers:
+    for eng_phone_number in engagement_phone_numbers:
         eng_user_key = prefix_eng_user_key(
             settings=settings,
-            user_key=eng_address.engagement.employment_identifier,
-            inst_id=eng_address.engagement.institution_identifier,
+            user_key=eng_phone_number.engagement.employment_identifier,
+            inst_id=eng_phone_number.engagement.institution_identifier,
         )
 
         engagement_timeline = await gql_client.get_engagement_uuids(
@@ -156,7 +156,7 @@ async def _sync_engagement_phone_numbers(
             continue
         engagement_uuid = object_.uuid
 
-        eng_address1_type_uuid = await get_class(
+        eng_phone1_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
             class_user_key="engagement_telefon",
@@ -165,13 +165,13 @@ async def _sync_engagement_phone_numbers(
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.phone1,
-            address_type_uuid=eng_address1_type_uuid,
+            sd_address=eng_phone_number.phone1,
+            address_type_uuid=eng_phone1_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
 
-        eng_address2_type_uuid = await get_class(
+        eng_phone2_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
             class_user_key="engagement_telefon_anden",
@@ -180,8 +180,8 @@ async def _sync_engagement_phone_numbers(
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.phone2,
-            address_type_uuid=eng_address2_type_uuid,
+            sd_address=eng_phone_number.phone2,
+            address_type_uuid=eng_phone2_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
