@@ -160,6 +160,15 @@ class EngagementPhoneNumbers(BaseModel):
     phone2: str | None
 
 
+class EngagementEmails(BaseModel):
+    """
+    Model for holding the SD person *engagement* emails
+    """
+
+    engagement: Engagement
+    email: str | None
+
+
 class Person(BaseModel):
     cpr: str
     given_name: str
@@ -169,8 +178,7 @@ class Person(BaseModel):
     person_phone_number2: str | None = None
     person_address: str | None = None
     engagement_phone_numbers: list[EngagementPhoneNumbers] = []
-    # TODO: fix
-    engagement_emails: list[EngagementPhoneNumbers] = []
+    engagement_emails: list[EngagementEmails] = []
 
 
 class Interval(GenericModel, Generic[V], frozen=True):

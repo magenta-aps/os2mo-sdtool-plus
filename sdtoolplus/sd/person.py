@@ -18,6 +18,7 @@ from sdclient.responses import PersonEmployment
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.models import Engagement
+from sdtoolplus.models import EngagementEmails
 from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 
@@ -74,6 +75,30 @@ def _get_employment_phone_numbers(
             )
         )
     return engagement_phone_numbers
+
+
+def _get_employment_emails(
+    institution_identifier: str,
+    cpr: str,
+    employments: list[PersonEmployment],
+) -> list[EngagementEmails]:
+    """Get the SD person employment email address for each employment"""
+    engagement_emails = []
+    for employment in employments:
+        engagement = Engagement(
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            employment_identifier=employment.EmploymentIdentifier,
+        )
+        email = _get_email(employment.ContactInformation)
+
+        engagement_emails.append(
+            EngagementEmails(
+                engagement=engagement,
+                email=email,
+            )
+        )
+    return engagement_emails
 
 
 # Persons in SD has no timeline and can only be queried at a specific date
@@ -142,9 +167,8 @@ async def get_sd_person(
         institution_identifier, cpr, sd_person_response.Employment
     )
 
-    # TODO: fix
-    sd_eng_emails = _get_employment_phone_numbers(
-        institution_identifier, cpr, sd_person_response.Employment, _get_email
+    sd_eng_emails = _get_employment_emails(
+        institution_identifier, cpr, sd_person_response.Employment
     )
 
     person = Person(
