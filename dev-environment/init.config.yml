@@ -65,9 +65,6 @@ facets:
     person_email:
       title: "Privat e-mail"
       scope: "EMAIL"
-    person_email_anden:
-      title: "Privat e-mail (sekundær)"
-      scope: "EMAIL"
     person_telefon:
       title: "Privat telefon"
       scope: "PHONE"
@@ -76,9 +73,6 @@ facets:
       scope: "PHONE"
     engagement_email:
       title: "E-mail"
-      scope: "EMAIL"
-    engagement_email_anden:
-      title: "E-mail (sekundær)"
       scope: "EMAIL"
     engagement_telefon:
       title: "Telefon"
