@@ -67,13 +67,14 @@ def _get_employment_phone_numbers(
         )
         phone1, phone2 = _get_phone_numbers(employment.ContactInformation)
 
-        engagement_phone_numbers.append(
-            EngagementPhoneNumbers(
-                engagement=engagement,
-                phone1=phone1,
-                phone2=phone2,
+        if phone1 is not None or phone2 is not None:
+            engagement_phone_numbers.append(
+                EngagementPhoneNumbers(
+                    engagement=engagement,
+                    phone1=phone1,
+                    phone2=phone2,
+                )
             )
-        )
     return engagement_phone_numbers
 
 
@@ -92,12 +93,13 @@ def _get_employment_emails(
         )
         email = _get_email(employment.ContactInformation)
 
-        engagement_emails.append(
-            EngagementEmails(
-                engagement=engagement,
-                email=email,
+        if email is not None:
+            engagement_emails.append(
+                EngagementEmails(
+                    engagement=engagement,
+                    email=email,
+                )
             )
-        )
     return engagement_emails
 
 
