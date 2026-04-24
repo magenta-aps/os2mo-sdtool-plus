@@ -158,10 +158,6 @@ from .get_person_timeline import GetPersonTimeline
 from .get_person_timeline import GetPersonTimelineEmployees
 from .get_person_timeline import GetPersonTimelineEmployeesObjects
 from .get_person_timeline import GetPersonTimelineEmployeesObjectsValidities
-from .get_person_timeline import GetPersonTimelineEmployeesObjectsValiditiesAddresses
-from .get_person_timeline import (
-    GetPersonTimelineEmployeesObjectsValiditiesAddressesAddressType,
-)
 from .get_person_timeline import GetPersonTimelineEmployeesObjectsValiditiesValidity
 from .get_related_units import GetRelatedUnits
 from .get_related_units import GetRelatedUnitsRelatedUnits
@@ -497,8 +493,6 @@ __all__ = [
     "GetPersonTimelineEmployees",
     "GetPersonTimelineEmployeesObjects",
     "GetPersonTimelineEmployeesObjectsValidities",
-    "GetPersonTimelineEmployeesObjectsValiditiesAddresses",
-    "GetPersonTimelineEmployeesObjectsValiditiesAddressesAddressType",
     "GetPersonTimelineEmployeesObjectsValiditiesValidity",
     "GetRelatedUnits",
     "GetRelatedUnitsRelatedUnits",

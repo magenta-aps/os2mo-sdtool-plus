@@ -23,21 +23,10 @@ class GetPersonTimelineEmployeesObjects(BaseModel):
 
 
 class GetPersonTimelineEmployeesObjectsValidities(BaseModel):
-    addresses: List["GetPersonTimelineEmployeesObjectsValiditiesAddresses"]
     cpr_number: Optional[CPRNumber]
     given_name: str
     surname: str
     validity: "GetPersonTimelineEmployeesObjectsValiditiesValidity"
-
-
-class GetPersonTimelineEmployeesObjectsValiditiesAddresses(BaseModel):
-    address_type: "GetPersonTimelineEmployeesObjectsValiditiesAddressesAddressType"
-    name: Optional[str]
-
-
-class GetPersonTimelineEmployeesObjectsValiditiesAddressesAddressType(BaseModel):
-    user_key: str
-    scope: Optional[str]
 
 
 class GetPersonTimelineEmployeesObjectsValiditiesValidity(BaseModel):
@@ -49,6 +38,4 @@ GetPersonTimeline.update_forward_refs()
 GetPersonTimelineEmployees.update_forward_refs()
 GetPersonTimelineEmployeesObjects.update_forward_refs()
 GetPersonTimelineEmployeesObjectsValidities.update_forward_refs()
-GetPersonTimelineEmployeesObjectsValiditiesAddresses.update_forward_refs()
-GetPersonTimelineEmployeesObjectsValiditiesAddressesAddressType.update_forward_refs()
 GetPersonTimelineEmployeesObjectsValiditiesValidity.update_forward_refs()

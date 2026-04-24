@@ -629,13 +629,6 @@ class GraphQLClient(AsyncBaseClient):
                 objects {
                   uuid
                   validities {
-                    addresses {
-                      address_type {
-                        user_key
-                        scope
-                      }
-                      name
-                    }
                     cpr_number
                     given_name
                     surname
