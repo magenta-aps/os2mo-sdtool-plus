@@ -1323,10 +1323,13 @@ async def test_person_addresses_terminate(
     Email  (remove)        |-------------------chuck@karate.org----------------------
     Phone2 (12345) (no-op) |----------------------23456789---------------------------
     Phone2 (12345) (remove)|----------------------23456789---------------------------
+    Phone2 (34567) (remove)|----------------------34567890---------------------------
     Email (12345) (no-op)  |-----------------norris@hollywood.com--------------------
     Email (12345) (remove) |-----------------norris@hollywood.com--------------------
     Email (12345) (remove) |-----------------norris@hollywood.com--------------------
     Email (12345) (remove) |-----------------chuck@hollywood.com--------------------
+    Email (23456) (remove) |--------------------bruce@kung.fu------------------------
+    Email (34567) (remove) |-------------------brandon@kung.fu-----------------------
 
     Addresses in SD (no timelines!):
     Email         : chuck@karate.org      <-- person email
@@ -1339,7 +1342,9 @@ async def test_person_addresses_terminate(
 
     person_uuid = uuid4()
     cpr = "0101011234"
-    emp_id = "12345"
+    emp_id_12345 = "12345"
+    emp_id_23456 = "23456"
+    emp_id_34567 = "34567"
     now = datetime.combine(datetime.today(), time.min, tzinfo=TIMEZONE)
 
     dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
@@ -1357,10 +1362,42 @@ async def test_person_addresses_terminate(
     eng_types = await get_engagement_types(graphql_client)
 
     # Create engagement
-    eng_uuid = (
+    eng12345_uuid = (
         await graphql_client.create_engagement(
             EngagementCreateInput(
-                user_key=f"II-{emp_id}",
+                user_key=f"II-{emp_id_12345}",
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name4",
+                extension_4="dep1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Create another engagement (23456)
+    eng23456_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=f"II-{emp_id_23456}",
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name4",
+                extension_4="dep1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Create another engagement (34567)
+    eng34567_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=f"II-{emp_id_34567}",
                 validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
                 extension_1="name4",
                 extension_4="dep1",
@@ -1411,7 +1448,7 @@ async def test_person_addresses_terminate(
             value="12345678",
             address_type=person_phone1_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1448,7 +1485,7 @@ async def test_person_addresses_terminate(
             value="23456789",
             address_type=eng_phone2_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1461,7 +1498,21 @@ async def test_person_addresses_terminate(
             value="23456789",
             address_type=eng_phone2_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    # Create engagement phone2 for EmploymentIdentifier 34567 where the
+    # EmploymentIdentifier is not found in the SD payload
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="34567890",
+            value="34567890",
+            address_type=eng_phone2_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng34567_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1474,7 +1525,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1487,7 +1538,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1500,7 +1551,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1513,10 +1564,39 @@ async def test_person_addresses_terminate(
             value="chuck@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
+
+    # Create engagement email (which is not found in SD) for EmploymentIdentifier 23456
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="bruce@kung.fu",
+            value="bruce@kung.fu",
+            address_type=eng_email_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng23456_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    # Create engagement email for EmploymentIdentifier 34567 where the
+    # EmploymentIdentifier is not found in the SD payload
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="brandon@kung.fu",
+            value="brandon@kung.fu",
+            address_type=eng_email_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng34567_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    await graphql_client.delete_org_function(eng34567_uuid)
 
     sd_resp = f"""<?xml version="1.0" encoding="UTF-8" ?>
         <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
@@ -1537,12 +1617,15 @@ async def test_person_addresses_terminate(
                     <EmailAddressIdentifier>chuck@karate.org</EmailAddressIdentifier>
                 </ContactInformation>
                 <Employment>
-                    <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                    <EmploymentIdentifier>{emp_id_12345}</EmploymentIdentifier>
                     <ContactInformation>
                         <TelephoneNumberIdentifier>00000000</TelephoneNumberIdentifier>
                         <TelephoneNumberIdentifier>23456789</TelephoneNumberIdentifier>
                         <EmailAddressIdentifier>norris@hollywood.com</EmailAddressIdentifier>
                     </ContactInformation>
+                </Employment>
+                <Employment>
+                    <EmploymentIdentifier>23456</EmploymentIdentifier>
                 </Employment>
             </Person>
         </GetPerson20111201>
@@ -1604,12 +1687,12 @@ async def test_person_addresses_terminate(
     assert interval_1.visibility_uuid == visibility_uuid
     assert interval_1.address_type.uuid == person_email_address_type_uuid
 
-    # Engagement phone2
+    # Engagement phone2 (12345)
     r_engagement_phone2 = await graphql_client.get_address_timeline(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
             address_type=ClassFilter(uuids=[eng_phone2_address_type_uuid]),
-            engagement=EngagementFilter(uuids=[eng_uuid]),
+            engagement=EngagementFilter(uuids=[eng12345_uuid]),
             from_date=now,
             to_date=None,
         )
@@ -1625,12 +1708,25 @@ async def test_person_addresses_terminate(
     assert interval_1.visibility_uuid == visibility_uuid
     assert interval_1.address_type.uuid == eng_phone2_address_type_uuid
 
-    # Engagement email
+    # Engagement phone2 (34567)
+    r_engagement_phone2 = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_phone2_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng34567_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    assert not r_engagement_phone2.objects
+
+    # Engagement email (12345)
     r_engagement_email = await graphql_client.get_address_timeline(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
             address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
-            engagement=EngagementFilter(uuids=[eng_uuid]),
+            engagement=EngagementFilter(uuids=[eng12345_uuid]),
             from_date=now,
             to_date=None,
         )
@@ -1645,3 +1741,29 @@ async def test_person_addresses_terminate(
     assert interval_1.value == "norris@hollywood.com"
     assert interval_1.visibility_uuid == visibility_uuid
     assert interval_1.address_type.uuid == eng_email_address_type_uuid
+
+    # Engagement email (23456)
+    r_engagement_email = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng23456_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    assert not r_engagement_email.objects
+
+    # Engagement email (34567)
+    r_engagement_email = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng34567_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    assert not r_engagement_email.objects
