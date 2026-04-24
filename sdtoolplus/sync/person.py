@@ -64,7 +64,11 @@ async def _sync_address(
         "to_date": None,
     }
     if engagement_uuid is not None:
-        address_filter_kwargs["engagement"] = EngagementFilter(uuids=[engagement_uuid])
+        address_filter_kwargs["engagement"] = EngagementFilter(
+            uuids=[engagement_uuid],
+            from_date=now,
+            to_date=None,
+        )
     address_filter = AddressFilter(**address_filter_kwargs)
 
     mo_addresses = await gql_client.get_address_timeline(address_filter)
