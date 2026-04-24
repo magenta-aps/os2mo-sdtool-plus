@@ -46,7 +46,7 @@ async def _sync_address(
     address_type_uuid: UUID,
     visibility_uuid: UUID,
     engagement_uuid: UUID | None = None,
-) -> None:
+) -> UUID | None:
     logger.info(
         "Syncing address",
         person_uuid=str(person_uuid),
@@ -77,7 +77,7 @@ async def _sync_address(
     logger.info("MO addresses", mo_addresses=mo_addresses.dict())
 
     if sd_address is None and mo_address is None:
-        return
+        return None
 
     # There can only be one of each address type. If there is more than one,
     # terminate all but the first
@@ -88,11 +88,11 @@ async def _sync_address(
     # Terminate the address if it is found in MO, but not in SD
     if sd_address is None and mo_address is not None:
         await terminate_address(gql_client, mo_address.uuid, now)
-        return
+        return mo_address.uuid
 
     # Create the address if it is found in SD, but not in MO
     if sd_address is not None and mo_address is None:
-        await create_address(
+        address_uuid = await create_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             value=sd_address,
@@ -101,7 +101,7 @@ async def _sync_address(
             address_type_uuid=address_type_uuid,
             engagement_uuid=engagement_uuid,
         )
-        return
+        return address_uuid
 
     assert sd_address is not None
     assert mo_address is not None
@@ -126,6 +126,31 @@ async def _sync_address(
 
     logger.info("Done syncing address", person_uuid=str(person_uuid))
 
+    return mo_address.uuid
+
+
+async def terminate_leftover_addresses(
+    gql_client: GraphQLClient,
+    person_uuid: UUID,
+    address_type_uuid: UUID,
+    address_uuids_processed: set[UUID],
+) -> None:
+    # Terminate any leftover engagement addresses
+    now = datetime.now(tz=TIMEZONE)
+    mo_addresses = await gql_client.get_address_timeline(
+        AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[address_type_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+    mo_address_uuids = set(email.uuid for email in mo_addresses.objects)
+    leftover_addresses = mo_address_uuids.difference(address_uuids_processed)
+    for address_uuid in leftover_addresses:
+        logger.info("Terminate leftover address", uuid=str(address_uuid))
+        await terminate_address(gql_client, address_uuid, now)
+
 
 async def _sync_engagement_phone_numbers(
     gql_client: GraphQLClient,
@@ -140,6 +165,20 @@ async def _sync_engagement_phone_numbers(
         engagement_phone_numbers=[addr.dict() for addr in engagement_phone_numbers],
     )
 
+    eng_phone1_type_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_telefon",
+    )
+
+    eng_phone2_type_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_telefon_anden",
+    )
+
+    phone1_uuids_processed = set()
+    phone2_uuids_processed = set()
     for eng_phone_number in engagement_phone_numbers:
         eng_user_key = prefix_eng_user_key(
             settings=settings,
@@ -163,13 +202,7 @@ async def _sync_engagement_phone_numbers(
             continue
         engagement_uuid = object_.uuid
 
-        eng_phone1_type_uuid = await get_class(
-            gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon",
-        )
-
-        await _sync_address(
+        phone1_uuid = await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_phone_number.phone1,
@@ -177,14 +210,10 @@ async def _sync_engagement_phone_numbers(
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
+        if phone1_uuid is not None:
+            phone1_uuids_processed.add(phone1_uuid)
 
-        eng_phone2_type_uuid = await get_class(
-            gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="engagement_telefon_anden",
-        )
-
-        await _sync_address(
+        phone2_uuid = await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_phone_number.phone2,
@@ -192,6 +221,22 @@ async def _sync_engagement_phone_numbers(
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
+        if phone2_uuid is not None:
+            phone2_uuids_processed.add(phone2_uuid)
+
+    await terminate_leftover_addresses(
+        gql_client=gql_client,
+        person_uuid=person_uuid,
+        address_type_uuid=eng_phone1_type_uuid,
+        address_uuids_processed=phone1_uuids_processed,
+    )
+
+    await terminate_leftover_addresses(
+        gql_client=gql_client,
+        person_uuid=person_uuid,
+        address_type_uuid=eng_phone2_type_uuid,
+        address_uuids_processed=phone2_uuids_processed,
+    )
 
     logger.info("Done syncing engagement phone numbers")
 
@@ -209,6 +254,13 @@ async def _sync_engagement_emails(
         engagement_emails=[addr.dict() for addr in engagement_emails],
     )
 
+    eng_email_type_uuid = await get_class(
+        gql_client=gql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_email",
+    )
+
+    address_uuids_processed = set()
     for eng_email in engagement_emails:
         eng_user_key = prefix_eng_user_key(
             settings=settings,
@@ -232,13 +284,7 @@ async def _sync_engagement_emails(
             continue
         engagement_uuid = object_.uuid
 
-        eng_email_type_uuid = await get_class(
-            gql_client=gql_client,
-            facet_user_key="employee_address_type",
-            class_user_key="engagement_email",
-        )
-
-        await _sync_address(
+        address_uuid = await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
             sd_address=eng_email.email,
@@ -247,7 +293,17 @@ async def _sync_engagement_emails(
             engagement_uuid=engagement_uuid,
         )
 
-        logger.info("Done syncing engagement emails")
+        if address_uuid is not None:
+            address_uuids_processed.add(address_uuid)
+
+    await terminate_leftover_addresses(
+        gql_client=gql_client,
+        person_uuid=person_uuid,
+        address_type_uuid=eng_email_type_uuid,
+        address_uuids_processed=address_uuids_processed,
+    )
+
+    logger.info("Done syncing engagement emails")
 
 
 async def _sync_addresses(
