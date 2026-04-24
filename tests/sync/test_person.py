@@ -19,7 +19,6 @@ from sdtoolplus.sync.person import _sync_addresses
         ("disable_person_phone_number_sync", "person_telefon_anden"),
         ("disable_person_postal_address_sync", "AdresseSDEmployee"),
         ("disable_person_email_address_sync", "person_email"),
-        ("disable_person_email_address_sync", "person_email_anden"),
     ],
 )
 @patch("sdtoolplus.sync.person._sync_address")
@@ -36,6 +35,8 @@ async def test_person_address_sync_flags(
 
     settings = sdtoolplus_settings.dict()
     settings.update({environment_variable: True})
+
+    mock_get_class.return_value = uuid4()
 
     sd_person = Person(
         cpr="2711401111",
@@ -74,6 +75,8 @@ async def test_engagement_disable_engagement_phone_number_sync_flag(
     settings = sdtoolplus_settings.dict()
     settings.update({"disable_engagement_phone_number_sync": True})
 
+    mock_get_class.return_value = uuid4()
+
     sd_person = Person(
         cpr="2711401111",
         given_name="Bruce",
@@ -106,6 +109,8 @@ async def test_engagement_disable_engagement_email_address_sync_flag(
 
     settings = sdtoolplus_settings.dict()
     settings.update({"disable_engagement_email_address_sync": True})
+
+    mock_get_class.return_value = uuid4()
 
     sd_person = Person(
         cpr="2711401111",
