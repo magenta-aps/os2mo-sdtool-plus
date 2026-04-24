@@ -9,7 +9,6 @@ import pytest
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.models import Person
-from sdtoolplus.sync.person import PersonEngagementAddressType
 from sdtoolplus.sync.person import _sync_addresses
 
 
@@ -60,31 +59,20 @@ async def test_person_address_sync_flags(
     assert class_user_key not in class_user_keys_fetched
 
 
-@pytest.mark.parametrize(
-    "environment_variable, address_type",
-    [
-        ("disable_engagement_phone_number_sync", PersonEngagementAddressType.phone),
-        ("disable_engagement_phone_number_sync", PersonEngagementAddressType.phone),
-        ("disable_engagement_email_address_sync", PersonEngagementAddressType.email),
-        ("disable_engagement_email_address_sync", PersonEngagementAddressType.email),
-    ],
-)
 @patch("sdtoolplus.sync.person._sync_address")
-@patch("sdtoolplus.sync.person._sync_engagement_addresses")
+@patch("sdtoolplus.sync.person._sync_engagement_phone_numbers")
 @patch("sdtoolplus.sync.person.get_class")
-async def test_engagement_address_sync_flags(
+async def test_engagement_disable_engagement_phone_number_sync_flag(
     mock_get_class: AsyncMock,
-    mock__sync_engagement_address: AsyncMock,
+    mock__sync_engagement_phone_numbers: AsyncMock,
     mock__sync_address: AsyncMock,
     sdtoolplus_settings: SDToolPlusSettings,
-    environment_variable: str,
-    address_type: PersonEngagementAddressType,
 ) -> None:
     # Arrange
     mock_gql_client = AsyncMock(spec=GraphQLClient)
 
     settings = sdtoolplus_settings.dict()
-    settings.update({environment_variable: True})
+    settings.update({"disable_engagement_phone_number_sync": True})
 
     sd_person = Person(
         cpr="2711401111",
@@ -101,8 +89,37 @@ async def test_engagement_address_sync_flags(
     )
 
     # Assert
-    address_types_used = [
-        call_args.kwargs["address_type"]
-        for call_args in mock__sync_engagement_address.call_args_list
-    ]
-    assert address_type not in address_types_used
+    mock__sync_engagement_phone_numbers.assert_not_awaited()
+
+
+@patch("sdtoolplus.sync.person._sync_address")
+@patch("sdtoolplus.sync.person._sync_engagement_emails")
+@patch("sdtoolplus.sync.person.get_class")
+async def test_engagement_disable_engagement_email_address_sync_flag(
+    mock_get_class: AsyncMock,
+    mock__sync_engagement_emails: AsyncMock,
+    mock__sync_address: AsyncMock,
+    sdtoolplus_settings: SDToolPlusSettings,
+) -> None:
+    # Arrange
+    mock_gql_client = AsyncMock(spec=GraphQLClient)
+
+    settings = sdtoolplus_settings.dict()
+    settings.update({"disable_engagement_email_address_sync": True})
+
+    sd_person = Person(
+        cpr="2711401111",
+        given_name="Bruce",
+        surname="Lee",
+    )
+
+    # Act
+    await _sync_addresses(
+        gql_client=mock_gql_client,
+        settings=SDToolPlusSettings.parse_obj(settings),
+        person_uuid=uuid4(),
+        sd_person=sd_person,
+    )
+
+    # Assert
+    mock__sync_engagement_emails.assert_not_awaited()

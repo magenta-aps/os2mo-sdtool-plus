@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
-from enum import Enum
 from typing import Any
 from typing import cast
 from uuid import UUID
@@ -30,18 +29,14 @@ from sdtoolplus.mo.person import update_address
 from sdtoolplus.mo.person import update_person
 from sdtoolplus.mo.timelines.common import get_class
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
-from sdtoolplus.models import EngagementAddresses
+from sdtoolplus.models import EngagementEmails
+from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 from sdtoolplus.sd.person import get_sd_person
 from sdtoolplus.sync.common import prefix_eng_user_key
 from sdtoolplus.types import CPRNumber
 
 logger = structlog.stdlib.get_logger()
-
-
-class PersonEngagementAddressType(Enum):
-    phone = "telefon"
-    email = "email"
 
 
 async def _sync_address(
@@ -56,6 +51,8 @@ async def _sync_address(
         "Syncing address",
         person_uuid=str(person_uuid),
         sd_address=sd_address,
+        address_type_uuid=str(address_type_uuid),
+        engagement_uuid=str(engagement_uuid),
     )
 
     now = datetime.now(tz=TIMEZONE)
@@ -67,13 +64,17 @@ async def _sync_address(
         "to_date": None,
     }
     if engagement_uuid is not None:
-        address_filter_kwargs["engagement_uuid"] = EngagementFilter(
-            uuids=[engagement_uuid]
+        address_filter_kwargs["engagement"] = EngagementFilter(
+            uuids=[engagement_uuid],
+            from_date=now,
+            to_date=None,
         )
     address_filter = AddressFilter(**address_filter_kwargs)
 
     mo_addresses = await gql_client.get_address_timeline(address_filter)
     mo_address = first(mo_addresses.objects, default=None)
+
+    logger.info("MO addresses", mo_addresses=mo_addresses.dict())
 
     if sd_address is None and mo_address is None:
         return
@@ -81,6 +82,7 @@ async def _sync_address(
     # There can only be one of each address type. If there is more than one,
     # terminate all but the first
     for term_address in mo_addresses.objects[1:]:
+        logger.info("Terminate redundant addresses")
         await terminate_address(gql_client, term_address.uuid, now)
 
     # Terminate the address if it is found in MO, but not in SD
@@ -122,28 +124,27 @@ async def _sync_address(
             engagement_uuid=engagement_uuid,
         )
 
-    logger.info("Done syncing person address", person_uuid=str(person_uuid))
+    logger.info("Done syncing address", person_uuid=str(person_uuid))
 
 
-async def _sync_engagement_addresses(
+async def _sync_engagement_phone_numbers(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
     person_uuid: UUID,
-    engagement_addresses: list[EngagementAddresses],
+    engagement_phone_numbers: list[EngagementPhoneNumbers],
     visibility_uuid: UUID,
-    address_type: PersonEngagementAddressType,
 ) -> None:
     logger.info(
-        "Syncing engagement addresses",
+        "Syncing engagement phone numbers",
         person_uuid=str(person_uuid),
-        engagement_addresses=[addr.dict() for addr in engagement_addresses],
+        engagement_phone_numbers=[addr.dict() for addr in engagement_phone_numbers],
     )
 
-    for eng_address in engagement_addresses:
+    for eng_phone_number in engagement_phone_numbers:
         eng_user_key = prefix_eng_user_key(
             settings=settings,
-            user_key=eng_address.engagement.employment_identifier,
-            inst_id=eng_address.engagement.institution_identifier,
+            user_key=eng_phone_number.engagement.employment_identifier,
+            inst_id=eng_phone_number.engagement.institution_identifier,
         )
 
         engagement_timeline = await gql_client.get_engagement_uuids(
@@ -155,42 +156,98 @@ async def _sync_engagement_addresses(
         object_ = only(engagement_timeline.objects, too_long=MoreThanOneEngagementError)
         if object_ is None:
             logger.info(
-                "Cannot sync engagement address since engagement not found",
+                "Cannot sync engagement phone number since engagement not found",
                 person_uuid=str(person_uuid),
                 user_key=eng_user_key,
             )
             continue
         engagement_uuid = object_.uuid
 
-        eng_address1_type_uuid = await get_class(
+        eng_phone1_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key=f"engagement_{address_type.value}",
+            class_user_key="engagement_telefon",
         )
 
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.address1,
-            address_type_uuid=eng_address1_type_uuid,
+            sd_address=eng_phone_number.phone1,
+            address_type_uuid=eng_phone1_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
 
-        eng_address2_type_uuid = await get_class(
+        eng_phone2_type_uuid = await get_class(
             gql_client=gql_client,
             facet_user_key="employee_address_type",
-            class_user_key=f"engagement_{address_type.value}_anden",
+            class_user_key="engagement_telefon_anden",
         )
 
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=eng_address.address2,
-            address_type_uuid=eng_address2_type_uuid,
+            sd_address=eng_phone_number.phone2,
+            address_type_uuid=eng_phone2_type_uuid,
             visibility_uuid=visibility_uuid,
             engagement_uuid=engagement_uuid,
         )
+
+    logger.info("Done syncing engagement phone numbers")
+
+
+async def _sync_engagement_emails(
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    person_uuid: UUID,
+    engagement_emails: list[EngagementEmails],
+    visibility_uuid: UUID,
+) -> None:
+    logger.info(
+        "Syncing engagement emails",
+        person_uuid=str(person_uuid),
+        engagement_emails=[addr.dict() for addr in engagement_emails],
+    )
+
+    for eng_email in engagement_emails:
+        eng_user_key = prefix_eng_user_key(
+            settings=settings,
+            user_key=eng_email.engagement.employment_identifier,
+            inst_id=eng_email.engagement.institution_identifier,
+        )
+
+        engagement_timeline = await gql_client.get_engagement_uuids(
+            get_engagement_filter(
+                person=person_uuid, user_key=eng_user_key, from_date=None, to_date=None
+            )
+        )
+
+        object_ = only(engagement_timeline.objects, too_long=MoreThanOneEngagementError)
+        if object_ is None:
+            logger.info(
+                "Cannot sync engagement email since engagement not found",
+                person_uuid=str(person_uuid),
+                user_key=eng_user_key,
+            )
+            continue
+        engagement_uuid = object_.uuid
+
+        eng_email_type_uuid = await get_class(
+            gql_client=gql_client,
+            facet_user_key="employee_address_type",
+            class_user_key="engagement_email",
+        )
+
+        await _sync_address(
+            gql_client=gql_client,
+            person_uuid=person_uuid,
+            sd_address=eng_email.email,
+            address_type_uuid=eng_email_type_uuid,
+            visibility_uuid=visibility_uuid,
+            engagement_uuid=engagement_uuid,
+        )
+
+        logger.info("Done syncing engagement emails")
 
 
 async def _sync_addresses(
@@ -209,6 +266,7 @@ async def _sync_addresses(
 
     # Person phone 1
     if not settings.disable_person_phone_number_sync:
+        logger.info("Syncing person phone1")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -220,8 +278,10 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person phone1")
 
         # Person phone 2
+        logger.info("Syncing person phone2")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -233,13 +293,15 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person phone2")
 
     if not settings.disable_person_email_address_sync:
-        # Person email 1
+        # Person email
+        logger.info("Syncing person email")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
-            sd_address=sd_person.person_email1,
+            sd_address=sd_person.person_email,
             address_type_uuid=await get_class(
                 gql_client=gql_client,
                 facet_user_key="employee_address_type",
@@ -247,22 +309,11 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
-
-        # Person email 2
-        await _sync_address(
-            gql_client=gql_client,
-            person_uuid=person_uuid,
-            sd_address=sd_person.person_email2,
-            address_type_uuid=await get_class(
-                gql_client=gql_client,
-                facet_user_key="employee_address_type",
-                class_user_key="person_email_anden",
-            ),
-            visibility_uuid=visibility_uuid,
-        )
+        logger.info("Done syncing person email")
 
     if not settings.disable_person_postal_address_sync:
         # Postal address (only present on the SD person object itself)
+        logger.info("Syncing person postal address")
         await _sync_address(
             gql_client=gql_client,
             person_uuid=person_uuid,
@@ -274,27 +325,26 @@ async def _sync_addresses(
             ),
             visibility_uuid=visibility_uuid,
         )
+        logger.info("Done syncing person postal address")
 
     if not settings.disable_engagement_phone_number_sync:
         # Engagement phone numbers
-        await _sync_engagement_addresses(
+        await _sync_engagement_phone_numbers(
             gql_client=gql_client,
             settings=settings,
             person_uuid=person_uuid,
-            engagement_addresses=sd_person.engagement_phone_numbers,
+            engagement_phone_numbers=sd_person.engagement_phone_numbers,
             visibility_uuid=visibility_uuid,
-            address_type=PersonEngagementAddressType.phone,
         )
 
     if not settings.disable_engagement_email_address_sync:
         # Engagement email addresses
-        await _sync_engagement_addresses(
+        await _sync_engagement_emails(
             gql_client=gql_client,
             settings=settings,
             person_uuid=person_uuid,
-            engagement_addresses=sd_person.engagement_emails,
+            engagement_emails=sd_person.engagement_emails,
             visibility_uuid=visibility_uuid,
-            address_type=PersonEngagementAddressType.email,
         )
 
     logger.info("Done syncing person addresses", person_uuid=str(person_uuid))
@@ -387,7 +437,8 @@ async def sync_person(
     )
 
     if settings.enable_person_address_sync:
-        # TODO: make proper fix!
+        # We have to look up the person once again in order to exclude addresses
+        # from passive engagements
         sd_person = await get_sd_person(
             sd_client=sd_client,
             institution_identifier=institution_identifier,

@@ -28,6 +28,7 @@ class GetAddressTimelineAddressesObjectsValidities(BaseModel):
     value: str
     uuid: UUID
     validity: "GetAddressTimelineAddressesObjectsValiditiesValidity"
+    engagement_uuid: Optional[UUID]
 
 
 class GetAddressTimelineAddressesObjectsValiditiesAddressType(BaseModel):

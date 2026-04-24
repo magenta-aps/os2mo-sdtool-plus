@@ -196,6 +196,7 @@ class GraphQLClient(AsyncBaseClient):
                       from
                       to
                     }
+                    engagement_uuid
                   }
                 }
               }

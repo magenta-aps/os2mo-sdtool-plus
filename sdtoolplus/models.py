@@ -150,27 +150,35 @@ class Engagement(BaseModel):
     employment_identifier: str
 
 
-class EngagementAddresses(BaseModel):
+class EngagementPhoneNumbers(BaseModel):
     """
-    Model for holding the SD person *engagement* phone or email addresses.
+    Model for holding the SD person *engagement* phone numbers
     """
 
     engagement: Engagement
-    address1: str | None
-    address2: str | None
+    phone1: str | None
+    phone2: str | None
+
+
+class EngagementEmails(BaseModel):
+    """
+    Model for holding the SD person *engagement* emails
+    """
+
+    engagement: Engagement
+    email: str | None
 
 
 class Person(BaseModel):
     cpr: str
     given_name: str
     surname: str
-    person_email1: str | None = None
-    person_email2: str | None = None
+    person_email: str | None = None
     person_phone_number1: str | None = None
     person_phone_number2: str | None = None
     person_address: str | None = None
-    engagement_phone_numbers: list[EngagementAddresses] = []
-    engagement_emails: list[EngagementAddresses] = []
+    engagement_phone_numbers: list[EngagementPhoneNumbers] = []
+    engagement_emails: list[EngagementEmails] = []
 
 
 class Interval(GenericModel, Generic[V], frozen=True):
