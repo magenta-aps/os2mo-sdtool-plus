@@ -1339,7 +1339,7 @@ async def test_person_addresses_terminate(
 
     person_uuid = uuid4()
     cpr = "0101011234"
-    emp_id = "12345"
+    emp_id_12345 = "12345"
     now = datetime.combine(datetime.today(), time.min, tzinfo=TIMEZONE)
 
     dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
@@ -1357,10 +1357,10 @@ async def test_person_addresses_terminate(
     eng_types = await get_engagement_types(graphql_client)
 
     # Create engagement
-    eng_uuid = (
+    eng12345_uuid = (
         await graphql_client.create_engagement(
             EngagementCreateInput(
-                user_key=f"II-{emp_id}",
+                user_key=f"II-{emp_id_12345}",
                 validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
                 extension_1="name4",
                 extension_4="dep1",
@@ -1411,7 +1411,7 @@ async def test_person_addresses_terminate(
             value="12345678",
             address_type=person_phone1_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1448,7 +1448,7 @@ async def test_person_addresses_terminate(
             value="23456789",
             address_type=eng_phone2_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1461,7 +1461,7 @@ async def test_person_addresses_terminate(
             value="23456789",
             address_type=eng_phone2_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1474,7 +1474,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1487,7 +1487,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1500,7 +1500,7 @@ async def test_person_addresses_terminate(
             value="norris@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1513,7 +1513,7 @@ async def test_person_addresses_terminate(
             value="chuck@hollywood.com",
             address_type=eng_email_address_type_uuid,
             visibility=visibility_uuid,
-            engagement=eng_uuid,
+            engagement=eng12345_uuid,
             validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
         )
     )
@@ -1537,7 +1537,7 @@ async def test_person_addresses_terminate(
                     <EmailAddressIdentifier>chuck@karate.org</EmailAddressIdentifier>
                 </ContactInformation>
                 <Employment>
-                    <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                    <EmploymentIdentifier>{emp_id_12345}</EmploymentIdentifier>
                     <ContactInformation>
                         <TelephoneNumberIdentifier>00000000</TelephoneNumberIdentifier>
                         <TelephoneNumberIdentifier>23456789</TelephoneNumberIdentifier>
@@ -1609,7 +1609,7 @@ async def test_person_addresses_terminate(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
             address_type=ClassFilter(uuids=[eng_phone2_address_type_uuid]),
-            engagement=EngagementFilter(uuids=[eng_uuid]),
+            engagement=EngagementFilter(uuids=[eng12345_uuid]),
             from_date=now,
             to_date=None,
         )
@@ -1630,7 +1630,7 @@ async def test_person_addresses_terminate(
         input=AddressFilter(
             employee=EmployeeFilter(uuids=[person_uuid]),
             address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
-            engagement=EngagementFilter(uuids=[eng_uuid]),
+            engagement=EngagementFilter(uuids=[eng12345_uuid]),
             from_date=now,
             to_date=None,
         )
