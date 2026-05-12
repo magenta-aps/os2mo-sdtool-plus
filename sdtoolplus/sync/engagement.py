@@ -473,7 +473,8 @@ async def engagement_ou_strategy_region(
                 await related_units(
                     gql_client=gql_client,
                     unit_uuid=cast(OrgUnitUUID, sd_unit),
-                    unit_interval=unit_interval,
+                    start=unit_interval.start,
+                    end=unit_interval.end,
                     unknown_unit_uuid=settings.unknown_unit,
                 )
             )
