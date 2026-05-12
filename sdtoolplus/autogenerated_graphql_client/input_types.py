@@ -1,19 +1,13 @@
 # This file has been modified by the UnsetInputTypesPlugin
 from datetime import datetime
-from typing import Any
-from typing import List
-from typing import Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from pydantic import Field
 
 from ..types import CPRNumber
-from .base_model import UNSET
-from .base_model import BaseModel
-from .base_model import UnsetType
-from .enums import AccessLogModel
-from .enums import FileStore
-from .enums import OwnerInferencePriority
+from .base_model import UNSET, BaseModel, UnsetType
+from .enums import AccessLogModel, FileStore, OwnerInferencePriority
 
 
 class AccessLogFilter(BaseModel):

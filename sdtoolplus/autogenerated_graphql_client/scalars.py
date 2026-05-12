@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import Any
-from typing import Callable
-from typing import Dict
+from typing import Any, Callable, Dict
 
 from fastramqpi.ariadne import parse_graphql_datetime
 

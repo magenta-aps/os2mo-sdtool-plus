@@ -1,144 +1,121 @@
 from datetime import datetime
-from typing import Any
-from typing import Optional
-from typing import Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from ..types import CPRNumber
-from ._testing__create_employee import TestingCreateEmployee
-from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
-from ._testing__create_engagement import TestingCreateEngagement
-from ._testing__create_engagement import TestingCreateEngagementEngagementCreate
-from ._testing__create_org_unit import TestingCreateOrgUnit
-from ._testing__create_org_unit import TestingCreateOrgUnitOrgUnitCreate
-from ._testing__get_org_unit import TestingGetOrgUnit
-from ._testing__get_org_unit import TestingGetOrgUnitOrgUnits
-from ._testing__get_org_unit_address import TestingGetOrgUnitAddress
-from ._testing__get_org_unit_address import TestingGetOrgUnitAddressOrgUnits
-from ._testing__update_related_units import TestingUpdateRelatedUnits
-from ._testing__update_related_units import TestingUpdateRelatedUnitsRelatedUnitsUpdate
-from .address_types import AddressTypes
-from .address_types import AddressTypesFacets
+from ._testing__create_employee import (
+    TestingCreateEmployee,
+    TestingCreateEmployeeEmployeeCreate,
+)
+from ._testing__create_engagement import (
+    TestingCreateEngagement,
+    TestingCreateEngagementEngagementCreate,
+)
+from ._testing__create_org_unit import (
+    TestingCreateOrgUnit,
+    TestingCreateOrgUnitOrgUnitCreate,
+)
+from ._testing__get_org_unit import TestingGetOrgUnit, TestingGetOrgUnitOrgUnits
+from ._testing__get_org_unit_address import (
+    TestingGetOrgUnitAddress,
+    TestingGetOrgUnitAddressOrgUnits,
+)
+from ._testing__update_related_units import (
+    TestingUpdateRelatedUnits,
+    TestingUpdateRelatedUnitsRelatedUnitsUpdate,
+)
+from .address_types import AddressTypes, AddressTypesFacets
 from .async_base_client import AsyncBaseClient
-from .base_model import UNSET
-from .base_model import UnsetType
-from .create_address import CreateAddress
-from .create_address import CreateAddressAddressCreate
-from .create_association import CreateAssociation
-from .create_association import CreateAssociationAssociationCreate
-from .create_class import CreateClass
-from .create_class import CreateClassClassCreate
-from .create_engagement import CreateEngagement
-from .create_engagement import CreateEngagementEngagementCreate
-from .create_leave import CreateLeave
-from .create_leave import CreateLeaveLeaveCreate
-from .create_org_unit import CreateOrgUnit
-from .create_org_unit import CreateOrgUnitOrgUnitCreate
-from .create_person import CreatePerson
-from .create_person import CreatePersonEmployeeCreate
-from .delete_address import DeleteAddress
-from .delete_address import DeleteAddressAddressDelete
-from .delete_org_function import DeleteOrgFunction
-from .delete_org_function import DeleteOrgFunctionEngagementDelete
-from .get_actor import GetActor
-from .get_actor import GetActorMe
-from .get_address_timeline import GetAddressTimeline
-from .get_address_timeline import GetAddressTimelineAddresses
-from .get_association_timeline import GetAssociationTimeline
-from .get_association_timeline import GetAssociationTimelineAssociations
-from .get_class import GetClass
-from .get_class import GetClassClasses
-from .get_engagement_timeline import GetEngagementTimeline
-from .get_engagement_timeline import GetEngagementTimelineEngagements
-from .get_engagement_uuids import GetEngagementUuids
-from .get_engagement_uuids import GetEngagementUuidsEngagements
-from .get_engagements import GetEngagements
-from .get_engagements import GetEngagementsEngagements
-from .get_events import GetEvents
-from .get_events import GetEventsEvents
-from .get_facet_uuid import GetFacetUuid
-from .get_facet_uuid import GetFacetUuidFacets
-from .get_leave import GetLeave
-from .get_leave import GetLeaveLeaves
-from .get_org_unit import GetOrgUnit
-from .get_org_unit import GetOrgUnitOrgUnits
-from .get_org_unit_children import GetOrgUnitChildren
-from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
-from .get_org_unit_timeline import GetOrgUnitTimeline
-from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
-from .get_org_unit_user_keys import GetOrgUnitUserKeys
-from .get_org_unit_user_keys import GetOrgUnitUserKeysOrgUnits
-from .get_organization import GetOrganization
-from .get_organization import GetOrganizationOrg
-from .get_parent_roots import GetParentRoots
-from .get_parent_roots import GetParentRootsOrgUnits
-from .get_person import GetPerson
-from .get_person import GetPersonEmployees
-from .get_person_cpr import GetPersonCpr
-from .get_person_cpr import GetPersonCprEmployees
-from .get_person_timeline import GetPersonTimeline
-from .get_person_timeline import GetPersonTimelineEmployees
-from .get_related_units import GetRelatedUnits
-from .get_related_units import GetRelatedUnitsRelatedUnits
-from .get_unit import GetUnit
-from .get_unit import GetUnitOrgUnits
-from .input_types import AddressCreateInput
-from .input_types import AddressFilter
-from .input_types import AddressTerminateInput
-from .input_types import AddressUpdateInput
-from .input_types import AssociationCreateInput
-from .input_types import AssociationFilter
-from .input_types import AssociationTerminateInput
-from .input_types import AssociationUpdateInput
-from .input_types import ClassCreateInput
-from .input_types import ClassFilter
-from .input_types import ClassUpdateInput
-from .input_types import EmployeeCreateInput
-from .input_types import EmployeeFilter
-from .input_types import EmployeeUpdateInput
-from .input_types import EngagementCreateInput
-from .input_types import EngagementFilter
-from .input_types import EngagementTerminateInput
-from .input_types import EngagementUpdateInput
-from .input_types import EventSendInput
-from .input_types import FullEventFilter
-from .input_types import LeaveCreateInput
-from .input_types import LeaveFilter
-from .input_types import LeaveTerminateInput
-from .input_types import LeaveUpdateInput
-from .input_types import OrganisationUnitCreateInput
-from .input_types import OrganisationUnitFilter
-from .input_types import OrganisationUnitTerminateInput
-from .input_types import OrganisationUnitUpdateInput
-from .input_types import RelatedUnitFilter
-from .input_types import RelatedUnitsUpdateInput
-from .refresh_engagements import RefreshEngagements
-from .refresh_engagements import RefreshEngagementsEngagementRefresh
+from .base_model import UNSET, UnsetType
+from .create_address import CreateAddress, CreateAddressAddressCreate
+from .create_association import CreateAssociation, CreateAssociationAssociationCreate
+from .create_class import CreateClass, CreateClassClassCreate
+from .create_engagement import CreateEngagement, CreateEngagementEngagementCreate
+from .create_leave import CreateLeave, CreateLeaveLeaveCreate
+from .create_org_unit import CreateOrgUnit, CreateOrgUnitOrgUnitCreate
+from .create_person import CreatePerson, CreatePersonEmployeeCreate
+from .delete_address import DeleteAddress, DeleteAddressAddressDelete
+from .delete_org_function import DeleteOrgFunction, DeleteOrgFunctionEngagementDelete
+from .get_actor import GetActor, GetActorMe
+from .get_address_timeline import GetAddressTimeline, GetAddressTimelineAddresses
+from .get_association_timeline import (
+    GetAssociationTimeline,
+    GetAssociationTimelineAssociations,
+)
+from .get_class import GetClass, GetClassClasses
+from .get_engagement_timeline import (
+    GetEngagementTimeline,
+    GetEngagementTimelineEngagements,
+)
+from .get_engagement_uuids import GetEngagementUuids, GetEngagementUuidsEngagements
+from .get_engagements import GetEngagements, GetEngagementsEngagements
+from .get_events import GetEvents, GetEventsEvents
+from .get_facet_uuid import GetFacetUuid, GetFacetUuidFacets
+from .get_leave import GetLeave, GetLeaveLeaves
+from .get_org_unit import GetOrgUnit, GetOrgUnitOrgUnits
+from .get_org_unit_children import GetOrgUnitChildren, GetOrgUnitChildrenOrgUnits
+from .get_org_unit_parents import GetOrgUnitParents, GetOrgUnitParentsOrgUnits
+from .get_org_unit_timeline import GetOrgUnitTimeline, GetOrgUnitTimelineOrgUnits
+from .get_org_unit_user_keys import GetOrgUnitUserKeys, GetOrgUnitUserKeysOrgUnits
+from .get_organization import GetOrganization, GetOrganizationOrg
+from .get_parent_roots import GetParentRoots, GetParentRootsOrgUnits
+from .get_person import GetPerson, GetPersonEmployees
+from .get_person_cpr import GetPersonCpr, GetPersonCprEmployees
+from .get_person_timeline import GetPersonTimeline, GetPersonTimelineEmployees
+from .get_related_units import GetRelatedUnits, GetRelatedUnitsRelatedUnits
+from .get_unit import GetUnit, GetUnitOrgUnits
+from .input_types import (
+    AddressCreateInput,
+    AddressFilter,
+    AddressTerminateInput,
+    AddressUpdateInput,
+    AssociationCreateInput,
+    AssociationFilter,
+    AssociationTerminateInput,
+    AssociationUpdateInput,
+    ClassCreateInput,
+    ClassFilter,
+    ClassUpdateInput,
+    EmployeeCreateInput,
+    EmployeeFilter,
+    EmployeeUpdateInput,
+    EngagementCreateInput,
+    EngagementFilter,
+    EngagementTerminateInput,
+    EngagementUpdateInput,
+    EventSendInput,
+    FullEventFilter,
+    LeaveCreateInput,
+    LeaveFilter,
+    LeaveTerminateInput,
+    LeaveUpdateInput,
+    OrganisationUnitCreateInput,
+    OrganisationUnitFilter,
+    OrganisationUnitTerminateInput,
+    OrganisationUnitUpdateInput,
+    RelatedUnitFilter,
+    RelatedUnitsUpdateInput,
+)
+from .refresh_engagements import RefreshEngagements, RefreshEngagementsEngagementRefresh
 from .send_event import SendEvent
-from .terminate_address import TerminateAddress
-from .terminate_address import TerminateAddressAddressTerminate
-from .terminate_association import TerminateAssociation
-from .terminate_association import TerminateAssociationAssociationTerminate
-from .terminate_engagement import TerminateEngagement
-from .terminate_engagement import TerminateEngagementEngagementTerminate
-from .terminate_leave import TerminateLeave
-from .terminate_leave import TerminateLeaveLeaveTerminate
-from .terminate_org_unit import TerminateOrgUnit
-from .terminate_org_unit import TerminateOrgUnitOrgUnitTerminate
-from .update_address import UpdateAddress
-from .update_address import UpdateAddressAddressUpdate
-from .update_association import UpdateAssociation
-from .update_association import UpdateAssociationAssociationUpdate
-from .update_class import UpdateClass
-from .update_class import UpdateClassClassUpdate
-from .update_engagement import UpdateEngagement
-from .update_engagement import UpdateEngagementEngagementUpdate
-from .update_leave import UpdateLeave
-from .update_leave import UpdateLeaveLeaveUpdate
-from .update_org_unit import UpdateOrgUnit
-from .update_org_unit import UpdateOrgUnitOrgUnitUpdate
-from .update_person import UpdatePerson
-from .update_person import UpdatePersonEmployeeUpdate
+from .terminate_address import TerminateAddress, TerminateAddressAddressTerminate
+from .terminate_association import (
+    TerminateAssociation,
+    TerminateAssociationAssociationTerminate,
+)
+from .terminate_engagement import (
+    TerminateEngagement,
+    TerminateEngagementEngagementTerminate,
+)
+from .terminate_leave import TerminateLeave, TerminateLeaveLeaveTerminate
+from .terminate_org_unit import TerminateOrgUnit, TerminateOrgUnitOrgUnitTerminate
+from .update_address import UpdateAddress, UpdateAddressAddressUpdate
+from .update_association import UpdateAssociation, UpdateAssociationAssociationUpdate
+from .update_class import UpdateClass, UpdateClassClassUpdate
+from .update_engagement import UpdateEngagement, UpdateEngagementEngagementUpdate
+from .update_leave import UpdateLeave, UpdateLeaveLeaveUpdate
+from .update_org_unit import UpdateOrgUnit, UpdateOrgUnitOrgUnitUpdate
+from .update_person import UpdatePerson, UpdatePersonEmployeeUpdate
 
 
 def gql(q: str) -> str:
@@ -587,6 +564,35 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrgUnit.parse_obj(data).org_units
+
+    async def get_org_unit_parents(
+        self,
+        uuid: UUID,
+        start: datetime,
+        end: Union[Optional[datetime], UnsetType] = UNSET,
+    ) -> GetOrgUnitParentsOrgUnits:
+        query = gql("""
+            query GetOrgUnitParents($uuid: UUID!, $start: DateTime!, $end: DateTime) {
+              org_units(filter: {uuids: [$uuid]}) {
+                objects {
+                  validities(start: $start, end: $end) {
+                    uuid
+                    parent_response {
+                      uuid
+                    }
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"uuid": uuid, "start": start, "end": end}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetOrgUnitParents.parse_obj(data).org_units
 
     async def get_person(self, cpr: CPRNumber) -> GetPersonEmployees:
         query = gql("""

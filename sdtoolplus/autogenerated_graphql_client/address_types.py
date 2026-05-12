@@ -1,5 +1,4 @@
-from typing import List
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from .base_model import BaseModel

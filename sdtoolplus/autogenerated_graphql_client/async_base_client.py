@@ -1,11 +1,6 @@
 import enum
 import json
-from typing import Any
-from typing import AsyncIterator
-from typing import Dict
-from typing import Optional
-from typing import TypeVar
-from typing import cast
+from typing import Any, AsyncIterator, Dict, Optional, TypeVar, cast
 from uuid import uuid4
 
 import httpx
@@ -13,17 +8,17 @@ from pydantic import BaseModel
 from pydantic.json import pydantic_encoder
 
 from .base_model import UNSET
-from .exceptions import GraphQLClientGraphQLMultiError
-from .exceptions import GraphQLClientHttpError
-from .exceptions import GraphQLClientInvalidMessageFormat
-from .exceptions import GraphQlClientInvalidResponseError
+from .exceptions import (
+    GraphQLClientGraphQLMultiError,
+    GraphQLClientHttpError,
+    GraphQLClientInvalidMessageFormat,
+    GraphQlClientInvalidResponseError,
+)
 
 try:
     from websockets.client import WebSocketClientProtocol
     from websockets.client import connect as ws_connect
-    from websockets.typing import Data
-    from websockets.typing import Origin
-    from websockets.typing import Subprotocol
+    from websockets.typing import Data, Origin, Subprotocol
 except ImportError:
     from contextlib import asynccontextmanager
 
