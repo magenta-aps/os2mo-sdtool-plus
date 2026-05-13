@@ -4,8 +4,11 @@ OS2mo integration for [SD](https://sd.dk).
 
 ## Usage
 
+> [!WARNING]
+> This does not work if you're running `podman` isntead of `docker`, because our `docker-compose.yml` makes use of `post_start` commands, which are not part of the container specification.
+
 ```sh
-podman compose up -d
+docker compose up -d
 ```
 
 Configuration is done through environment variables. Available options can be
@@ -18,8 +21,8 @@ After starting the project, tests can be run using
 [pytest](https://pytest.org), for example:
 
 ```sh
-podman compose stop sdtool-plus
-podman compose run --rm sdtool-plus pytest tests/integration/test_engagement_timeline.py
+docker compose stop sdtool-plus
+docker compose run --rm sdtool-plus pytest tests/integration/test_engagement_timeline.py
 ```
 
 All tests should be runnable both locally and in CI -- it is considered a bug
