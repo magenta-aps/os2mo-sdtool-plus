@@ -2509,6 +2509,208 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_eng_timeline_recursive_related_units_simple_case(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are using the payroll unit tree (from the base_tree_builder):
+
+    <root> (12121212-1212-1212-1212-121212121212)>
+    └── Department 1 (10000000-0000-0000-0000-000000000000)>
+        ├── Department 2 (20000000-0000-0000-0000-000000000000)>
+        │   ├── Department 3 (30000000-0000-0000-0000-000000000000)>
+        │   └── Department 4 (40000000-0000-0000-0000-000000000000)>
+        └── Department 5 (50000000-0000-0000-0000-000000000000)>
+            └── Department 6 (60000000-0000-0000-0000-000000000000)>
+
+    Time  --------t1---------------------------t2------------------------------------>
+
+    Engagement not yet found in MO!
+
+    SD (name)     |---------------------------name4----------------------------------
+    SD (key)      |---------------------------1234-----------------------------------
+    SD (unit)     |--------dep3----------------|----------------dep6-----------------
+    SD (unit ID)  |--------dep3----------------|----------------dep6-----------------
+    SD (active)   |------------------------------------------------------------------
+    SD (eng_type) |--------------------------------full------------------------------
+
+    OU parents:
+    dep3          |-------------------------------dep2-------------------------------
+    dep2          |-------------------------------dep1-------------------------------
+    dep6          |-------------------------------dep5-------------------------------
+
+    OU relations:
+    dep3                                    (no relations!)
+    dep2                                    (no relations!)
+    dep1          |--------------------------------A---------------------------------
+    dep5          |--------------------------------B---------------------------------
+
+    Time  --------t1---------------------------t2------------------------------------>
+
+    "Assert"      |---------------1------------|--------------------2----------------
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+    dep3_uuid = UUID("30000000-0000-0000-0000-000000000000")
+    dep5_uuid = UUID("50000000-0000-0000-0000-000000000000")
+    dep6_uuid = UUID("60000000-0000-0000-0000-000000000000")
+    A_uuid = UUID("aaaaaaaa-2a66-429e-8893-aaaaaaaaaaaa")
+    B_uuid = UUID("bbbbbbbb-2a66-429e-8893-bbbbbbbbbbbb")
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create org unit relations
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=dep1_uuid,
+            destination=[A_uuid],
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=dep5_uuid,
+            destination=[B_uuid],
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep3</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep3_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep6</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep6_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name4</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.extension_4 == "dep3"
+    assert interval_1.extension_5 == str(dep3_uuid)
+    assert interval_1.org_unit_uuid == A_uuid
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t2
+    assert mo_end_to_timeline_end(interval_2.validity.to) == POSITIVE_INFINITY
+    assert interval_2.extension_4 == "dep6"
+    assert interval_2.extension_5 == str(dep6_uuid)
+    assert interval_2.org_unit_uuid == B_uuid
+
+    assert len(validities) == 2
+
+
+@pytest.mark.integration_test
 async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
