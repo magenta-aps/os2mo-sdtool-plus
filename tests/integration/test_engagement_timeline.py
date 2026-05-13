@@ -2711,6 +2711,588 @@ async def test_eng_timeline_recursive_related_units_simple_case(
 
 
 @pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_eng_timeline_recursive_related_units_complex_case(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitTypeUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    If this test passes, let's go get a beer!
+
+    We are using the payroll unit tree (from the base_tree_builder):
+
+    Time  --------t1-----t2---t3---t4--t5--------t6------t7----t8---------t9-------t10->
+
+    Engagement not yet found in MO!
+
+    SD (name)     |---------------------------name4--------------------------------|
+    SD (key)      |---------------------------1234---------------------------------|
+    SD (unit)     |---------A----------|------------B----------|---------C---------|
+    SD (unit ID)  |---------A----------|------------B----------|---------C---------|
+    SD (active)   |----------------------------------------------------------------|
+    SD (eng_type) |--------------------------------full----------------------------|
+
+    OU parents:
+    A             ---------------------------F-----------------------------------------
+    B             ----------------D--------------|--------------E----------------------
+    C             -------------------------------G-------------------------------------
+    D             -------------------------------J-------------------------------------
+    G             -------------------------------H-------------------------------------
+
+    OU relations:
+    A                    |----X----|             |-------Y-------|
+    A                         |---Z----|
+    B                                    (no relations!)
+    C                                    (no relations!)
+    D                                    (no relations!)
+    E                                             |---Z---|------------V---------------
+    F             |---W--|
+    G                                                     |-------Q-------|
+    H                                    (no relations!)
+    J                    |-----------------P--------------|
+
+    Expected engagement unit timeline:
+                  |---W--|----X----|-Z-|----P----|---Z---|--V--|-----Q----|-unknown|
+
+    Time  --------t1-----t2---t3---t4--t5--------t6------t7----t8---------t9-------t10->
+
+    "Assert"      |---1--|----2----|-3-|----4----|---5---|--6--|-----7----|----8---|
+    intervals
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+    t6 = datetime(2006, 1, 1, tzinfo=tz)
+    t7 = datetime(2007, 1, 1, tzinfo=tz)
+    t8 = datetime(2008, 1, 1, tzinfo=tz)
+    t9 = datetime(2009, 1, 1, tzinfo=tz)
+    t10 = datetime(2010, 1, 1, tzinfo=tz)
+
+    now = datetime(1999, 1, 1, tzinfo=tz)
+
+    # Units
+    root = UUID("12121212-1212-1212-1212-121212121212")
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+    adm_top_uuid = UUID(int=2)
+
+    A_uuid = UUID(int=10)
+    B_uuid = UUID(int=11)
+    C_uuid = UUID(int=12)
+    D_uuid = UUID(int=13)
+    E_uuid = UUID(int=14)
+    F_uuid = UUID(int=15)
+    G_uuid = UUID(int=16)
+    H_uuid = UUID(int=17)
+    J_uuid = UUID(int=18)
+    P_uuid = UUID(int=19)
+    Q_uuid = UUID(int=20)
+    V_uuid = UUID(int=21)
+    W_uuid = UUID(int=22)
+    X_uuid = UUID(int=23)
+    Y_uuid = UUID(int=24)
+    Z_uuid = UUID(int=25)
+
+    # Create units (common)
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=root,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Root",
+            user_key="root",
+            org_unit_type=org_unit_type,
+        )
+    )
+
+    # Create units (SD payroll)
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=dep1_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Department 1",
+            user_key="dep1",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["TOP"],
+            parent=root,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=H_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="H",
+            user_key="h",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=dep1_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=J_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="J",
+            user_key="j",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=dep1_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=G_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="G",
+            user_key="g",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=H_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=D_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="D",
+            user_key="d",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=J_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=E_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="E",
+            user_key="e",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=dep1_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=F_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="F",
+            user_key="f",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=dep1_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=A_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="A",
+            user_key="a",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=F_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=B_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="B",
+            user_key="b",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=D_uuid,
+        )
+    )
+
+    await graphql_client.update_org_unit(
+        OrganisationUnitUpdateInput(
+            uuid=B_uuid,
+            validity=timeline_interval_to_mo_validity(t6, POSITIVE_INFINITY),
+            name="B",
+            user_key="b",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=E_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=C_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="C",
+            user_key="c",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY1-niveau"],
+            parent=G_uuid,
+        )
+    )
+
+    # Create units (adm-org)
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=adm_top_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Adm Top",
+            user_key="adm-top",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=root,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=P_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="P",
+            user_key="p",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=Q_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Q",
+            user_key="q",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=V_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="V",
+            user_key="v",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=W_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="W",
+            user_key="w",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=X_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="X",
+            user_key="x",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=Y_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Y",
+            user_key="y",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=Z_uuid,
+            validity=timeline_interval_to_mo_validity(now, POSITIVE_INFINITY),
+            name="Z",
+            user_key="z",
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["non-SD"],
+            parent=adm_top_uuid,
+        )
+    )
+
+    # Create org unit relations
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=A_uuid,
+            destination=[X_uuid],
+            validity=timeline_interval_to_mo_validity(t2, t3),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=A_uuid,
+            destination=[X_uuid, Z_uuid],
+            validity=timeline_interval_to_mo_validity(t3, t4),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=A_uuid,
+            destination=[Z_uuid],
+            validity=timeline_interval_to_mo_validity(t4, t5),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=A_uuid,
+            destination=[Y_uuid],
+            validity=timeline_interval_to_mo_validity(t6, t8),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=E_uuid,
+            destination=[Z_uuid],
+            validity=timeline_interval_to_mo_validity(t6, t7),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=E_uuid,
+            destination=[V_uuid],
+            validity=timeline_interval_to_mo_validity(t7, POSITIVE_INFINITY),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=F_uuid,
+            destination=[W_uuid],
+            validity=timeline_interval_to_mo_validity(t1, t2),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=G_uuid,
+            destination=[Q_uuid],
+            validity=timeline_interval_to_mo_validity(t7, t9),
+        )
+    )
+
+    await graphql_client._testing__update_related_units(
+        RelatedUnitsUpdateInput(
+            origin=J_uuid,
+            destination=[P_uuid],
+            validity=timeline_interval_to_mo_validity(t2, t7),
+        )
+    )
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2006-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2004-12-31</DeactivationDate>
+                <DepartmentIdentifier>a</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(A_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2005-01-01</ActivationDate>
+                <DeactivationDate>2007-12-31</DeactivationDate>
+                <DepartmentIdentifier>b</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(B_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2008-01-01</ActivationDate>
+                <DeactivationDate>2009-12-31</DeactivationDate>
+                <DepartmentIdentifier>c</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(C_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2008-01-01</ActivationDate>
+                <DeactivationDate>2009-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name4</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2009-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2009-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=f"II-{emp_id}", from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.extension_4 == "a"
+    assert interval_1.extension_5 == str(A_uuid)
+    assert interval_1.org_unit_uuid == W_uuid
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t2
+    assert mo_end_to_timeline_end(interval_2.validity.to) == t4
+    assert interval_2.extension_4 == "a"
+    assert interval_2.extension_5 == str(A_uuid)
+    # TODO: this depends on that "first" chooses X over Z between t3 (not a typo) and t4
+    assert interval_2.org_unit_uuid == X_uuid
+
+    interval_3 = validities[2]
+    assert interval_3.validity.from_ == t4
+    assert mo_end_to_timeline_end(interval_3.validity.to) == t5
+    assert interval_3.extension_4 == "a"
+    assert interval_3.extension_5 == str(A_uuid)
+    assert interval_3.org_unit_uuid == Z_uuid
+
+    interval_4 = validities[3]
+    assert interval_4.validity.from_ == t5
+    assert mo_end_to_timeline_end(interval_4.validity.to) == t6
+    assert interval_4.extension_4 == "b"
+    assert interval_4.extension_5 == str(B_uuid)
+    assert interval_4.org_unit_uuid == P_uuid
+
+    interval_5 = validities[4]
+    assert interval_5.validity.from_ == t6
+    assert mo_end_to_timeline_end(interval_5.validity.to) == t7
+    assert interval_5.extension_4 == "b"
+    assert interval_5.extension_5 == str(B_uuid)
+    assert interval_5.org_unit_uuid == Z_uuid
+
+    interval_6 = validities[5]
+    assert interval_6.validity.from_ == t7
+    assert mo_end_to_timeline_end(interval_6.validity.to) == t8
+    assert interval_6.extension_4 == "b"
+    assert interval_6.extension_5 == str(B_uuid)
+    assert interval_6.org_unit_uuid == V_uuid
+
+    interval_7 = validities[6]
+    assert interval_7.validity.from_ == t8
+    assert mo_end_to_timeline_end(interval_7.validity.to) == t9
+    assert interval_7.extension_4 == "c"
+    assert interval_7.extension_5 == str(C_uuid)
+    assert interval_7.org_unit_uuid == Q_uuid
+
+    interval_8 = validities[7]
+    assert interval_8.validity.from_ == t9
+    assert mo_end_to_timeline_end(interval_8.validity.to) == t10
+    assert interval_8.extension_4 == "c"
+    assert interval_8.extension_5 == str(C_uuid)
+    assert interval_8.org_unit_uuid == UNKNOWN_UNIT
+
+    assert len(validities) == 8
+
+
+@pytest.mark.integration_test
 async def test_get_engagement_timeline_eng_previously_in_closed_unit(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
