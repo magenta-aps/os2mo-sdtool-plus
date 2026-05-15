@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import logging
 import os
 import uuid
 from copy import deepcopy
@@ -34,6 +35,10 @@ from sdtoolplus.tree_diff_executor import TreeDiffExecutor
 
 _TESTING_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "mo.v7.graphql")
 _TESTING_MO_VALIDITY = Validity(from_date=datetime.now(), to_date=None)
+
+
+# httpcore spams the logs making them useless for debugging
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 
 @pytest.fixture(scope="session")
