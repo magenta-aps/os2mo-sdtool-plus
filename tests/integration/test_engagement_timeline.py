@@ -3181,7 +3181,7 @@ async def test_eng_timeline_recursive_related_units_complex_case(
                 <DepartmentUUIDIdentifier>{str(C_uuid)}</DepartmentUUIDIdentifier>
               </EmploymentDepartment>
               <Profession>
-                <ActivationDate>2008-01-01</ActivationDate>
+                <ActivationDate>2001-01-01</ActivationDate>
                 <DeactivationDate>2009-12-31</DeactivationDate>
                 <JobPositionIdentifier>1234</JobPositionIdentifier>
                 <EmploymentName>name4</EmploymentName>
