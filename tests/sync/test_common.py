@@ -1,10 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
-from uuid import uuid4
 
 import pytest
 
-from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.sync.common import prefix_eng_user_key
 from sdtoolplus.sync.common import split_engagement_user_key
 
@@ -21,22 +19,12 @@ def test_split_engagement_user_key(
     prefix_eng_user_key: bool,
     expected_inst_id: str,
     expected_emp_id: str,
-    sdtoolplus_settings: SDToolPlusSettings,
 ) -> None:
-    # Arrange
-    settings = sdtoolplus_settings.dict()
-    settings.update(
-        {
-            "prefix_engagement_user_keys": prefix_eng_user_key,
-            "unknown_unit": uuid4(),
-            "apply_ny_logic": False,
-            "mo_subtree_paths_for_root": {},
-        }
-    )
-
     # Act
     inst_id, emp_id = split_engagement_user_key(
-        SDToolPlusSettings.parse_obj(settings), user_key
+        prefix_engagement_user_keys=prefix_eng_user_key,
+        user_key=user_key,
+        inst_id=expected_inst_id,
     )
 
     # Assert
