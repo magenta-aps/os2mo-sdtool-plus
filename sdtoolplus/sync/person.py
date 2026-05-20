@@ -34,6 +34,7 @@ from sdtoolplus.models import EngagementPhoneNumbers
 from sdtoolplus.models import Person
 from sdtoolplus.sd.person import get_sd_person
 from sdtoolplus.sync.common import prefix_eng_user_key
+from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.types import CPRNumber
 
 logger = structlog.stdlib.get_logger()
@@ -136,6 +137,7 @@ async def terminate_leftover_addresses(
     address_type_uuid: UUID,
     address_uuids_processed: set[UUID],
     multiple_institutions: bool,
+    prefix_engagement_user_keys: bool,
 ) -> None:
     # Terminate any leftover engagement addresses
     now = datetime.now(tz=TIMEZONE)
@@ -174,7 +176,9 @@ async def terminate_leftover_addresses(
                 mo_address_uuids.add(mo_address.uuid)
                 continue
             user_key = first(objects_.validities).user_key
-            eng_inst_id, _ = user_key.split("-")
+            eng_inst_id, _ = split_engagement_user_key(
+                prefix_engagement_user_keys, user_key, institution_identifier
+            )
             if eng_inst_id == institution_identifier:
                 mo_address_uuids.add(mo_address.uuid)
 
@@ -269,6 +273,7 @@ async def _sync_engagement_phone_numbers(
         address_type_uuid=eng_phone1_type_uuid,
         address_uuids_processed=phone1_uuids_processed,
         multiple_institutions=multiple_institutions,
+        prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
     await terminate_leftover_addresses(
@@ -278,6 +283,7 @@ async def _sync_engagement_phone_numbers(
         address_type_uuid=eng_phone2_type_uuid,
         address_uuids_processed=phone2_uuids_processed,
         multiple_institutions=multiple_institutions,
+        prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
     logger.info("Done syncing engagement phone numbers")
@@ -348,6 +354,7 @@ async def _sync_engagement_emails(
         multiple_institutions=len(settings.mo_subtree_paths_for_root) > 1
         if settings.mo_subtree_paths_for_root is not None
         else False,
+        prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
     logger.info("Done syncing engagement emails")
