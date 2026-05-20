@@ -55,22 +55,12 @@ def test_prefix_eng_user_key(
     emp_id: str,
     prefix_engagement_user_key: bool,
     expected_user_key: str,
-    sdtoolplus_settings: SDToolPlusSettings,
 ) -> None:
-    # Arrange
-    settings = sdtoolplus_settings.dict()
-    settings.update(
-        {
-            "prefix_engagement_user_keys": prefix_engagement_user_key,
-            "unknown_unit": uuid4(),
-            "apply_ny_logic": False,
-            "mo_subtree_paths_for_root": {},
-        }
-    )
-
     # Act
     actual_user_key = prefix_eng_user_key(
-        settings=SDToolPlusSettings.parse_obj(settings), user_key=emp_id, inst_id="II"
+        prefix_engagement_user_keys=prefix_engagement_user_key,
+        user_key=emp_id,
+        inst_id="II",
     )
 
     # Assert

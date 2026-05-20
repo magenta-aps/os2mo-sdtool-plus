@@ -214,7 +214,7 @@ async def _sync_engagement_phone_numbers(
     phone2_uuids_processed = set()
     for eng_phone_number in engagement_phone_numbers:
         eng_user_key = prefix_eng_user_key(
-            settings=settings,
+            prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
             user_key=eng_phone_number.engagement.employment_identifier,
             inst_id=eng_phone_number.engagement.institution_identifier,
         )
@@ -306,7 +306,7 @@ async def _sync_engagement_emails(
     address_uuids_processed = set()
     for eng_email in engagement_emails:
         eng_user_key = prefix_eng_user_key(
-            settings=settings,
+            prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
             user_key=eng_email.engagement.employment_identifier,
             inst_id=eng_email.engagement.institution_identifier,
         )

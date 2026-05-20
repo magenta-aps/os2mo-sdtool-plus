@@ -70,7 +70,9 @@ async def _sync_eng_intervals(
     dry_run: bool,
 ) -> None:
     user_key = prefix_eng_user_key(
-        settings, employment_identifier, institution_identifier
+        settings.prefix_engagement_user_keys,
+        employment_identifier,
+        institution_identifier,
     )
 
     logger.info(
@@ -681,7 +683,9 @@ async def sync_engagement(
         gql_client=gql_client,
         person=person.uuid,
         user_key=prefix_eng_user_key(
-            settings, employment_identifier, institution_identifier
+            settings.prefix_engagement_user_keys,
+            employment_identifier,
+            institution_identifier,
         ),
     )
 
@@ -709,7 +713,9 @@ async def sync_engagement(
         gql_client=gql_client,
         person=person.uuid,
         user_key=prefix_eng_user_key(
-            settings, employment_identifier, institution_identifier
+            settings.prefix_engagement_user_keys,
+            employment_identifier,
+            institution_identifier,
         ),
     )
 
