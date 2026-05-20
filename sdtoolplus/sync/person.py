@@ -136,10 +136,9 @@ async def terminate_leftover_addresses(
     person_uuid: UUID,
     address_type_uuid: UUID,
     address_uuids_processed: set[UUID],
-    multiple_institutions: bool,
     prefix_engagement_user_keys: bool,
 ) -> None:
-    # Terminate any leftover engagement addresses
+    # Terminate any leftover engagement addresses within the given institution
     now = datetime.now(tz=TIMEZONE)
     mo_addresses = await gql_client.get_address_timeline(
         AddressFilter(
@@ -150,37 +149,34 @@ async def terminate_leftover_addresses(
         )
     )
 
-    # Only terminate addresses which belong to the relevant institution
-    mo_address_uuids = set(addr.uuid for addr in mo_addresses.objects)
-
     # Refactor this block according to the comments here:
     # https://git.magenta.dk/rammearkitektur/os2mo-sdtool-plus/-/merge_requests/320
-    if multiple_institutions:
-        mo_address_uuids = set()
-        for mo_address in mo_addresses.objects:
-            addr_eng_uuid = one(
-                set(validity.engagement_uuid for validity in mo_address.validities)
-            )
+    mo_address_uuids = set()
+    for mo_address in mo_addresses.objects:
+        addr_eng_uuid = one(
+            set(validity.engagement_uuid for validity in mo_address.validities)
+        )
 
-            if addr_eng_uuid is None:
-                # This happens for leftover buggy engagement addresses without an
-                # engagement UUID reference
-                await terminate_address(gql_client, mo_address.uuid, now)
-                continue
+        if addr_eng_uuid is None:
+            # This happens for leftover buggy engagement addresses without an
+            # engagement UUID reference
+            await terminate_address(gql_client, mo_address.uuid, now)
+            continue
 
-            mo_engagement = await gql_client.get_engagement_timeline(
-                EngagementFilter(uuids=[addr_eng_uuid])
-            )
-            objects_ = only(mo_engagement.objects)
-            if objects_ is None:
-                mo_address_uuids.add(mo_address.uuid)
-                continue
-            user_key = first(objects_.validities).user_key
-            eng_inst_id, _ = split_engagement_user_key(
-                prefix_engagement_user_keys, user_key, institution_identifier
-            )
-            if eng_inst_id == institution_identifier:
-                mo_address_uuids.add(mo_address.uuid)
+        mo_engagement = await gql_client.get_engagement_timeline(
+            EngagementFilter(uuids=[addr_eng_uuid])
+        )
+        objects_ = only(mo_engagement.objects)
+        if objects_ is None:
+            mo_address_uuids.add(mo_address.uuid)
+            continue
+        user_key = first(objects_.validities).user_key
+        eng_inst_id, _ = split_engagement_user_key(
+            prefix_engagement_user_keys, user_key, institution_identifier
+        )
+        # Only terminate addresses which belong to the relevant institution
+        if eng_inst_id == institution_identifier:
+            mo_address_uuids.add(mo_address.uuid)
 
     leftover_addresses = mo_address_uuids.difference(address_uuids_processed)
     for address_uuid in leftover_addresses:
@@ -261,18 +257,12 @@ async def _sync_engagement_phone_numbers(
         if phone2_uuid is not None:
             phone2_uuids_processed.add(phone2_uuid)
 
-    multiple_institutions = (
-        len(settings.mo_subtree_paths_for_root) > 1
-        if settings.mo_subtree_paths_for_root is not None
-        else False
-    )
     await terminate_leftover_addresses(
         gql_client=gql_client,
         person_uuid=person_uuid,
         institution_identifier=institution_identifier,
         address_type_uuid=eng_phone1_type_uuid,
         address_uuids_processed=phone1_uuids_processed,
-        multiple_institutions=multiple_institutions,
         prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
@@ -282,7 +272,6 @@ async def _sync_engagement_phone_numbers(
         institution_identifier=institution_identifier,
         address_type_uuid=eng_phone2_type_uuid,
         address_uuids_processed=phone2_uuids_processed,
-        multiple_institutions=multiple_institutions,
         prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
@@ -351,9 +340,6 @@ async def _sync_engagement_emails(
         institution_identifier=institution_identifier,
         address_type_uuid=eng_email_type_uuid,
         address_uuids_processed=address_uuids_processed,
-        multiple_institutions=len(settings.mo_subtree_paths_for_root) > 1
-        if settings.mo_subtree_paths_for_root is not None
-        else False,
         prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
     )
 
