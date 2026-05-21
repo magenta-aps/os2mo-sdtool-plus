@@ -117,7 +117,7 @@ services:
       - command: rabbitmqadmin declare queue --name person-events
 
   mo-init:
-    image: magentaaps/os2mo-init:2
+    image: magentaaps/os2mo-init:5.2.1
     environment:
       MO_URL: "http://mo:5000"
       CLIENT_ID: "dipex"
