@@ -284,6 +284,19 @@ async def engagement_ou_strategy_elevate_to_ny_level(
     return desired_eng_timeline
 
 
+async def engagement_ou_strategy_elevate_managers(
+    sd_client: SDClient,
+    gql_client: GraphQLClient,
+    sd_eng_timeline: EngagementTimeline,
+) -> EngagementTimeline:
+    """
+    Engagement OU strategy that elevates managers. Stub implementation.
+    """
+    logger.info("Applying OU elevate-managers strategy")
+    # TODO: implement manager elevation logic
+    return sd_eng_timeline
+
+
 async def engagement_ou_strategy_region(
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
@@ -407,6 +420,10 @@ async def engagement_ou_strategy(
         return sd_eng_timeline
 
     if settings.mode == Mode.MUNICIPALITY:
+        if settings.elevate_managers:
+            return await engagement_ou_strategy_elevate_managers(
+                sd_client, gql_client, sd_eng_timeline
+            )
         if settings.apply_ny_logic:
             return await engagement_ou_strategy_elevate_to_ny_level(
                 sd_client, sd_eng_timeline
