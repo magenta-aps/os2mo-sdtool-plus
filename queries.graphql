@@ -395,6 +395,41 @@ query GetEngagementTimeline(
   }
 }
 
+query GetManagerTimeline(
+  $filter: ManagerFilter!
+) {
+  managers(
+    filter: $filter
+  ) {
+    objects {
+      uuid
+      validities {
+        user_key
+        validity {
+          from
+          to
+        }
+        org_unit_uuid
+        employee_uuid
+      }
+    }
+  }
+}
+
+query GetManagerEngagement($uuid: UUID!) {
+  managers(
+    filter: { uuids: [$uuid], from_date: null, to_date: null }
+  ) {
+    objects {
+      validities {
+        engagement_response {
+          uuid
+        }
+      }
+    }
+  }
+}
+
 mutation UpdateEngagement($input: EngagementUpdateInput!) {
   engagement_update(input: $input) {
     uuid
@@ -634,5 +669,18 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
         }
       }
     }
+  }
+}
+
+
+mutation _Testing_CreateManager($input: ManagerCreateInput!) {
+  manager_create(input: $input) {
+    uuid
+  }
+}
+
+mutation _Testing_UpdateManager($input: ManagerUpdateInput!) {
+  manager_update(input: $input) {
+    uuid
   }
 }
