@@ -336,7 +336,9 @@ async def _mo_engagement(
         }
     )
     institution_identifier, employment_identifier = split_engagement_user_key(
-        settings, mo_engagement_user_key
+        prefix_engagement_user_keys=settings.prefix_engagement_user_keys,
+        user_key=mo_engagement_user_key,
+        inst_id=settings.sd_institution_identifier,
     )
     await sync_engagement(
         sd_client=sd_client,

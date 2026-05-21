@@ -1795,3 +1795,278 @@ async def test_person_addresses_terminate(
     )
 
     assert not r_engagement_email.objects
+
+
+@pytest.mark.integration_test
+@travel("2002-07-01")
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"AA": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"], "BB": ["12121212-1212-1212-1212-121212121212", "80000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "ENABLE_PERSON_ADDRESS_SYNC": "true",
+    }
+)
+async def test_person_ensure_addresses_from_other_institution_not_terminated(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Ensure that addresses from other institutions not terminated. In this test we have
+    two SD institutions: AA and BB. We assume that the institution for which we need to
+    sync is BB, i.e. address related to AA must not be terminated.
+
+    Addresses in MO:
+
+    Time  ---------------------t1----------------------------------------------------->
+
+    Phone1 (AA-12345) (keep)   |----------------------12345678-------------------------
+    Phone1 (BB-12345) (remove) |----------------------12345678-------------------------
+    Email (AA-12345) (keep)    |-----------------norris@hollywood.com------------------
+    Email (BB-12345) (remove)  |-----------------norris@hollywood.com------------------
+
+    No addresses in SD for BB!
+    """
+
+    # Arrange
+    t1 = datetime(2001, 1, 1, tzinfo=TIMEZONE)
+
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id_12345 = "12345"
+    now = datetime.combine(datetime.today(), time.min, tzinfo=TIMEZONE)
+
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    # Create person
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create engagements
+    eng_AA_12345_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=f"AA-{emp_id_12345}",
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name1",
+                extension_4="dep1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    eng_BB_12345_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=f"BB-{emp_id_12345}",
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name1",
+                extension_4="dep1",
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Get the address types
+    eng_email_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_email",
+    )
+
+    eng_phone1_address_type_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="employee_address_type",
+        class_user_key="engagement_telefon",
+    )
+
+    visibility_uuid = await get_class(
+        gql_client=graphql_client,
+        facet_user_key="visibility",
+        class_user_key="Public",
+    )
+
+    # Create phone 1 (AA)
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="12345678",
+            value="12345678",
+            address_type=eng_phone1_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng_AA_12345_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    # Create phone 1 (BB)
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="12345678",
+            value="12345678",
+            address_type=eng_phone1_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng_BB_12345_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    # Create engagement email (AA)
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="norris@hollywood.com",
+            value="norris@hollywood.com",
+            address_type=eng_email_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng_AA_12345_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    # Create engagement email (BB)
+    await graphql_client.create_address(
+        AddressCreateInput(
+            person=person_uuid,
+            user_key="norris@hollywood.com",
+            value="norris@hollywood.com",
+            address_type=eng_email_address_type_uuid,
+            visibility=visibility_uuid,
+            engagement=eng_BB_12345_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8" ?>
+        <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+            <RequestStructure>
+                <InstitutionIdentifier>BB</InstitutionIdentifier>
+                <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+                <EffectiveDate>2002-07-01</EffectiveDate>
+                <StatusActiveIndicator>true</StatusActiveIndicator>
+                <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                <ContactInformationIndicator>true</ContactInformationIndicator>
+                <PostalAddressIndicator>true</PostalAddressIndicator>
+            </RequestStructure>
+            <Person>
+                <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                <PersonGivenName>Chuck</PersonGivenName>
+                <PersonSurnameName>Norris</PersonSurnameName>
+                <Employment>
+                    <EmploymentIdentifier>{emp_id_12345}</EmploymentIdentifier>
+                </Employment>
+            </Person>
+        </GetPerson20111201>
+    """
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=BB&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=BB&EffectiveDate=01.07.2002&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=False&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person",
+        json={
+            "institution_identifier": "BB",
+            "cpr": cpr,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # Engagement phone 1 (AA)
+    r_engagement_phone1_AA = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_phone1_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_AA_12345_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    engagement_phone1_AA = one(r_engagement_phone1_AA.objects)
+
+    interval_1 = engagement_phone1_AA.validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == POSITIVE_INFINITY
+    assert interval_1.user_key == "12345678"
+    assert interval_1.value == "12345678"
+    assert interval_1.visibility_uuid == visibility_uuid
+    assert interval_1.address_type.uuid == eng_phone1_address_type_uuid
+
+    # Engagement phone 1 (BB)
+    r_engagement_phone1_BB = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_phone1_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_BB_12345_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    assert not r_engagement_phone1_BB.objects
+
+    # Engagement email (AA)
+    r_engagement_email_AA = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_AA_12345_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    engagement_email_AA = one(r_engagement_email_AA.objects)
+
+    interval_1 = engagement_email_AA.validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == POSITIVE_INFINITY
+    assert interval_1.user_key == "norris@hollywood.com"
+    assert interval_1.value == "norris@hollywood.com"
+    assert interval_1.visibility_uuid == visibility_uuid
+    assert interval_1.address_type.uuid == eng_email_address_type_uuid
+
+    # Engagement email (BB)
+    r_engagement_email_BB = await graphql_client.get_address_timeline(
+        input=AddressFilter(
+            employee=EmployeeFilter(uuids=[person_uuid]),
+            address_type=ClassFilter(uuids=[eng_email_address_type_uuid]),
+            engagement=EngagementFilter(uuids=[eng_BB_12345_uuid]),
+            from_date=now,
+            to_date=None,
+        )
+    )
+
+    assert not r_engagement_email_BB.objects

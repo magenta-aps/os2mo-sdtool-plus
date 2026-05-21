@@ -17,18 +17,18 @@ def _sd_inst_id_prefix(key: str, inst_id: str) -> str:
 
 
 def prefix_eng_user_key(
-    settings: SDToolPlusSettings, user_key: str, inst_id: str
+    prefix_engagement_user_keys: bool, user_key: str, inst_id: str
 ) -> str:
-    if not settings.prefix_engagement_user_keys:
+    if not prefix_engagement_user_keys:
         return user_key
     return _sd_inst_id_prefix(user_key, inst_id)
 
 
 def split_engagement_user_key(
-    settings: SDToolPlusSettings, user_key: str
+    prefix_engagement_user_keys: bool, user_key: str, inst_id: str
 ) -> tuple[str, str]:
-    if not settings.prefix_engagement_user_keys:
-        return settings.sd_institution_identifier, user_key
+    if not prefix_engagement_user_keys:
+        return inst_id, user_key
     institution_identifier, employment_id = user_key.split("-")
     return institution_identifier, employment_id
 
