@@ -276,6 +276,10 @@ class EngagementType(Interval[EngType]):
     pass
 
 
+class ManagerUnit(Interval[OrgUnitUUID]):
+    pass
+
+
 def combine_intervals(intervals: tuple[T, ...]) -> tuple[T, ...]:
     """
     Combine adjacent interval entities with same values.
@@ -455,6 +459,19 @@ class AssociationTimeline(BaseTimeline):
         try:
             self.association_active.entity_at(timestamp)
             self.association_unit.entity_at(timestamp)
+            return True
+        except NoValueError:
+            return False
+
+
+class ManagerTimeline(BaseTimeline):
+    manager_active: Timeline[Active] = Timeline[Active]()
+    manager_unit: Timeline[ManagerUnit] = Timeline[ManagerUnit]()
+
+    def has_required_mo_values(self, timestamp: datetime) -> bool:
+        try:
+            self.manager_active.entity_at(timestamp)
+            self.manager_unit.entity_at(timestamp)
             return True
         except NoValueError:
             return False
