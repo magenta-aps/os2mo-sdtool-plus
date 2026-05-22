@@ -116,7 +116,7 @@ def process_sd_amqp_message(
     @wraps(func)
     async def wrapper(message: AbstractIncomingMessage):
         log = logger.bind(message=message)
-        log.debug("Processing SD AMQP message", body=message.body)
+        log.info("Processing SD AMQP message", body=message.body)
         # Requeue message on exception so it can be retried
         async with message.process(requeue=True):
             try:
