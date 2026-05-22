@@ -2,6 +2,8 @@ from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
 from ._testing__create_engagement import TestingCreateEngagementEngagementCreate
+from ._testing__create_manager import TestingCreateManager
+from ._testing__create_manager import TestingCreateManagerManagerCreate
 from ._testing__create_org_unit import TestingCreateOrgUnit
 from ._testing__create_org_unit import TestingCreateOrgUnitOrgUnitCreate
 from ._testing__get_org_unit import TestingGetOrgUnit
@@ -20,6 +22,8 @@ from ._testing__get_org_unit_address import (
 from ._testing__get_org_unit_address import (
     TestingGetOrgUnitAddressOrgUnitsObjectsCurrentAddresses,
 )
+from ._testing__update_manager import TestingUpdateManager
+from ._testing__update_manager import TestingUpdateManagerManagerUpdate
 from ._testing__update_related_units import TestingUpdateRelatedUnits
 from ._testing__update_related_units import TestingUpdateRelatedUnitsRelatedUnitsUpdate
 from .address_types import AddressTypes
@@ -114,6 +118,18 @@ from .get_leave import GetLeaveLeaves
 from .get_leave import GetLeaveLeavesObjects
 from .get_leave import GetLeaveLeavesObjectsValidities
 from .get_leave import GetLeaveLeavesObjectsValiditiesValidity
+from .get_manager_engagement import GetManagerEngagement
+from .get_manager_engagement import GetManagerEngagementManagers
+from .get_manager_engagement import GetManagerEngagementManagersObjects
+from .get_manager_engagement import GetManagerEngagementManagersObjectsValidities
+from .get_manager_engagement import (
+    GetManagerEngagementManagersObjectsValiditiesEngagementResponse,
+)
+from .get_manager_timeline import GetManagerTimeline
+from .get_manager_timeline import GetManagerTimelineManagers
+from .get_manager_timeline import GetManagerTimelineManagersObjects
+from .get_manager_timeline import GetManagerTimelineManagersObjectsValidities
+from .get_manager_timeline import GetManagerTimelineManagersObjectsValiditiesValidity
 from .get_org_unit import GetOrgUnit
 from .get_org_unit import GetOrgUnitOrgUnits
 from .get_org_unit import GetOrgUnitOrgUnitsObjects
@@ -455,6 +471,16 @@ __all__ = [
     "GetLeaveLeavesObjects",
     "GetLeaveLeavesObjectsValidities",
     "GetLeaveLeavesObjectsValiditiesValidity",
+    "GetManagerEngagement",
+    "GetManagerEngagementManagers",
+    "GetManagerEngagementManagersObjects",
+    "GetManagerEngagementManagersObjectsValidities",
+    "GetManagerEngagementManagersObjectsValiditiesEngagementResponse",
+    "GetManagerTimeline",
+    "GetManagerTimelineManagers",
+    "GetManagerTimelineManagersObjects",
+    "GetManagerTimelineManagersObjectsValidities",
+    "GetManagerTimelineManagersObjectsValiditiesValidity",
     "GetOrgUnit",
     "GetOrgUnitChildren",
     "GetOrgUnitChildrenOrgUnits",
@@ -602,6 +628,8 @@ __all__ = [
     "TestingCreateEmployeeEmployeeCreate",
     "TestingCreateEngagement",
     "TestingCreateEngagementEngagementCreate",
+    "TestingCreateManager",
+    "TestingCreateManagerManagerCreate",
     "TestingCreateOrgUnit",
     "TestingCreateOrgUnitOrgUnitCreate",
     "TestingGetOrgUnit",
@@ -616,6 +644,8 @@ __all__ = [
     "TestingGetOrgUnitOrgUnitsObjectsCurrentOrgUnitLevel",
     "TestingGetOrgUnitOrgUnitsObjectsCurrentParent",
     "TestingGetOrgUnitOrgUnitsObjectsCurrentValidity",
+    "TestingUpdateManager",
+    "TestingUpdateManagerManagerUpdate",
     "TestingUpdateRelatedUnits",
     "TestingUpdateRelatedUnitsRelatedUnitsUpdate",
     "UpdateAddress",

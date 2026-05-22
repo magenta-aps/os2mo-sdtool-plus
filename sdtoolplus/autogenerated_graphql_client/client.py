@@ -9,12 +9,16 @@ from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
 from ._testing__create_engagement import TestingCreateEngagementEngagementCreate
+from ._testing__create_manager import TestingCreateManager
+from ._testing__create_manager import TestingCreateManagerManagerCreate
 from ._testing__create_org_unit import TestingCreateOrgUnit
 from ._testing__create_org_unit import TestingCreateOrgUnitOrgUnitCreate
 from ._testing__get_org_unit import TestingGetOrgUnit
 from ._testing__get_org_unit import TestingGetOrgUnitOrgUnits
 from ._testing__get_org_unit_address import TestingGetOrgUnitAddress
 from ._testing__get_org_unit_address import TestingGetOrgUnitAddressOrgUnits
+from ._testing__update_manager import TestingUpdateManager
+from ._testing__update_manager import TestingUpdateManagerManagerUpdate
 from ._testing__update_related_units import TestingUpdateRelatedUnits
 from ._testing__update_related_units import TestingUpdateRelatedUnitsRelatedUnitsUpdate
 from .address_types import AddressTypes
@@ -60,6 +64,10 @@ from .get_facet_uuid import GetFacetUuid
 from .get_facet_uuid import GetFacetUuidFacets
 from .get_leave import GetLeave
 from .get_leave import GetLeaveLeaves
+from .get_manager_engagement import GetManagerEngagement
+from .get_manager_engagement import GetManagerEngagementManagers
+from .get_manager_timeline import GetManagerTimeline
+from .get_manager_timeline import GetManagerTimelineManagers
 from .get_org_unit import GetOrgUnit
 from .get_org_unit import GetOrgUnitOrgUnits
 from .get_org_unit_children import GetOrgUnitChildren
@@ -106,6 +114,9 @@ from .input_types import LeaveCreateInput
 from .input_types import LeaveFilter
 from .input_types import LeaveTerminateInput
 from .input_types import LeaveUpdateInput
+from .input_types import ManagerCreateInput
+from .input_types import ManagerFilter
+from .input_types import ManagerUpdateInput
 from .input_types import OrganisationUnitCreateInput
 from .input_types import OrganisationUnitFilter
 from .input_types import OrganisationUnitTerminateInput
@@ -785,6 +796,51 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return GetEngagementTimeline.parse_obj(data).engagements
 
+    async def get_manager_timeline(
+        self, filter: ManagerFilter
+    ) -> GetManagerTimelineManagers:
+        query = gql("""
+            query GetManagerTimeline($filter: ManagerFilter!) {
+              managers(filter: $filter) {
+                objects {
+                  uuid
+                  validities {
+                    user_key
+                    validity {
+                      from
+                      to
+                    }
+                    org_unit_uuid
+                    employee_uuid
+                  }
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagerTimeline.parse_obj(data).managers
+
+    async def get_manager_engagement(self, uuid: UUID) -> GetManagerEngagementManagers:
+        query = gql("""
+            query GetManagerEngagement($uuid: UUID!) {
+              managers(filter: {uuids: [$uuid], from_date: null, to_date: null}) {
+                objects {
+                  validities {
+                    engagement_response {
+                      uuid
+                    }
+                  }
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"uuid": uuid}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagerEngagement.parse_obj(data).managers
+
     async def update_engagement(
         self, input: EngagementUpdateInput
     ) -> UpdateEngagementEngagementUpdate:
@@ -1202,3 +1258,33 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TestingGetOrgUnitAddress.parse_obj(data).org_units
+
+    async def _testing__create_manager(
+        self, input: ManagerCreateInput
+    ) -> TestingCreateManagerManagerCreate:
+        query = gql("""
+            mutation _Testing_CreateManager($input: ManagerCreateInput!) {
+              manager_create(input: $input) {
+                uuid
+              }
+            }
+            """)
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TestingCreateManager.parse_obj(data).manager_create
+
+    async def _testing__update_manager(
+        self, input: ManagerUpdateInput
+    ) -> TestingUpdateManagerManagerUpdate:
+        query = gql("""
+            mutation _Testing_UpdateManager($input: ManagerUpdateInput!) {
+              manager_update(input: $input) {
+                uuid
+              }
+            }
+            """)
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TestingUpdateManager.parse_obj(data).manager_update
