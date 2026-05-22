@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
 from datetime import date
+from datetime import datetime
 from itertools import pairwise
 from typing import cast
 from uuid import UUID
@@ -33,13 +34,16 @@ from sdtoolplus.mo.timelines.engagement import terminate_engagement
 from sdtoolplus.mo.timelines.engagement import update_engagement
 from sdtoolplus.mo.timelines.leave import get_leave_timeline as get_mo_leave_timeline
 from sdtoolplus.mo.timelines.leave import terminate_leave_before_engagement_termination
+from sdtoolplus.mo.timelines.manager import get_manager_timeline
 from sdtoolplus.mo.timelines.org_unit import get_ou_timeline
 from sdtoolplus.mo.timelines.related_unit import related_units
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementTimeline
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import LeaveTimeline
+from sdtoolplus.models import ManagerTimeline
 from sdtoolplus.models import PersonGraphQLEvent
 from sdtoolplus.models import Timeline
 from sdtoolplus.models import UnitParent
@@ -285,16 +289,112 @@ async def engagement_ou_strategy_elevate_to_ny_level(
 
 
 async def engagement_ou_strategy_elevate_managers(
-    sd_client: SDClient,
     gql_client: GraphQLClient,
+    person: UUID,
+    user_key: str,
     sd_eng_timeline: EngagementTimeline,
 ) -> EngagementTimeline:
     """
-    Engagement OU strategy that elevates managers. Stub implementation.
+    Engagement OU strategy that elevates the engagement to the unit being managed
+    in the intervals where the person is also a manager for that engagement. In
+    intervals without a manager record, the original SD engagement unit is kept.
     """
     logger.info("Applying OU elevate-managers strategy")
-    # TODO: implement manager elevation logic
-    return sd_eng_timeline
+
+    mo_eng = await gql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person, user_key=user_key, from_date=None, to_date=None
+        )
+    )
+    mo_eng_obj = only(mo_eng.objects)
+    if mo_eng_obj is None:
+        # The engagement does not exist in MO yet, so there cannot be any
+        # manager referencing it.
+        return sd_eng_timeline
+
+    mo_manager_timeline = await get_manager_timeline(
+        gql_client=gql_client, person=person, engagement=mo_eng_obj.uuid
+    )
+    if mo_manager_timeline == ManagerTimeline():
+        return sd_eng_timeline
+
+    manager_unit_uuids = set(
+        cast(OrgUnitUUID, interval.value)
+        for interval in mo_manager_timeline.manager_unit.intervals
+    )
+    manager_unit_timelines = dict(
+        zip(
+            manager_unit_uuids,
+            await asyncio.gather(
+                *(
+                    get_ou_timeline(gql_client=gql_client, unit_uuid=unit_uuid)
+                    for unit_uuid in manager_unit_uuids
+                )
+            ),
+        )
+    )
+
+    manager_unit_id_endpoints: set[datetime] = set().union(
+        *(
+            timeline.unit_id.get_interval_endpoints()
+            for timeline in manager_unit_timelines.values()
+        )
+    )
+    endpoints = sorted(
+        sd_eng_timeline.eng_unit.get_interval_endpoints()
+        .union(sd_eng_timeline.eng_active.get_interval_endpoints())
+        .union(mo_manager_timeline.manager_unit.get_interval_endpoints())
+        .union(manager_unit_id_endpoints)
+    )
+
+    unit_intervals = []
+    unit_id_intervals = []
+    for start, end in pairwise(endpoints):
+        # Skip interval if the engagement is not active in the period
+        try:
+            sd_eng_timeline.eng_active.entity_at(start)
+        except NoValueError:
+            continue
+
+        unit_id = cast(str, sd_eng_timeline.eng_unit_id.entity_at(start).value)
+        try:
+            # Use manager unit if available
+            unit_uuid = cast(
+                OrgUnitUUID, mo_manager_timeline.manager_unit.entity_at(start).value
+            )
+        except NoValueError:
+            # Use normal SD unit if manager unit not available
+            unit_uuid = cast(
+                OrgUnitUUID, sd_eng_timeline.eng_unit.entity_at(start).value
+            )
+        else:
+            # Use manager unit id if available
+            unit_id = cast(
+                str, manager_unit_timelines[unit_uuid].unit_id.entity_at(start).value
+            )
+        unit_intervals.append(EngagementUnit(start=start, end=end, value=unit_uuid))
+        unit_id_intervals.append(EngagementUnitId(start=start, end=end, value=unit_id))
+
+    desired_eng_timeline = EngagementTimeline(
+        eng_active=sd_eng_timeline.eng_active,
+        eng_key=sd_eng_timeline.eng_key,
+        eng_name=sd_eng_timeline.eng_name,
+        eng_unit=Timeline[EngagementUnit](
+            intervals=combine_intervals(tuple(unit_intervals))
+        ),
+        eng_sd_unit=sd_eng_timeline.eng_sd_unit,
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=combine_intervals(tuple(unit_id_intervals))
+        ),
+        eng_type=sd_eng_timeline.eng_type,
+    )
+
+    logger.info(
+        "Desired engagement timeline", desired_eng_timeline=desired_eng_timeline.dict()
+    )
+    logger.info("Done applying OU elevate-managers strategy")
+
+    return desired_eng_timeline
 
 
 async def engagement_ou_strategy_region(
@@ -409,6 +509,8 @@ async def engagement_ou_strategy(
     sd_client: SDClient,
     gql_client: GraphQLClient,
     settings: SDToolPlusSettings,
+    person: UUID,
+    user_key: str,
     sd_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
 ) -> EngagementTimeline:
@@ -422,7 +524,10 @@ async def engagement_ou_strategy(
     if settings.mode == Mode.MUNICIPALITY:
         if settings.elevate_managers:
             return await engagement_ou_strategy_elevate_managers(
-                sd_client, gql_client, sd_eng_timeline
+                gql_client=gql_client,
+                person=person,
+                user_key=user_key,
+                sd_eng_timeline=sd_eng_timeline,
             )
         if settings.apply_ny_logic:
             return await engagement_ou_strategy_elevate_to_ny_level(
@@ -571,7 +676,11 @@ async def fix_too_narrow_ou_validities(
     cpr,
     employment_identifier,
     settings,
-    dry_run=False: (institution_identifier, cpr, employment_identifier)
+    dry_run=False: (
+        institution_identifier,
+        cpr,
+        employment_identifier,
+    )
 )
 async def sync_engagement(
     sd_client: SDClient,
@@ -696,20 +805,24 @@ async def sync_engagement(
         )
         raise PersonNotFoundError()
 
+    user_key = prefix_eng_user_key(
+        settings.prefix_engagement_user_keys,
+        employment_identifier,
+        institution_identifier,
+    )
+
     mo_eng_timeline = await get_engagement_timeline(
         gql_client=gql_client,
         person=person.uuid,
-        user_key=prefix_eng_user_key(
-            settings.prefix_engagement_user_keys,
-            employment_identifier,
-            institution_identifier,
-        ),
+        user_key=user_key,
     )
 
     desired_eng_timeline = await engagement_ou_strategy(
         sd_client=sd_client,
         gql_client=gql_client,
         settings=settings,
+        person=person.uuid,
+        user_key=user_key,
         sd_eng_timeline=sd_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
     )
