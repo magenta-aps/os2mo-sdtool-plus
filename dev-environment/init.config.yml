@@ -132,3 +132,15 @@ facets:
     Orlov:
       title: "Orlov"
       scope: "TEXT"
+  manager_level:
+    afdelingsleder:
+      title: "Afdelingsleder"
+      scope: "TEXT"
+  manager_type:
+    leder:
+      title: "Leder"
+      scope: "TEXT"
+  responsibility:
+    personale:
+      title: "Personale"
+      scope: "TEXT"
