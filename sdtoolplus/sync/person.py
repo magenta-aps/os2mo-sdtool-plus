@@ -75,7 +75,15 @@ async def _sync_address(
     address_filter = AddressFilter(**address_filter_kwargs)
 
     mo_addresses = await gql_client.get_address_timeline(address_filter)
-    mo_address = first(mo_addresses.objects, default=None)
+    # MO does not guarantee an ordering of the returned addresses. When more
+    # than one address of the same type/engagement exists, prefer one whose
+    # current value matches the SD value, so we keep that one and terminate
+    # the rest instead of rewriting the validity of the kept address.
+    mo_address_objects = sorted(
+        mo_addresses.objects,
+        key=lambda obj: 0 if first(obj.validities).value == sd_address else 1,
+    )
+    mo_address = first(mo_address_objects, default=None)
 
     logger.info("MO addresses", mo_addresses=mo_addresses.dict())
 
@@ -84,7 +92,7 @@ async def _sync_address(
 
     # There can only be one of each address type. If there is more than one,
     # terminate all but the first
-    for term_address in mo_addresses.objects[1:]:
+    for term_address in mo_address_objects[1:]:
         logger.info("Terminate redundant addresses")
         await terminate_address(gql_client, term_address.uuid, now)
 
