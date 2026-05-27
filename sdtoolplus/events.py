@@ -278,16 +278,12 @@ async def _sd_employment(
     )
 
 
-@router.post("/events/mo/engagement", dependencies=[Depends(sd_api_open)])
-async def _mo_engagement(
-    settings: depends.Settings,
-    sd_client: depends.SDClient,
-    gql_client: depends.GraphQLClient,
-    event: Event[UUID],
+async def _sync_engagement_by_uuid(
+    settings,
+    sd_client,
+    gql_client: GraphQLClient,
+    mo_engagement_uuid: UUID,
 ) -> None:
-    mo_engagement_uuid = event.subject
-    logger.info("Received MO engagement event", uuid=str(mo_engagement_uuid))
-
     mo_engagements = await gql_client.get_engagements(
         input=EngagementFilter(
             from_date=None,
@@ -347,6 +343,23 @@ async def _mo_engagement(
         cpr=mo_person_cpr,
         employment_identifier=employment_identifier,
         settings=settings,
+    )
+
+
+@router.post("/events/mo/engagement", dependencies=[Depends(sd_api_open)])
+async def _mo_engagement(
+    settings: depends.Settings,
+    sd_client: depends.SDClient,
+    gql_client: depends.GraphQLClient,
+    event: Event[UUID],
+) -> None:
+    mo_engagement_uuid = event.subject
+    logger.info("Received MO engagement event", uuid=str(mo_engagement_uuid))
+    await _sync_engagement_by_uuid(
+        settings=settings,
+        sd_client=sd_client,
+        gql_client=gql_client,
+        mo_engagement_uuid=mo_engagement_uuid,
     )
 
 
