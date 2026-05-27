@@ -4,6 +4,7 @@ import asyncio
 from datetime import date
 from datetime import datetime
 from itertools import pairwise
+from typing import assert_never
 from typing import cast
 from uuid import UUID
 
@@ -521,25 +522,29 @@ async def engagement_ou_strategy(
     if sd_eng_timeline == EngagementTimeline():
         return sd_eng_timeline
 
-    if settings.mode == Mode.MUNICIPALITY:
-        if settings.elevate_managers:
-            return await engagement_ou_strategy_elevate_managers(
+    match settings.mode:
+        case Mode.MUNICIPALITY:
+            if settings.elevate_managers:
+                return await engagement_ou_strategy_elevate_managers(
+                    gql_client=gql_client,
+                    person=person,
+                    user_key=user_key,
+                    sd_eng_timeline=sd_eng_timeline,
+                )
+            if settings.apply_ny_logic:
+                return await engagement_ou_strategy_elevate_to_ny_level(
+                    sd_client, sd_eng_timeline
+                )
+            return sd_eng_timeline
+        case Mode.REGION:
+            return await engagement_ou_strategy_region(
                 gql_client=gql_client,
-                person=person,
-                user_key=user_key,
+                settings=settings,
                 sd_eng_timeline=sd_eng_timeline,
+                mo_eng_timeline=mo_eng_timeline,
             )
-        if settings.apply_ny_logic:
-            return await engagement_ou_strategy_elevate_to_ny_level(
-                sd_client, sd_eng_timeline
-            )
-        return sd_eng_timeline
-    return await engagement_ou_strategy_region(
-        gql_client=gql_client,
-        settings=settings,
-        sd_eng_timeline=sd_eng_timeline,
-        mo_eng_timeline=mo_eng_timeline,
-    )
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 async def fix_missing_job_functions(
