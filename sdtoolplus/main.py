@@ -137,6 +137,16 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     parallelism=3,
                 )
             )
+        if settings.elevate_managers:
+            listeners.append(
+                Listener(
+                    namespace="mo",
+                    user_key="manager",
+                    routing_key="manager",
+                    path="/events/mo/manager",
+                    parallelism=3,
+                )
+            )
 
     return listeners
 
