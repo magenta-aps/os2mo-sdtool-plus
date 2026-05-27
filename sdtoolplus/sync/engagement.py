@@ -319,16 +319,15 @@ async def engagement_ou_strategy_elevate_managers(
     if mo_manager_timeline == ManagerTimeline():
         return sd_eng_timeline
 
-    manager_unit_uuids = set(
-        cast(OrgUnitUUID, interval.value)
-        for interval in mo_manager_timeline.manager_unit.intervals
-    )
+    manager_unit_uuids = {
+        interval.value for interval in mo_manager_timeline.manager_unit.intervals
+    }
     manager_unit_timelines = dict(
         zip(
             manager_unit_uuids,
             await asyncio.gather(
                 *(
-                    get_ou_timeline(gql_client=gql_client, unit_uuid=unit_uuid)
+                    get_ou_timeline(gql_client=gql_client, unit_uuid=unit_uuid)  # type: ignore  # mypy cannot handle generic types properly
                     for unit_uuid in manager_unit_uuids
                 )
             ),
@@ -357,22 +356,16 @@ async def engagement_ou_strategy_elevate_managers(
         except NoValueError:
             continue
 
-        unit_id = cast(str, sd_eng_timeline.eng_unit_id.entity_at(start).value)
+        unit_id = sd_eng_timeline.eng_unit_id.entity_at(start).value
         try:
             # Use manager unit if available
-            unit_uuid = cast(
-                OrgUnitUUID, mo_manager_timeline.manager_unit.entity_at(start).value
-            )
+            unit_uuid = mo_manager_timeline.manager_unit.entity_at(start).value
         except NoValueError:
             # Use normal SD unit if manager unit not available
-            unit_uuid = cast(
-                OrgUnitUUID, sd_eng_timeline.eng_unit.entity_at(start).value
-            )
+            unit_uuid = sd_eng_timeline.eng_unit.entity_at(start).value
         else:
             # Use manager unit id if available
-            unit_id = cast(
-                str, manager_unit_timelines[unit_uuid].unit_id.entity_at(start).value
-            )
+            unit_id = manager_unit_timelines[unit_uuid].unit_id.entity_at(start).value
         unit_intervals.append(EngagementUnit(start=start, end=end, value=unit_uuid))
         unit_id_intervals.append(EngagementUnitId(start=start, end=end, value=unit_id))
 
