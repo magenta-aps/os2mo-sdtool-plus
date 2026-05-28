@@ -52,6 +52,8 @@ class SDToolPlusSettings(BaseSettings):
     apply_ny_logic: bool = True
     httpx_timeout_ny_logic: PositiveInt = 120
 
+    elevate_managers: bool = False
+
     # Compare the SD tree to the MO tree found at the path. The path must be a
     # list of UUIDs
     mo_subtree_path_for_root: list[OrgUnitUUID] = []

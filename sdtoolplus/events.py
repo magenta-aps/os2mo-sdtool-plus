@@ -278,16 +278,12 @@ async def _sd_employment(
     )
 
 
-@router.post("/events/mo/engagement", dependencies=[Depends(sd_api_open)])
-async def _mo_engagement(
-    settings: depends.Settings,
-    sd_client: depends.SDClient,
-    gql_client: depends.GraphQLClient,
-    event: Event[UUID],
+async def _sync_engagement_by_uuid(
+    settings,
+    sd_client,
+    gql_client: GraphQLClient,
+    mo_engagement_uuid: UUID,
 ) -> None:
-    mo_engagement_uuid = event.subject
-    logger.info("Received MO engagement event", uuid=str(mo_engagement_uuid))
-
     mo_engagements = await gql_client.get_engagements(
         input=EngagementFilter(
             from_date=None,
@@ -348,6 +344,60 @@ async def _mo_engagement(
         employment_identifier=employment_identifier,
         settings=settings,
     )
+
+
+@router.post("/events/mo/engagement", dependencies=[Depends(sd_api_open)])
+async def _mo_engagement(
+    settings: depends.Settings,
+    sd_client: depends.SDClient,
+    gql_client: depends.GraphQLClient,
+    event: Event[UUID],
+) -> None:
+    mo_engagement_uuid = event.subject
+    logger.info("Received MO engagement event", uuid=str(mo_engagement_uuid))
+    await _sync_engagement_by_uuid(
+        settings=settings,
+        sd_client=sd_client,
+        gql_client=gql_client,
+        mo_engagement_uuid=mo_engagement_uuid,
+    )
+
+
+@router.post("/events/mo/manager", dependencies=[Depends(sd_api_open)])
+async def _mo_manager(
+    settings: depends.Settings,
+    sd_client: depends.SDClient,
+    gql_client: depends.GraphQLClient,
+    event: Event[UUID],
+) -> None:
+    mo_manager_uuid = event.subject
+    logger.info("Received MO manager event", uuid=str(mo_manager_uuid))
+
+    mo_manager = await gql_client.get_manager_engagement(uuid=mo_manager_uuid)
+    manager = only(mo_manager.objects)
+    if manager is None:
+        logger.info("Manager not found", mo_manager_uuid=str(mo_manager_uuid))
+        return
+
+    engagement_uuids = set(
+        validity.engagement_response.uuid
+        for validity in manager.validities
+        if validity.engagement_response is not None
+    )
+    if not engagement_uuids:
+        logger.info(
+            "Manager has no engagement. Skipping",
+            mo_manager_uuid=str(mo_manager_uuid),
+        )
+        return
+
+    for engagement_uuid in engagement_uuids:
+        await _sync_engagement_by_uuid(
+            settings=settings,
+            sd_client=sd_client,
+            gql_client=gql_client,
+            mo_engagement_uuid=engagement_uuid,
+        )
 
 
 @router.post("/events/sd/org")
