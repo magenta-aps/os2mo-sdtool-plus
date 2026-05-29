@@ -409,9 +409,23 @@ query GetManagerTimeline(
           from
           to
         }
+        engagement_response {
+          uuid
+        }
         org_unit_uuid
         employee_uuid
+        manager_type_uuid
+        manager_level_uuid
+        responsibility_uuids
       }
+    }
+  }
+}
+
+query GetManagers($filter: ManagerFilter!) {
+  managers(filter: $filter) {
+    objects {
+      uuid
     }
   }
 }
