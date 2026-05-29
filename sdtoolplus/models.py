@@ -276,7 +276,31 @@ class EngagementType(Interval[EngType]):
     pass
 
 
+class ManagerUserKey(Interval[str]):
+    pass
+
+
 class ManagerUnit(Interval[OrgUnitUUID]):
+    pass
+
+
+class ManagerPerson(Interval[Optional[UUID]]):
+    pass
+
+
+class ManagerEngagement(Interval[Optional[UUID]]):
+    pass
+
+
+class ManagerType(Interval[Optional[UUID]]):
+    pass
+
+
+class ManagerLevel(Interval[Optional[UUID]]):
+    pass
+
+
+class ManagerResponsibility(Interval[Optional[list[UUID]]]):
     pass
 
 
@@ -466,12 +490,26 @@ class AssociationTimeline(BaseTimeline):
 
 class ManagerTimeline(BaseTimeline):
     manager_active: Timeline[Active] = Timeline[Active]()
+    manager_user_key: Timeline[ManagerUserKey] = Timeline[ManagerUserKey]()
     manager_unit: Timeline[ManagerUnit] = Timeline[ManagerUnit]()
+    manager_person: Timeline[ManagerPerson] = Timeline[ManagerPerson]()
+    manager_engagement: Timeline[ManagerEngagement] = Timeline[ManagerEngagement]()
+    manager_type: Timeline[ManagerType] = Timeline[ManagerType]()
+    manager_level: Timeline[ManagerLevel] = Timeline[ManagerLevel]()
+    manager_responsibilities: Timeline[ManagerResponsibility] = Timeline[
+        ManagerResponsibility
+    ]()
 
     def has_required_mo_values(self, timestamp: datetime) -> bool:
         try:
             self.manager_active.entity_at(timestamp)
+            self.manager_user_key.entity_at(timestamp)
             self.manager_unit.entity_at(timestamp)
+            self.manager_person.entity_at(timestamp)
+            self.manager_engagement.entity_at(timestamp)
+            self.manager_type.entity_at(timestamp)
+            self.manager_level.entity_at(timestamp)
+            self.manager_responsibilities.entity_at(timestamp)
             return True
         except NoValueError:
             return False
