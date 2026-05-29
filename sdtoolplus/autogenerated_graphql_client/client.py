@@ -68,6 +68,8 @@ from .get_manager_engagement import GetManagerEngagement
 from .get_manager_engagement import GetManagerEngagementManagers
 from .get_manager_timeline import GetManagerTimeline
 from .get_manager_timeline import GetManagerTimelineManagers
+from .get_managers import GetManagers
+from .get_managers import GetManagersManagers
 from .get_org_unit import GetOrgUnit
 from .get_org_unit import GetOrgUnitOrgUnits
 from .get_org_unit_children import GetOrgUnitChildren
@@ -810,8 +812,14 @@ class GraphQLClient(AsyncBaseClient):
                       from
                       to
                     }
+                    engagement_response {
+                      uuid
+                    }
                     org_unit_uuid
                     employee_uuid
+                    manager_type_uuid
+                    manager_level_uuid
+                    responsibility_uuids
                   }
                 }
               }
@@ -821,6 +829,21 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetManagerTimeline.parse_obj(data).managers
+
+    async def get_managers(self, filter: ManagerFilter) -> GetManagersManagers:
+        query = gql("""
+            query GetManagers($filter: ManagerFilter!) {
+              managers(filter: $filter) {
+                objects {
+                  uuid
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"filter": filter}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetManagers.parse_obj(data).managers
 
     async def get_manager_engagement(self, uuid: UUID) -> GetManagerEngagementManagers:
         query = gql("""

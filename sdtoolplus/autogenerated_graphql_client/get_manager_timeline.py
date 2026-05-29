@@ -24,8 +24,14 @@ class GetManagerTimelineManagersObjects(BaseModel):
 class GetManagerTimelineManagersObjectsValidities(BaseModel):
     user_key: str
     validity: "GetManagerTimelineManagersObjectsValiditiesValidity"
+    engagement_response: Optional[
+        "GetManagerTimelineManagersObjectsValiditiesEngagementResponse"
+    ]
     org_unit_uuid: UUID
     employee_uuid: Optional[UUID]
+    manager_type_uuid: Optional[UUID]
+    manager_level_uuid: Optional[UUID]
+    responsibility_uuids: Optional[List[UUID]]
 
 
 class GetManagerTimelineManagersObjectsValiditiesValidity(BaseModel):
@@ -33,8 +39,13 @@ class GetManagerTimelineManagersObjectsValiditiesValidity(BaseModel):
     to: Optional[datetime]
 
 
+class GetManagerTimelineManagersObjectsValiditiesEngagementResponse(BaseModel):
+    uuid: UUID
+
+
 GetManagerTimeline.update_forward_refs()
 GetManagerTimelineManagers.update_forward_refs()
 GetManagerTimelineManagersObjects.update_forward_refs()
 GetManagerTimelineManagersObjectsValidities.update_forward_refs()
 GetManagerTimelineManagersObjectsValiditiesValidity.update_forward_refs()
+GetManagerTimelineManagersObjectsValiditiesEngagementResponse.update_forward_refs()
