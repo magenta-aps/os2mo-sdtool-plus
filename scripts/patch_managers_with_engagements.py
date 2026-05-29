@@ -1,8 +1,10 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import csv
 from datetime import datetime
 from itertools import pairwise
+from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
@@ -35,6 +37,14 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.models import combine_intervals
 
 logger = structlog.stdlib.get_logger()
+
+CSV_HEADER = (
+    "manager_uuid",
+    "person_uuid",
+    "start",
+    "end",
+    "engagement_uuid",
+)
 
 
 class PersonEngagement(Interval[Optional[UUID]]):
@@ -236,7 +246,19 @@ async def update_manager(
     )
 
 
-async def run(write_to_mo: bool, man_uuid: UUID | None) -> None:
+def write_csv(path: Path, rows: list[tuple[str, ...]]) -> None:
+    with open(path, "w", newline="") as fp:
+        writer = csv.writer(fp)
+        writer.writerow(CSV_HEADER)
+        writer.writerows(rows)
+
+
+async def run(
+    write_to_mo: bool,
+    man_uuid: UUID | None,
+    updated_csv: Path,
+    not_updated_csv: Path,
+) -> None:
     gql_client = get_gql_client()
 
     managers = await gql_client.get_managers(
@@ -331,13 +353,43 @@ async def run(write_to_mo: bool, man_uuid: UUID | None) -> None:
                         )
                     )
 
+    write_csv(updated_csv, updated)
+    write_csv(not_updated_csv, not_updated)
+
+    logger.info(
+        "Wrote CSV files",
+        updated_csv=str(updated_csv),
+        updated_rows=len(updated),
+        not_updated_csv=str(not_updated_csv),
+        not_updated_rows=len(not_updated),
+    )
+
 
 @click.command()
 @click.option("--write-to-mo", type=click.BOOL, default=False)
 @click.option("--manager", "man_uuid", type=click.UUID)
-def main(write_to_mo: bool, man_uuid: UUID | None) -> None:
+@click.option(
+    "--updated-csv",
+    type=click.Path(dir_okay=False, writable=True, path_type=Path),
+    default=Path("/tmp/updated_managers.csv"),
+    show_default=True,
+    help="CSV output file for manager intervals that were updated",
+)
+@click.option(
+    "--not-updated-csv",
+    type=click.Path(dir_okay=False, writable=True, path_type=Path),
+    default=Path("/tmp/not_updated_managers.csv"),
+    show_default=True,
+    help="CSV output file for manager intervals that could not be updated",
+)
+def main(
+    write_to_mo: bool,
+    man_uuid: UUID | None,
+    updated_csv: Path,
+    not_updated_csv: Path,
+) -> None:
     logger.info("Script started")
-    asyncio.run(run(write_to_mo, man_uuid))
+    asyncio.run(run(write_to_mo, man_uuid, updated_csv, not_updated_csv))
     logger.info("Script finished!")
 
 
