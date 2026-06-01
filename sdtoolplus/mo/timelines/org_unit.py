@@ -541,6 +541,50 @@ async def update_ou(
     logger.info("OU updated", uuid=str(org_unit))
 
 
+async def terminate_ou_addresses(
+    gql_client: GraphQLClient,
+    org_unit: OrgUnitUUID,
+    mo_validity: RAValidityInput,
+    dry_run: bool = False,
+) -> None:
+    """Terminate every address on the org unit within the given MO validity."""
+    mo_unit = await gql_client.get_org_unit_timeline(
+        unit_uuid=org_unit,
+        from_date=mo_validity.from_,
+        to_date=mo_validity.to,
+    )
+
+    if mo_validity.to is not None:
+        addr_term_payloads = [
+            AddressTerminateInput(
+                uuid=address.uuid,
+                from_=mo_validity.from_,
+                to=mo_validity.to,
+            )
+            for validity in one(mo_unit.objects).validities
+            for address in validity.addresses
+        ]
+    else:
+        addr_term_payloads = [
+            AddressTerminateInput(
+                uuid=address.uuid,
+                # Converting from "from" to "to" due to the wierd way terminations in MO
+                # work
+                to=mo_validity.from_ - timedelta(days=1),
+            )
+            for validity in one(mo_unit.objects).validities
+            for address in validity.addresses
+        ]
+
+    logger.info(
+        "OU address termination payloads",
+        payloads=[payload.dict() for payload in addr_term_payloads],
+    )
+    if not dry_run:
+        for addr_term_payload in addr_term_payloads:
+            await gql_client.terminate_address(addr_term_payload)
+
+
 async def terminate_ou(
     gql_client: GraphQLClient,
     org_unit: OrgUnitUUID,
@@ -560,53 +604,30 @@ async def terminate_ou(
 
     mo_validity = timeline_interval_to_mo_validity(start, end)
 
-    # Temporary work-around: get addresses to terminate if any
-    mo_unit = await gql_client.get_org_unit_timeline(
-        unit_uuid=org_unit,
-        from_date=mo_validity.from_,
-        to_date=mo_validity.to,
+    # Temporary work-around: terminate the unit's addresses before terminating
+    # the unit itself.
+    await terminate_ou_addresses(
+        gql_client=gql_client,
+        org_unit=org_unit,
+        mo_validity=mo_validity,
+        dry_run=dry_run,
     )
 
     if mo_validity.to is not None:
-        addr_term_payloads = [
-            AddressTerminateInput(
-                uuid=address.uuid,
-                from_=mo_validity.from_,
-                to=mo_validity.to,
-            )
-            for validity in one(mo_unit.objects).validities
-            for address in validity.addresses
-        ]
         payload = OrganisationUnitTerminateInput(
             uuid=org_unit,
             from_=mo_validity.from_,
             to=mo_validity.to,
         )
     else:
-        addr_term_payloads = [
-            AddressTerminateInput(
-                uuid=address.uuid,
-                # Converting from "from" to "to" due to the wierd way terminations in MO
-                # work
-                to=mo_validity.from_ - timedelta(days=1),
-            )
-            for validity in one(mo_unit.objects).validities
-            for address in validity.addresses
-        ]
         payload = OrganisationUnitTerminateInput(
             uuid=org_unit,
             # Converting from "from" to "to" due to the wierd way terminations in MO
             # work
             to=mo_validity.from_ - timedelta(days=1),
         )
-    logger.info(
-        "OU address termination payloads",
-        payloads=[payload.dict() for payload in addr_term_payloads],
-    )
     logger.info("OU terminate payload", payload=payload.dict())
     if not dry_run:
-        for addr_term_payload in addr_term_payloads:
-            await gql_client.terminate_address(addr_term_payload)
         try:
             await gql_client.terminate_org_unit(payload)
         except GraphQLClientGraphQLMultiError as error:
