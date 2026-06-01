@@ -599,7 +599,7 @@ mutation SendEvent($input: EventSendInput!) {
   event_send(input: $input)
 }
 
-mutation _Testing_UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
+mutation UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
   related_units_update(input: $input) {
     uuid
   }
