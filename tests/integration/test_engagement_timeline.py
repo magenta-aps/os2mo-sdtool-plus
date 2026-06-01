@@ -1623,7 +1623,7 @@ async def test_eng_timeline_related_units(
     )
 
     # Create org unit relations
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep1_uuid,
             destination=[A_uuid],
@@ -1631,7 +1631,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep2_uuid,
             destination=[B_uuid],
@@ -1639,7 +1639,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep3_uuid,
             destination=[C_uuid],
@@ -1647,7 +1647,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep3_uuid,
             destination=[C_uuid, D_uuid],
@@ -1655,7 +1655,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep3_uuid,
             destination=[D_uuid, E_uuid],
@@ -1663,7 +1663,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep3_uuid,
             destination=[E_uuid],
@@ -1671,7 +1671,7 @@ async def test_eng_timeline_related_units(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep3_uuid,
             destination=[],
@@ -1956,7 +1956,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
     )
 
     # Create org unit relations
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep1_uuid,
             destination=[A_uuid],
@@ -1964,7 +1964,7 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep2_uuid,
             destination=[B_uuid],
@@ -2195,7 +2195,7 @@ async def test_eng_timeline_related_units_single_day_relation(
     )
 
     # Create org unit relations
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep1_uuid,
             destination=[A_uuid],
@@ -2203,7 +2203,7 @@ async def test_eng_timeline_related_units_single_day_relation(
         )
     )
 
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep1_uuid,
             destination=[B_uuid],
@@ -2411,7 +2411,7 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
     )
 
     # Create org unit relations
-    await graphql_client._testing__update_related_units(
+    await graphql_client.update_related_units(
         RelatedUnitsUpdateInput(
             origin=dep1_uuid,
             destination=[A_uuid],
