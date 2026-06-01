@@ -24,6 +24,8 @@
 - Always use `docker compose run --rm sdtool-plus pytest ...` to run tests.
   This requires starting the development environment and running
   `docker compose stop sdtool-plus` first.
+- You will need a running os2mo stack to run integration tests, you can find
+  os2mo here: https://github.com/OS2mo
 - Never run all tests; it takes too long. Only run relevant tests.
 
 ## Commit Instructions
