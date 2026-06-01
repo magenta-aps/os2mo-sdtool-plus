@@ -19,8 +19,6 @@ from ._testing__get_org_unit_address import TestingGetOrgUnitAddress
 from ._testing__get_org_unit_address import TestingGetOrgUnitAddressOrgUnits
 from ._testing__update_manager import TestingUpdateManager
 from ._testing__update_manager import TestingUpdateManagerManagerUpdate
-from ._testing__update_related_units import TestingUpdateRelatedUnits
-from ._testing__update_related_units import TestingUpdateRelatedUnitsRelatedUnitsUpdate
 from .address_types import AddressTypes
 from .address_types import AddressTypesFacets
 from .async_base_client import AsyncBaseClient
@@ -154,6 +152,8 @@ from .update_org_unit import UpdateOrgUnit
 from .update_org_unit import UpdateOrgUnitOrgUnitUpdate
 from .update_person import UpdatePerson
 from .update_person import UpdatePersonEmployeeUpdate
+from .update_related_units import UpdateRelatedUnits
+from .update_related_units import UpdateRelatedUnitsRelatedUnitsUpdate
 
 
 def gql(q: str) -> str:
@@ -1163,11 +1163,11 @@ class GraphQLClient(AsyncBaseClient):
         data = self.get_data(response)
         return SendEvent.parse_obj(data).event_send
 
-    async def _testing__update_related_units(
+    async def update_related_units(
         self, input: RelatedUnitsUpdateInput
-    ) -> TestingUpdateRelatedUnitsRelatedUnitsUpdate:
+    ) -> UpdateRelatedUnitsRelatedUnitsUpdate:
         query = gql("""
-            mutation _Testing_UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
+            mutation UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
               related_units_update(input: $input) {
                 uuid
               }
@@ -1176,7 +1176,7 @@ class GraphQLClient(AsyncBaseClient):
         variables: dict[str, object] = {"input": input}
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
-        return TestingUpdateRelatedUnits.parse_obj(data).related_units_update
+        return UpdateRelatedUnits.parse_obj(data).related_units_update
 
     async def _testing__create_employee(
         self, uuid: UUID, given_name: str, surname: str

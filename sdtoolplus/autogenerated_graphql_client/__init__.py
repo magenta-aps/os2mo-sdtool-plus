@@ -24,8 +24,6 @@ from ._testing__get_org_unit_address import (
 )
 from ._testing__update_manager import TestingUpdateManager
 from ._testing__update_manager import TestingUpdateManagerManagerUpdate
-from ._testing__update_related_units import TestingUpdateRelatedUnits
-from ._testing__update_related_units import TestingUpdateRelatedUnitsRelatedUnitsUpdate
 from .address_types import AddressTypes
 from .address_types import AddressTypesFacets
 from .address_types import AddressTypesFacetsObjects
@@ -359,6 +357,8 @@ from .update_org_unit import UpdateOrgUnit
 from .update_org_unit import UpdateOrgUnitOrgUnitUpdate
 from .update_person import UpdatePerson
 from .update_person import UpdatePersonEmployeeUpdate
+from .update_related_units import UpdateRelatedUnits
+from .update_related_units import UpdateRelatedUnitsRelatedUnitsUpdate
 
 __all__ = [
     "AccessLogFilter",
@@ -670,8 +670,6 @@ __all__ = [
     "TestingGetOrgUnitOrgUnitsObjectsCurrentValidity",
     "TestingUpdateManager",
     "TestingUpdateManagerManagerUpdate",
-    "TestingUpdateRelatedUnits",
-    "TestingUpdateRelatedUnitsRelatedUnitsUpdate",
     "UpdateAddress",
     "UpdateAddressAddressUpdate",
     "UpdateAddressAddressUpdateCurrent",
@@ -689,6 +687,8 @@ __all__ = [
     "UpdateOrgUnitOrgUnitUpdate",
     "UpdatePerson",
     "UpdatePersonEmployeeUpdate",
+    "UpdateRelatedUnits",
+    "UpdateRelatedUnitsRelatedUnitsUpdate",
     "UuidsBoundClassFilter",
     "UuidsBoundEmployeeFilter",
     "UuidsBoundEngagementFilter",
