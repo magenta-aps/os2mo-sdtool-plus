@@ -83,6 +83,7 @@ type = "uuid.UUID"
 type = "..types.CPRNumber"
 
 [tool.pytest.ini_options]
+collect_imported_tests = false
 asyncio_mode="auto"
 
 [build-system]
