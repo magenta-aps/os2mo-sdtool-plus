@@ -74,6 +74,8 @@ from .get_org_unit import GetOrgUnit
 from .get_org_unit import GetOrgUnitOrgUnits
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
+from .get_org_unit_parents import GetOrgUnitParents
+from .get_org_unit_parents import GetOrgUnitParentsOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_org_unit_user_keys import GetOrgUnitUserKeys
@@ -600,6 +602,35 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrgUnit.parse_obj(data).org_units
+
+    async def get_org_unit_parents(
+        self,
+        uuid: UUID,
+        start: datetime,
+        end: Union[Optional[datetime], UnsetType] = UNSET,
+    ) -> GetOrgUnitParentsOrgUnits:
+        query = gql("""
+            query GetOrgUnitParents($uuid: UUID!, $start: DateTime!, $end: DateTime) {
+              org_units(filter: {uuids: [$uuid]}) {
+                objects {
+                  validities(start: $start, end: $end) {
+                    uuid
+                    parent_response {
+                      uuid
+                    }
+                    validity {
+                      from
+                      to
+                    }
+                  }
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"uuid": uuid, "start": start, "end": end}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return GetOrgUnitParents.parse_obj(data).org_units
 
     async def get_person(self, cpr: CPRNumber) -> GetPersonEmployees:
         query = gql("""
