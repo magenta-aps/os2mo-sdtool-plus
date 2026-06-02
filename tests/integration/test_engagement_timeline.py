@@ -2518,6 +2518,7 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "USE_RECURSIVE_MO_OU_RELATION_LOOKUP": "true",
     }
 )
 async def test_eng_timeline_recursive_related_units_simple_case(
@@ -2720,6 +2721,7 @@ async def test_eng_timeline_recursive_related_units_simple_case(
         "APPLY_NY_LOGIC": "false",
         "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
         "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "USE_RECURSIVE_MO_OU_RELATION_LOOKUP": "true",
     }
 )
 async def test_eng_timeline_recursive_related_units_complex_case(

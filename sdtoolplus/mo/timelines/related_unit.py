@@ -85,6 +85,7 @@ async def related_units(
     start: datetime,
     end: datetime,
     unknown_unit_uuid: OrgUnitUUID,
+    recursive_lookup: bool,
 ) -> list[EngagementUnit]:
     """
     Returns the related units in the given interval (or the "Unknown" unit if no related
@@ -123,6 +124,13 @@ async def related_units(
                     end=end,
                     value=timeline_related_unit,
                 )
+            )
+            continue
+
+        if not recursive_lookup:
+            # recursive lookup is disabled, so just give up and return unknown
+            timeline_related_units.append(
+                EngagementUnit(start=start, end=end, value=unknown_unit_uuid)
             )
             continue
 
@@ -167,7 +175,14 @@ async def related_units(
                 continue
 
             timeline_related_units.extend(
-                await related_units(gql_client, parent, start, end, unknown_unit_uuid)
+                await related_units(
+                    gql_client=gql_client,
+                    unit_uuid=parent,
+                    start=start,
+                    end=end,
+                    unknown_unit_uuid=unknown_unit_uuid,
+                    recursive_lookup=True,
+                )
             )
 
     return timeline_related_units

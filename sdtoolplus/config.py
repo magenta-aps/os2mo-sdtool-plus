@@ -98,6 +98,12 @@ class SDToolPlusSettings(BaseSettings):
     # 2) Apply the special engagement OU strategy for the regions.
     mode: Mode = Mode.MUNICIPALITY
 
+    # If true, any engagements without org unit relations use their parent's
+    # org unit relations. This recurses up the org tree if the parent also doesn't
+    # have any relations, and so on.
+    # This option is only available in region mode
+    use_recursive_mo_ou_relation_lookup: bool = False
+
     # If true, we prefix the engagement user keys in "municipality" mode
     prefix_engagement_user_keys: bool = False
 
@@ -246,7 +252,12 @@ class SDToolPlusSettings(BaseSettings):
 
     @root_validator
     def check_region_settings(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if not values["mode"] == Mode.REGION:
+        if values["mode"] != Mode.REGION:
+            # check that region-specific settings are not set if not in region mode
+            if values["use_recursive_mo_ou_relation_lookup"]:
+                raise ValueError(
+                    "USE_RECURSIVE_MO_OU_RELATION_LOOKUP can only be set in region mode"
+                )
             return values
 
         if values["unknown_unit"] is None:
