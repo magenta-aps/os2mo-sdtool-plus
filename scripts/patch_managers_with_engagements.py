@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
 import csv
+import json
 from datetime import datetime
 from itertools import pairwise
 from pathlib import Path
@@ -261,6 +262,14 @@ async def run(
 ) -> None:
     gql_client = get_gql_client()
 
+    # Load mapping of known manager-to-engagement UUIDs (used in cases where there
+    # a manager has more than one engagements)
+    try:
+        with open("/tmp/manager-to-engagement.json") as fp:
+            manager_to_engagement = json.load(fp)
+    except FileNotFoundError:
+        manager_to_engagement = dict()
+
     managers = await gql_client.get_managers(
         ManagerFilter(from_date=None, to_date=None)
     )
@@ -314,15 +323,20 @@ async def run(
                     person_engagement_timelines, start_
                 )
                 if len(engagement_uuids) > 1:
-                    not_updated.append(
-                        (
-                            str(manager_uuid),
-                            str(person_uuid),
-                            start_.isoformat(),
-                            end_.isoformat(),
-                            "More than one manager engagement",
+                    eng_uuid = manager_to_engagement.get(str(manager_uuid))
+                    if eng_uuid is not None:
+                        engagement_uuids = [UUID(eng_uuid)]
+                    else:
+                        not_updated.append(
+                            (
+                                str(manager_uuid),
+                                str(person_uuid),
+                                start_.isoformat(),
+                                end_.isoformat(),
+                                "More than one manager engagement",
+                            )
                         )
-                    )
+                        continue
 
                 try:
                     engagement_uuid = one(engagement_uuids)
