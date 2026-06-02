@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from itertools import pairwise
+from typing import Sequence
 
 from more_itertools import collapse
 from more_itertools import first
@@ -15,18 +16,21 @@ from sdtoolplus.mo.timelines.common import datetime_to_mo_end
 from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import EngagementUnit
+from sdtoolplus.models import HasValidities
 
 
-def _get_related_units_endpoints(
-    objects: list[GetRelatedUnitsRelatedUnitsObjects],
+def _get_mo_objects_endpoints(
+    objects: Sequence[HasValidities],
     start: datetime,
     end: datetime,
 ) -> list[datetime]:
     """
-    Get the related unit endpoints timeline datetimes. E.g. in the case of dep3 having
-    related units C, D and E as below, the function will return
-    [t3, t4, t5, t6, t7, t8] (where t3 and t8 are the provided start and end argument,
-    respectively).
+    Given a collection of MO objects with validities, returns the merged list of
+    endpoints.
+
+    E.g. in the case of dep3 having related units C, D and E as below, the function
+    will return [t3, t4, t5, t6, t7, t8] (where t3 and t8 are the provided start
+    and end argument, respectively).
 
     Time  --------t1--------t2----t3--t4--t5--t6--t7--t8-----t9--------------------->
     dep3          |-------------C---------|---E---|
@@ -108,7 +112,7 @@ async def related_units(
     objects = mo_rel_units.objects
 
     # Get the related unit interval endpoints as timeline datetimes
-    endpoints = _get_related_units_endpoints(objects=objects, start=start, end=end)
+    endpoints = _get_mo_objects_endpoints(objects=objects, start=start, end=end)
     timeline_related_units = []
 
     for start, end in pairwise(endpoints):
