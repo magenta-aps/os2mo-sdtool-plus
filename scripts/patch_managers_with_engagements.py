@@ -56,7 +56,7 @@ async def get_manager_timeline(
 ) -> ManagerTimeline:
     gql_timeline = await gql_client.get_manager_timeline(
         ManagerFilter(
-            manager_uuid=manager_uuid,
+            uuids=[manager_uuid],
             from_date=None,
             to_date=None,
         )
@@ -273,10 +273,18 @@ async def run(
     not_updated: list[tuple[str, ...]] = []
 
     for manager_uuid in manager_uuids:
+        logger.info("Processing manager", manager_uuid=str(manager_uuid))
+
         manager_timeline = await get_manager_timeline(gql_client, manager_uuid)
 
         endpoints = sorted(manager_timeline.get_interval_endpoints())
         for start, end in pairwise(endpoints):
+            try:
+                manager_timeline.manager_active.entity_at(start)
+            except NoValueError:
+                # Manager is not active
+                continue
+
             if manager_timeline.manager_engagement.entity_at(start).value is not None:
                 # We already have an engagement reference in this interval
                 continue
@@ -353,6 +361,9 @@ async def run(
                         )
                     )
 
+        write_csv(updated_csv, updated)
+        write_csv(not_updated_csv, not_updated)
+
     write_csv(updated_csv, updated)
     write_csv(not_updated_csv, not_updated)
 
@@ -366,7 +377,7 @@ async def run(
 
 
 @click.command()
-@click.option("--write-to-mo", type=click.BOOL, default=False)
+@click.option("--write-to-mo", is_flag=True)
 @click.option("--manager", "man_uuid", type=click.UUID)
 @click.option(
     "--updated-csv",
