@@ -83,6 +83,77 @@ def _select_parent_at(
     return first(parent_unit, default=None)
 
 
+async def _resolve_via_parents(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+    start: datetime,
+    end: datetime,
+    unknown_unit_uuid: OrgUnitUUID,
+) -> list[EngagementUnit]:
+    """
+    Returns related units by walking up the org tree, accounting for the infinitely
+    expanding universe of temporal parents.
+    """
+    mo_parents = await gql_client.get_org_unit_parents(
+        uuid=unit_uuid, start=start, end=end
+    )
+
+    if len(mo_parents.objects) == 0:
+        # We have no parents => use unknown.
+        return [EngagementUnit(start=start, end=end, value=unknown_unit_uuid)]
+
+    result: list[EngagementUnit] = []
+    endpoints = _get_mo_objects_endpoints(mo_parents.objects, start=start, end=end)
+    for chunk_start, chunk_end in pairwise(endpoints):
+        parent = _select_parent_at(mo_parents, at=chunk_start)
+
+        if parent is None:
+            result.append(
+                EngagementUnit(
+                    start=chunk_start, end=chunk_end, value=unknown_unit_uuid
+                )
+            )
+            continue
+
+        result.extend(
+            await related_units(
+                gql_client, parent, chunk_start, chunk_end, unknown_unit_uuid, True
+            )
+        )
+    return result
+
+
+async def _resolve_interval(
+    gql_client: GraphQLClient,
+    unit_uuid: OrgUnitUUID,
+    start: datetime,
+    end: datetime,
+    objects: list[GetRelatedUnitsRelatedUnitsObjects],
+    unknown_unit_uuid: OrgUnitUUID,
+    recursive_lookup: bool,
+) -> list[EngagementUnit]:
+    """
+    Resolve a single (start, end) chunk: prefer a direct related unit, otherwise
+    either give up with "unknown" or recurse via parents.
+    """
+    direct = _get_related_unit_at(objects=objects, unit_uuid=unit_uuid, at=start)
+    if direct is not None:
+        # Happy path. We have a related unit.
+        return [EngagementUnit(start=start, end=end, value=direct)]
+
+    if not recursive_lookup:
+        # recursive lookup is disabled, so just give up and return unknown
+        return [EngagementUnit(start=start, end=end, value=unknown_unit_uuid)]
+
+    return await _resolve_via_parents(
+        gql_client=gql_client,
+        unit_uuid=unit_uuid,
+        start=start,
+        end=end,
+        unknown_unit_uuid=unknown_unit_uuid,
+    )
+
+
 async def related_units(
     gql_client: GraphQLClient,
     unit_uuid: OrgUnitUUID,
@@ -110,83 +181,19 @@ async def related_units(
     )
 
     objects = mo_rel_units.objects
-
-    # Get the related unit interval endpoints as timeline datetimes
     endpoints = _get_mo_objects_endpoints(objects=objects, start=start, end=end)
-    timeline_related_units = []
 
-    for start, end in pairwise(endpoints):
-        timeline_related_unit = _get_related_unit_at(
-            objects=objects, unit_uuid=unit_uuid, at=start
+    result: list[EngagementUnit] = []
+    for chunk_start, chunk_end in pairwise(endpoints):
+        result.extend(
+            await _resolve_interval(
+                gql_client=gql_client,
+                unit_uuid=unit_uuid,
+                start=chunk_start,
+                end=chunk_end,
+                objects=objects,
+                unknown_unit_uuid=unknown_unit_uuid,
+                recursive_lookup=recursive_lookup,
+            )
         )
-
-        if timeline_related_unit is not None:
-            # Happy path. We have a related unit.
-            timeline_related_units.append(
-                EngagementUnit(
-                    start=start,
-                    end=end,
-                    value=timeline_related_unit,
-                )
-            )
-            continue
-
-        if not recursive_lookup:
-            # recursive lookup is disabled, so just give up and return unknown
-            timeline_related_units.append(
-                EngagementUnit(start=start, end=end, value=unknown_unit_uuid)
-            )
-            continue
-
-        # We do not have a related unit, so now we have to recurse up the org
-        # tree accounting for the infinitely expanding universe of temporal
-        # parents.
-        mo_parents = await gql_client.get_org_unit_parents(
-            uuid=unit_uuid, start=start, end=end
-        )
-
-        if len(mo_parents.objects) == 0:
-            # We have no parents => use unknown.
-            timeline_related_units.append(
-                EngagementUnit(
-                    start=start,
-                    end=end,
-                    value=unknown_unit_uuid,
-                )
-            )
-            continue
-
-        endpoints = {start, end}
-        for obj in mo_parents.objects:
-            for val in obj.validities:
-                if val.validity.from_ > start:
-                    endpoints.add(val.validity.from_)
-                parent_end = mo_end_to_timeline_end(val.validity.to)
-                if parent_end < end:
-                    endpoints.add(parent_end)
-
-        for start, end in pairwise(sorted(endpoints)):
-            parent = _select_parent_at(mo_parents, at=start)
-
-            if parent is None:
-                timeline_related_units.append(
-                    EngagementUnit(
-                        start=start,
-                        end=end,
-                        value=unknown_unit_uuid,
-                    )
-                )
-                continue
-
-            timeline_related_units.extend(
-                await related_units(
-                    gql_client=gql_client,
-                    unit_uuid=parent,
-                    start=start,
-                    end=end,
-                    unknown_unit_uuid=unknown_unit_uuid,
-                    recursive_lookup=True,
-                )
-            )
-
-    return timeline_related_units
+    return result
