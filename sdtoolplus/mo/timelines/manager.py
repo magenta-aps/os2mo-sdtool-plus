@@ -24,6 +24,10 @@ async def get_manager_timeline(
     person: UUID,
     engagement: UUID,
 ) -> ManagerTimeline:
+    logger.info(
+        "Get MO manager timeline", person=str(person), engagement=str(engagement)
+    )
+
     gql_timeline = await gql_client.get_manager_timeline(
         ManagerFilter(
             employee=EmployeeFilter(uuids=[person]),
