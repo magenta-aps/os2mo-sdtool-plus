@@ -30,6 +30,9 @@
           pkgs.libxml2.dev
           pkgs.libxslt
           pkgs.libxslt.dev
+
+          # util for running tests locally
+          pkgs.just
         ];
 
         shellHook = ''

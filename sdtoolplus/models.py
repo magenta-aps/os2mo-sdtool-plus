@@ -7,9 +7,12 @@ from itertools import pairwise
 from typing import Any
 from typing import Generic
 from typing import Optional
+from typing import Protocol
 from typing import Self
+from typing import Sequence
 from typing import TypeVar
 from typing import cast
+from typing import runtime_checkable
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -531,3 +534,29 @@ class MOPhoneNumberTimelineObj(BaseModel, frozen=True):
     # MO phone number address UUID
     uuid: UUID | None
     phone_number: Timeline[UnitPhoneNumber] = Timeline[UnitPhoneNumber]()
+
+
+@runtime_checkable
+class ValidityLike(Protocol):
+    """Any class that looks like a validity, useful for being generic over Ariadne-generated types"""
+
+    from_: datetime
+    to: datetime | None
+
+
+@runtime_checkable
+class HasValidity(Protocol):
+    """Any class with a "validity" field, useful for being generic over Ariadne-generated types"""
+
+    # property is needed for covariance
+    @property
+    def validity(self) -> ValidityLike: ...
+
+
+@runtime_checkable
+class HasValidities(Protocol):
+    """Any class with a "validities" field, useful for being generic over Ariadne-generated types"""
+
+    # property is needed for covariance
+    @property
+    def validities(self) -> Sequence[HasValidity]: ...

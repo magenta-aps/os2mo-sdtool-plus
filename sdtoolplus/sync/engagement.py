@@ -396,6 +396,7 @@ async def engagement_ou_strategy_region(
     settings: SDToolPlusSettings,
     sd_eng_timeline: EngagementTimeline,
     mo_eng_timeline: EngagementTimeline,
+    recursive_ou_relation_lookup: bool,
 ) -> EngagementTimeline:
     """
     The engagement OU strategy for the regions works as follows:
@@ -473,8 +474,10 @@ async def engagement_ou_strategy_region(
                 await related_units(
                     gql_client=gql_client,
                     unit_uuid=cast(OrgUnitUUID, sd_unit),
-                    unit_interval=unit_interval,
+                    start=unit_interval.start,
+                    end=unit_interval.end,
                     unknown_unit_uuid=settings.unknown_unit,
+                    recursive_lookup=recursive_ou_relation_lookup,
                 )
             )
     logger.info(
@@ -535,6 +538,7 @@ async def engagement_ou_strategy(
                 settings=settings,
                 sd_eng_timeline=sd_eng_timeline,
                 mo_eng_timeline=mo_eng_timeline,
+                recursive_ou_relation_lookup=settings.use_recursive_mo_ou_relation_lookup,
             )
         case _ as unreachable:
             assert_never(unreachable)
