@@ -16,9 +16,7 @@ query GetOrganization {
 }
 
 query GetAddressTimeline($input: AddressFilter!) {
-  addresses(
-    filter: $input
-  ) {
+  addresses(filter: $input) {
     objects {
       uuid
       validities {
@@ -42,7 +40,7 @@ query GetAddressTimeline($input: AddressFilter!) {
 }
 
 query AddressTypes {
-  facets(filter: {user_keys: "org_unit_address_type"}) {
+  facets(filter: { user_keys: "org_unit_address_type" }) {
     objects {
       current {
         user_key
@@ -58,9 +56,7 @@ query AddressTypes {
 }
 
 mutation CreateAddress($input: AddressCreateInput!) {
-  address_create(
-    input: $input
-  ) {
+  address_create(input: $input) {
     uuid
     current {
       validity {
@@ -77,9 +73,7 @@ mutation CreateAddress($input: AddressCreateInput!) {
 }
 
 mutation UpdateAddress($input: AddressUpdateInput!) {
-  address_update(
-    input: $input
-  ) {
+  address_update(input: $input) {
     uuid
     current {
       validity {
@@ -108,7 +102,7 @@ mutation DeleteAddress($addr_uuid: UUID!) {
 }
 
 query GetFacetUuid($user_key: String!) {
-  facets(filter: {user_keys: [$user_key]}) {
+  facets(filter: { user_keys: [$user_key] }) {
     objects {
       uuid
     }
@@ -158,8 +152,14 @@ query GetUnit($uuid: UUID!) {
   }
 }
 
-query GetOrgUnitTimeline($unit_uuid: UUID!, $from_date: DateTime, $to_date: DateTime) {
-  org_units(filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }) {
+query GetOrgUnitTimeline(
+  $unit_uuid: UUID!
+  $from_date: DateTime
+  $to_date: DateTime
+) {
+  org_units(
+    filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }
+  ) {
     objects {
       validities {
         validity {
@@ -269,7 +269,7 @@ query GetOrgUnit($filter: OrganisationUnitFilter!) {
 }
 
 query GetOrgUnitParents($uuid: UUID!, $start: DateTime!, $end: DateTime) {
-  org_units(filter: {uuids: [$uuid]}) {
+  org_units(filter: { uuids: [$uuid] }) {
     objects {
       validities(start: $start, end: $end) {
         uuid
@@ -286,9 +286,7 @@ query GetOrgUnitParents($uuid: UUID!, $start: DateTime!, $end: DateTime) {
 }
 
 query GetPerson($cpr: CPR!) {
-  employees(
-    filter: { cpr_numbers: [$cpr], from_date: null, to_date: null }
-  ) {
+  employees(filter: { cpr_numbers: [$cpr], from_date: null, to_date: null }) {
     objects {
       uuid
     }
@@ -340,11 +338,7 @@ mutation CreateEngagement($input: EngagementCreateInput!) {
   }
 }
 
-query GetEngagements(
-  $cursor: Cursor,
-  $limit: int,
-  $input: EngagementFilter!
-) {
+query GetEngagements($cursor: Cursor, $limit: int, $input: EngagementFilter!) {
   engagements(cursor: $cursor, limit: $limit, filter: $input) {
     page_info {
       next_cursor
@@ -366,24 +360,16 @@ query GetEngagements(
   }
 }
 
-query GetEngagementUuids(
-  $filter: EngagementFilter!
-) {
-  engagements(
-    filter: $filter
-  ) {
+query GetEngagementUuids($filter: EngagementFilter!) {
+  engagements(filter: $filter) {
     objects {
       uuid
     }
   }
 }
 
-query GetEngagementTimeline(
-  $filter: EngagementFilter!
-) {
-  engagements(
-    filter: $filter
-  ) {
+query GetEngagementTimeline($filter: EngagementFilter!) {
+  engagements(filter: $filter) {
     objects {
       uuid
       validities {
@@ -412,12 +398,8 @@ query GetEngagementTimeline(
   }
 }
 
-query GetManagerTimeline(
-  $filter: ManagerFilter!
-) {
-  managers(
-    filter: $filter
-  ) {
+query GetManagerTimeline($filter: ManagerFilter!) {
+  managers(filter: $filter) {
     objects {
       uuid
       validities {
@@ -448,9 +430,7 @@ query GetManagers($filter: ManagerFilter!) {
 }
 
 query GetManagerEngagement($uuid: UUID!) {
-  managers(
-    filter: { uuids: [$uuid], from_date: null, to_date: null }
-  ) {
+  managers(filter: { uuids: [$uuid], from_date: null, to_date: null }) {
     objects {
       validities {
         engagement_response {
@@ -474,17 +454,17 @@ mutation TerminateEngagement($input: EngagementTerminateInput!) {
 }
 
 mutation RefreshEngagements(
-  $cursor: Cursor,
-  $limit: int,
-  $filter: EngagementFilter,
-  $owner: UUID!,
+  $cursor: Cursor
+  $limit: int
+  $filter: EngagementFilter
+  $owner: UUID!
   $priority: int
 ) {
   engagement_refresh(
-    cursor: $cursor,
-    limit: $limit,
-    filter: $filter,
-    owner: $owner,
+    cursor: $cursor
+    limit: $limit
+    filter: $filter
+    owner: $owner
     priority: $priority
   ) {
     objects
@@ -607,37 +587,33 @@ mutation _Testing_UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
 
 mutation _Testing_CreateEmployee(
   $uuid: UUID!
-  $given_name: String!,
-  $surname: String!,
+  $given_name: String!
+  $surname: String!
 ) {
   employee_create(
-    input: {
-      uuid: $uuid,
-      given_name: $given_name,
-      surname: $surname,
-    }
+    input: { uuid: $uuid, given_name: $given_name, surname: $surname }
   ) {
     uuid
   }
 }
 
 mutation _Testing_CreateOrgUnit(
-  $uuid: UUID!,
-  $name: String!,
-  $user_key: String!,
-  $from_date: DateTime!,
-  $org_unit_type: UUID!,
-  $org_unit_level: UUID,
+  $uuid: UUID!
+  $name: String!
+  $user_key: String!
+  $from_date: DateTime!
+  $org_unit_type: UUID!
+  $org_unit_level: UUID
   $parent: UUID
 ) {
   org_unit_create(
     input: {
-      uuid: $uuid,
-      name: $name,
-      user_key: $user_key,
-      validity: {from: $from_date},
-      org_unit_type: $org_unit_type,
-      org_unit_level: $org_unit_level,
+      uuid: $uuid
+      name: $name
+      user_key: $user_key
+      validity: { from: $from_date }
+      org_unit_type: $org_unit_type
+      org_unit_level: $org_unit_level
       parent: $parent
     }
   ) {
@@ -646,7 +622,7 @@ mutation _Testing_CreateOrgUnit(
 }
 
 query _Testing_GetOrgUnit($uuid: UUID!) {
-  org_units(filter: {uuids: [$uuid]}) {
+  org_units(filter: { uuids: [$uuid] }) {
     objects {
       current {
         validity {
@@ -671,18 +647,18 @@ query _Testing_GetOrgUnit($uuid: UUID!) {
 }
 
 mutation _Testing_CreateEngagement(
-  $from_date: DateTime!,
-  $org_unit: UUID!,
-  $engagement_type: UUID!,
-  $job_function: UUID!,
+  $from_date: DateTime!
+  $org_unit: UUID!
+  $engagement_type: UUID!
+  $job_function: UUID!
   $person: UUID!
 ) {
   engagement_create(
     input: {
-      validity: {from: $from_date},
-      org_unit: $org_unit,
-      engagement_type: $engagement_type,
-      job_function: $job_function,
+      validity: { from: $from_date }
+      org_unit: $org_unit
+      engagement_type: $engagement_type
+      job_function: $job_function
       person: $person
     }
   ) {
@@ -691,10 +667,10 @@ mutation _Testing_CreateEngagement(
 }
 
 query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
-  org_units(filter: {uuids: [$org_unit]}) {
+  org_units(filter: { uuids: [$org_unit] }) {
     objects {
       current {
-        addresses(filter: {address_types: [$addr_type]}) {
+        addresses(filter: { address_types: [$addr_type] }) {
           value
           user_key
         }
@@ -702,7 +678,6 @@ query _Testing_GetOrgUnitAddress($org_unit: UUID!, $addr_type: UUID!) {
     }
   }
 }
-
 
 mutation _Testing_CreateManager($input: ManagerCreateInput!) {
   manager_create(input: $input) {
