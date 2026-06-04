@@ -268,23 +268,6 @@ query GetOrgUnit($filter: OrganisationUnitFilter!) {
   }
 }
 
-query GetOrgUnitParents($uuid: UUID!, $start: DateTime!, $end: DateTime) {
-  org_units(filter: { uuids: [$uuid] }) {
-    objects {
-      validities(start: $start, end: $end) {
-        uuid
-        parent_response {
-          uuid
-        }
-        validity {
-          from
-          to
-        }
-      }
-    }
-  }
-}
-
 query GetPerson($cpr: CPR!) {
   employees(filter: { cpr_numbers: [$cpr], from_date: null, to_date: null }) {
     objects {
