@@ -145,14 +145,6 @@ from .get_org_unit import GetOrgUnitOrgUnitsObjectsValiditiesValidity
 from .get_org_unit_children import GetOrgUnitChildren
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnits
 from .get_org_unit_children import GetOrgUnitChildrenOrgUnitsObjects
-from .get_org_unit_parents import GetOrgUnitParents
-from .get_org_unit_parents import GetOrgUnitParentsOrgUnits
-from .get_org_unit_parents import GetOrgUnitParentsOrgUnitsObjects
-from .get_org_unit_parents import GetOrgUnitParentsOrgUnitsObjectsValidities
-from .get_org_unit_parents import (
-    GetOrgUnitParentsOrgUnitsObjectsValiditiesParentResponse,
-)
-from .get_org_unit_parents import GetOrgUnitParentsOrgUnitsObjectsValiditiesValidity
 from .get_org_unit_timeline import GetOrgUnitTimeline
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnits
 from .get_org_unit_timeline import GetOrgUnitTimelineOrgUnitsObjects
@@ -508,12 +500,6 @@ __all__ = [
     "GetOrgUnitOrgUnitsObjectsValidities",
     "GetOrgUnitOrgUnitsObjectsValiditiesChildren",
     "GetOrgUnitOrgUnitsObjectsValiditiesValidity",
-    "GetOrgUnitParents",
-    "GetOrgUnitParentsOrgUnits",
-    "GetOrgUnitParentsOrgUnitsObjects",
-    "GetOrgUnitParentsOrgUnitsObjectsValidities",
-    "GetOrgUnitParentsOrgUnitsObjectsValiditiesParentResponse",
-    "GetOrgUnitParentsOrgUnitsObjectsValiditiesValidity",
     "GetOrgUnitTimeline",
     "GetOrgUnitTimelineOrgUnits",
     "GetOrgUnitTimelineOrgUnitsObjects",
