@@ -4714,3 +4714,204 @@ async def test_eng_timeline_elevate_managers_for_non_manager(
     assert interval_1.org_unit_uuid == dep1_uuid
     assert interval_1.extension_4 == "dep1"
     assert interval_1.extension_5 == str(dep1_uuid)
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "ELEVATE_MANAGERS": "true",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
+async def test_eng_timeline_elevate_managers_multiple_managers(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    When the person is manager for the engagement via multiple manager objects
+    in the same interval, we cannot know which one to use for the engagement
+    elevation. The elevation therefore uses the first manager object (sorted by
+    manager object UUID).
+
+    Time  ----------t1-----------------------------t2------->
+
+    MO eng (OU)     |-------------dep3-------------|
+    MO manager A    |-------------dep2-------------|
+    MO manager B    |-------------dep5-------------|
+    (both managers are related to the MO eng)
+
+    SD eng          |-------------dep3-------------|
+
+    "Assert"        |--------------1---------------|
+    intervals
+
+    Two manager objects exist for the same person and engagement in [t1, t2):
+    "aaaa..." in dep2 and "bbbb..." in dep5. Since "aaaa..." sorts first by
+    manager object UUID, the engagement (in dep3 in SD) is elevated to dep2.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    dep2_uuid = UUID("20000000-0000-0000-0000-000000000000")
+    dep3_uuid = UUID("30000000-0000-0000-0000-000000000000")
+    dep5_uuid = UUID("50000000-0000-0000-0000-000000000000")
+
+    manager_a_uuid = UUID("aaaaaaaa-0000-0000-0000-000000000000")
+    manager_b_uuid = UUID("bbbbbbbb-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (in dep3 according to SD)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t1, t2),
+                extension_1="name1",
+                extension_4="dep3",
+                extension_5=str(dep3_uuid),
+                person=person_uuid,
+                org_unit=dep3_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    manager_level = await get_class(graphql_client, "manager_level", "afdelingsleder")
+    manager_type = await get_class(graphql_client, "manager_type", "leder")
+    responsibility = await get_class(graphql_client, "responsibility", "personale")
+
+    # Two manager objects for the same person and engagement in [t1, t2)
+    await graphql_client._testing__create_manager(
+        ManagerCreateInput(
+            uuid=manager_a_uuid,
+            user_key=emp_id,
+            person=person_uuid,
+            responsibility=[responsibility],
+            engagement=eng_uuid,
+            org_unit=dep2_uuid,
+            manager_level=manager_level,
+            manager_type=manager_type,
+            validity=timeline_interval_to_mo_validity(t1, t2),
+        )
+    )
+    await graphql_client._testing__create_manager(
+        ManagerCreateInput(
+            uuid=manager_b_uuid,
+            user_key=emp_id,
+            person=person_uuid,
+            responsibility=[responsibility],
+            engagement=eng_uuid,
+            org_unit=dep5_uuid,
+            manager_level=manager_level,
+            manager_type=manager_type,
+            validity=timeline_interval_to_mo_validity(t1, t2),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2001-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep3</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep3_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    interval_1 = one(one(updated_eng.objects).validities)
+
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    # Elevated to the first manager object's unit (dep2), not dep5
+    assert interval_1.org_unit_uuid == dep2_uuid
+    assert interval_1.extension_4 == "dep2"
+    assert interval_1.extension_5 == str(dep3_uuid)
