@@ -140,10 +140,12 @@ async def _resolve_interval(
     Resolve a single (start, end) chunk: prefer a direct related unit, otherwise
     either give up with "unknown" or recurse via parents.
     """
-    direct = _get_related_unit_at(objects=objects, unit_uuid=unit_uuid, at=start)
-    if direct is not None:
+    ou_related_unit = _get_related_unit_at(
+        objects=objects, unit_uuid=unit_uuid, at=start
+    )
+    if ou_related_unit is not None:
         # Happy path. We have a related unit.
-        return [EngagementUnit(start=start, end=end, value=direct)]
+        return [EngagementUnit(start=start, end=end, value=ou_related_unit)]
 
     if not recursive_lookup:
         # recursive lookup is disabled, so just give up and return unknown
