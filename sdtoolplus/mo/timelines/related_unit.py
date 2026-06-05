@@ -117,7 +117,7 @@ async def _resolve_via_parents(
         result.extend(
             await related_units(
                 gql_client,
-                parent_uuid,
+                parent_uuid,  # type: ignore[arg-type]  # ariadne doesn't get generics
                 start_,
                 end_,
                 unknown_unit_uuid,
