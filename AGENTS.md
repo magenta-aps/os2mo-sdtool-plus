@@ -36,3 +36,8 @@
   number, e.g.:
   - `feat: [#68002] allow reading connected addresses through an engagement`.
   - `fix: [#68002] don't sleep when no events`.
+
+## Code Review
+
+- You do not have access to the remote, so you can't look up the merge request/pull request
+- Assume that you need to review the commits from the base of the branch to the head
