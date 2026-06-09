@@ -108,13 +108,14 @@ async def get_department(
                 UUIDIndicator=True,
             ),
         )
+    except SDRootElementNotFound as error:
+        logger.error("Error getting department from SD", error=error)
+        return None
+    else:
         if not department.Department:
             logger.warning("Empty department response from SD!")
             return None
         return department
-    except SDRootElementNotFound as error:
-        logger.error("Error getting department from SD", error=error)
-        return None
 
 
 async def get_department_timeline(
