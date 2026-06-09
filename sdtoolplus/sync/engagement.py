@@ -405,9 +405,32 @@ async def engagement_ou_strategy_region(
        engagement will stay in the MO unit for the given interval.
     2) If the engagement already exists in MO and is placed in "Unknown", we will
        attempt to place the engagement in a (random) related unit in the given interval.
+       If there are no related units in the interval, we will either place the
+       engagement in "Unknown", or attempt to place it using a recursive
+       algorithm (explained below).
     3) If the engagement does not already exist in MO, we will attempt to place the
        engagement in a (random) related unit in the given interval. If there are no
-       related units in the interval, we will place the engagement in "Unknown".
+       related units in the interval, we will either place the engagement in "Unknown",
+       or attempt to place it using a recursive algorithm (explained below).
+
+    If `recursive_ou_relation_lookup` is `True`, rather than placing an engagement
+    in "Unknown" when it doesn't have relations, we first check if its parent org
+    unit has a relation, and if that doesn't either, we check the parent of the
+    parent, and so on, up the org tree, until we either find a relation, or we
+    reach the root unit, in which case we then place the engagement in "Unknown".
+
+    Due to bi-temporality, an engagement validity may have multiple parents, because
+    the parent of its org unit may change half-way through the engagement's validity,
+    therefore, the `recursive_ou_relation_lookup` flag may cause engagement validities
+    to be split into smaller validities:
+
+    eng. unit    |--------u1-------|
+    u1 relation   (has no relation)
+    u1 parent    |---u2---|---u3---|
+    u2 relation  |---r1-------|
+    u3 relation  |--------r2-------|
+
+    result       |---r1---|---r2---|
 
     These rules apply apart from the following exception. If the engagement SD unit
     UUID value changes (stored in MOs engagement attribute "extension_5"), we will
