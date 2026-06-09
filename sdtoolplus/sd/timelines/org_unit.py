@@ -9,6 +9,7 @@ from more_itertools import collapse
 from more_itertools import first
 from more_itertools import only
 from sdclient.client import SDClient
+from sdclient.exceptions import SDDepartmentNotFound
 from sdclient.exceptions import SDParentNotFound
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
@@ -108,9 +109,12 @@ async def get_department(
                 UUIDIndicator=True,
             ),
         )
+    except SDDepartmentNotFound:
+        logger.info("SD department not found", uuid=str(unit_uuid))
+        return None
     except SDRootElementNotFound as error:
         logger.error("Error getting department from SD", error=error)
-        return None
+        raise
     else:
         if not department.Department:
             logger.warning("Empty department response from SD!")
