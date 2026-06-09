@@ -3167,10 +3167,10 @@ async def test_ou_timeline_sync_filter(
           <Body>
             <Fault>
               <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
-              <faultstring>DepartmentUUIDIdentifier  was not found.</faultstring>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
               <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
               <detail>
-                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier  was not found."</string>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
               </detail>
             </Fault>
           </Body>
@@ -3232,10 +3232,10 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
           <Body>
             <Fault>
               <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
-              <faultstring>DepartmentUUIDIdentifier  was not found.</faultstring>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
               <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
               <detail>
-                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier  was not found."</string>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
               </detail>
             </Fault>
           </Body>
