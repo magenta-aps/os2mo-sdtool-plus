@@ -3371,3 +3371,91 @@ async def test_ou_timeline_sd_to_mo_ou_uuid_map(
     assert validity.validity.from_ == t1
     assert mo_end_to_timeline_end(validity.validity.to) == t2
     assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_ou_timeline_terminate_unit_no_longer_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing that an existing unit in MO is terminated when the unit no
+    longer exists in SD, i.e. when the SD GetDepartment endpoint responds with a
+    "department not found" fault (causing `get_department` to return None and
+    hence an empty SD timeline).
+
+    Time  --------t1--------------------------------------------------------->
+
+    MO (active)   |---------------------name1--------------------------------
+    SD            (unit does not exist in SD)
+
+    "Assert"      (unit is terminated in MO)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Create a (leaf) unit in MO which we will later terminate
+    await graphql_client._testing__create_org_unit(
+        uuid=unit_uuid,
+        name="name1",
+        user_key="II-ABCD",
+        org_unit_type=org_unit_type,
+        org_unit_level=org_unit_levels["NY0-niveau"],
+        from_date=t1,
+        parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+    )
+
+    # The SD GetDepartment endpoint responds with a "department not found" fault
+    sd_dep_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <Envelope>
+          <Body>
+            <Fault>
+              <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
+              <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
+              <detail>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
+              </detail>
+            </Fault>
+          </Body>
+        </Envelope>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # The unit is terminated, i.e. it no longer has any active validities
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        unit_uuid=unit_uuid, from_date=None, to_date=None
+    )
+    assert updated_unit.objects == []
