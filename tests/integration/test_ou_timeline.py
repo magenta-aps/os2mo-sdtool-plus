@@ -3278,7 +3278,9 @@ async def test_ou_timeline_sync_only_sync_payroll_units(
 @pytest.mark.integration_test
 @pytest.mark.envvar(
     {
-        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}'
+        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}',
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
     }
 )
 async def test_ou_timeline_sd_to_mo_ou_uuid_map(
