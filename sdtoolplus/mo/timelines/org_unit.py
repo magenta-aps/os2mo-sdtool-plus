@@ -57,19 +57,12 @@ logger = structlog.stdlib.get_logger()
 
 async def get_ou_timeline(
     gql_client: GraphQLClient,
-    unit_uuid: OrgUnitUUID,
-    from_date: datetime | None = None,
-    to_date: datetime | None = None,
+    filter: OrganisationUnitFilter,
 ) -> UnitTimeline:
-    logger.info("Get MO org unit timeline", unit_uuid=str(unit_uuid))
+    assert filter.uuids is not None
+    logger.info("Get MO org unit timeline", unit_uuid=str(one(filter.uuids)))
 
-    gql_timelime = await gql_client.get_org_unit_timeline(
-        OrganisationUnitFilter(
-            uuids=[unit_uuid],
-            from_date=from_date,
-            to_date=to_date,
-        )
-    )
+    gql_timelime = await gql_client.get_org_unit_timeline(filter)
     objects = gql_timelime.objects
 
     if not objects:

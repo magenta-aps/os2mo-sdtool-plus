@@ -377,7 +377,10 @@ async def sync_ou(
     desired_unit_timeline = patch_missing_parents(settings, desired_unit_timeline)
     desired_unit_timeline = patch_missing_names(desired_unit_timeline)
 
-    mo_unit_timeline = await get_ou_timeline(gql_client, org_unit)
+    mo_unit_timeline = await get_ou_timeline(
+        gql_client,
+        OrganisationUnitFilter(uuids=[org_unit], from_date=None, to_date=None),
+    )
 
     ou_sync_successful = await sync_ou_intervals(
         gql_client=gql_client,
