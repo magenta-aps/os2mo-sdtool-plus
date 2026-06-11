@@ -3218,7 +3218,7 @@ async def test_ou_timeline_sync_filter(
         "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
-async def test_ou_timeline_sync_filter_unit_below_payroll_root(
+async def test_ou_timeline_sync_only_sync_payroll_units(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -3250,10 +3250,8 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
         </Envelope>
     """
 
-    unit_below_payroll_root = OrgUnitUUID("10000000-0000-0000-0000-000000000000")
-
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_below_payroll_root)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(UNKNOWN_UNIT)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -3262,16 +3260,14 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
     # Act
     r = await test_client.post(
         "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_below_payroll_root)},
+        json={"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)},
     )
 
     # Assert
     assert r.status_code == 200
 
     updated_unit = await graphql_client.get_org_unit_timeline(
-        OrganisationUnitFilter(
-            uuids=[unit_below_payroll_root], from_date=None, to_date=None
-        )
+        OrganisationUnitFilter(uuids=[UNKNOWN_UNIT], from_date=None, to_date=None)
     )
     validities = one(updated_unit.objects).validities
 
