@@ -139,14 +139,6 @@ async def sync_ou_intervals(
         priority=priority,
     )
 
-    # Skip synchronisation if OU was never in SD. This ensures we don't delete
-    # org-units unrelated to SD in MO. Note that is *is* technically possible
-    # to delete OUs in SD, but in that case we don't receive an AMQP event
-    # anyway due to limitations in SD.
-    if desired_unit_timeline == UnitTimeline():
-        logger.info("Skipping sync of OU")
-        return False
-
     sd_interval_endpoints = desired_unit_timeline.get_interval_endpoints()
     mo_interval_endpoints = mo_unit_timeline.get_interval_endpoints()
 
