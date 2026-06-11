@@ -240,7 +240,9 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 4
@@ -400,7 +402,9 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 1
@@ -595,9 +599,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
     async def verify() -> None:
         # Check the unit itself
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=unit_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -607,9 +609,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
 
         # Check the child unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=child_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[child_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -874,9 +874,7 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
     async def verify() -> None:
         # Check the unit itself
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=unit_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -887,9 +885,7 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
 
         # Check the parent unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=parent_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[parent_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -900,9 +896,9 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
 
         # Check the grandparent unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=grandparent_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(
+                uuids=[grandparent_uuid], from_date=None, to_date=None
+            )
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -1102,7 +1098,9 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     updated_postal_address = await graphql_client.get_address_timeline(
@@ -1290,7 +1288,9 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     # Check the unit
@@ -2887,7 +2887,9 @@ async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validity = one(one(created_unit.objects).validities)
 
     assert validity.validity.from_ == t1
@@ -3010,7 +3012,9 @@ async def test_ou_timeline_condense_multiple_sd_parents_to_unknown_unit(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(created_unit.objects).validities
 
     interval_1 = validities[0]
@@ -3127,7 +3131,9 @@ async def test_ou_timeline_patch_with_no_name_for_missing_sd_name(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validity = one(one(created_unit.objects).validities)
 
     assert validity.validity.from_ == t1
@@ -3193,7 +3199,9 @@ async def test_ou_timeline_sync_filter(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(UNKNOWN_UNIT, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[UNKNOWN_UNIT], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     # We assert that the unit still exists
@@ -3261,7 +3269,9 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
     assert r.status_code == 200
 
     updated_unit = await graphql_client.get_org_unit_timeline(
-        unit_below_payroll_root, None, None
+        OrganisationUnitFilter(
+            uuids=[unit_below_payroll_root], from_date=None, to_date=None
+        )
     )
     validities = one(updated_unit.objects).validities
 
@@ -3364,7 +3374,7 @@ async def test_ou_timeline_sd_to_mo_ou_uuid_map(
     assert r.status_code == 200
 
     mo_unit = await graphql_client.get_org_unit_timeline(
-        unit_uuid=unit_uuid, from_date=None, to_date=None
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
     )
     validity = one(one(mo_unit.objects).validities)
 
@@ -3456,6 +3466,6 @@ async def test_ou_timeline_terminate_unit_no_longer_in_sd(
 
     # The unit is terminated, i.e. it no longer has any active validities
     updated_unit = await graphql_client.get_org_unit_timeline(
-        unit_uuid=unit_uuid, from_date=None, to_date=None
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
     )
     assert updated_unit.objects == []

@@ -64,7 +64,11 @@ async def get_ou_timeline(
     logger.info("Get MO org unit timeline", unit_uuid=str(unit_uuid))
 
     gql_timelime = await gql_client.get_org_unit_timeline(
-        unit_uuid=unit_uuid, from_date=from_date, to_date=to_date
+        OrganisationUnitFilter(
+            uuids=[unit_uuid],
+            from_date=from_date,
+            to_date=to_date,
+        )
     )
     objects = gql_timelime.objects
 
@@ -431,7 +435,11 @@ async def update_ou(
     # TODO: refactor get_org_unit_timeline to take a RAValidityInput object instead of
     # start and end dates
     ou = await gql_client.get_org_unit_timeline(
-        org_unit, mo_validity.from_, mo_validity.to
+        OrganisationUnitFilter(
+            uuids=[org_unit],
+            from_date=mo_validity.from_,
+            to_date=mo_validity.to,
+        )
     )
 
     # Get the OU type UUID
@@ -564,9 +572,11 @@ async def terminate_ou(
 
     # Temporary work-around: get addresses to terminate if any
     mo_unit = await gql_client.get_org_unit_timeline(
-        unit_uuid=org_unit,
-        from_date=mo_validity.from_,
-        to_date=mo_validity.to,
+        OrganisationUnitFilter(
+            uuids=[org_unit],
+            from_date=mo_validity.from_,
+            to_date=mo_validity.to,
+        )
     )
 
     if mo_validity.to is not None:
