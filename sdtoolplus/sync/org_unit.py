@@ -4,6 +4,7 @@ from itertools import pairwise
 
 import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
+from more_itertools import last
 from sdclient.client import SDClient
 from sdclient.responses import GetDepartmentResponse
 
@@ -377,9 +378,20 @@ async def sync_ou(
     desired_unit_timeline = patch_missing_parents(settings, desired_unit_timeline)
     desired_unit_timeline = patch_missing_names(desired_unit_timeline)
 
+    assert settings.mo_subtree_paths_for_root is not None
     mo_unit_timeline = await get_ou_timeline(
         gql_client,
-        OrganisationUnitFilter(uuids=[org_unit], from_date=None, to_date=None),
+        OrganisationUnitFilter(
+            uuids=[org_unit],
+            from_date=None,
+            to_date=None,
+            ancestor=OrganisationUnitFilter(
+                uuids=[
+                    last(subtree_path)
+                    for inst_id, subtree_path in settings.mo_subtree_paths_for_root.items()
+                ]
+            ),
+        ),
     )
 
     ou_sync_successful = await sync_ou_intervals(
