@@ -152,14 +152,8 @@ query GetUnit($uuid: UUID!) {
   }
 }
 
-query GetOrgUnitTimeline(
-  $unit_uuid: UUID!
-  $from_date: DateTime
-  $to_date: DateTime
-) {
-  org_units(
-    filter: { uuids: [$unit_uuid], from_date: $from_date, to_date: $to_date }
-  ) {
+query GetOrgUnitTimeline($filter: OrganisationUnitFilter!) {
+  org_units(filter: $filter) {
     objects {
       validities {
         validity {
