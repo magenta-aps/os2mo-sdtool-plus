@@ -240,7 +240,9 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 4
@@ -400,7 +402,9 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     assert len(validities) == 1
@@ -595,9 +599,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
     async def verify() -> None:
         # Check the unit itself
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=unit_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -607,9 +609,7 @@ async def test_ou_timeline_sd_unit_priority_sync(
 
         # Check the child unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=child_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[child_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -874,9 +874,7 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
     async def verify() -> None:
         # Check the unit itself
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=unit_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -887,9 +885,7 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
 
         # Check the parent unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=parent_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(uuids=[parent_uuid], from_date=None, to_date=None)
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -900,9 +896,9 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
 
         # Check the grandparent unit
         updated_unit = await graphql_client.get_org_unit_timeline(
-            unit_uuid=grandparent_uuid,
-            from_date=None,
-            to_date=None,
+            OrganisationUnitFilter(
+                uuids=[grandparent_uuid], from_date=None, to_date=None
+            )
         )
 
         validity = one(one(updated_unit.objects).validities)
@@ -1102,7 +1098,9 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     updated_postal_address = await graphql_client.get_address_timeline(
@@ -1290,7 +1288,9 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     # Check the unit
@@ -2887,7 +2887,9 @@ async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validity = one(one(created_unit.objects).validities)
 
     assert validity.validity.from_ == t1
@@ -3010,7 +3012,9 @@ async def test_ou_timeline_condense_multiple_sd_parents_to_unknown_unit(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validities = one(created_unit.objects).validities
 
     interval_1 = validities[0]
@@ -3127,7 +3131,9 @@ async def test_ou_timeline_patch_with_no_name_for_missing_sd_name(
     # Assert
     assert r.status_code == 200
 
-    created_unit = await graphql_client.get_org_unit_timeline(unit_uuid, None, None)
+    created_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
     validity = one(one(created_unit.objects).validities)
 
     assert validity.validity.from_ == t1
@@ -3167,10 +3173,10 @@ async def test_ou_timeline_sync_filter(
           <Body>
             <Fault>
               <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
-              <faultstring>DepartmentUUIDIdentifier  was not found.</faultstring>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
               <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
               <detail>
-                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier  was not found."</string>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
               </detail>
             </Fault>
           </Body>
@@ -3193,7 +3199,9 @@ async def test_ou_timeline_sync_filter(
     # Assert
     assert r.status_code == 200
 
-    updated_unit = await graphql_client.get_org_unit_timeline(UNKNOWN_UNIT, None, None)
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[UNKNOWN_UNIT], from_date=None, to_date=None)
+    )
     validities = one(updated_unit.objects).validities
 
     # We assert that the unit still exists
@@ -3210,7 +3218,7 @@ async def test_ou_timeline_sync_filter(
         "PREFIX_ENGAGEMENT_USER_KEYS": "true",
     }
 )
-async def test_ou_timeline_sync_filter_unit_below_payroll_root(
+async def test_ou_timeline_sync_only_sync_payroll_units(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
     org_unit_type: OrgUnitUUID,
@@ -3232,20 +3240,18 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
           <Body>
             <Fault>
               <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
-              <faultstring>DepartmentUUIDIdentifier  was not found.</faultstring>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
               <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
               <detail>
-                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier  was not found."</string>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
               </detail>
             </Fault>
           </Body>
         </Envelope>
     """
 
-    unit_below_payroll_root = OrgUnitUUID("10000000-0000-0000-0000-000000000000")
-
     respx_mock.get(
-        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_below_payroll_root)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(UNKNOWN_UNIT)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
     ).respond(
         content_type="text/xml;charset=UTF-8",
         content=sd_dep_resp,
@@ -3254,14 +3260,14 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
     # Act
     r = await test_client.post(
         "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_below_payroll_root)},
+        json={"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)},
     )
 
     # Assert
     assert r.status_code == 200
 
     updated_unit = await graphql_client.get_org_unit_timeline(
-        unit_below_payroll_root, None, None
+        OrganisationUnitFilter(uuids=[UNKNOWN_UNIT], from_date=None, to_date=None)
     )
     validities = one(updated_unit.objects).validities
 
@@ -3272,7 +3278,9 @@ async def test_ou_timeline_sync_filter_unit_below_payroll_root(
 @pytest.mark.integration_test
 @pytest.mark.envvar(
     {
-        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}'
+        "SD_INSTITUTION_TO_MO_ROOT_OU_UUID_MAP": '{"b113bae1-7582-448e-a0d7-59015dcc143c": "10000000-0000-0000-0000-000000000000"}',
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
     }
 )
 async def test_ou_timeline_sd_to_mo_ou_uuid_map(
@@ -3364,10 +3372,98 @@ async def test_ou_timeline_sd_to_mo_ou_uuid_map(
     assert r.status_code == 200
 
     mo_unit = await graphql_client.get_org_unit_timeline(
-        unit_uuid=unit_uuid, from_date=None, to_date=None
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
     )
     validity = one(one(mo_unit.objects).validities)
 
     assert validity.validity.from_ == t1
     assert mo_end_to_timeline_end(validity.validity.to) == t2
     assert validity.parent_uuid == OrgUnitUUID("10000000-0000-0000-0000-000000000000")
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_ou_timeline_terminate_unit_no_longer_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing that an existing unit in MO is terminated when the unit no
+    longer exists in SD, i.e. when the SD GetDepartment endpoint responds with a
+    "department not found" fault (causing `get_department` to return None and
+    hence an empty SD timeline).
+
+    Time  --------t1--------------------------------------------------------->
+
+    MO (active)   |---------------------name1--------------------------------
+    SD            (unit does not exist in SD)
+
+    "Assert"      (unit is terminated in MO)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Create a (leaf) unit in MO which we will later terminate
+    await graphql_client._testing__create_org_unit(
+        uuid=unit_uuid,
+        name="name1",
+        user_key="II-ABCD",
+        org_unit_type=org_unit_type,
+        org_unit_level=org_unit_levels["NY0-niveau"],
+        from_date=t1,
+        parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+    )
+
+    # The SD GetDepartment endpoint responds with a "department not found" fault
+    sd_dep_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <Envelope>
+          <Body>
+            <Fault>
+              <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
+              <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
+              <detail>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
+              </detail>
+            </Fault>
+          </Body>
+        </Envelope>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/ou",
+        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # The unit is terminated, i.e. it no longer has any active validities
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
+    assert updated_unit.objects == []

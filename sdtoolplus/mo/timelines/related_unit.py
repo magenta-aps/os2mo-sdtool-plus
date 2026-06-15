@@ -84,7 +84,8 @@ async def _resolve_via_parents(
     expanding universe of temporal parents.
     """
     ou_timeline = await get_ou_timeline(
-        gql_client, unit_uuid, from_date=start, to_date=end
+        gql_client,
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=start, to_date=end),
     )
 
     if ou_timeline.parent == Timeline[UnitParent]():

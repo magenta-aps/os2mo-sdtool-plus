@@ -57,15 +57,11 @@ logger = structlog.stdlib.get_logger()
 
 async def get_ou_timeline(
     gql_client: GraphQLClient,
-    unit_uuid: OrgUnitUUID,
-    from_date: datetime | None = None,
-    to_date: datetime | None = None,
+    filter: OrganisationUnitFilter,
 ) -> UnitTimeline:
-    logger.info("Get MO org unit timeline", unit_uuid=str(unit_uuid))
+    logger.info("Get MO org unit timeline", filter=filter)
 
-    gql_timelime = await gql_client.get_org_unit_timeline(
-        unit_uuid=unit_uuid, from_date=from_date, to_date=to_date
-    )
+    gql_timelime = await gql_client.get_org_unit_timeline(filter)
     objects = gql_timelime.objects
 
     if not objects:
@@ -431,7 +427,11 @@ async def update_ou(
     # TODO: refactor get_org_unit_timeline to take a RAValidityInput object instead of
     # start and end dates
     ou = await gql_client.get_org_unit_timeline(
-        org_unit, mo_validity.from_, mo_validity.to
+        OrganisationUnitFilter(
+            uuids=[org_unit],
+            from_date=mo_validity.from_,
+            to_date=mo_validity.to,
+        )
     )
 
     # Get the OU type UUID
@@ -564,9 +564,11 @@ async def terminate_ou(
 
     # Temporary work-around: get addresses to terminate if any
     mo_unit = await gql_client.get_org_unit_timeline(
-        unit_uuid=org_unit,
-        from_date=mo_validity.from_,
-        to_date=mo_validity.to,
+        OrganisationUnitFilter(
+            uuids=[org_unit],
+            from_date=mo_validity.from_,
+            to_date=mo_validity.to,
+        )
     )
 
     if mo_validity.to is not None:
