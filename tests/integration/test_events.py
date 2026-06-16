@@ -3,7 +3,6 @@
 import json
 from datetime import date
 from datetime import datetime
-from unittest import skip
 from unittest.mock import AsyncMock
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -40,9 +39,8 @@ from sdtoolplus.mo.timelines.engagement import get_engagement_filter
 from sdtoolplus.mo.timelines.engagement import get_engagement_types
 from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
 from sdtoolplus.models import POSITIVE_INFINITY
-from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import EngType
-from sdtoolplus.models import PersonGraphQLEvent
+from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
 
@@ -593,7 +591,6 @@ async def test_retry_after_when_sd_api_is_closed(
             assert r.headers.get("Retry-After") == retry_after
 
 
-@skip("Skip until work-around in process_sd_amqp_employment_event is removed")
 @pytest.mark.parametrize(
     "event_type, expected",
     [
@@ -601,8 +598,8 @@ async def test_retry_after_when_sd_api_is_closed(
             "EMPLOYMENT_CHANGED",
             EventSendInput(
                 namespace="sd",
-                routing_key="employment",
-                subject=EmploymentGraphQLEvent(
+                routing_key="person-employment",
+                subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier="XY",
                     employment_identifier="12345",
                     cpr="1234567890",
@@ -613,9 +610,10 @@ async def test_retry_after_when_sd_api_is_closed(
             "EMPLOYMENT_CONTACT_INFO_CHANGED",
             EventSendInput(
                 namespace="sd",
-                routing_key="person",
-                subject=PersonGraphQLEvent(
+                routing_key="person-employment",
+                subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier="XY",
+                    employment_identifier="12345",
                     cpr="1234567890",
                 ).json(),
             ),
