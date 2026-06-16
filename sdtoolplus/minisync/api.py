@@ -8,6 +8,7 @@ from starlette.status import HTTP_200_OK
 from .. import depends
 from ..sync.engagement import sync_engagement
 from ..sync.person import sync_person
+from ..sync.person import sync_person_addresses
 from .engagement import move_engagement
 from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
@@ -57,7 +58,7 @@ async def sync_person_and_engagement(
 
     # TODO: add integration test when endpoint fully implemented.
 
-    await sync_person(
+    person_uuid = await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
         settings=settings,
@@ -65,13 +66,23 @@ async def sync_person_and_engagement(
         cpr=payload.cpr,
     )
 
-    await sync_engagement(
-        sd_client=sd_client,
-        gql_client=gql_client,
-        institution_identifier=payload.institution_identifier,
-        cpr=payload.cpr,
-        employment_identifier=payload.employment_identifier,
-        settings=settings,
-    )
+    if person_uuid is not None:
+        await sync_engagement(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            employment_identifier=payload.employment_identifier,
+            settings=settings,
+        )
+
+        await sync_person_addresses(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            settings=settings,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            person_uuid=person_uuid,
+        )
 
     return {"msg": "success"}

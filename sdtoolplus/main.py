@@ -49,17 +49,17 @@ from .middleware import ExceptionLoggerMiddleware
 from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
-from .models import EmploymentGraphQLEvent
 from .models import EngagementSyncPayload
 from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
-from .models import PersonGraphQLEvent
+from .models import PersonAndEmploymentGraphQLEvent
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
 from .sync.engagement import sync_engagement
 from .sync.org_unit import sync_ou
 from .sync.person import sync_person
+from .sync.person import sync_person_addresses
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -83,23 +83,13 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     parallelism=1,
                 )
             )
-        if not settings.disable_sd_person_events:
+        if not settings.disable_sd_person_engagement_events:
             listeners.append(
                 Listener(
                     namespace="sd",
-                    user_key="person",
-                    routing_key="person",
-                    path="/events/sd/person",
-                    parallelism=3,
-                )
-            )
-        if not settings.disable_sd_engagement_events:
-            listeners.append(
-                Listener(
-                    namespace="sd",
-                    user_key="employment",
-                    routing_key="employment",
-                    path="/events/sd/employment",
+                    user_key="person-employment",
+                    routing_key="person-employment",
+                    path="/events/sd/person-and-employment",
                     parallelism=3,
                 )
             )
@@ -370,13 +360,25 @@ def create_fastramqpi() -> FastRAMQPI:
         payload: PersonSyncPayload,
     ) -> dict:
         """Sync the person with the given CPR from the given institution identifier."""
-        await sync_person(
+        person_uuid = await sync_person(
             sd_client=sd_client,
             gql_client=gql_client,
             settings=settings,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
         )
+        if person_uuid is None:
+            return {"msg": "Person not found!"}
+
+        if settings.enable_person_address_sync:
+            await sync_person_addresses(
+                sd_client=sd_client,
+                gql_client=gql_client,
+                settings=settings,
+                institution_identifier=payload.institution_identifier,
+                cpr=payload.cpr,
+                person_uuid=person_uuid,
+            )
 
         return {"msg": "success"}
 
@@ -402,8 +404,8 @@ def create_fastramqpi() -> FastRAMQPI:
         events = [
             EventSendInput(
                 namespace="sd",
-                routing_key="person",
-                subject=PersonGraphQLEvent(
+                routing_key="person-employment",
+                subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier=institution_identifier,
                     cpr=person.cpr,
                 ).json(),
@@ -429,20 +431,15 @@ def create_fastramqpi() -> FastRAMQPI:
         payload: EngagementSyncPayload,
         dry_run: bool = False,
     ) -> dict:
-        # TODO: This person sync is a temporary change which can be removed when the code
-        #       for handling the new SD event types has been implemented. Soon SD will stop
-        #       sending person events and only send engagement events, when employment
-        #       addresses are updated. For now, we therefore need to sync the engagement
-        #       person too, when syncing the engagement, since the employment addresses
-        #       are stored on the Person object in SD.
-        if settings.sync_person_when_syncing_sd_engagement:
-            await sync_person(
-                sd_client=sd_client,
-                gql_client=gql_client,
-                settings=settings,
-                institution_identifier=payload.institution_identifier,
-                cpr=payload.cpr,
-            )
+        person_uuid = await sync_person(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            settings=settings,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+        )
+        if person_uuid is None:
+            return {"msg": "Person not found!"}
 
         await sync_engagement(
             sd_client=sd_client,
@@ -453,6 +450,16 @@ def create_fastramqpi() -> FastRAMQPI:
             settings=settings,
             dry_run=dry_run,
         )
+
+        await sync_person_addresses(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            settings=settings,
+            institution_identifier=payload.institution_identifier,
+            cpr=payload.cpr,
+            person_uuid=person_uuid,
+        )
+
         return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/engagement/all/sd", status_code=HTTP_200_OK)
@@ -503,8 +510,8 @@ def create_fastramqpi() -> FastRAMQPI:
             for e in one(res.Person).Employment:
                 event = EventSendInput(
                     namespace="sd",
-                    routing_key="employment",
-                    subject=EmploymentGraphQLEvent(
+                    routing_key="person-employment",
+                    subject=PersonAndEmploymentGraphQLEvent(
                         institution_identifier=institution_identifier,
                         cpr=person.cpr,
                         employment_identifier=e.EmploymentIdentifier,

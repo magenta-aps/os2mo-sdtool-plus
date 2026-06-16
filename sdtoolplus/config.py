@@ -132,10 +132,8 @@ class SDToolPlusSettings(BaseSettings):
     disable_sd_events: bool = False
     # If true, we disable all SD org unit events
     disable_sd_ou_events: bool = False
-    # If true, we disable all SD person events
-    disable_sd_person_events: bool = False
     # If true, we disable all SD engagement events
-    disable_sd_engagement_events: bool = False
+    disable_sd_person_engagement_events: bool = False
     # If true, we disable all MO events
     disable_mo_events: bool = False
     # If true, we disable all MO org unit events
