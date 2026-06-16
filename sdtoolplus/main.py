@@ -42,8 +42,6 @@ from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .events import EmploymentGraphQLEvent
-from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .exceptions import UnknownNYLevel
@@ -51,9 +49,11 @@ from .middleware import ExceptionLoggerMiddleware
 from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
+from .models import EmploymentGraphQLEvent
 from .models import EngagementSyncPayload
 from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
+from .models import PersonGraphQLEvent
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
