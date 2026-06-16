@@ -584,28 +584,54 @@ async def sync_person(
         "Done syncing person!", institution_identifier=institution_identifier, cpr=cpr
     )
 
-    if settings.enable_person_address_sync:
-        # We have to look up the person once again in order to exclude addresses
-        # from passive engagements
-        sd_person = await get_sd_person(
-            sd_client=sd_client,
+    await sync_person_addresses(
+        sd_client=sd_client,
+        gql_client=gql_client,
+        settings=settings,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        person_uuid=person_uuid,
+    )
+
+
+async def sync_person_addresses(
+    sd_client: SDClient,
+    gql_client: GraphQLClient,
+    settings: SDToolPlusSettings,
+    institution_identifier: str,
+    cpr: str,
+    person_uuid: UUID,
+) -> None:
+    if not settings.enable_person_address_sync:
+        return
+
+    logger.info(
+        "Sync person address",
+        inst_id=institution_identifier,
+        cpr=cpr,
+    )
+
+    # We have to look up the person once again in order to exclude addresses
+    # from passive engagements
+    sd_person = await get_sd_person(
+        sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        effective_date=datetime.today(),
+        include_passive_persons=False,
+    )
+    if sd_person is None:
+        logger.warning(
+            "Person not found in SD. Skipping address sync",
             institution_identifier=institution_identifier,
             cpr=cpr,
-            effective_date=datetime.today(),
-            include_passive_persons=False,
         )
-        if sd_person is None:
-            logger.warning(
-                "Person not found in SD. Skipping address sync",
-                institution_identifier=institution_identifier,
-                cpr=cpr,
-            )
-            return
+        return
 
-        await _sync_addresses(
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=institution_identifier,
-            person_uuid=person_uuid,
-            sd_person=sd_person,
-        )
+    await _sync_addresses(
+        gql_client=gql_client,
+        settings=settings,
+        institution_identifier=institution_identifier,
+        person_uuid=person_uuid,
+        sd_person=sd_person,
+    )
