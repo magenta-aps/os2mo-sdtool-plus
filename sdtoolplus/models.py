@@ -70,10 +70,10 @@ class EmploymentAMQPEvent(BaseModel):
 # Event models
 
 
-class EmploymentGraphQLEvent(BaseModel):
+class PersonAndEmploymentGraphQLEvent(BaseModel):
     institution_identifier: str
-    employment_identifier: str
     cpr: str
+    employment_identifier: str | None = None
 
 
 class OrgAMQPEvent(BaseModel):
@@ -103,11 +103,6 @@ class PersonAMQPEvent(BaseModel):
     """
 
     instCode: str
-    cpr: str
-
-
-class PersonGraphQLEvent(BaseModel):
-    institution_identifier: str
     cpr: str
 
 
