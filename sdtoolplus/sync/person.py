@@ -538,7 +538,7 @@ async def sync_person(
     settings: SDToolPlusSettings,
     institution_identifier: str,
     cpr: str,
-) -> None:
+) -> UUID | None:
     logger.info(
         "Sync person",
         inst_id=institution_identifier,
@@ -551,7 +551,7 @@ async def sync_person(
             institution_identifier=institution_identifier,
             cpr=cpr,
         )
-        return
+        return None
 
     sd_person = await get_sd_person(
         sd_client=sd_client,
@@ -565,7 +565,7 @@ async def sync_person(
             institution_identifier=institution_identifier,
             cpr=cpr,
         )
-        return
+        return None
 
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
@@ -592,6 +592,8 @@ async def sync_person(
         cpr=cpr,
         person_uuid=person_uuid,
     )
+
+    return person_uuid
 
 
 async def sync_person_addresses(
