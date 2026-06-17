@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from uuid import UUID
@@ -51,6 +52,42 @@ from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
+
+# The /timeline/sync/person-engagement endpoint syncs the person before the
+# engagement, which calls the SD GetPerson20111201 endpoint. The tests below all
+# use the same CPR ("0101011234") and sync as of "today", so the GetPerson call
+# is identical across them and mocked via the constants below.
+TODAY_URL_FORMAT = date.strftime(date.today(), "%d.%m.%Y")
+TODAY_SD_FORMAT = date.strftime(date.today(), "%Y-%m-%d")
+
+GET_PERSON_URL = (
+    "https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II"
+    f"&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier=0101011234"
+    "&StatusActiveIndicator=True&StatusPassiveIndicator=True"
+    "&ContactInformationIndicator=True&PostalAddressIndicator=True"
+)
+
+GET_PERSON_SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
+    <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+        <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
+            <StatusActiveIndicator>true</StatusActiveIndicator>
+            <StatusPassiveIndicator>true</StatusPassiveIndicator>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+        </RequestStructure>
+        <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <PersonGivenName>Chuck</PersonGivenName>
+            <PersonSurnameName>Norris</PersonSurnameName>
+            <Employment>
+                <EmploymentIdentifier>12345</EmploymentIdentifier>
+            </Employment>
+        </Person>
+    </GetPerson20111201>
+"""
 
 
 @pytest.mark.integration_test
@@ -311,6 +348,10 @@ async def test_eng_timeline_http_triggered_sync(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -587,6 +628,10 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -822,6 +867,10 @@ async def test_eng_timeline_create_new_engagement(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -1011,6 +1060,10 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -1267,6 +1320,10 @@ async def test_association_create_update_terminate(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -1445,6 +1502,10 @@ async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_mis
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -1743,6 +1804,10 @@ async def test_eng_timeline_related_units(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -2030,6 +2095,10 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -2263,6 +2332,10 @@ async def test_eng_timeline_related_units_single_day_relation(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -2471,6 +2544,10 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -2669,6 +2746,10 @@ async def test_eng_timeline_recursive_related_units_simple_case(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -3280,6 +3361,10 @@ async def test_eng_timeline_recursive_related_units_complex_case(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -3697,6 +3782,10 @@ async def test_eng_timeline_delete_engagement_and_leave_not_found_in_sd(
         </Envelope>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -3850,6 +3939,10 @@ async def test_eng_timeline_only_process_sd_engagements(
         </Envelope>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -4069,6 +4162,10 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -4217,6 +4314,10 @@ async def test_eng_timeline_handle_termination_of_sd_status_8_engagements(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -4400,6 +4501,10 @@ async def test_eng_timeline_unknown_job_function(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -4585,6 +4690,10 @@ async def test_eng_timeline_unit_validity_too_narrow(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -4871,6 +4980,10 @@ async def test_eng_timeline_status_code_engagement_types(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -5165,6 +5278,10 @@ async def test_eng_timeline_elevate_managers(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -5401,6 +5518,10 @@ async def test_eng_timeline_elevate_managers_changing_unit_id(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -5539,6 +5660,10 @@ async def test_eng_timeline_elevate_managers_for_non_manager(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -5739,6 +5864,10 @@ async def test_eng_timeline_elevate_managers_multiple_managers(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
