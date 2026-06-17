@@ -49,14 +49,14 @@ from .middleware import ExceptionLoggerMiddleware
 from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
-from .models import EngagementSyncPayload
 from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
 from .models import PersonAndEmploymentGraphQLEvent
+from .models import PersonAndEngagementSyncPayload
 from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
-from .sync.engagement import sync_engagement
+from .sync.engagement import sync_person_and_engagement
 from .sync.org_unit import sync_ou
 from .sync.person import sync_person
 from .sync.person import sync_person_addresses
@@ -423,46 +423,33 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return {"msg": f"{len(events)} person events queued"}
 
-    @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
+    @fastapi_router.post("/timeline/sync/person-engagement", status_code=HTTP_200_OK)
     async def timeline_sync_engagement(
         settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
-        payload: EngagementSyncPayload,
-        dry_run: bool = False,
+        payload: PersonAndEngagementSyncPayload,
     ) -> dict:
-        person_uuid = await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-        )
-        if person_uuid is None:
-            return {"msg": "Person not found!"}
+        """
+        Sync person and engagement.
 
-        await sync_engagement(
+        If the employmeny identifier is not set in the payload, we will effectively only
+        sync the person.
+        """
+        await sync_person_and_engagement(
+            settings=settings,
             sd_client=sd_client,
             gql_client=gql_client,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
             employment_identifier=payload.employment_identifier,
-            settings=settings,
-            dry_run=dry_run,
-        )
-
-        await sync_person_addresses(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            person_uuid=person_uuid,
         )
 
         return {"msg": "success"}
 
-    @fastapi_router.post("/timeline/sync/engagement/all/sd", status_code=HTTP_200_OK)
+    @fastapi_router.post(
+        "/timeline/sync/person-engagement/all/sd", status_code=HTTP_200_OK
+    )
     async def full_timeline_sync_sd_engagements(
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,

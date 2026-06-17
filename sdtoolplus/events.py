@@ -46,9 +46,9 @@ from sdtoolplus.models import PersonAMQPEvent
 from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
 from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.sync.engagement import sync_engagement
+from sdtoolplus.sync.engagement import sync_person_and_engagement
 from sdtoolplus.sync.org_unit import sync_ou
 from sdtoolplus.sync.person import sync_person
-from sdtoolplus.sync.person import sync_person_addresses
 
 logger = structlog.stdlib.get_logger()
 
@@ -221,41 +221,14 @@ async def _sd_person_employment(
     person_engagement: PersonAndEmploymentGraphQLEvent = event.subject
     logger.info("Received SD person or engagement event", subject=person_engagement)
 
-    if settings.disable_sd_person_events:
-        return
-
-    person_uuid = await sync_person(
+    await sync_person_and_engagement(
+        settings=settings,
         sd_client=sd_client,
         gql_client=gql_client,
-        settings=settings,
         institution_identifier=person_engagement.institution_identifier,
         cpr=person_engagement.cpr,
+        employment_identifier=person_engagement.employment_identifier,
     )
-    if person_uuid is None:
-        return
-
-    if settings.disable_sd_engagement_events:
-        return
-
-    if person_engagement.employment_identifier is not None:
-        await sync_engagement(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=person_engagement.institution_identifier,
-            cpr=person_engagement.cpr,
-            employment_identifier=person_engagement.employment_identifier,
-            settings=settings,
-        )
-
-    if settings.enable_person_address_sync:
-        await sync_person_addresses(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=person_engagement.institution_identifier,
-            cpr=person_engagement.cpr,
-            person_uuid=person_uuid,
-        )
 
 
 async def _sync_engagement_by_uuid(

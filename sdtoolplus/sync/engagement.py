@@ -56,6 +56,8 @@ from sdtoolplus.sd.timelines.employment import (
 from sdtoolplus.sync.association import sync_associations
 from sdtoolplus.sync.common import prefix_eng_user_key
 from sdtoolplus.sync.leave import _sync_leave_intervals
+from sdtoolplus.sync.person import sync_person
+from sdtoolplus.sync.person import sync_person_addresses
 from sdtoolplus.types import CPRNumber
 
 logger = structlog.stdlib.get_logger()
@@ -892,3 +894,50 @@ async def sync_engagement(
         desired_eng_timeline=desired_eng_timeline,
         dry_run=dry_run,
     )
+
+
+async def sync_person_and_engagement(
+    settings: SDToolPlusSettings,
+    sd_client: SDClient,
+    gql_client: GraphQLClient,
+    institution_identifier: str,
+    cpr: str,
+    employment_identifier: str | None,
+) -> None:
+    logger.info(
+        "Sync person and engagement",
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        employment_identifier=employment_identifier,
+    )
+
+    person_uuid = await sync_person(
+        sd_client=sd_client,
+        gql_client=gql_client,
+        settings=settings,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+    )
+    if person_uuid is None:
+        logger.warning("Person not found in SD (or fictive SD person)")
+        return
+
+    if employment_identifier is not None:
+        await sync_engagement(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            employment_identifier=employment_identifier,
+            settings=settings,
+        )
+
+    if settings.enable_person_address_sync:
+        await sync_person_addresses(
+            sd_client=sd_client,
+            gql_client=gql_client,
+            settings=settings,
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+            person_uuid=person_uuid,
+        )

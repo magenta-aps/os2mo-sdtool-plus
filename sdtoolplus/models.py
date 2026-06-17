@@ -131,10 +131,10 @@ class PersonSyncPayload(BaseModel):
     cpr: str
 
 
-class EngagementSyncPayload(BaseModel):
+class PersonAndEngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
-    employment_identifier: str
+    employment_identifier: str | None = None
 
 
 class OrgUnitSyncPayload(BaseModel):
