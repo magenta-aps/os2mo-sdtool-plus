@@ -455,7 +455,6 @@ def create_fastramqpi() -> FastRAMQPI:
         gql_client: depends.GraphQLClient,
         institution_identifier: str,
         only_active_persons: bool = False,
-        dry_run: bool = False,
     ) -> dict:
         """
         Sync engagements of all SD persons, i.e.
@@ -473,11 +472,6 @@ def create_fastramqpi() -> FastRAMQPI:
             only_active_persons=only_active_persons,
         )
 
-        if dry_run:
-            logger.info(
-                f"Dry-run. Would create engagement events for {len(sd_persons)} persons"
-            )
-            return {"msg": "success"}
         for person in sd_persons:
             try:
                 res = await get_sd_person_engagements(
