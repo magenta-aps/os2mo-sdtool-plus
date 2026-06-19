@@ -5901,3 +5901,70 @@ async def test_eng_timeline_elevate_managers_multiple_managers(
     assert interval_1.org_unit_uuid == dep2_uuid
     assert interval_1.extension_4 == "dep2"
     assert interval_1.extension_5 == str(dep3_uuid)
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
+async def test_eng_timeline_raises_when_person_not_found_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    The /timeline/sync/person-engagement endpoint syncs the person before the
+    engagement. If the person is not found in SD, a PersonNotFoundError (HTTP
+    404) is raised - even when an employment_identifier is provided - and the
+    engagement is therefore not synced.
+    """
+    # Arrange
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    # The SD GetPerson endpoint responds with a "person not found" fault
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content="""
+        <Envelope>
+            <Body>
+                <Fault>
+                    <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+                    <faultstring>
+                        The stated PersonCivilRegistrationIdentifier '0101011234' does not exist.
+                    </faultstring>
+                    <faultactor>
+                        dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetPerson20111201BO
+                    </faultactor>
+                    <detail>
+                        <string>
+                            Missing or invalid parameter from client: "The stated PersonCivilRegistrationIdentifier '0101011234' does not exist."
+                        </string>
+                    </detail>
+                </Fault>
+            </Body>
+        </Envelope>
+        """,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/timeline/sync/person-engagement",
+        json={
+            "institution_identifier": "II",
+            "cpr": cpr,
+            "employment_identifier": emp_id,
+        },
+    )
+
+    # Assert: a PersonNotFoundError (HTTP 404) is raised
+    assert r.status_code == 404
+
+    # The engagement was not synced
+    engagements = await graphql_client.get_engagements(
+        EngagementFilter(user_keys=[emp_id])
+    )
+    assert not engagements.objects
