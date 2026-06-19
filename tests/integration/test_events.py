@@ -39,6 +39,7 @@ from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
 from sdtoolplus.mo.timelines.engagement import get_engagement_types
 from sdtoolplus.mo_org_unit_importer import OrgUnitLevelUUID
+from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import EngType
 from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
@@ -859,5 +860,253 @@ async def test_sd_employment_amqp_event_is_processed(
         validity = one(one(mo_engagement.objects).validities)
         assert validity.validity.from_ == t1
         assert validity.org_unit_uuid == dep1_uuid
+
+    await verify()
+
+
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "EVENT_BASED_SYNC": "true",
+        # The dedicated SD broker (sd-amqp) is not available in CI, so point the
+        # SD AMQP integration at the os2mo message broker instead.
+        "SD_AMQP__URL": SD_AMQP_URL,
+        # We only want to exercise the SD AMQP -> SD person/employment event
+        # flow, so disable the MO event listeners.
+        "DISABLE_MO_EVENTS": "true",
+    }
+)
+@pytest.mark.integration_test
+async def test_sd_person_amqp_event_is_processed(
+    sd_amqp_queues: None,
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Send an SD person event via the SD AMQP `person-events` queue and assert
+    that it is processed correctly.
+
+    The application consumes the AMQP message, converts it to an MO GraphQL
+    "person-employment" event (without an employment identifier), which in turn
+    triggers a sync of the person (only) in MO.
+    """
+    # Arrange
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    today_sd_format = date.strftime(date.today(), "%Y-%m-%d")
+    today_url_format = date.strftime(date.today(), "%d.%m.%Y")
+
+    # The person does not exist in MO yet
+    mo_person_before = await graphql_client.get_person(cpr=CPRNumber(cpr))
+    assert mo_person_before.objects == []
+
+    # Configure the SD API GetPerson mock
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={today_url_format}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=f"""<?xml version="1.0" encoding="UTF-8" ?>
+            <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+                <RequestStructure>
+                    <InstitutionIdentifier>II</InstitutionIdentifier>
+                    <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                    <EffectiveDate>{today_sd_format}</EffectiveDate>
+                    <StatusActiveIndicator>true</StatusActiveIndicator>
+                    <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                    <ContactInformationIndicator>false</ContactInformationIndicator>
+                    <PostalAddressIndicator>false</PostalAddressIndicator>
+                </RequestStructure>
+                <Person>
+                    <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                    <PersonGivenName>Chuck</PersonGivenName>
+                    <PersonSurnameName>Norris</PersonSurnameName>
+                    <Employment>
+                        <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                    </Employment>
+                </Person>
+            </GetPerson20111201>
+        """,
+    )
+
+    # Act: publish an SD person event to the SD AMQP `person-events` queue (the
+    # same queue the application consumes from)
+    connection = await aio_pika.connect(SD_AMQP_URL)
+    try:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(
+                    {
+                        "id": str(uuid4()),
+                        "eventType": "Person",
+                        "instCode": "II",
+                        "cpr": cpr,
+                    }
+                ).encode("utf-8")
+            ),
+            routing_key="person-events",
+        )
+    finally:
+        await connection.close()
+
+    # Assert: the person is eventually synced to MO
+    @retry()  # type: ignore[no-redef]
+    async def verify() -> None:
+        mo_person = await graphql_client.get_person_timeline(
+            filter=EmployeeFilter(
+                cpr_numbers=[CPRNumber(cpr)], from_date=None, to_date=None
+            )
+        )
+        person = one(mo_person.objects)
+        assert one(person.validities).given_name == "Chuck"
+
+    await verify()
+
+
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+        "EVENT_BASED_SYNC": "true",
+        # The dedicated SD broker (sd-amqp) is not available in CI, so point the
+        # SD AMQP integration at the os2mo message broker instead.
+        "SD_AMQP__URL": SD_AMQP_URL,
+        # We only want to exercise the SD AMQP -> SD org event flow, so disable
+        # the MO event listeners.
+        "DISABLE_MO_EVENTS": "true",
+    }
+)
+@pytest.mark.integration_test
+async def test_sd_org_amqp_event_is_processed(
+    sd_amqp_queues: None,
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Send an SD org unit event via the SD AMQP `org-events` queue and assert that
+    it is processed correctly.
+
+    The application consumes the AMQP message, converts it to an MO GraphQL
+    "org" event, which in turn triggers a sync of the org unit in MO. SD reports
+    a wider validity than MO, so the MO unit is extended to match SD.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t6 = datetime(2006, 1, 1, tzinfo=tz)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Create the MO unit (narrower than SD: t2-t6)
+    await graphql_client.create_org_unit(
+        OrganisationUnitCreateInput(
+            uuid=unit_uuid,
+            validity=timeline_interval_to_mo_validity(start=t2, end=t6),
+            name="name1",
+            user_key="II-ABCD",
+            parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+            org_unit_type=org_unit_type,
+            org_unit_level=org_unit_levels["NY0-niveau"],
+        )
+    )
+
+    sd_dep_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetDepartment20111201 creationDateTime="2025-02-18T10:41:08">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <ActivationDate>1930-02-18</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <DepartmentNameIndicator>true</DepartmentNameIndicator>
+            <EmploymentDepartmentIndicator>false</EmploymentDepartmentIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+            <ProductionUnitIndicator>false</ProductionUnitIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <RegionIdentifier>RI</RegionIdentifier>
+          <RegionUUIDIdentifier>838b8691-7785-4f64-a83a-b383567dd171</RegionUUIDIdentifier>
+          <InstitutionIdentifier>II</InstitutionIdentifier>
+          <InstitutionUUIDIdentifier>d6024493-a920-4040-9876-9faaae88efc1</InstitutionUUIDIdentifier>
+          <Department>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIdentifier>ABCD</DepartmentIdentifier>
+            <DepartmentUUIDIdentifier>{str(unit_uuid)}</DepartmentUUIDIdentifier>
+            <DepartmentLevelIdentifier>NY0-niveau</DepartmentLevelIdentifier>
+            <DepartmentName>name1</DepartmentName>
+          </Department>
+        </GetDepartment20111201>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    respx_mock.get(
+        f"https://service.sd.dk/api-gateway/organization/public/api/v1/organizations/uuids/{str(unit_uuid)}/department-parent-history"
+    ).respond(
+        json=[
+            {
+                "startDate": "2001-01-01",
+                "endDate": "9999-12-31",
+                "parentUuid": "10000000-0000-0000-0000-000000000000",
+            },
+        ],
+    )
+
+    # Act: publish an SD org event to the SD AMQP `org-events` queue (the same
+    # queue the application consumes from)
+    connection = await aio_pika.connect(SD_AMQP_URL)
+    try:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(
+                    {
+                        "id": str(uuid4()),
+                        "eventType": "Org",
+                        "instCode": "II",
+                        "orgUnitUuid": str(unit_uuid),
+                        "fromDate": "2001-01-01",
+                        "toDate": "9999-12-31",
+                    }
+                ).encode("utf-8")
+            ),
+            routing_key="org-events",
+        )
+    finally:
+        await connection.close()
+
+    # Assert: the MO unit is eventually extended to match the SD timeline
+    @retry()  # type: ignore[no-redef]
+    async def verify() -> None:
+        updated_unit = await graphql_client.get_org_unit_timeline(
+            OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+        )
+        validity = one(one(updated_unit.objects).validities)
+        assert validity.validity.from_ == t1
+        assert mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
+        assert validity.name == "name1"
+        assert validity.user_key == "II-ABCD"
+        assert validity.org_unit_level is not None
+        assert validity.org_unit_level.name == "NY0-niveau"
+        assert validity.parent_uuid == OrgUnitUUID(
+            "10000000-0000-0000-0000-000000000000"
+        )
 
     await verify()
