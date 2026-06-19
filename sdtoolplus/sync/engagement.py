@@ -25,6 +25,7 @@ from sdtoolplus.exceptions import DepartmentParentsNotFoundError
 from sdtoolplus.exceptions import DepartmentValidityExceedsParentsValiditiesError
 from sdtoolplus.exceptions import HolesInDepartmentParentsTimelineError
 from sdtoolplus.exceptions import NoValueError
+from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timelines.engagement import create_engagement
 from sdtoolplus.mo.timelines.engagement import get_engagement_filter
 from sdtoolplus.mo.timelines.engagement import get_engagement_timeline
@@ -911,6 +912,16 @@ async def sync_person_and_engagement(
         employment_identifier=employment_identifier,
     )
 
+    # Fictive persons (CPRs ending in "0000") are intentionally skipped and must
+    # not be treated as an error.
+    if cpr.endswith("0000"):
+        logger.warning(
+            "Skipping fictive person since CPR ends with 0000",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return
+
     person_uuid = await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
@@ -919,8 +930,8 @@ async def sync_person_and_engagement(
         cpr=cpr,
     )
     if person_uuid is None:
-        logger.warning("Person not found in SD (or fictive SD person)")
-        return
+        logger.warning("Person not found in SD")
+        raise PersonNotFoundError()
 
     if employment_identifier is not None:
         await sync_engagement(
