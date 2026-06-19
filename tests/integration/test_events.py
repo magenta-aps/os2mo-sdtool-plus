@@ -10,6 +10,7 @@ from uuid import UUID
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+import aio_pika
 import pytest
 from fastapi import Depends
 from fastapi import FastAPI
@@ -43,6 +44,39 @@ from sdtoolplus.models import EngType
 from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
+
+# In production the SD AMQP events arrive on a dedicated SD broker. That broker
+# (the `sd-amqp` service) is not available in the CI pipeline, so for the
+# integration test we point the SD AMQP integration at the os2mo `msg-broker`
+# instead.
+SD_AMQP_URL = "amqp://guest:guest@msg-broker:5672/"
+
+# The queues the SD AMQP integration consumes from. In production these are
+# declared by SD; the application only consumes them (passively).
+SD_AMQP_QUEUES = ("employment-events", "org-events", "person-events")
+
+
+@pytest.fixture
+async def sd_amqp_queues() -> None:
+    """Declare the SD AMQP queues on the message broker.
+
+    The application consumes these queues passively (it does not declare them),
+    so they must exist before the application connects. This fixture must run
+    before the application server is started (i.e. before the `test_client`
+    fixture).
+
+    The queues are durable and are not part of the database snapshot, so any
+    messages left over from a previous test would otherwise linger. We therefore
+    purge them in case they already exist.
+    """
+    connection = await aio_pika.connect(SD_AMQP_URL)
+    try:
+        channel = await connection.channel()
+        for name in SD_AMQP_QUEUES:
+            queue = await channel.declare_queue(name, durable=True)
+            await queue.purge()
+    finally:
+        await connection.close()
 
 
 @pytest.mark.envvar(
@@ -647,3 +681,183 @@ async def test_process_sd_amqp_employment_event(
 
     # Assert
     mock_gql_client.send_event.assert_awaited_once_with(input=expected)
+
+
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "EVENT_BASED_SYNC": "true",
+        # The dedicated SD broker (sd-amqp) is not available in CI, so point the
+        # SD AMQP integration at the os2mo message broker instead.
+        "SD_AMQP__URL": SD_AMQP_URL,
+        # We only want to exercise the SD AMQP -> SD person/employment event
+        # flow, so disable the MO event listeners.
+        "DISABLE_MO_EVENTS": "true",
+    }
+)
+@pytest.mark.integration_test
+async def test_sd_employment_amqp_event_is_processed(
+    sd_amqp_queues: None,
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+) -> None:
+    """
+    Send an SD employment event via the SD AMQP `employment-events` queue and
+    assert that it is processed correctly.
+
+    The application consumes the AMQP message, converts it to an MO GraphQL
+    "person-employment" event, which in turn triggers a sync of both the person
+    and the engagement in MO.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    cpr = "0101011234"
+    emp_id = "12345"
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    today_sd_format = date.strftime(date.today(), "%Y-%m-%d")
+    today_url_format = date.strftime(date.today(), "%d.%m.%Y")
+
+    # The person does not exist in MO yet
+    mo_person_before = await graphql_client.get_person(cpr=CPRNumber(cpr))
+    assert mo_person_before.objects == []
+
+    # Configure the SD API GetPerson mock
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={today_url_format}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=f"""<?xml version="1.0" encoding="UTF-8" ?>
+            <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+                <RequestStructure>
+                    <InstitutionIdentifier>II</InstitutionIdentifier>
+                    <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                    <EffectiveDate>{today_sd_format}</EffectiveDate>
+                    <StatusActiveIndicator>true</StatusActiveIndicator>
+                    <StatusPassiveIndicator>true</StatusPassiveIndicator>
+                    <ContactInformationIndicator>false</ContactInformationIndicator>
+                    <PostalAddressIndicator>false</PostalAddressIndicator>
+                </RequestStructure>
+                <Person>
+                    <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+                    <PersonGivenName>Chuck</PersonGivenName>
+                    <PersonSurnameName>Norris</PersonSurnameName>
+                    <Employment>
+                        <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+                    </Employment>
+                </Person>
+            </GetPerson20111201>
+        """,
+    )
+
+    # Configure the SD API GetEmploymentChanged mock (a single active interval
+    # in dep1)
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+        """,
+    )
+
+    # Act: publish an SD employment event to the SD AMQP `employment-events`
+    # queue (the same queue the application consumes from)
+    connection = await aio_pika.connect(SD_AMQP_URL)
+    try:
+        channel = await connection.channel()
+        await channel.default_exchange.publish(
+            aio_pika.Message(
+                body=json.dumps(
+                    {
+                        "id": str(uuid4()),
+                        "eventType": "Employment",
+                        "instCode": "II",
+                        "tjnr": emp_id,
+                        "cpr": cpr,
+                    }
+                ).encode("utf-8")
+            ),
+            routing_key="employment-events",
+        )
+    finally:
+        await connection.close()
+
+    # Assert: the person and the engagement are eventually synced to MO
+    @retry()  # type: ignore[no-redef]
+    async def verify() -> None:
+        mo_person = await graphql_client.get_person_timeline(
+            filter=EmployeeFilter(
+                cpr_numbers=[CPRNumber(cpr)], from_date=None, to_date=None
+            )
+        )
+        person = one(mo_person.objects)
+        assert one(person.validities).given_name == "Chuck"
+
+        mo_engagement = await graphql_client.get_engagement_timeline(
+            get_engagement_filter(
+                person=person.uuid,
+                user_key=emp_id,
+                from_date=None,
+                to_date=None,
+            )
+        )
+        validity = one(one(mo_engagement.objects).validities)
+        assert validity.validity.from_ == t1
+        assert validity.org_unit_uuid == dep1_uuid
+
+    await verify()
