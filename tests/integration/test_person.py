@@ -114,7 +114,7 @@ async def test_person_not_in_sd_due_to_envelope_sd_response(
     )
 
     # Assert
-    assert r.status_code == 200
+    assert r.status_code == 404
 
 
 @pytest.mark.integration_test
@@ -173,7 +173,7 @@ async def test_person_not_in_sd_due_to_missing_person_element(
     )
 
     # Assert
-    assert r.status_code == 200
+    assert r.status_code == 404
 
     mo_person = await graphql_client.get_person_timeline(
         EmployeeFilter(cpr_numbers=[CPR], from_date=None, to_date=None)
