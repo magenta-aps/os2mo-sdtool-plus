@@ -28,7 +28,7 @@ async def engagement_move(
 
 
 @minisync_router.post("/minisync/sync-person-and-employment", status_code=HTTP_200_OK)
-async def sync_person_and_eng(
+async def _sync_person_and_engagement(
     response: Response,
     settings: depends.Settings,
     sd_client: depends.SDClient,
