@@ -53,13 +53,10 @@ from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
 from .models import PersonAndEmploymentGraphQLEvent
 from .models import PersonAndEngagementSyncPayload
-from .models import PersonSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
 from .sync.engagement import sync_person_and_engagement
 from .sync.org_unit import sync_ou
-from .sync.person import sync_person
-from .sync.person import sync_person_addresses
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -351,36 +348,6 @@ def create_fastramqpi() -> FastRAMQPI:
         logger.info("Run completed!")
 
         return results
-
-    @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
-    async def timeline_sync_person(
-        sd_client: depends.SDClient,
-        gql_client: depends.GraphQLClient,
-        settings: depends.Settings,
-        payload: PersonSyncPayload,
-    ) -> dict:
-        """Sync the person with the given CPR from the given institution identifier."""
-        person_uuid = await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-        )
-        if person_uuid is None:
-            return {"msg": "Person not found!"}
-
-        if settings.enable_person_address_sync:
-            await sync_person_addresses(
-                sd_client=sd_client,
-                gql_client=gql_client,
-                settings=settings,
-                institution_identifier=payload.institution_identifier,
-                cpr=payload.cpr,
-                person_uuid=person_uuid,
-            )
-
-        return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/person/all")
     async def sync_all_persons(

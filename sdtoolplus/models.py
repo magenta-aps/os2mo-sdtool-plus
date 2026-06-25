@@ -126,11 +126,6 @@ class EngType(Enum):
         return cls.RECALCULATE
 
 
-class PersonSyncPayload(BaseModel):
-    institution_identifier: str
-    cpr: str
-
-
 class PersonAndEngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
