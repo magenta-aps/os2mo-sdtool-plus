@@ -1,13 +1,17 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import asyncio
+import threading
 from datetime import date
 from datetime import datetime
 from datetime import time
+from time import sleep
 from typing import cast
 from uuid import UUID
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+import httpx
 import pytest
 from httpx import AsyncClient
 from more_itertools import one
@@ -62,6 +66,69 @@ SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
         </Person>
     </GetPerson20111201>
 """
+
+
+def get_person_url(cpr: str) -> str:
+    return f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+
+
+def sd_person_resp(cpr: str) -> str:
+    return f"""<?xml version="1.0" encoding="UTF-8" ?>
+    <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+        <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
+            <StatusActiveIndicator>true</StatusActiveIndicator>
+            <StatusPassiveIndicator>true</StatusPassiveIndicator>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+        </RequestStructure>
+        <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <PersonGivenName>Chuck</PersonGivenName>
+            <PersonSurnameName>Norris</PersonSurnameName>
+            <Employment>
+                <EmploymentIdentifier>{EMP_ID}</EmploymentIdentifier>
+            </Employment>
+        </Person>
+    </GetPerson20111201>
+    """
+
+
+class ConcurrencyProbe:
+    """A respx ``side_effect`` that records the maximum number of overlapping
+    SD ``GetPerson`` calls.
+
+    The SD client calls are offloaded to worker threads (via
+    ``asyncio.to_thread``), so two non-serialized syncs will execute this
+    ``side_effect`` concurrently. By holding the "critical section" open with a
+    blocking sleep and counting overlaps, we can observe whether
+    ``handle_exclusively_decorator`` serialized the calls (max 1) or allowed
+    them to run concurrently (max 2).
+    """
+
+    def __init__(self, delay: float = 0.5) -> None:
+        self._lock = threading.Lock()
+        self._delay = delay
+        self._current = 0
+        self.max_concurrent = 0
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        with self._lock:
+            self._current += 1
+            self.max_concurrent = max(self.max_concurrent, self._current)
+        try:
+            sleep(self._delay)
+        finally:
+            with self._lock:
+                self._current -= 1
+        cpr = request.url.params["PersonCivilRegistrationIdentifier"]
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/xml;charset=UTF-8"},
+            content=sd_person_resp(cpr),
+        )
 
 
 @pytest.mark.integration_test
@@ -2070,3 +2137,77 @@ async def test_person_ensure_addresses_from_other_institution_not_terminated(
     )
 
     assert not r_engagement_email_BB.objects
+
+
+@pytest.mark.integration_test
+async def test_sync_person_and_engagement_is_exclusive_for_same_key(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    Two concurrent syncs for the *same* (institution, cpr, employment) key must
+    not overlap, because sync_person_and_engagement is guarded by
+    handle_exclusively_decorator.
+
+    See test_sync_person_and_engagement_allows_concurrency_for_different_keys for
+    the positive control proving the probe can actually observe overlap.
+    """
+    # Arrange
+    probe = ConcurrencyProbe()
+    respx_mock.get(get_person_url(CPR)).mock(side_effect=probe)
+
+    payload = {"institution_identifier": "II", "cpr": CPR}
+
+    # Act: fire two identical syncs concurrently
+    r1, r2 = await asyncio.gather(
+        test_client.post("/timeline/sync/person-engagement", json=payload),
+        test_client.post("/timeline/sync/person-engagement", json=payload),
+    )
+
+    # Assert
+    assert r1.status_code == 200
+    assert r2.status_code == 200
+    # Same key -> the decorator serializes the two calls, so they never overlap.
+    assert probe.max_concurrent == 1
+
+
+@pytest.mark.integration_test
+async def test_sync_person_and_engagement_allows_concurrency_for_different_keys(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    Positive control for test_sync_person_and_engagement_is_exclusive_for_same_key.
+
+    Two concurrent syncs for *different* keys (different CPRs) are allowed to run
+    concurrently. This proves both that the probe can actually observe overlap
+    and that the lock is per-key rather than a single global lock.
+    """
+    # Arrange
+    cpr_a = CPRNumber("0101011234")
+    cpr_b = CPRNumber("0202022345")
+
+    # Both endpoints share the same probe so overlap across the two CPRs is seen.
+    probe = ConcurrencyProbe()
+    respx_mock.get(get_person_url(cpr_a)).mock(side_effect=probe)
+    respx_mock.get(get_person_url(cpr_b)).mock(side_effect=probe)
+
+    # Act: fire two syncs with different keys concurrently
+    r_a, r_b = await asyncio.gather(
+        test_client.post(
+            "/timeline/sync/person-engagement",
+            json={"institution_identifier": "II", "cpr": cpr_a},
+        ),
+        test_client.post(
+            "/timeline/sync/person-engagement",
+            json={"institution_identifier": "II", "cpr": cpr_b},
+        ),
+    )
+
+    # Assert
+    assert r_a.status_code == 200
+    assert r_b.status_code == 200
+    # Different keys -> no shared lock, so the two calls overlap.
+    assert probe.max_concurrent == 2
