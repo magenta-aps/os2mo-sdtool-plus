@@ -141,7 +141,7 @@ async def process_sd_amqp_employment_event(
     await graphql_client.send_event(
         input=EventSendInput(
             namespace="sd",
-            routing_key="person-employment",
+            routing_key="person-and-employment",
             subject=PersonAndEmploymentGraphQLEvent(
                 institution_identifier=event.instCode,
                 employment_identifier=event.tjnr,
@@ -175,7 +175,7 @@ async def process_sd_amqp_person_event(
     await graphql_client.send_event(
         input=EventSendInput(
             namespace="sd",
-            routing_key="person-employment",
+            routing_key="person-and-employment",
             subject=PersonAndEmploymentGraphQLEvent(
                 institution_identifier=event.instCode,
                 cpr=event.cpr,

@@ -247,7 +247,7 @@ class TestFastAPIApp:
             False,
             [
                 {"namespace": "sd", "routing_key": "org"},
-                {"namespace": "sd", "routing_key": "person-employment"},
+                {"namespace": "sd", "routing_key": "person-and-employment"},
                 {"namespace": "mo", "routing_key": "org_unit"},
                 {"namespace": "mo", "routing_key": "person"},
                 {"namespace": "mo", "routing_key": "engagement"},

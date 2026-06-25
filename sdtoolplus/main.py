@@ -87,8 +87,8 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
             listeners.append(
                 Listener(
                     namespace="sd",
-                    user_key="person-employment",
-                    routing_key="person-employment",
+                    user_key="person-and-employment",
+                    routing_key="person-and-employment",
                     path="/events/sd/person-and-employment",
                     parallelism=3,
                 )
@@ -404,7 +404,7 @@ def create_fastramqpi() -> FastRAMQPI:
         events = [
             EventSendInput(
                 namespace="sd",
-                routing_key="person-employment",
+                routing_key="person-and-employment",
                 subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier=institution_identifier,
                     cpr=person.cpr,
@@ -491,7 +491,7 @@ def create_fastramqpi() -> FastRAMQPI:
             for e in one(res.Person).Employment:
                 event = EventSendInput(
                     namespace="sd",
-                    routing_key="person-employment",
+                    routing_key="person-and-employment",
                     subject=PersonAndEmploymentGraphQLEvent(
                         institution_identifier=institution_identifier,
                         cpr=person.cpr,

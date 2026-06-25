@@ -633,7 +633,7 @@ async def test_retry_after_when_sd_api_is_closed(
             "EMPLOYMENT_CHANGED",
             EventSendInput(
                 namespace="sd",
-                routing_key="person-employment",
+                routing_key="person-and-employment",
                 subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier="XY",
                     employment_identifier="12345",
@@ -645,7 +645,7 @@ async def test_retry_after_when_sd_api_is_closed(
             "EMPLOYMENT_CONTACT_INFO_CHANGED",
             EventSendInput(
                 namespace="sd",
-                routing_key="person-employment",
+                routing_key="person-and-employment",
                 subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier="XY",
                     employment_identifier="12345",
@@ -711,7 +711,7 @@ async def test_sd_employment_amqp_event_is_processed(
     assert that it is processed correctly.
 
     The application consumes the AMQP message, converts it to an MO GraphQL
-    "person-employment" event, which in turn triggers a sync of both the person
+    "person-and-employment" event, which in turn triggers a sync of both the person
     and the engagement in MO.
     """
     # Arrange
@@ -889,7 +889,7 @@ async def test_sd_person_amqp_event_is_processed(
     that it is processed correctly.
 
     The application consumes the AMQP message, converts it to an MO GraphQL
-    "person-employment" event (without an employment identifier), which in turn
+    "person-and-employment" event (without an employment identifier), which in turn
     triggers a sync of the person (only) in MO.
     """
     # Arrange
