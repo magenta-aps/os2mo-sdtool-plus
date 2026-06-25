@@ -390,7 +390,9 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return {"msg": f"{len(events)} person events queued"}
 
-    @fastapi_router.post("/timeline/sync/person-engagement", status_code=HTTP_200_OK)
+    @fastapi_router.post(
+        "/timeline/sync/person-and-engagement", status_code=HTTP_200_OK
+    )
     async def timeline_sync_engagement(
         settings: depends.Settings,
         sd_client: depends.SDClient,
@@ -415,7 +417,7 @@ def create_fastramqpi() -> FastRAMQPI:
         return {"msg": "success"}
 
     @fastapi_router.post(
-        "/timeline/sync/person-engagement/all/sd", status_code=HTTP_200_OK
+        "/timeline/sync/person-and-engagement/all/sd", status_code=HTTP_200_OK
     )
     async def full_timeline_sync_sd_engagements(
         sd_client: depends.SDClient,
