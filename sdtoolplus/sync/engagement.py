@@ -703,19 +703,6 @@ async def fix_too_narrow_ou_validities(
     return desired_timeline
 
 
-@handle_exclusively_decorator(
-    key=lambda sd_client,
-    gql_client,
-    institution_identifier,
-    cpr,
-    employment_identifier,
-    settings,
-    dry_run=False: (
-        institution_identifier,
-        cpr,
-        employment_identifier,
-    )
-)
 async def sync_engagement(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -897,6 +884,18 @@ async def sync_engagement(
     )
 
 
+@handle_exclusively_decorator(
+    key=lambda settings,
+    sd_client,
+    gql_client,
+    institution_identifier,
+    cpr,
+    employment_identifier: (
+        institution_identifier,
+        cpr,
+        employment_identifier,
+    )
+)
 async def sync_person_and_engagement(
     settings: SDToolPlusSettings,
     sd_client: SDClient,
