@@ -359,7 +359,7 @@ async def _sd_org(
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     event: Event[Json[OrgGraphQLEvent]],
-) -> None:
+) -> dict:
     org = event.subject
     logger.info("Received SD org event", subject=org)
 
@@ -371,6 +371,8 @@ async def _sd_org(
         settings=settings,
         priority=event.priority,
     )
+
+    return {"msg": "success"}
 
 
 @router.post("/events/mo/org-unit")
