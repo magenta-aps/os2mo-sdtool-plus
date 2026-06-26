@@ -50,11 +50,19 @@ case "$COMMAND" in
         INSTITUTION_IDENTIFIER="$2"
         ORG_UNIT="$3"
 
+        # The dedicated /timeline/sync/ou endpoint has been removed; OU syncs are
+        # now triggered via the SD org event handler. The event subject is a
+        # JSON-encoded OrgGraphQLEvent, so its quotes must be escaped when
+        # embedded in the event payload.
+        SUBJECT=$(printf '{"institution_identifier": "%s", "org_unit": "%s"}' \
+          "$INSTITUTION_IDENTIFIER" "$ORG_UNIT")
+        ESCAPED_SUBJECT=${SUBJECT//\"/\\\"}
+
         curl --json "{
-          \"institution_identifier\": \"$INSTITUTION_IDENTIFIER\",
-          \"org_unit\": \"$ORG_UNIT\"
+          \"subject\": \"$ESCAPED_SUBJECT\",
+          \"priority\": 9000
         }" \
-        "$BASE_URL/ou"
+        "http://localhost:8000/events/sd/org"
         ;;
 
     person)
