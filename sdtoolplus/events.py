@@ -212,12 +212,12 @@ router = APIRouter()
 
 
 @router.post("/events/sd/person-and-employment", dependencies=[Depends(sd_api_open)])
-async def _sd_person_employment(
+async def _sd_person_and_employment(
     settings: depends.Settings,
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     event: Event[Json[PersonAndEmploymentGraphQLEvent]],
-) -> None:
+) -> dict:
     person_engagement: PersonAndEmploymentGraphQLEvent = event.subject
     logger.info("Received SD person or engagement event", subject=person_engagement)
 
@@ -229,6 +229,8 @@ async def _sd_person_employment(
         cpr=person_engagement.cpr,
         employment_identifier=person_engagement.employment_identifier,
     )
+
+    return {"msg": "success"}
 
 
 async def _sync_engagement_by_uuid(
