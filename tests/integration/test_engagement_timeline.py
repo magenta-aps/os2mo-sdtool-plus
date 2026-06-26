@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import json
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -53,7 +54,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
 
-# The /timeline/sync/person-and-engagement endpoint syncs the person before the
+# The /events/sd/person-and-employment endpoint syncs the person before the
 # engagement, which calls the SD GetPerson20111201 endpoint. The tests below all
 # use the same CPR ("0101011234") and sync as of "today", so the GetPerson call
 # is identical across them and mocked via the constants below.
@@ -361,11 +362,16 @@ async def test_eng_timeline_http_triggered_sync(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -641,11 +647,16 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -880,11 +891,16 @@ async def test_eng_timeline_create_new_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1095,11 +1111,16 @@ async def test_eng_timeline_create_new_engagement_ny_logic_enabled(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1357,11 +1378,16 @@ async def test_association_create_update_terminate(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1515,11 +1541,16 @@ async def test_eng_timeline_skip_create_new_engagement_when_sd_timeline_data_mis
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1817,11 +1848,16 @@ async def test_eng_timeline_related_units(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -2108,11 +2144,16 @@ async def test_eng_timeline_related_units_recalculate_when_eng_moved_in_sd(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -2345,11 +2386,16 @@ async def test_eng_timeline_related_units_single_day_relation(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -2557,11 +2603,16 @@ async def test_eng_timeline_related_units_when_sd_unit_not_found_in_interval(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -2759,11 +2810,16 @@ async def test_eng_timeline_recursive_related_units_simple_case(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -3374,11 +3430,16 @@ async def test_eng_timeline_recursive_related_units_complex_case(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -3795,11 +3856,16 @@ async def test_eng_timeline_delete_engagement_and_leave_not_found_in_sd(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4175,11 +4241,16 @@ async def test_eng_timeline_terminate_leave_before_terminating_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4327,11 +4398,16 @@ async def test_eng_timeline_handle_termination_of_sd_status_8_engagements(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4353,11 +4429,16 @@ async def test_eng_timeline_skip_0000_cprs(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4514,11 +4595,16 @@ async def test_eng_timeline_unknown_job_function(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4703,11 +4789,16 @@ async def test_eng_timeline_unit_validity_too_narrow(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -4993,11 +5084,16 @@ async def test_eng_timeline_status_code_engagement_types(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -5291,11 +5387,16 @@ async def test_eng_timeline_elevate_managers(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -5531,11 +5632,16 @@ async def test_eng_timeline_elevate_managers_changing_unit_id(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -5673,11 +5779,16 @@ async def test_eng_timeline_elevate_managers_for_non_manager(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -5877,11 +5988,16 @@ async def test_eng_timeline_elevate_managers_multiple_managers(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -5916,7 +6032,7 @@ async def test_eng_timeline_raises_when_person_not_found_in_sd(
     respx_mock: MockRouter,
 ):
     """
-    The /timeline/sync/person-and-engagement endpoint syncs the person before the
+    The /events/sd/person-and-employment endpoint syncs the person before the
     engagement. If the person is not found in SD, a PersonNotFoundError (HTTP
     404) is raised - even when an employment_identifier is provided - and the
     engagement is therefore not synced.
@@ -5952,11 +6068,16 @@ async def test_eng_timeline_raises_when_person_not_found_in_sd(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 

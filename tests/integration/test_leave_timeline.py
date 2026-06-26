@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import json
 from datetime import date
 from datetime import datetime
 from uuid import UUID
@@ -27,7 +28,7 @@ from sdtoolplus.models import EngType
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
 
-# The /timeline/sync/person-and-engagement endpoint syncs the person before the
+# The /events/sd/person-and-employment endpoint syncs the person before the
 # engagement, which calls the SD GetPerson20111201 endpoint. The tests below all
 # use the same CPR ("0101011234") and sync as of "today", so the GetPerson call
 # is identical across them and mocked via the constants below.
@@ -236,11 +237,16 @@ async def test_leave_timeline(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -395,11 +401,16 @@ async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -560,11 +571,16 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -733,11 +749,16 @@ async def test_leave_timeline_do_not_create_leave_for_status_code_4(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
-            "employment_identifier": emp_id,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
         },
     )
 

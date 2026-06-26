@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 import asyncio
+import json
 import threading
 from datetime import date
 from datetime import datetime
@@ -173,10 +174,15 @@ async def test_person_not_in_sd_due_to_envelope_sd_response(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -232,10 +238,15 @@ async def test_person_not_in_sd_due_to_missing_person_element(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -293,10 +304,15 @@ async def test_person_create_new(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": CPR,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": CPR,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -367,10 +383,15 @@ async def test_person_timeline_update(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": CPR,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": CPR,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -413,10 +434,15 @@ async def test_person_skip_0000_cprs(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": "0101010000",
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": "0101010000",
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -431,7 +457,7 @@ async def test_person_skip_0000_cprs(
 
 
 @pytest.mark.integration_test
-@travel("2002-07-01")
+@travel("2002-07-01 12:00:00")
 @pytest.mark.envvar(
     {
         "MODE": "region",
@@ -647,10 +673,15 @@ async def test_person_addresses(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -752,7 +783,7 @@ async def test_person_addresses(
 
 
 @pytest.mark.integration_test
-@travel("2002-07-01")
+@travel("2002-07-01 12:00:00")
 @pytest.mark.envvar(
     {
         "MODE": "region",
@@ -893,10 +924,15 @@ async def test_person_addresses_all_zero_phone_number(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -948,7 +984,7 @@ async def test_person_addresses_all_zero_phone_number(
 
 
 @pytest.mark.integration_test
-@travel("2002-07-01")
+@travel("2002-07-01 12:00:00")
 @pytest.mark.envvar(
     {
         "MODE": "region",
@@ -1211,10 +1247,15 @@ async def test_person_engagement_addresses(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1359,7 +1400,7 @@ async def test_person_engagement_addresses(
 
 
 @pytest.mark.integration_test
-@travel("2002-07-01")
+@travel("2002-07-01 12:00:00")
 @pytest.mark.envvar(
     {
         "MODE": "region",
@@ -1726,10 +1767,15 @@ async def test_person_addresses_terminate(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "II",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -1865,7 +1911,7 @@ async def test_person_addresses_terminate(
 
 
 @pytest.mark.integration_test
-@travel("2002-07-01")
+@travel("2002-07-01 12:00:00")
 @pytest.mark.envvar(
     {
         "MODE": "region",
@@ -2060,10 +2106,15 @@ async def test_person_ensure_addresses_from_other_institution_not_terminated(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/person-and-engagement",
+        "/events/sd/person-and-employment",
         json={
-            "institution_identifier": "BB",
-            "cpr": cpr,
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "BB",
+                    "cpr": cpr,
+                }
+            ),
+            "priority": 9000,
         },
     )
 
@@ -2161,8 +2212,14 @@ async def test_sync_person_and_engagement_is_exclusive_for_same_key(
 
     # Act: fire two identical syncs concurrently
     r1, r2 = await asyncio.gather(
-        test_client.post("/timeline/sync/person-and-engagement", json=payload),
-        test_client.post("/timeline/sync/person-and-engagement", json=payload),
+        test_client.post(
+            "/events/sd/person-and-employment",
+            json={"subject": json.dumps(payload), "priority": 9000},
+        ),
+        test_client.post(
+            "/events/sd/person-and-employment",
+            json={"subject": json.dumps(payload), "priority": 9000},
+        ),
     )
 
     # Assert
@@ -2197,12 +2254,18 @@ async def test_sync_person_and_engagement_allows_concurrency_for_different_keys(
     # Act: fire two syncs with different keys concurrently
     r_a, r_b = await asyncio.gather(
         test_client.post(
-            "/timeline/sync/person-and-engagement",
-            json={"institution_identifier": "II", "cpr": cpr_a},
+            "/events/sd/person-and-employment",
+            json={
+                "subject": json.dumps({"institution_identifier": "II", "cpr": cpr_a}),
+                "priority": 9000,
+            },
         ),
         test_client.post(
-            "/timeline/sync/person-and-engagement",
-            json={"institution_identifier": "II", "cpr": cpr_b},
+            "/events/sd/person-and-employment",
+            json={
+                "subject": json.dumps({"institution_identifier": "II", "cpr": cpr_b}),
+                "priority": 9000,
+            },
         ),
     )
 
