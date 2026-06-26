@@ -50,7 +50,7 @@ from tests.integration.conftest import UNKNOWN_UNIT
 # (the `sd-amqp` service) is not available in the CI pipeline, so for the
 # integration test we point the SD AMQP integration at the os2mo `msg-broker`
 # instead.
-SD_AMQP_URL = "amqp://guest:guest@msg-broker:5672/"
+SD_AMQP_URL = "amqp://guest:guest@sd-amqp:5672/"
 
 # The queues the SD AMQP integration consumes from. In production these are
 # declared by SD; the application only consumes them (passively).

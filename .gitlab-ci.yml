@@ -70,6 +70,10 @@ Integration-test:
   extends:
     - .integration-test:mo
   parallel: 3
+  services:
+    - !reference [.integration-test:mo, services]
+    - name: rabbitmq:4-management
+      alias: sd-amqp
   variables:
       RUN_ALEMBIC_MIGRATIONS: "false"
       SD_USERNAME: "username"
