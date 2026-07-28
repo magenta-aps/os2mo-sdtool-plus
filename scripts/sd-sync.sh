@@ -10,10 +10,6 @@
 
 set -euo pipefail
 
-# The dedicated /timeline/sync/* endpoints have been removed; syncs are now
-# triggered via the SD event handlers. Each event subject is a JSON-encoded
-# GraphQL event, so its quotes must be escaped when embedded in the event
-# payload.
 EVENTS_URL="http://localhost:8000/events/sd"
 
 if [[ $# -lt 1 ]]; then
