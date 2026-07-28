@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-BASE_URL="http://localhost:8000/timeline/sync"
+EVENTS_URL="http://localhost:8000/events/sd"
 
 if [[ $# -lt 1 ]]; then
     echo "Usage:"
@@ -33,12 +33,16 @@ case "$COMMAND" in
         CPR="$3"
         EMPLOYMENT_IDENTIFIER="$4"
 
+        SUBJECT=$(printf \
+          '{"institution_identifier": "%s", "cpr": "%s", "employment_identifier": "%s"}' \
+          "$INSTITUTION_IDENTIFIER" "$CPR" "$EMPLOYMENT_IDENTIFIER")
+        ESCAPED_SUBJECT=${SUBJECT//\"/\\\"}
+
         curl --json "{
-          \"institution_identifier\": \"$INSTITUTION_IDENTIFIER\",
-          \"cpr\": \"$CPR\",
-          \"employment_identifier\": \"$EMPLOYMENT_IDENTIFIER\"
+          \"subject\": \"$ESCAPED_SUBJECT\",
+          \"priority\": 9000
         }" \
-        "$BASE_URL/person-and-engagement"
+        "$EVENTS_URL/person-and-employment"
         ;;
 
     ou)
@@ -50,11 +54,15 @@ case "$COMMAND" in
         INSTITUTION_IDENTIFIER="$2"
         ORG_UNIT="$3"
 
+        SUBJECT=$(printf '{"institution_identifier": "%s", "org_unit": "%s"}' \
+          "$INSTITUTION_IDENTIFIER" "$ORG_UNIT")
+        ESCAPED_SUBJECT=${SUBJECT//\"/\\\"}
+
         curl --json "{
-          \"institution_identifier\": \"$INSTITUTION_IDENTIFIER\",
-          \"org_unit\": \"$ORG_UNIT\"
+          \"subject\": \"$ESCAPED_SUBJECT\",
+          \"priority\": 9000
         }" \
-        "$BASE_URL/ou"
+        "$EVENTS_URL/org"
         ;;
 
     person)
@@ -66,11 +74,15 @@ case "$COMMAND" in
         INSTITUTION_IDENTIFIER="$2"
         CPR="$3"
 
+        SUBJECT=$(printf '{"institution_identifier": "%s", "cpr": "%s"}' \
+          "$INSTITUTION_IDENTIFIER" "$CPR")
+        ESCAPED_SUBJECT=${SUBJECT//\"/\\\"}
+
         curl --json "{
-          \"institution_identifier\": \"$INSTITUTION_IDENTIFIER\",
-          \"cpr\": \"$CPR\"
+          \"subject\": \"$ESCAPED_SUBJECT\",
+          \"priority\": 9000
         }" \
-        "$BASE_URL/person-and-engagement"
+        "$EVENTS_URL/person-and-employment"
         ;;
 
     *)

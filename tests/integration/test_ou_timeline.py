@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+import json
 from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
@@ -233,8 +234,13 @@ async def test_ou_timeline_name_and_id_and_level_and_parent_http_triggered_sync(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -395,8 +401,13 @@ async def test_ou_timeline_sd_unit_should_extend_mo_unit(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -588,8 +599,13 @@ async def test_ou_timeline_sd_unit_priority_sync(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -863,8 +879,13 @@ async def test_ou_timeline_sd_unit_priority_sync_for_updating_problematic_ancest
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -1091,8 +1112,13 @@ async def test_ou_timeline_should_terminate_addresses_before_terminating_unit(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -1281,8 +1307,13 @@ async def test_ou_timeline_create_new_unit_with_pnumber_and_postal_addr_and_phon
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -1597,8 +1628,13 @@ async def test_ou_timeline_update_pnumber_and_postal_addr_and_phone_number(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -1908,8 +1944,13 @@ async def test_ou_timeline_address_intervals_are_combined(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -2171,8 +2212,13 @@ async def test_ou_timeline_update_addresses_for_unit_in_past(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -2422,8 +2468,13 @@ async def test_ou_timeline_remove_pnumber_and_postal_addr_and_phone_number(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -2549,8 +2600,13 @@ async def test_ou_timeline_no_address_sync_when_disabled(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -2746,8 +2802,13 @@ async def test_ou_timeline_postal_dar_address(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -2880,8 +2941,13 @@ async def test_ou_timeline_patch_with_unknown_for_missing_sd_parent(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3005,8 +3071,13 @@ async def test_ou_timeline_condense_multiple_sd_parents_to_unknown_unit(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3124,8 +3195,13 @@ async def test_ou_timeline_patch_with_no_name_for_missing_sd_name(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3192,8 +3268,13 @@ async def test_ou_timeline_sync_filter(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3259,8 +3340,13 @@ async def test_ou_timeline_sync_only_sync_payroll_units(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(UNKNOWN_UNIT)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3364,8 +3450,13 @@ async def test_ou_timeline_sd_to_mo_ou_uuid_map(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert
@@ -3455,8 +3546,13 @@ async def test_ou_timeline_terminate_unit_no_longer_in_sd(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/ou",
-        json={"institution_identifier": "II", "org_unit": str(unit_uuid)},
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
     )
 
     # Assert

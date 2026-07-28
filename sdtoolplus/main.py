@@ -50,13 +50,9 @@ from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
 from .models import OrgGraphQLEvent
-from .models import OrgUnitSyncPayload
 from .models import PersonAndEmploymentGraphQLEvent
-from .models import PersonAndEngagementSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
-from .sync.engagement import sync_person_and_engagement
-from .sync.org_unit import sync_ou
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -391,32 +387,6 @@ def create_fastramqpi() -> FastRAMQPI:
         return {"msg": f"{len(events)} person events queued"}
 
     @fastapi_router.post(
-        "/timeline/sync/person-and-engagement", status_code=HTTP_200_OK
-    )
-    async def timeline_sync_engagement(
-        settings: depends.Settings,
-        sd_client: depends.SDClient,
-        gql_client: depends.GraphQLClient,
-        payload: PersonAndEngagementSyncPayload,
-    ) -> dict:
-        """
-        Sync person and engagement.
-
-        If the employmeny identifier is not set in the payload, we will effectively only
-        sync the person.
-        """
-        await sync_person_and_engagement(
-            settings=settings,
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-            employment_identifier=payload.employment_identifier,
-        )
-
-        return {"msg": "success"}
-
-    @fastapi_router.post(
         "/timeline/sync/person-and-engagement/all/sd", status_code=HTTP_200_OK
     )
     async def full_timeline_sync_sd_engagements(
@@ -528,25 +498,6 @@ def create_fastramqpi() -> FastRAMQPI:
 
         logger.info("Done queueing all MO engagements")
 
-        return {"msg": "success"}
-
-    @fastapi_router.post("/timeline/sync/ou", status_code=HTTP_200_OK)
-    async def timeline_sync_ou(
-        settings: depends.Settings,
-        sd_client: depends.SDClient,
-        gql_client: depends.GraphQLClient,
-        payload: OrgUnitSyncPayload,
-        dry_run: bool = False,
-    ) -> dict:
-        await sync_ou(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            institution_identifier=payload.institution_identifier,
-            org_unit=payload.org_unit,
-            settings=settings,
-            priority=9000,
-            dry_run=dry_run,
-        )
         return {"msg": "success"}
 
     @fastapi_router.post("/timeline/sync/ou/all", status_code=HTTP_200_OK)
