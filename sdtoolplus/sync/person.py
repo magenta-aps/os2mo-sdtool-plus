@@ -409,8 +409,8 @@ async def _sync_addresses(
         class_user_key="Public",
     )
 
-    # Person phone 1
     if not settings.disable_person_phone_number_sync:
+        # Person phone 1
         logger.info("Syncing person phone1")
         await _sync_address(
             gql_client=gql_client,
