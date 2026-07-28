@@ -580,15 +580,6 @@ async def sync_person(
         "Done syncing person!", institution_identifier=institution_identifier, cpr=cpr
     )
 
-    await sync_person_addresses(
-        sd_client=sd_client,
-        gql_client=gql_client,
-        settings=settings,
-        institution_identifier=institution_identifier,
-        cpr=cpr,
-        person_uuid=person_uuid,
-    )
-
     return person_uuid
 
 
