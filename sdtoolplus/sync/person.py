@@ -531,7 +531,6 @@ async def _sync_person(
 async def sync_person(
     sd_client: SDClient,
     gql_client: GraphQLClient,
-    settings: SDToolPlusSettings,
     institution_identifier: str,
     cpr: str,
 ) -> UUID | None:

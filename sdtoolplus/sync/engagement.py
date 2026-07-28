@@ -924,7 +924,6 @@ async def sync_person_and_engagement(
     person_uuid = await sync_person(
         sd_client=sd_client,
         gql_client=gql_client,
-        settings=settings,
         institution_identifier=institution_identifier,
         cpr=cpr,
     )

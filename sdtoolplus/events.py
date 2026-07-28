@@ -459,7 +459,6 @@ async def _mo_person(
             await sync_person(
                 sd_client=sd_client,
                 gql_client=gql_client,
-                settings=settings,
                 institution_identifier=institution_identifier,
                 cpr=mo_person_cpr,
             )
