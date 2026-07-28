@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
 from uuid import UUID
 from uuid import uuid4
@@ -25,6 +26,42 @@ from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import EngType
 from sdtoolplus.types import CPRNumber
 from tests.integration.conftest import UNKNOWN_UNIT
+
+# The /timeline/sync/person-and-engagement endpoint syncs the person before the
+# engagement, which calls the SD GetPerson20111201 endpoint. The tests below all
+# use the same CPR ("0101011234") and sync as of "today", so the GetPerson call
+# is identical across them and mocked via the constants below.
+TODAY_URL_FORMAT = date.strftime(date.today(), "%d.%m.%Y")
+TODAY_SD_FORMAT = date.strftime(date.today(), "%Y-%m-%d")
+
+GET_PERSON_URL = (
+    "https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=II"
+    f"&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier=0101011234"
+    "&StatusActiveIndicator=True&StatusPassiveIndicator=True"
+    "&ContactInformationIndicator=True&PostalAddressIndicator=True"
+)
+
+GET_PERSON_SD_RESP = f"""<?xml version="1.0" encoding="UTF-8" ?>
+    <GetPerson20111201 creationDateTime="2025-04-09T09:47:55">
+        <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <EffectiveDate>{TODAY_SD_FORMAT}</EffectiveDate>
+            <StatusActiveIndicator>true</StatusActiveIndicator>
+            <StatusPassiveIndicator>true</StatusPassiveIndicator>
+            <ContactInformationIndicator>false</ContactInformationIndicator>
+            <PostalAddressIndicator>false</PostalAddressIndicator>
+        </RequestStructure>
+        <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <PersonGivenName>Chuck</PersonGivenName>
+            <PersonSurnameName>Norris</PersonSurnameName>
+            <Employment>
+                <EmploymentIdentifier>12345</EmploymentIdentifier>
+            </Employment>
+        </Person>
+    </GetPerson20111201>
+"""
 
 
 @pytest.mark.integration_test
@@ -186,6 +223,10 @@ async def test_leave_timeline(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -195,7 +236,7 @@ async def test_leave_timeline(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/engagement",
+        "/timeline/sync/person-and-engagement",
         json={
             "institution_identifier": "II",
             "cpr": cpr,
@@ -341,6 +382,10 @@ async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -350,7 +395,7 @@ async def test_leave_timeline_do_not_create_leave_for_missing_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/engagement",
+        "/timeline/sync/person-and-engagement",
         json={
             "institution_identifier": "II",
             "cpr": cpr,
@@ -502,6 +547,10 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -511,7 +560,7 @@ async def test_leave_timeline_do_not_update_leave_for_missing_engagement(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/engagement",
+        "/timeline/sync/person-and-engagement",
         json={
             "institution_identifier": "II",
             "cpr": cpr,
@@ -671,6 +720,10 @@ async def test_leave_timeline_do_not_create_leave_for_status_code_4(
         </GetEmploymentChanged20111201>
     """
 
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
     respx_mock.get(
         "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
     ).respond(
@@ -680,7 +733,7 @@ async def test_leave_timeline_do_not_create_leave_for_status_code_4(
 
     # Act
     r = await test_client.post(
-        "/timeline/sync/engagement",
+        "/timeline/sync/person-and-engagement",
         json={
             "institution_identifier": "II",
             "cpr": cpr,

@@ -70,10 +70,10 @@ class EmploymentAMQPEvent(BaseModel):
 # Event models
 
 
-class EmploymentGraphQLEvent(BaseModel):
+class PersonAndEmploymentGraphQLEvent(BaseModel):
     institution_identifier: str
-    employment_identifier: str
     cpr: str
+    employment_identifier: str | None = None
 
 
 class OrgAMQPEvent(BaseModel):
@@ -106,11 +106,6 @@ class PersonAMQPEvent(BaseModel):
     cpr: str
 
 
-class PersonGraphQLEvent(BaseModel):
-    institution_identifier: str
-    cpr: str
-
-
 class EngType(Enum):
     MONTHLY_FULL_TIME = "fuldtid"
     MONTHLY_PART_TIME = "deltid"
@@ -131,15 +126,10 @@ class EngType(Enum):
         return cls.RECALCULATE
 
 
-class PersonSyncPayload(BaseModel):
+class PersonAndEngagementSyncPayload(BaseModel):
     institution_identifier: str
     cpr: str
-
-
-class EngagementSyncPayload(BaseModel):
-    institution_identifier: str
-    cpr: str
-    employment_identifier: str
+    employment_identifier: str | None = None
 
 
 class OrgUnitSyncPayload(BaseModel):

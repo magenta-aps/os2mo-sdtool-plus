@@ -40,13 +40,13 @@ from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.exceptions import PersonNotFoundError
 from sdtoolplus.mo.timelines.engagement import get_engagement_types_to_process
 from sdtoolplus.models import EmploymentAMQPEvent
-from sdtoolplus.models import EmploymentGraphQLEvent
 from sdtoolplus.models import OrgAMQPEvent
 from sdtoolplus.models import OrgGraphQLEvent
 from sdtoolplus.models import PersonAMQPEvent
-from sdtoolplus.models import PersonGraphQLEvent
+from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
 from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.sync.engagement import sync_engagement
+from sdtoolplus.sync.engagement import sync_person_and_engagement
 from sdtoolplus.sync.org_unit import sync_ou
 from sdtoolplus.sync.person import sync_person
 
@@ -138,43 +138,11 @@ async def process_sd_amqp_employment_event(
 ) -> None:
     event = EmploymentAMQPEvent.parse_raw(message.body)
 
-    # In SD, employment addresses changes are relayed via employment events even
-    # though the SD person object holds the relevant address info for the employment
-    # address. We therefore need to map the "EMPLOYMENT_CONTACT_INFO_CHANGED" to a
-    # MO person event
-    if event.eventType == "EMPLOYMENT_CONTACT_INFO_CHANGED":
-        await graphql_client.send_event(
-            input=EventSendInput(
-                namespace="sd",
-                routing_key="person",
-                subject=PersonGraphQLEvent(
-                    institution_identifier=event.instCode,
-                    cpr=event.cpr,
-                ).json(),
-            )
-        )
-        return
-
-    # TODO: temporary work-around until we either:
-    #       1) Make one common handler for all event where each event triggers a
-    #          sequential sync in the order person, engagement and addresses
-    #       2) Separate the person and address sync
     await graphql_client.send_event(
         input=EventSendInput(
             namespace="sd",
-            routing_key="person",
-            subject=PersonGraphQLEvent(
-                institution_identifier=event.instCode,
-                cpr=event.cpr,
-            ).json(),
-        )
-    )
-
-    await graphql_client.send_event(
-        input=EventSendInput(
-            namespace="sd",
-            routing_key="employment",
-            subject=EmploymentGraphQLEvent(
+            routing_key="person-and-employment",
+            subject=PersonAndEmploymentGraphQLEvent(
                 institution_identifier=event.instCode,
                 employment_identifier=event.tjnr,
                 cpr=event.cpr,
@@ -207,8 +175,8 @@ async def process_sd_amqp_person_event(
     await graphql_client.send_event(
         input=EventSendInput(
             namespace="sd",
-            routing_key="person",
-            subject=PersonGraphQLEvent(
+            routing_key="person-and-employment",
+            subject=PersonAndEmploymentGraphQLEvent(
                 institution_identifier=event.instCode,
                 cpr=event.cpr,
             ).json(),
@@ -243,38 +211,23 @@ async def sd_api_open() -> None:
 router = APIRouter()
 
 
-@router.post("/events/sd/employment", dependencies=[Depends(sd_api_open)])
-async def _sd_employment(
+@router.post("/events/sd/person-and-employment", dependencies=[Depends(sd_api_open)])
+async def _sd_person_employment(
     settings: depends.Settings,
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
-    event: Event[Json[EmploymentGraphQLEvent]],
+    event: Event[Json[PersonAndEmploymentGraphQLEvent]],
 ) -> None:
-    engagement = event.subject
-    logger.info("Received SD engagement event", subject=engagement)
+    person_engagement: PersonAndEmploymentGraphQLEvent = event.subject
+    logger.info("Received SD person or engagement event", subject=person_engagement)
 
-    # TODO: This person sync is a temporary change which can be removed when the code
-    #       for handling the new SD event types has been implemented. Soon SD will stop
-    #       sending person events and only send engagement events, when employment
-    #       addresses are updated. For now, we therefore need to sync the engagement
-    #       person too, when syncing the engagement, since the employment addresses
-    #       are stored on the Person object in SD.
-    if settings.sync_person_when_syncing_sd_engagement:
-        await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=engagement.institution_identifier,
-            cpr=engagement.cpr,
-        )
-
-    await sync_engagement(
+    await sync_person_and_engagement(
+        settings=settings,
         sd_client=sd_client,
         gql_client=gql_client,
-        institution_identifier=engagement.institution_identifier,
-        cpr=engagement.cpr,
-        employment_identifier=engagement.employment_identifier,
-        settings=settings,
+        institution_identifier=person_engagement.institution_identifier,
+        cpr=person_engagement.cpr,
+        employment_identifier=person_engagement.employment_identifier,
     )
 
 
@@ -474,25 +427,6 @@ async def _mo_org_unit(
     )
 
 
-@router.post("/events/sd/person", dependencies=[Depends(sd_api_open)])
-async def _sd_person(
-    sd_client: depends.SDClient,
-    gql_client: depends.GraphQLClient,
-    settings: depends.Settings,
-    event: Event[Json[PersonGraphQLEvent]],
-) -> None:
-    person = event.subject
-    logger.info("Received SD person event", subject=person)
-
-    await sync_person(
-        sd_client=sd_client,
-        gql_client=gql_client,
-        settings=settings,
-        institution_identifier=person.institution_identifier,
-        cpr=person.cpr,
-    )
-
-
 @router.post("/events/mo/person", dependencies=[Depends(sd_api_open)])
 async def _mo_person(
     settings: depends.Settings,
@@ -525,7 +459,6 @@ async def _mo_person(
             await sync_person(
                 sd_client=sd_client,
                 gql_client=gql_client,
-                settings=settings,
                 institution_identifier=institution_identifier,
                 cpr=mo_person_cpr,
             )

@@ -38,7 +38,7 @@ case "$COMMAND" in
           \"cpr\": \"$CPR\",
           \"employment_identifier\": \"$EMPLOYMENT_IDENTIFIER\"
         }" \
-        "$BASE_URL/engagement"
+        "$BASE_URL/person-and-engagement"
         ;;
 
     ou)
@@ -70,7 +70,7 @@ case "$COMMAND" in
           \"institution_identifier\": \"$INSTITUTION_IDENTIFIER\",
           \"cpr\": \"$CPR\"
         }" \
-        "$BASE_URL/person"
+        "$BASE_URL/person-and-engagement"
         ;;
 
     *)

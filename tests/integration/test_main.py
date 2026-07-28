@@ -204,19 +204,17 @@ class TestFastAPIApp:
     "event_based_sync,"
     "disable_sd_events,"
     "disable_sd_ou_events,"
-    "disable_sd_person_events,"
-    "disable_sd_engagement_events,"
+    "disable_sd_person_engagement_events,"
     "disable_mo_events,"
     "disable_mo_ou_events,"
     "disable_mo_person_events,"
     "disable_mo_engagement_events,"
     "expected",
     [
-        (False, False, False, False, False, False, False, False, False, []),
+        (False, False, False, False, False, False, False, False, []),
         (
             True,
             True,
-            False,
             False,
             False,
             False,
@@ -230,14 +228,12 @@ class TestFastAPIApp:
             False,
             False,
             True,
-            False,
             True,
             True,
             True,
             True,
             [
                 {"namespace": "sd", "routing_key": "org"},
-                {"namespace": "sd", "routing_key": "employment"},
             ],
         ),
         (
@@ -249,11 +245,9 @@ class TestFastAPIApp:
             False,
             False,
             False,
-            False,
             [
                 {"namespace": "sd", "routing_key": "org"},
-                {"namespace": "sd", "routing_key": "person"},
-                {"namespace": "sd", "routing_key": "employment"},
+                {"namespace": "sd", "routing_key": "person-and-employment"},
                 {"namespace": "mo", "routing_key": "org_unit"},
                 {"namespace": "mo", "routing_key": "person"},
                 {"namespace": "mo", "routing_key": "engagement"},
@@ -265,8 +259,7 @@ def test__configure_listeners(
     event_based_sync: bool,
     disable_sd_events: bool,
     disable_sd_ou_events: bool,
-    disable_sd_person_events: bool,
-    disable_sd_engagement_events: bool,
+    disable_sd_person_engagement_events: bool,
     disable_mo_events: bool,
     disable_mo_ou_events: bool,
     disable_mo_person_events: bool,
@@ -281,8 +274,7 @@ def test__configure_listeners(
             "event_based_sync": event_based_sync,
             "disable_sd_events": disable_sd_events,
             "disable_sd_ou_events": disable_sd_ou_events,
-            "disable_sd_person_events": disable_sd_person_events,
-            "disable_sd_engagement_events": disable_sd_engagement_events,
+            "disable_sd_person_engagement_events": disable_sd_person_engagement_events,
             "disable_mo_events": disable_mo_events,
             "disable_mo_ou_events": disable_mo_ou_events,
             "disable_mo_person_events": disable_mo_person_events,

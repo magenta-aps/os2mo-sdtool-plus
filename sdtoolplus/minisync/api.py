@@ -6,8 +6,7 @@ from fastapi import Response
 from starlette.status import HTTP_200_OK
 
 from .. import depends
-from ..sync.engagement import sync_engagement
-from ..sync.person import sync_person
+from ..sync.engagement import sync_person_and_engagement
 from .engagement import move_engagement
 from .models import EngagementMovePayload
 from .models import EngagementSyncPayload
@@ -29,7 +28,7 @@ async def engagement_move(
 
 
 @minisync_router.post("/minisync/sync-person-and-employment", status_code=HTTP_200_OK)
-async def sync_person_and_engagement(
+async def _sync_person_and_engagement(
     response: Response,
     settings: depends.Settings,
     sd_client: depends.SDClient,
@@ -48,8 +47,6 @@ async def sync_person_and_engagement(
             cpr: CPR number of the person
             employment_identifier: The SD EmploymentIdentifier
 
-        dry_run: If true, nothing will be written to MO.
-
     Returns:
         Dictionary with status
     """
@@ -57,21 +54,13 @@ async def sync_person_and_engagement(
 
     # TODO: add integration test when endpoint fully implemented.
 
-    await sync_person(
-        sd_client=sd_client,
-        gql_client=gql_client,
+    await sync_person_and_engagement(
         settings=settings,
-        institution_identifier=payload.institution_identifier,
-        cpr=payload.cpr,
-    )
-
-    await sync_engagement(
         sd_client=sd_client,
         gql_client=gql_client,
         institution_identifier=payload.institution_identifier,
         cpr=payload.cpr,
         employment_identifier=payload.employment_identifier,
-        settings=settings,
     )
 
     return {"msg": "success"}

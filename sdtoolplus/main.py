@@ -42,8 +42,6 @@ from .db.rundb import Status
 from .db.rundb import delete_last_run
 from .db.rundb import get_status
 from .db.rundb import persist_status
-from .events import EmploymentGraphQLEvent
-from .events import PersonGraphQLEvent
 from .events import router as events_router
 from .events import sd_amqp_lifespan
 from .exceptions import UnknownNYLevel
@@ -51,15 +49,14 @@ from .middleware import ExceptionLoggerMiddleware
 from .middleware import RequestIDMiddleware
 from .minisync.api import minisync_router
 from .mo_class import MOOrgUnitLevelMap
-from .models import EngagementSyncPayload
 from .models import OrgGraphQLEvent
 from .models import OrgUnitSyncPayload
-from .models import PersonSyncPayload
+from .models import PersonAndEmploymentGraphQLEvent
+from .models import PersonAndEngagementSyncPayload
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
-from .sync.engagement import sync_engagement
+from .sync.engagement import sync_person_and_engagement
 from .sync.org_unit import sync_ou
-from .sync.person import sync_person
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
@@ -83,23 +80,13 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     parallelism=1,
                 )
             )
-        if not settings.disable_sd_person_events:
+        if not settings.disable_sd_person_engagement_events:
             listeners.append(
                 Listener(
                     namespace="sd",
-                    user_key="person",
-                    routing_key="person",
-                    path="/events/sd/person",
-                    parallelism=3,
-                )
-            )
-        if not settings.disable_sd_engagement_events:
-            listeners.append(
-                Listener(
-                    namespace="sd",
-                    user_key="employment",
-                    routing_key="employment",
-                    path="/events/sd/employment",
+                    user_key="person-and-employment",
+                    routing_key="person-and-employment",
+                    path="/events/sd/person-and-employment",
                     parallelism=3,
                 )
             )
@@ -362,24 +349,6 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return results
 
-    @fastapi_router.post("/timeline/sync/person", status_code=HTTP_200_OK)
-    async def timeline_sync_person(
-        sd_client: depends.SDClient,
-        gql_client: depends.GraphQLClient,
-        settings: depends.Settings,
-        payload: PersonSyncPayload,
-    ) -> dict:
-        """Sync the person with the given CPR from the given institution identifier."""
-        await sync_person(
-            sd_client=sd_client,
-            gql_client=gql_client,
-            settings=settings,
-            institution_identifier=payload.institution_identifier,
-            cpr=payload.cpr,
-        )
-
-        return {"msg": "success"}
-
     @fastapi_router.post("/timeline/sync/person/all")
     async def sync_all_persons(
         sd_client: depends.SDClient,
@@ -402,8 +371,8 @@ def create_fastramqpi() -> FastRAMQPI:
         events = [
             EventSendInput(
                 namespace="sd",
-                routing_key="person",
-                subject=PersonGraphQLEvent(
+                routing_key="person-and-employment",
+                subject=PersonAndEmploymentGraphQLEvent(
                     institution_identifier=institution_identifier,
                     cpr=person.cpr,
                 ).json(),
@@ -421,47 +390,40 @@ def create_fastramqpi() -> FastRAMQPI:
 
         return {"msg": f"{len(events)} person events queued"}
 
-    @fastapi_router.post("/timeline/sync/engagement", status_code=HTTP_200_OK)
+    @fastapi_router.post(
+        "/timeline/sync/person-and-engagement", status_code=HTTP_200_OK
+    )
     async def timeline_sync_engagement(
         settings: depends.Settings,
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
-        payload: EngagementSyncPayload,
-        dry_run: bool = False,
+        payload: PersonAndEngagementSyncPayload,
     ) -> dict:
-        # TODO: This person sync is a temporary change which can be removed when the code
-        #       for handling the new SD event types has been implemented. Soon SD will stop
-        #       sending person events and only send engagement events, when employment
-        #       addresses are updated. For now, we therefore need to sync the engagement
-        #       person too, when syncing the engagement, since the employment addresses
-        #       are stored on the Person object in SD.
-        if settings.sync_person_when_syncing_sd_engagement:
-            await sync_person(
-                sd_client=sd_client,
-                gql_client=gql_client,
-                settings=settings,
-                institution_identifier=payload.institution_identifier,
-                cpr=payload.cpr,
-            )
+        """
+        Sync person and engagement.
 
-        await sync_engagement(
+        If the employmeny identifier is not set in the payload, we will effectively only
+        sync the person.
+        """
+        await sync_person_and_engagement(
+            settings=settings,
             sd_client=sd_client,
             gql_client=gql_client,
             institution_identifier=payload.institution_identifier,
             cpr=payload.cpr,
             employment_identifier=payload.employment_identifier,
-            settings=settings,
-            dry_run=dry_run,
         )
+
         return {"msg": "success"}
 
-    @fastapi_router.post("/timeline/sync/engagement/all/sd", status_code=HTTP_200_OK)
+    @fastapi_router.post(
+        "/timeline/sync/person-and-engagement/all/sd", status_code=HTTP_200_OK
+    )
     async def full_timeline_sync_sd_engagements(
         sd_client: depends.SDClient,
         gql_client: depends.GraphQLClient,
         institution_identifier: str,
         only_active_persons: bool = False,
-        dry_run: bool = False,
     ) -> dict:
         """
         Sync engagements of all SD persons, i.e.
@@ -479,11 +441,6 @@ def create_fastramqpi() -> FastRAMQPI:
             only_active_persons=only_active_persons,
         )
 
-        if dry_run:
-            logger.info(
-                f"Dry-run. Would create engagement events for {len(sd_persons)} persons"
-            )
-            return {"msg": "success"}
         for person in sd_persons:
             try:
                 res = await get_sd_person_engagements(
@@ -503,8 +460,8 @@ def create_fastramqpi() -> FastRAMQPI:
             for e in one(res.Person).Employment:
                 event = EventSendInput(
                     namespace="sd",
-                    routing_key="employment",
-                    subject=EmploymentGraphQLEvent(
+                    routing_key="person-and-employment",
+                    subject=PersonAndEmploymentGraphQLEvent(
                         institution_identifier=institution_identifier,
                         cpr=person.cpr,
                         employment_identifier=e.EmploymentIdentifier,
