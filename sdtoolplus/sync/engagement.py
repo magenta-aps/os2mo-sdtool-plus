@@ -531,6 +531,21 @@ async def engagement_ou_strategy_region(
     return desired_timeline
 
 
+async def engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+    sd_eng_timeline: EngagementTimeline, unknown_unit_uuid: OrgUnitUUID | None
+) -> EngagementTimeline:
+    """
+    This strategy will remove all intervals in the past where the eng_unit is the
+    unknown unit. The result of this is that the engagement will be terminated in these
+    intervals.
+
+    Args:
+        sd_eng_timeline: the engagement timeline to modify.
+        unknown_unit_uuid: the UUID of the unknown unit.
+    """
+    return sd_eng_timeline
+
+
 async def engagement_ou_strategy(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -826,6 +841,13 @@ async def sync_engagement(
         user_key=user_key,
         sd_eng_timeline=sd_eng_timeline,
         mo_eng_timeline=mo_eng_timeline,
+    )
+
+    desired_eng_timeline = (
+        await engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+            sd_eng_timeline=desired_eng_timeline,
+            unknown_unit_uuid=settings.unknown_unit,
+        )
     )
 
     desired_eng_timeline = await fix_missing_job_functions(
