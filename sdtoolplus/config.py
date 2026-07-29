@@ -233,6 +233,10 @@ class SDToolPlusSettings(BaseSettings):
     # UUID of the unit "Ukendt" (only used when running in "region" mode)
     unknown_unit: OrgUnitUUID | None = None
 
+    # Terminate engagements in the intervals in the past where they are placed in the
+    # unknown unit.
+    terminate_engagements_in_unknown_in_past: bool = False
+
     class Config:
         env_nested_delimiter = "__"
 
