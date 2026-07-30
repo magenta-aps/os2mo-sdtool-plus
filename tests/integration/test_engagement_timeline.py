@@ -6089,3 +6089,243 @@ async def test_eng_timeline_raises_when_person_not_found_in_sd(
         EngagementFilter(user_keys=[emp_id])
     )
     assert not engagements.objects
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "TERMINATE_ENGAGEMENTS_IN_UNKNOWN_IN_PAST": "true",
+    }
+)
+async def test_eng_timeline_terminate_in_unknown_in_past(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    With `terminate_engagements_in_unknown_in_past` enabled, an engagement placed in
+    the unknown unit in intervals entirely in the past is terminated in those
+    intervals, while the interval where it is currently (today) in the unknown unit
+    is kept.
+
+    Time  --------t1--------t2-----t3--------t4-----t5------------------------------->
+
+    MO/SD (unit)  |-unknown-|-dep1-|-unknown-|-dep1-|--------unknown-----------------
+
+    Note that this is a somewhat artificial SD unit construction as the unknown unit
+    does exists in SD, but that is not important for the test.
+
+    "Assert"                |-dep1-|         |-dep1-|--------unknown-----------------
+    intervals
+
+    (the two disjoint past unknown intervals are terminated, the current one kept)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+    t5 = datetime(2005, 1, 1, tzinfo=tz)
+
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create the MO engagement placed in the unknown unit for the entire period...
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+                extension_1="name1",
+                extension_4="ukendt",
+                extension_5=str(UNKNOWN_UNIT),
+                person=person_uuid,
+                org_unit=UNKNOWN_UNIT,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # ...then place it in dep1 in the two intervals separating the unknown intervals
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t2, t3),
+            extension_1="name1",
+            extension_4="dep1",
+            extension_5=str(dep1_uuid),
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t4, t5),
+            extension_1="name1",
+            extension_4="dep1",
+            extension_5=str(dep1_uuid),
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    # SD returns the same unit timeline: unknown / dep1 / unknown / dep1 / unknown
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2001-12-31</DeactivationDate>
+                <DepartmentIdentifier>ukendt</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(UNKNOWN_UNIT)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2002-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2003-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <DepartmentIdentifier>ukendt</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(UNKNOWN_UNIT)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2004-01-01</ActivationDate>
+                <DeactivationDate>2004-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <EmploymentDepartment>
+                <ActivationDate>2005-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>ukendt</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(UNKNOWN_UNIT)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+
+    # The two past unknown intervals ([t1, t2) and [t3, t4)) are terminated, leaving
+    # the two dep1 intervals and the current (today) unknown interval.
+    assert len(validities) == 3
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t2
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t3
+    assert interval_1.org_unit_uuid == dep1_uuid
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t4
+    assert mo_end_to_timeline_end(interval_2.validity.to) == t5
+    assert interval_2.org_unit_uuid == dep1_uuid
+
+    interval_3 = validities[2]
+    assert interval_3.validity.from_ == t5
+    assert mo_end_to_timeline_end(interval_3.validity.to) == POSITIVE_INFINITY
+    assert interval_3.org_unit_uuid == UNKNOWN_UNIT

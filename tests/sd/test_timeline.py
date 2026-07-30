@@ -13,10 +13,12 @@ from respx import MockRouter
 from sdclient.client import SDClient
 from sdclient.exceptions import SDParentNotFound
 from sdclient.responses import DepartmentParentHistoryObj
+from time_machine import travel
 
 from sdtoolplus.exceptions import DepartmentParentsNotFoundError
 from sdtoolplus.exceptions import DepartmentValidityExceedsParentsValiditiesError
 from sdtoolplus.exceptions import HolesInDepartmentParentsTimelineError
+from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
@@ -28,6 +30,9 @@ from sdtoolplus.models import EngagementUnitId
 from sdtoolplus.models import EngType
 from sdtoolplus.models import Timeline
 from sdtoolplus.sync.engagement import engagement_ou_strategy_elevate_to_ny_level
+from sdtoolplus.sync.engagement import (
+    engagement_ou_strategy_terminate_in_past_where_unit_unknown,
+)
 
 
 async def test_engagement_ou_strategy_elevate_to_ny_level(respx_mock: MockRouter):
@@ -311,3 +316,254 @@ async def test_engagement_ou_strategy_elevate_to_ny_level_department_exceeds_par
         await engagement_ou_strategy_elevate_to_ny_level(
             sd_client=mock_sd_client, sd_eng_timeline=sd_eng_timeline
         )
+
+
+async def test_engagement_ou_strategy_terminate_in_past_where_unit_unknown():
+    """
+    An engagement placed in the unknown unit in the past is terminated (removed
+    from every field of the timeline) in that interval, while the rest of the
+    timeline is kept unchanged.
+
+    Time       --t1--------------t2------------------(now=2020)-------------t3--
+
+    SD (unit)    |----unknown-----|-----------------real------------------------|
+    SD (active)  |--------------------------True-----------------------------|
+
+    Desired      (terminated)     |-----------------real------------------------|
+    """
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2010, 1, 1, tzinfo=tz)
+    t3 = datetime(2030, 1, 1, tzinfo=tz)
+
+    unknown = UUID("44c15403-2a66-429e-8893-acaae9f30dfb")
+    real_unit = UUID("10000000-0000-0000-0000-000000000000")
+
+    sd_eng_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](intervals=(Active(start=t1, end=t3, value=True),)),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t1, end=t3, value="key"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t1, end=t3, value="name"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(
+                EngagementUnit(start=t1, end=t2, value=unknown),
+                EngagementUnit(start=t2, end=t3, value=real_unit),
+            )
+        ),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=(
+                EngagementSDUnit(start=t1, end=t2, value=unknown),
+                EngagementSDUnit(start=t2, end=t3, value=real_unit),
+            )
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(
+                EngagementUnitId(start=t1, end=t2, value="u1"),
+                EngagementUnitId(start=t2, end=t3, value="u2"),
+            )
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(start=t1, end=t3, value=EngType.MONTHLY_FULL_TIME),
+            )
+        ),
+    )
+
+    # Act (now = 2020, so the unknown interval t1-t2 is entirely in the past)
+    with travel("2020-01-01", tick=False):
+        desired = await engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+            sd_eng_timeline=sd_eng_timeline,
+            unknown_unit_uuid=unknown,
+        )
+
+    # Assert: the past unknown-unit interval is removed from every field
+    assert desired == EngagementTimeline(
+        eng_active=Timeline[Active](intervals=(Active(start=t2, end=t3, value=True),)),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t2, end=t3, value="key"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t2, end=t3, value="name"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(EngagementUnit(start=t2, end=t3, value=real_unit),)
+        ),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=(EngagementSDUnit(start=t2, end=t3, value=real_unit),)
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(EngagementUnitId(start=t2, end=t3, value="u2"),)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(start=t2, end=t3, value=EngType.MONTHLY_FULL_TIME),
+            )
+        ),
+    )
+
+
+async def test_engagement_ou_strategy_terminate_in_past_keeps_current_unknown():
+    """
+    Only unknown-unit intervals *entirely* in the past are terminated. If the
+    engagement is currently in the unknown unit (the interval containing "now"),
+    it stays there for the whole interval.
+                                                          now
+    Time         --t1--------t2-----------t3---------------+--------------------->
+
+    SD (unit)      |-unknown-|----dep1----|-------------unknown------------------
+    SD (active)    |----------------------True-----------------------------------
+
+    Desired (active)         |---------------------------------------------------
+    """
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2005, 1, 1, tzinfo=tz)
+    t3 = datetime(2015, 1, 1, tzinfo=tz)
+
+    unknown_unit = uuid4()
+    dep1 = UUID("10000000-0000-0000-0000-000000000000")
+
+    sd_eng_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](
+            intervals=(Active(start=t1, end=POSITIVE_INFINITY, value=True),)
+        ),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t1, end=POSITIVE_INFINITY, value="key"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t1, end=POSITIVE_INFINITY, value="name"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(
+                EngagementUnit(start=t1, end=t2, value=unknown_unit),
+                EngagementUnit(start=t2, end=t3, value=dep1),
+                EngagementUnit(start=t3, end=POSITIVE_INFINITY, value=unknown_unit),
+            )
+        ),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=(EngagementSDUnit(start=t1, end=POSITIVE_INFINITY, value=dep1),)
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(EngagementUnitId(start=t1, end=POSITIVE_INFINITY, value="dep1"),)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(
+                    start=t1, end=POSITIVE_INFINITY, value=EngType.MONTHLY_FULL_TIME
+                ),
+            )
+        ),
+    )
+
+    # Act (now = 2020, so only the unknown interval t1-t2 is entirely in the past;
+    # the unknown interval t3-∞ contains "now" and must be kept)
+    with travel("2020-01-01", tick=False):
+        desired = await engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+            sd_eng_timeline=sd_eng_timeline,
+            unknown_unit_uuid=unknown_unit,
+        )
+
+    # Assert: only the fully-past unknown interval (t1-t2) is removed
+    assert desired == EngagementTimeline(
+        eng_active=Timeline[Active](
+            intervals=(Active(start=t2, end=POSITIVE_INFINITY, value=True),)
+        ),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t2, end=POSITIVE_INFINITY, value="key"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t2, end=POSITIVE_INFINITY, value="name"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(
+                EngagementUnit(start=t2, end=t3, value=dep1),
+                EngagementUnit(start=t3, end=POSITIVE_INFINITY, value=unknown_unit),
+            )
+        ),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=(EngagementSDUnit(start=t2, end=POSITIVE_INFINITY, value=dep1),)
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(EngagementUnitId(start=t2, end=POSITIVE_INFINITY, value="dep1"),)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(
+                    start=t2, end=POSITIVE_INFINITY, value=EngType.MONTHLY_FULL_TIME
+                ),
+            )
+        ),
+    )
+
+
+async def test_engagement_ou_strategy_terminate_in_past_future_unknown_kept():
+    """An unknown-unit interval entirely in the future is left untouched."""
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2030, 1, 1, tzinfo=tz)
+    t2 = datetime(2040, 1, 1, tzinfo=tz)
+
+    unknown_unit = uuid4()
+    sd_unit = uuid4()
+
+    sd_eng_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](intervals=(Active(start=t1, end=t2, value=True),)),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t1, end=t2, value="key"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t1, end=t2, value="name"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(EngagementUnit(start=t1, end=t2, value=unknown_unit),)
+        ),
+        eng_sd_unit=Timeline[EngagementSDUnit](
+            intervals=(EngagementSDUnit(start=t1, end=t2, value=sd_unit),)
+        ),
+        eng_unit_id=Timeline[EngagementUnitId](
+            intervals=(EngagementUnitId(start=t1, end=t2, value="sd_unit"),)
+        ),
+        eng_type=Timeline[EngagementType](
+            intervals=(
+                EngagementType(start=t1, end=t2, value=EngType.MONTHLY_FULL_TIME),
+            )
+        ),
+    )
+
+    # Act
+    with travel("2020-01-01", tick=False):
+        desired = await engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+            sd_eng_timeline=sd_eng_timeline,
+            unknown_unit_uuid=unknown_unit,
+        )
+
+    # Assert: nothing removed
+    assert desired == sd_eng_timeline
+
+
+async def test_engagement_ou_strategy_terminate_in_past_no_unknown_unit():
+    """When no unknown unit is configured, the timeline is returned unchanged."""
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2010, 1, 1, tzinfo=tz)
+
+    sd_unit = uuid4()
+
+    sd_eng_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](intervals=(Active(start=t1, end=t2, value=True),)),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(EngagementUnit(start=t1, end=t2, value=sd_unit),)
+        ),
+    )
+
+    # Act
+    with travel("2020-01-01", tick=False):
+        desired = await engagement_ou_strategy_terminate_in_past_where_unit_unknown(
+            sd_eng_timeline=sd_eng_timeline,
+            unknown_unit_uuid=None,
+        )
+
+    # Assert
+    assert desired == sd_eng_timeline
