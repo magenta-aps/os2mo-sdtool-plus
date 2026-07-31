@@ -211,7 +211,7 @@ def uuid_sync(
                         "subject": eng_uuid,
                         "priority": priority,
                     },
-                    timeout=60,
+                    timeout=600,
                 )
                 r.raise_for_status()
             except httpx.ReadTimeout as error:
