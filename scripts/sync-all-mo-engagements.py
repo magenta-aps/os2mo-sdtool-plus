@@ -19,16 +19,70 @@ from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
 
 ENGAGEMENT_UUID_SYNC_URL = "http://localhost:8000/events/mo/engagement"
 
+# Column name used in the "processed" CSV file
+PROCESSED_FIELDNAME = "eng_uuid"
+
 logger = structlog.stdlib.get_logger()
 
 
+def load_processed(processed_csv_file: Path) -> set[str]:
+    """Load the identifiers of the already successfully processed engagements.
+
+    Args:
+        processed_csv_file: Path to the CSV file containing the processed
+            engagements. Does not have to exist yet.
+
+    Returns:
+        The set of identifiers of the already processed engagements.
+    """
+    if not processed_csv_file.exists():
+        return set()
+    with open(processed_csv_file, newline="") as fp:
+        reader = csv.DictReader(fp)
+        return {row[PROCESSED_FIELDNAME] for row in reader}
+
+
+def append_processed(processed_csv_file: Path, identifier: str) -> None:
+    """Append a successfully processed engagement identifier to the CSV file.
+
+    The file (including its header) is created if it does not already exist.
+
+    Args:
+        processed_csv_file: Path to the CSV file containing the processed
+            engagements.
+        identifier: The identifier of the engagement that was just processed.
+    """
+    write_header = (
+        not processed_csv_file.exists() or processed_csv_file.stat().st_size == 0
+    )
+    with open(processed_csv_file, "a", newline="") as fp:
+        writer = csv.DictWriter(fp, fieldnames=[PROCESSED_FIELDNAME])
+        if write_header:
+            writer.writeheader()
+        writer.writerow({PROCESSED_FIELDNAME: identifier})
+
+
 async def sync_all_mo_engagements(
-    gql_client: GraphQLClient, engagements_csv_file: Path, priority: int
+    gql_client: GraphQLClient,
+    engagements_csv_file: Path,
+    processed_csv_file: Path,
+    priority: int,
 ) -> None:
+    processed = load_processed(processed_csv_file)
+
     with open(engagements_csv_file, newline="") as fp:
         reader = csv.DictReader(fp)
         for i, row in enumerate(reader):
-            institution_identifier, employment_identifier = row["user_key"].split("-")
+            user_key = row["user_key"]
+            if user_key in processed:
+                logger.info(
+                    "Skipping already processed engagement",
+                    user_key=user_key,
+                    counter=i,
+                )
+                continue
+
+            institution_identifier, employment_identifier = user_key.split("-")
             cpr = last(row["cpr"].split(":"))
 
             logger.info(
@@ -40,18 +94,27 @@ async def sync_all_mo_engagements(
                 counter=i,
             )
 
-            await gql_client.send_event(
-                input=EventSendInput(
-                    namespace="sd",
-                    routing_key="person-and-employment",
-                    subject=PersonAndEmploymentGraphQLEvent(
-                        institution_identifier=institution_identifier,
-                        cpr=cpr,
-                        employment_identifier=employment_identifier,
-                    ).json(),
-                    priority=priority,
+            try:
+                await gql_client.send_event(
+                    input=EventSendInput(
+                        namespace="sd",
+                        routing_key="person-and-employment",
+                        subject=PersonAndEmploymentGraphQLEvent(
+                            institution_identifier=institution_identifier,
+                            cpr=cpr,
+                            employment_identifier=employment_identifier,
+                        ).json(),
+                        priority=priority,
+                    )
                 )
-            )
+            except Exception as error:
+                logger.error(
+                    "Could not queue engagement", user_key=user_key, error=error
+                )
+                continue
+
+            append_processed(processed_csv_file, user_key)
+            processed.add(user_key)
 
 
 @click.group()
@@ -62,9 +125,19 @@ def cli():
 @cli.command()
 @click.option(
     "--engagements-csv-file",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, path_type=Path),
     default=Path("/tmp/engagements.csv"),
     help="Path to the CSV file containing the engagements to sync",
+)
+@click.option(
+    "--processed-csv-file",
+    type=click.Path(path_type=Path),
+    default=Path("/tmp/processed_engagements.csv"),
+    help=(
+        "Path to the CSV file listing the already successfully processed "
+        "engagements. Engagements listed here are skipped, and the file is "
+        "updated after each successfully processed engagement."
+    ),
 )
 @click.option(
     "--priority",
@@ -74,12 +147,17 @@ def cli():
 )
 def user_key_sync(
     engagements_csv_file: Path,
+    processed_csv_file: Path,
     priority: int,
 ) -> None:
     logger.info("Script started")
 
     gql_client = get_gql_client()
-    asyncio.run(sync_all_mo_engagements(gql_client, engagements_csv_file, priority))
+    asyncio.run(
+        sync_all_mo_engagements(
+            gql_client, engagements_csv_file, processed_csv_file, priority
+        )
+    )
 
     logger.info("Script finished")
 
@@ -87,9 +165,19 @@ def user_key_sync(
 @cli.command()
 @click.option(
     "--engagements-csv-file",
-    type=click.Path(exists=True),
+    type=click.Path(exists=True, path_type=Path),
     default=Path("/tmp/engagements.csv"),
     help="Path to the CSV file containing the engagements to sync",
+)
+@click.option(
+    "--processed-csv-file",
+    type=click.Path(path_type=Path),
+    default=Path("/tmp/processed_engagements.csv"),
+    help=(
+        "Path to the CSV file listing the already successfully processed "
+        "engagements. Engagements listed here are skipped, and the file is "
+        "updated after each successfully processed engagement."
+    ),
 )
 @click.option(
     "--priority",
@@ -99,14 +187,23 @@ def user_key_sync(
 )
 def uuid_sync(
     engagements_csv_file: Path,
+    processed_csv_file: Path,
     priority: int,
 ) -> None:
     logger.info("Script started")
+
+    processed = load_processed(processed_csv_file)
 
     with open(engagements_csv_file, newline="") as fp:
         reader = csv.DictReader(fp)
         for i, row in enumerate(reader):
             eng_uuid = row["eng_uuid"].strip()
+            if eng_uuid in processed:
+                logger.info(
+                    "Skipping already processed engagement", eng_uuid=eng_uuid, count=i
+                )
+                continue
+
             try:
                 r = httpx.post(
                     ENGAGEMENT_UUID_SYNC_URL,
@@ -116,17 +213,20 @@ def uuid_sync(
                     },
                     timeout=60,
                 )
+                r.raise_for_status()
             except httpx.ReadTimeout as error:
                 # Some engagements take forever (~30-60 minutes) to sync, so we
                 # will skip these and handle them by alternative methods
                 logger.error("Timeout", eng_uuid=eng_uuid, error=error)
-            else:
-                try:
-                    r.raise_for_status()
-                except httpx.HTTPStatusError as error:
-                    logger.error(
-                        "Could not sync engagement", eng_uuid=eng_uuid, error=error
-                    )
+                continue
+            except httpx.HTTPStatusError as error:
+                logger.error(
+                    "Could not sync engagement", eng_uuid=eng_uuid, error=error
+                )
+                continue
+
+            append_processed(processed_csv_file, eng_uuid)
+            processed.add(eng_uuid)
             logger.info("Synced engagement", eng_uuid=eng_uuid, count=i)
 
     logger.info("Script finished")
