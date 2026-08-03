@@ -502,8 +502,8 @@ async def _sync_person(
     sd_person: Person,
     mo_person: GetPersonTimelineEmployees,
 ) -> UUID:
-    mo_objects = only(mo_person.objects, too_long=MoreThanOnePersonError)
-    if mo_objects is None:
+    mo_person_object = only(mo_person.objects, too_long=MoreThanOnePersonError)
+    if mo_person_object is None:
         person_uuid = await create_person(
             gql_client=gql_client,
             cpr=sd_person.cpr,
@@ -511,7 +511,7 @@ async def _sync_person(
             lastname=sd_person.surname,
         )
         return person_uuid
-    mo_validities = mo_objects.validities
+    mo_validities = mo_person_object.validities
 
     if (
         len(mo_validities) > 1
@@ -525,7 +525,7 @@ async def _sync_person(
             person=sd_person,
         )
 
-    return mo_objects.uuid
+    return mo_person_object.uuid
 
 
 async def sync_person(
