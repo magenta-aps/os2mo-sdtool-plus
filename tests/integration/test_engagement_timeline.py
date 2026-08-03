@@ -6329,3 +6329,159 @@ async def test_eng_timeline_terminate_in_unknown_in_past(
     assert interval_3.validity.from_ == t5
     assert mo_end_to_timeline_end(interval_3.validity.to) == POSITIVE_INFINITY
     assert interval_3.org_unit_uuid == UNKNOWN_UNIT
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
+async def test_eng_timeline_sync_when_sd_person_in_other_institution(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    An engagement is synced for an institution (here "XY") where the SD person is
+    *not* found - because the person lives in a different SD institution. Since the
+    person already exists in MO (synced earlier from the other institution), the
+    sync must not fail, but instead use the existing MO person and sync the
+    engagement.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    # The person already exists in MO (e.g. synced from another institution)
+    person_uuid = (
+        await graphql_client.create_person(
+            EmployeeCreateInput(
+                cpr_number=CPRNumber(cpr),
+                given_name="Chuck",
+                surname="Norris",
+            )
+        )
+    ).uuid
+
+    # SD GetPerson for institution "XY" returns an <Envelope> fault (the person is
+    # not found in this SD institution)
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetPerson20111201?InstitutionIdentifier=XY&EffectiveDate={TODAY_URL_FORMAT}&PersonCivilRegistrationIdentifier={cpr}&StatusActiveIndicator=True&StatusPassiveIndicator=True&ContactInformationIndicator=True&PostalAddressIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=f"""
+        <Envelope>
+            <Body>
+                <Fault>
+                    <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+                    <faultstring>
+                        The stated PersonCivilRegistrationIdentifier '{cpr}' does not exist.
+                    </faultstring>
+                    <faultactor>
+                        dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetPerson20111201BO
+                    </faultactor>
+                    <detail>
+                        <string>
+                            Missing or invalid parameter from client: "The stated PersonCivilRegistrationIdentifier '{cpr}' does not exist."
+                        </string>
+                    </detail>
+                </Fault>
+            </Body>
+        </Envelope>
+        """,
+    )
+
+    # SD GetEmploymentChanged for "XY" returns an active employment in dep1
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=XY&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>XY</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep1</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep1_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+        """,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "XY",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert: the sync succeeds and the engagement is created on the existing person
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    validity = one(one(updated_eng.objects).validities)
+    assert validity.validity.from_ == t1
+    assert mo_end_to_timeline_end(validity.validity.to) == POSITIVE_INFINITY
+    assert validity.org_unit_uuid == dep1_uuid
