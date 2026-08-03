@@ -547,20 +547,6 @@ async def sync_person(
         )
         return None
 
-    sd_person = await get_sd_person(
-        sd_client=sd_client,
-        institution_identifier=institution_identifier,
-        cpr=cpr,
-        effective_date=datetime.today(),
-    )
-    if sd_person is None:
-        logger.warning(
-            "Person not found in SD. Skipping",
-            institution_identifier=institution_identifier,
-            cpr=cpr,
-        )
-        return None
-
     mo_person = await gql_client.get_person_timeline(
         filter=EmployeeFilter(
             cpr_numbers=[cast(CPRNumber, cpr)], from_date=datetime.today(), to_date=None
@@ -568,6 +554,32 @@ async def sync_person(
     )
     logger.info("MO person", mo_person=mo_person.dict())
     mo_person_object = only(mo_person.objects, too_long=MoreThanOnePersonError)
+
+    sd_person = await get_sd_person(
+        sd_client=sd_client,
+        institution_identifier=institution_identifier,
+        cpr=cpr,
+        effective_date=datetime.today(),
+    )
+
+    if sd_person is None and mo_person_object is not None:
+        # This happens when the person in SD is located in a different institution
+        # than the persons engagement! In this case we have to rely on that the SD
+        # person from the other institution have been synced by a previous event.
+        logger.warning(
+            "Person found in MO, but not in the SD institution",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return mo_person_object.uuid
+
+    if sd_person is None:
+        logger.warning(
+            "Person not found in SD. Skipping",
+            institution_identifier=institution_identifier,
+            cpr=cpr,
+        )
+        return None
 
     person_uuid = await _sync_person(
         gql_client=gql_client,
