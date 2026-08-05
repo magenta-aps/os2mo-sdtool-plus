@@ -122,7 +122,6 @@ async def _sync_eng_intervals(
     mo_eng_timeline: EngagementTimeline,
     mo_leave_timeline: LeaveTimeline,
     settings: SDToolPlusSettings,
-    dry_run: bool,
 ) -> None:
     user_key = prefix_eng_user_key(
         settings.prefix_engagement_user_keys,
@@ -178,7 +177,6 @@ async def _sync_eng_intervals(
                 user_key=user_key,
                 start=start,
                 end=end,
-                dry_run=dry_run,
             )
             continue
 
@@ -200,7 +198,6 @@ async def _sync_eng_intervals(
                 end=end,
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
-                dry_run=dry_run,
             )
         else:
             await create_engagement(
@@ -211,7 +208,6 @@ async def _sync_eng_intervals(
                 end=end,
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
-                dry_run=dry_run,
             )
 
     logger.info(
@@ -805,6 +801,18 @@ async def fix_too_narrow_ou_validities(
     return desired_timeline
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client,
+    gql_client,
+    institution_identifier,
+    cpr,
+    employment_identifier,
+    settings: (
+        institution_identifier,
+        cpr,
+        employment_identifier,
+    )
+)
 async def sync_engagement(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -812,7 +820,6 @@ async def sync_engagement(
     cpr: str,
     employment_identifier: str,
     settings: SDToolPlusSettings,
-    dry_run: bool = False,
 ) -> None:
     """
     Sync the entire engagement and leave timelines for the given CPR and
@@ -825,7 +832,6 @@ async def sync_engagement(
         cpr: The person CPR number
         employment_identifier: The SD EmploymentIdentifier
         settings: The application settings
-        dry_run: If true, nothing will be written to MO.
     """
 
     logger.info(
@@ -833,7 +839,6 @@ async def sync_engagement(
         inst_id=institution_identifier,
         cpr=cpr,
         emp_id=employment_identifier,
-        dry_run=dry_run,
     )
 
     if cpr.endswith("0000"):
@@ -969,7 +974,6 @@ async def sync_engagement(
         mo_eng_timeline=mo_eng_timeline,
         mo_leave_timeline=mo_leave_timeline,
         settings=settings,
-        dry_run=dry_run,
     )
 
     # Sync leaves
@@ -981,7 +985,6 @@ async def sync_engagement(
         sd_leave_timeline=sd_leave_timeline,
         mo_leave_timeline=mo_leave_timeline,
         settings=settings,
-        dry_run=dry_run,
     )
 
     await sync_associations(
@@ -990,7 +993,6 @@ async def sync_engagement(
         person=person.uuid,
         user_key=employment_identifier,
         desired_eng_timeline=desired_eng_timeline,
-        dry_run=dry_run,
     )
 
 

@@ -6,6 +6,7 @@ from typing import cast
 from uuid import UUID
 
 import structlog
+from fastramqpi.ramqp.depends import handle_exclusively_decorator
 from more_itertools import first
 from more_itertools import one
 from more_itertools import only
@@ -527,6 +528,9 @@ async def _sync_person(
     return mo_person_object.uuid
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client, gql_client, institution_identifier, cpr: cpr
+)
 async def sync_person(
     sd_client: SDClient,
     gql_client: GraphQLClient,
@@ -594,6 +598,18 @@ async def sync_person(
     return person_uuid
 
 
+@handle_exclusively_decorator(
+    key=lambda sd_client,
+    gql_client,
+    settings,
+    institution_identifier,
+    cpr,
+    person_uuid: (
+        institution_identifier,
+        cpr,
+        person_uuid,
+    )
+)
 async def sync_person_addresses(
     sd_client: SDClient,
     gql_client: GraphQLClient,

@@ -101,7 +101,6 @@ async def create_association(
     start: datetime,
     end: datetime,
     association_type: UUID,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Create association",
@@ -120,8 +119,7 @@ async def create_association(
     )
     logger.info("Create association payload", payload=payload.dict())
 
-    if not dry_run:
-        await gql_client.create_association(payload)
+    await gql_client.create_association(payload)
     logger.info("Association created", person=str(person), user_key=user_key)
 
 
@@ -133,7 +131,6 @@ async def update_association(
     start: datetime,
     end: datetime,
     association_type: UUID,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Update association",
@@ -169,8 +166,7 @@ async def update_association(
                 ),
             )
             logger.info("Update association payload", payload=payload.dict())
-            if not dry_run:
-                await gql_client.update_association(payload)
+            await gql_client.update_association(payload)
             logger.info("Association updated", person=str(person), user_key=user_key)
         return
 
@@ -190,8 +186,7 @@ async def update_association(
     )
     logger.info("Update association payload", payload=payload.dict())
 
-    if not dry_run:
-        await gql_client.update_association(payload)
+    await gql_client.update_association(payload)
     logger.info("Association updated", person=str(person), user_key=user_key)
 
 
@@ -201,7 +196,6 @@ async def terminate_association(
     user_key: str,
     start: datetime,
     end: datetime,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Terminate association",
@@ -232,6 +226,5 @@ async def terminate_association(
         )
     logger.info("Terminate association payload", payload=payload.dict())
 
-    if not dry_run:
-        await gql_client.terminate_association(payload)
+    await gql_client.terminate_association(payload)
     logger.info("Association terminated", person=str(person), user_key=user_key)

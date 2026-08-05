@@ -29,7 +29,6 @@ async def _sync_association_intervals(
     person: UUID,
     user_key: str,
     desired_eng_timeline: EngagementTimeline,
-    dry_run: bool,
 ) -> None:
     """
     Make an association to the unit where the person is employed in SD.
@@ -82,7 +81,6 @@ async def _sync_association_intervals(
                 user_key=user_key,
                 start=start,
                 end=end,
-                dry_run=dry_run,
             )
             continue
 
@@ -107,7 +105,6 @@ async def _sync_association_intervals(
                 start=start,
                 end=end,
                 association_type=association_type_uuid,
-                dry_run=dry_run,
             )
         else:
             await create_association(
@@ -118,7 +115,6 @@ async def _sync_association_intervals(
                 start=start,
                 end=end,
                 association_type=association_type_uuid,
-                dry_run=dry_run,
             )
 
     logger.info(
@@ -134,7 +130,6 @@ async def sync_associations(
     person: UUID,
     user_key: str,
     desired_eng_timeline: EngagementTimeline,
-    dry_run: bool,
 ) -> None:
     """
     Sync associations (state pattern choosing a strategy based on the application
@@ -146,5 +141,4 @@ async def sync_associations(
             person=person,
             user_key=user_key,
             desired_eng_timeline=desired_eng_timeline,
-            dry_run=dry_run,
         )

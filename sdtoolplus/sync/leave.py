@@ -32,7 +32,6 @@ async def _sync_leave_intervals(
     sd_leave_timeline: LeaveTimeline,
     mo_leave_timeline: LeaveTimeline,
     settings: SDToolPlusSettings,
-    dry_run: bool,
 ) -> None:
     user_key = prefix_eng_user_key(
         settings.prefix_engagement_user_keys,
@@ -93,7 +92,6 @@ async def _sync_leave_intervals(
                 user_key=user_key,
                 start=start,
                 end=end,
-                dry_run=dry_run,
             )
             continue
 
@@ -119,7 +117,6 @@ async def _sync_leave_intervals(
                 end=end,
                 sd_leave_timeline=sd_leave_timeline,
                 leave_type=leave_type,
-                dry_run=dry_run,
             )
         else:
             await create_leave(
@@ -131,7 +128,6 @@ async def _sync_leave_intervals(
                 end=end,
                 sd_leave_timeline=sd_leave_timeline,
                 leave_type=leave_type,
-                dry_run=dry_run,
             )
 
     logger.info(
