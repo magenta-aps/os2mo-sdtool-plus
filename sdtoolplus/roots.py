@@ -128,7 +128,6 @@ async def ensure_sd_institution_units_and_unknown_unit(
             mo_unit_timeline=mo_timeline,
             institution_identifier=institution_identifier,
             priority=10000,
-            dry_run=False,
         )
 
     # Ensure the "Unknown" unit is present

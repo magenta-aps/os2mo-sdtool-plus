@@ -336,7 +336,6 @@ async def create_ou(
     org_unit_type_user_key: str,
     institution_identifier: str,
     priority: int,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Creating OU", uuid=str(org_unit))
     logger.debug(
@@ -373,33 +372,32 @@ async def create_ou(
         org_unit_level=ou_level_uuid,
     )
     logger.info("OU create payload", payload=payload.dict())
-    if not dry_run:
-        try:
-            await gql_client.create_org_unit(payload)
-        except GraphQLClientGraphQLMultiError as error:
-            mo_error = str(one(error.errors))
-            if mo_error not in [
-                "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
-                "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
-            ]:
-                raise error
+    try:
+        await gql_client.create_org_unit(payload)
+    except GraphQLClientGraphQLMultiError as error:
+        mo_error = str(one(error.errors))
+        if mo_error not in [
+            "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
+            "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
+        ]:
+            raise error
 
-            queue_priority = priority - 1
-            logger.error(
-                "Cannot create unit due to a MO error. Queuing parent",
-                org_unit=str(org_unit),
-                parent=parent,
-                start=start,
-                end=end,
-                priority=queue_priority,
-            )
-            await _queue_ou_parent(
-                gql_client=gql_client,
-                parent=parent,
-                institution_identifier=institution_identifier,
-                priority=queue_priority,
-            )
-            raise CannotProcessOrgUnitError()
+        queue_priority = priority - 1
+        logger.error(
+            "Cannot create unit due to a MO error. Queuing parent",
+            org_unit=str(org_unit),
+            parent=parent,
+            start=start,
+            end=end,
+            priority=queue_priority,
+        )
+        await _queue_ou_parent(
+            gql_client=gql_client,
+            parent=parent,
+            institution_identifier=institution_identifier,
+            priority=queue_priority,
+        )
+        raise CannotProcessOrgUnitError()
 
     logger.info("OU created", uuid=str(org_unit))
 
@@ -413,7 +411,6 @@ async def update_ou(
     org_unit_type_user_key: str,
     institution_identifier: str,
     priority: int,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Updating OU", uuid=str(org_unit))
     logger.debug(
@@ -468,34 +465,33 @@ async def update_ou(
                 time_planning=validity.time_planning_uuid,
             )
             logger.info("OU update payload", payload=payload.dict())
-            if not dry_run:
-                try:
-                    await gql_client.update_org_unit(payload)
-                except GraphQLClientGraphQLMultiError as error:
-                    mo_error = str(one(error.errors))
-                    if mo_error not in [
-                        "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
-                        "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
-                    ]:
-                        raise error
+            try:
+                await gql_client.update_org_unit(payload)
+            except GraphQLClientGraphQLMultiError as error:
+                mo_error = str(one(error.errors))
+                if mo_error not in [
+                    "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
+                    "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
+                ]:
+                    raise error
 
-                    queue_priority = priority - 1
-                    logger.error(
-                        "Cannot update unit due to MO error. Queuing parent",
-                        org_unit=str(org_unit),
-                        parent=parent,
-                        start=start,
-                        end=end,
-                        priority=queue_priority,
-                        mo_error=mo_error,
-                    )
-                    await _queue_ou_parent(
-                        gql_client=gql_client,
-                        parent=parent,
-                        institution_identifier=institution_identifier,
-                        priority=queue_priority,
-                    )
-                    raise CannotProcessOrgUnitError()
+                queue_priority = priority - 1
+                logger.error(
+                    "Cannot update unit due to MO error. Queuing parent",
+                    org_unit=str(org_unit),
+                    parent=parent,
+                    start=start,
+                    end=end,
+                    priority=queue_priority,
+                    mo_error=mo_error,
+                )
+                await _queue_ou_parent(
+                    gql_client=gql_client,
+                    parent=parent,
+                    institution_identifier=institution_identifier,
+                    priority=queue_priority,
+                )
+                raise CannotProcessOrgUnitError()
 
             logger.info("OU updated", uuid=str(org_unit))
         return
@@ -511,34 +507,33 @@ async def update_ou(
         org_unit_level=ou_level_uuid,
     )
     logger.info("OU update payload", payload=payload.dict())
-    if not dry_run:
-        try:
-            await gql_client.update_org_unit(payload)
-        except GraphQLClientGraphQLMultiError as error:
-            mo_error = str(one(error.errors))
-            if mo_error not in [
-                "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
-                "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
-            ]:
-                raise error
+    try:
+        await gql_client.update_org_unit(payload)
+    except GraphQLClientGraphQLMultiError as error:
+        mo_error = str(one(error.errors))
+        if mo_error not in [
+            "ErrorCodes.V_DATE_OUTSIDE_ORG_UNIT_RANGE",
+            "ErrorCodes.E_ORG_UNIT_NOT_FOUND",
+        ]:
+            raise error
 
-            queue_priority = priority - 1
-            logger.error(
-                "Cannot update unit due to MO error. Queuing parent",
-                org_unit=str(org_unit),
-                parent=parent,
-                start=start,
-                end=end,
-                priority=queue_priority,
-                mo_error=mo_error,
-            )
-            await _queue_ou_parent(
-                gql_client=gql_client,
-                parent=parent,
-                institution_identifier=institution_identifier,
-                priority=queue_priority,
-            )
-            raise CannotProcessOrgUnitError()
+        queue_priority = priority - 1
+        logger.error(
+            "Cannot update unit due to MO error. Queuing parent",
+            org_unit=str(org_unit),
+            parent=parent,
+            start=start,
+            end=end,
+            priority=queue_priority,
+            mo_error=mo_error,
+        )
+        await _queue_ou_parent(
+            gql_client=gql_client,
+            parent=parent,
+            institution_identifier=institution_identifier,
+            priority=queue_priority,
+        )
+        raise CannotProcessOrgUnitError()
 
     logger.info("OU updated", uuid=str(org_unit))
 
@@ -550,7 +545,6 @@ async def terminate_ou(
     end: datetime,
     institution_identifier: str,
     priority: int,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Terminate OU", org_unit=str(org_unit), start=start, end=end)
     if end - start <= timedelta(days=1):
@@ -608,44 +602,37 @@ async def terminate_ou(
         payloads=[payload.dict() for payload in addr_term_payloads],
     )
     logger.info("OU terminate payload", payload=payload.dict())
-    if not dry_run:
-        for addr_term_payload in addr_term_payloads:
-            await gql_client.terminate_address(addr_term_payload)
-        try:
-            await gql_client.terminate_org_unit(payload)
-        except GraphQLClientGraphQLMultiError as error:
-            if (
-                not str(one(error.errors))
-                == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN"
-            ):
-                raise error
+    for addr_term_payload in addr_term_payloads:
+        await gql_client.terminate_address(addr_term_payload)
+    try:
+        await gql_client.terminate_org_unit(payload)
+    except GraphQLClientGraphQLMultiError as error:
+        if not str(one(error.errors)) == "ErrorCodes.V_TERMINATE_UNIT_WITH_CHILDREN":
+            raise error
 
-            queue_priority = priority - 1
-            logger.error(
-                "Cannot terminate unit due to active child units. Queuing children",
-                org_unit=str(org_unit),
-                start=start,
-                end=end,
-                priority=queue_priority,
-            )
-            await _queue_ou_children(
-                gql_client=gql_client,
-                org_unit=org_unit,
-                mo_validity=mo_validity,
-                institution_identifier=institution_identifier,
-                priority=queue_priority,
-            )
-            raise CannotProcessOrgUnitError()
+        queue_priority = priority - 1
+        logger.error(
+            "Cannot terminate unit due to active child units. Queuing children",
+            org_unit=str(org_unit),
+            start=start,
+            end=end,
+            priority=queue_priority,
+        )
+        await _queue_ou_children(
+            gql_client=gql_client,
+            org_unit=org_unit,
+            mo_validity=mo_validity,
+            institution_identifier=institution_identifier,
+            priority=queue_priority,
+        )
+        raise CannotProcessOrgUnitError()
 
     logger.info("OU terminated", org_unit=str(org_unit))
 
 
-async def delete_address(
-    gql_client: GraphQLClient, address_uuid: UUID, dry_run: bool
-) -> None:
+async def delete_address(gql_client: GraphQLClient, address_uuid: UUID) -> None:
     logger.info("Delete address in MO", addr_uuid=str(address_uuid))
-    if not dry_run:
-        await gql_client.delete_address(address_uuid)
+    await gql_client.delete_address(address_uuid)
 
 
 async def create_pnumber_address(
@@ -653,7 +640,6 @@ async def create_pnumber_address(
     org_unit: OrgUnitUUID,
     address_uuid: UUID | None,
     sd_pnumber_timeline: Timeline[UnitPNumber],
-    dry_run: bool,
 ) -> None:
     logger.info("Create P-number in MO", pnumber_timeline=sd_pnumber_timeline.dict())
 
@@ -685,12 +671,9 @@ async def create_pnumber_address(
         address_type=p_number_address_type_uuid,
     )
     logger.info("Create address", payload=create_address_payload.dict())
-    if not dry_run:
-        created_address_uuid = (
-            await gql_client.create_address(create_address_payload)
-        ).uuid
-    else:
-        created_address_uuid = UUID(int=0)
+    created_address_uuid = (
+        await gql_client.create_address(create_address_payload)
+    ).uuid
 
     for sd_pnumber in sd_pnumber_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -703,8 +686,7 @@ async def create_pnumber_address(
             address_type=p_number_address_type_uuid,
         )
         logger.info("Update address payload", payload=update_address_payload.dict())
-        if not dry_run:
-            await gql_client.update_address(update_address_payload)
+        await gql_client.update_address(update_address_payload)
 
 
 async def create_postal_address(
@@ -713,7 +695,6 @@ async def create_postal_address(
     org_unit: OrgUnitUUID,
     address_uuid: UUID | None,
     desired_postal_address_timeline: Timeline[UnitPostalAddress],
-    dry_run: bool,
 ) -> None:
     logger.info(
         "Create postal address in MO",
@@ -759,12 +740,9 @@ async def create_postal_address(
         address_type=postal_address_type_uuid,
     )
     logger.info("Create address payload", payload=create_address_payload.dict())
-    if not dry_run:
-        created_address_uuid = (
-            await gql_client.create_address(create_address_payload)
-        ).uuid
-    else:
-        created_address_uuid = UUID(int=0)
+    created_address_uuid = (
+        await gql_client.create_address(create_address_payload)
+    ).uuid
 
     for sd_postal_address in desired_postal_address_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -779,8 +757,7 @@ async def create_postal_address(
             address_type=postal_address_type_uuid,
         )
         logger.info("Update address payload", payload=update_address_payload.dict())
-        if not dry_run:
-            await gql_client.update_address(update_address_payload)
+        await gql_client.update_address(update_address_payload)
 
 
 async def create_phone_number(
@@ -788,7 +765,6 @@ async def create_phone_number(
     org_unit: OrgUnitUUID,
     address_uuid: UUID | None,
     sd_phone_number_timeline: Timeline[UnitPhoneNumber],
-    dry_run: bool,
 ) -> None:
     logger.info(
         "Create phone number in MO",
@@ -825,12 +801,9 @@ async def create_phone_number(
         address_type=phone_number_type_uuid,
     )
     logger.info("Create address payload", payload=create_address_payload.dict())
-    if not dry_run:
-        created_address_uuid = (
-            await gql_client.create_address(create_address_payload)
-        ).uuid
-    else:
-        created_address_uuid = UUID(int=0)
+    created_address_uuid = (
+        await gql_client.create_address(create_address_payload)
+    ).uuid
 
     for sd_phone_number in sd_phone_number_timeline.intervals[1:]:
         update_address_payload = AddressUpdateInput(
@@ -845,5 +818,4 @@ async def create_phone_number(
             address_type=phone_number_type_uuid,
         )
         logger.info("Update address payload", payload=update_address_payload.dict())
-        if not dry_run:
-            await gql_client.update_address(update_address_payload)
+        await gql_client.update_address(update_address_payload)
