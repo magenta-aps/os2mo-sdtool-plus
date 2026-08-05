@@ -255,7 +255,6 @@ async def create_engagement(
     end: datetime,
     desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
-    dry_run: bool = False,
 ) -> None:
     logger.info("Creating engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -286,8 +285,7 @@ async def create_engagement(
         job_function=job_function_uuid,
     )
     logger.info("Create engagement payload", payload=payload.dict())
-    if not dry_run:
-        await gql_client.create_engagement(payload)
+    await gql_client.create_engagement(payload)
     logger.info("Engagement created", person=str(person), emp_id=user_key)
 
 
@@ -299,7 +297,6 @@ async def update_engagement(
     end: datetime,
     desired_eng_timeline: EngagementTimeline,
     eng_types: dict[EngType, UUID],
-    dry_run: bool = False,
 ) -> None:
     logger.info("Update engagement", person=str(person), emp_id=user_key)
     logger.debug(
@@ -361,8 +358,7 @@ async def update_engagement(
                 payload=payload.dict(),
                 validity=validity,
             )
-            if not dry_run:
-                await gql_client.update_engagement(payload)
+            await gql_client.update_engagement(payload)
             logger.info("Engagement updated", person=str(person), emp_id=user_key)
         return
 
@@ -388,8 +384,7 @@ async def update_engagement(
     logger.info(
         "Update engagement in interval", payload=payload.dict(), mo_validity=mo_validity
     )
-    if not dry_run:
-        await gql_client.update_engagement(payload)
+    await gql_client.update_engagement(payload)
     logger.info("Engagement updated", person=str(person), emp_id=user_key)
 
 
@@ -399,7 +394,6 @@ async def terminate_engagement(
     user_key: str,
     start: datetime,
     end: datetime,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Terminate engagement",
@@ -440,6 +434,5 @@ async def terminate_engagement(
         )
     logger.info("Terminate engagement payload", payload=payload.dict())
 
-    if not dry_run:
-        await gql_client.terminate_engagement(payload)
+    await gql_client.terminate_engagement(payload)
     logger.info("Engagement terminated", person=str(person), user_key=user_key)

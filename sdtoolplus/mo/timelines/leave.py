@@ -75,7 +75,6 @@ async def create_leave(
     end: datetime,
     sd_leave_timeline: LeaveTimeline,
     leave_type: UUID,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Create leave", person=str(person), user_key=user_key)
     logger.debug(
@@ -91,19 +90,18 @@ async def create_leave(
     )
     logger.info("Create leave payload", payload=payload.dict())
 
-    if not dry_run:
-        try:
-            await gql_client.create_leave(payload)
-        except GraphQLClientGraphQLMultiError as error:
-            if not str(one(error.errors)) == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT":
-                raise error
-            logger.error(
-                "Could not create leave in interval due to a missing engagement",
-                person=str(person),
-                user_key=user_key,
-                eng_uuid=str(eng_uuid),
-            )
-            return
+    try:
+        await gql_client.create_leave(payload)
+    except GraphQLClientGraphQLMultiError as error:
+        if not str(one(error.errors)) == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT":
+            raise error
+        logger.error(
+            "Could not create leave in interval due to a missing engagement",
+            person=str(person),
+            user_key=user_key,
+            eng_uuid=str(eng_uuid),
+        )
+        return
 
     logger.info("Leave created", person=str(person), user_key=user_key)
 
@@ -117,7 +115,6 @@ async def update_leave(
     end: datetime,
     sd_leave_timeline: LeaveTimeline,
     leave_type: UUID,
-    dry_run: bool = False,
 ) -> None:
     logger.info("Update leave", person=str(person), user_key=user_key)
     logger.debug(
@@ -151,22 +148,18 @@ async def update_leave(
                 ),
             )
             logger.info("Update leave payload", payload=payload.dict())
-            if not dry_run:
-                try:
-                    await gql_client.update_leave(payload)
-                except GraphQLClientGraphQLMultiError as error:
-                    if (
-                        not str(one(error.errors))
-                        == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT"
-                    ):
-                        raise error
-                    logger.error(
-                        "Could not update leave in interval due to a missing engagement",
-                        person=str(person),
-                        user_key=user_key,
-                        eng_uuid=str(eng_uuid),
-                    )
-                    return
+            try:
+                await gql_client.update_leave(payload)
+            except GraphQLClientGraphQLMultiError as error:
+                if not str(one(error.errors)) == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT":
+                    raise error
+                logger.error(
+                    "Could not update leave in interval due to a missing engagement",
+                    person=str(person),
+                    user_key=user_key,
+                    eng_uuid=str(eng_uuid),
+                )
+                return
 
             logger.info("Leave updated", person=str(person), user_key=user_key)
         return
@@ -190,19 +183,18 @@ async def update_leave(
     )
     logger.info("Update leave payload", payload=payload.dict())
 
-    if not dry_run:
-        try:
-            await gql_client.update_leave(payload)
-        except GraphQLClientGraphQLMultiError as error:
-            if not str(one(error.errors)) == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT":
-                raise error
-            logger.error(
-                "Could not update leave in interval due to a missing engagement",
-                person=str(person),
-                user_key=user_key,
-                eng_uuid=str(eng_uuid),
-            )
-            return
+    try:
+        await gql_client.update_leave(payload)
+    except GraphQLClientGraphQLMultiError as error:
+        if not str(one(error.errors)) == "ErrorCodes.V_NO_ACTIVE_ENGAGEMENT":
+            raise error
+        logger.error(
+            "Could not update leave in interval due to a missing engagement",
+            person=str(person),
+            user_key=user_key,
+            eng_uuid=str(eng_uuid),
+        )
+        return
 
     logger.info("Leave updated", person=str(person), user_key=user_key)
 
@@ -213,7 +205,6 @@ async def terminate_leave(
     user_key: str,
     start: datetime,
     end: datetime,
-    dry_run: bool = False,
 ) -> None:
     logger.info(
         "Terminate leave",
@@ -247,8 +238,7 @@ async def terminate_leave(
         )
     logger.info("Terminate leave payload", payload=payload.dict())
 
-    if not dry_run:
-        await gql_client.terminate_leave(payload)
+    await gql_client.terminate_leave(payload)
     logger.info("Leave terminated", person=str(person), user_key=user_key)
 
 
