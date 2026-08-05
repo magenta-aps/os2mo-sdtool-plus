@@ -442,7 +442,10 @@ async def _mo_person(
     logger.info("Received MO person event", uuid=str(mo_person_uuid))
 
     mo_persons = await gql_client.get_person_cpr(mo_person_uuid)
-    mo_person = one(mo_persons.objects)
+    mo_person = only(mo_persons.objects)
+    if mo_person is None:
+        logger.warning("MO person not found. Skipping sync", uuid=str(mo_person_uuid))
+        return
     # The CPR-number is used to map between MO and SD, and thus is not allowed
     # to change over time. People *can* change their CPR-number in real life,
     # however, but that is often done by creating a new person in SD (and
