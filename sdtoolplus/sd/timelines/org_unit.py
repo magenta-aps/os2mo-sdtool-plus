@@ -113,7 +113,13 @@ async def get_department(
         logger.info("SD department not found", uuid=str(unit_uuid))
         return None
     except SDRootElementNotFound as error:
-        logger.error("Error getting department from SD", error=error)
+        logger.error(
+            "Error getting department from SD",
+            error=error.message,
+            sd_response=dict(error.error) if error.error is not None else None,
+            institution_identifier=institution_identifier,
+            unit_uuid=str(unit_uuid),
+        )
         raise
     else:
         if not department.Department:
