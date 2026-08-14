@@ -83,7 +83,7 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     user_key="person-and-employment",
                     routing_key="person-and-employment",
                     path="/events/sd/person-and-employment",
-                    parallelism=3,
+                    parallelism=1,
                 )
             )
     if not settings.disable_mo_events:
@@ -107,7 +107,7 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     user_key="person",
                     routing_key="person",
                     path="/events/mo/person",
-                    parallelism=3,
+                    parallelism=1,
                 )
             )
         if not settings.disable_mo_engagement_events:
@@ -117,7 +117,7 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     user_key="engagement",
                     routing_key="engagement",
                     path="/events/mo/engagement",
-                    parallelism=3,
+                    parallelism=1,
                 )
             )
         if settings.elevate_managers:
@@ -127,7 +127,7 @@ def _configure_listeners(settings: SDToolPlusSettings) -> list[Listener]:
                     user_key="manager",
                     routing_key="manager",
                     path="/events/mo/manager",
-                    parallelism=3,
+                    parallelism=1,
                 )
             )
 
@@ -412,6 +412,8 @@ def create_fastramqpi() -> FastRAMQPI:
         )
 
         for person in sd_persons:
+            if person.cpr.endswith("0000"):
+                continue
             try:
                 res = await get_sd_person_engagements(
                     sd_client=sd_client,
