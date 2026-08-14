@@ -412,6 +412,8 @@ def create_fastramqpi() -> FastRAMQPI:
         )
 
         for person in sd_persons:
+            if person.cpr.endswith("0000"):
+                continue
             try:
                 res = await get_sd_person_engagements(
                     sd_client=sd_client,
