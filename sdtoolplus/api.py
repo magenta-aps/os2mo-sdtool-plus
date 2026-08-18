@@ -194,7 +194,8 @@ async def sync_all_persons(
     sd_client: depends.SDClient,
     graphql_client: depends.GraphQLClient,
     institution_identifier: str,
-    only_active_persons: bool = False,
+    sync_active_persons: bool = True,
+    sync_passive_persons: bool = False,
 ) -> dict:
     """
     Sync all persons in SD
@@ -205,7 +206,8 @@ async def sync_all_persons(
         sd_client=sd_client,
         institution_identifier=institution_identifier,
         effective_date=datetime.date.today(),
-        only_active_persons=only_active_persons,
+        sync_active_persons=sync_active_persons,
+        sync_passive_persons=sync_passive_persons,
     )
 
     events = [
@@ -236,7 +238,8 @@ async def full_timeline_sync_sd_engagements(
     sd_client: depends.SDClient,
     gql_client: depends.GraphQLClient,
     institution_identifier: str,
-    only_active_persons: bool = False,
+    sync_active_persons: bool = True,
+    sync_passive_persons: bool = False,
 ) -> dict:
     """
     Sync engagements of all SD persons, i.e.
@@ -251,7 +254,8 @@ async def full_timeline_sync_sd_engagements(
         sd_client=sd_client,
         institution_identifier=institution_identifier,
         effective_date=datetime.date.today(),
-        only_active_persons=only_active_persons,
+        sync_active_persons=sync_active_persons,
+        sync_passive_persons=sync_passive_persons,
     )
 
     for person in sd_persons:
