@@ -21,7 +21,6 @@ pydantic = {version = "^1", extras=["email"]}
 more-itertools = "^9"
 another-sd-client = "^5"
 uvicorn = "^0.34"
-sentry-sdk = "^2"
 structlog = "^25"
 fastramqpi = "^14.4.2"
 alembic = "^1"

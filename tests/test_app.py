@@ -40,17 +40,6 @@ class TestApp:
         assert isinstance(app.settings, SDToolPlusSettings)
         assert isinstance(app.session, PersistentGraphQLClient)
 
-    def test_init_calls_sentry_sdk(
-        self, sdtoolplus_settings: SDToolPlusSettings
-    ) -> None:
-        # Arrange
-        with ExitStack() as stack:
-            mock_sentry_sdk_init = self._add_mock(stack, "sentry_sdk.init")
-            # Act
-            self._get_app_instance(sdtoolplus_settings, sentry_dsn="sentry_dsn")
-            # Assert
-            mock_sentry_sdk_init.assert_called_once_with(dsn="sentry_dsn")
-
     async def test_as_single_tree_called_with_correct_path(
         self,
         mock_mo_org_unit_type_map,
