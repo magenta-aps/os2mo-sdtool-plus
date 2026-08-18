@@ -42,8 +42,8 @@ class MockSDClient:
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_two_new_departments_in_sd(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
@@ -158,8 +158,8 @@ async def test_two_new_departments_in_sd(
 @patch("sdtoolplus.app.SDClient", return_value=MockSDClient())
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_build_tree_extra_units_are_added(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
@@ -230,8 +230,8 @@ async def test_build_tree_extra_units_are_added(
 @patch("sdtoolplus.app.SDClient", return_value=MockSDClient())
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_build_tree_date_range_errors(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
@@ -412,8 +412,8 @@ async def test_build_tree_date_range_errors(
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_modify_root_unit(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,

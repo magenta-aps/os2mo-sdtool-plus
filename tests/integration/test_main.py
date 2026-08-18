@@ -20,8 +20,8 @@ from sdtoolplus.main import create_app
 
 @pytest.mark.integration_test
 class TestFastAPIApp:
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
+    @patch("sdtoolplus.db.rundb.persist_status")
+    @patch("sdtoolplus.db.rundb.get_status", return_value=Status.COMPLETED)
     def test_post_trigger(
         self, mock_get_status: MagicMock, mock_persist_status: MagicMock
     ) -> None:
@@ -29,7 +29,7 @@ class TestFastAPIApp:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            patch("sdtoolplus.api.App", return_value=mock_sdtoolplus_app),
             TestClient(create_app()) as client,
         ):
             # Arrange
@@ -68,8 +68,8 @@ class TestFastAPIApp:
                 == "postgresql+psycopg2://sdtool_plus:***@sd-db/sdtool_plus"
             )
 
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.RUNNING)
+    @patch("sdtoolplus.db.rundb.persist_status")
+    @patch("sdtoolplus.db.rundb.get_status", return_value=Status.RUNNING)
     def test_post_trigger_aborts_when_rundb_status_is_running(
         self,
         mock_get_status: MagicMock,
@@ -79,7 +79,7 @@ class TestFastAPIApp:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            patch("sdtoolplus.api.App", return_value=mock_sdtoolplus_app),
             TestClient(create_app()) as client,
         ):
             # Act
@@ -93,8 +93,8 @@ class TestFastAPIApp:
 
             mock_persist_status.assert_not_called()
 
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
+    @patch("sdtoolplus.db.rundb.persist_status")
+    @patch("sdtoolplus.db.rundb.get_status", return_value=Status.COMPLETED)
     def test_post_trigger_filter(
         self,
         mock_get_status: MagicMock,
@@ -103,7 +103,7 @@ class TestFastAPIApp:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            patch("sdtoolplus.api.App", return_value=mock_sdtoolplus_app),
             TestClient(create_app()) as client,
         ):
             # Act
@@ -114,8 +114,8 @@ class TestFastAPIApp:
                 org_unit=UUID("70000000-0000-0000-0000-000000000000"), dry_run=False
             )
 
-    @patch("sdtoolplus.main.persist_status")
-    @patch("sdtoolplus.main.get_status", return_value=Status.COMPLETED)
+    @patch("sdtoolplus.db.rundb.persist_status")
+    @patch("sdtoolplus.db.rundb.get_status", return_value=Status.COMPLETED)
     def test_post_trigger_dry(
         self,
         mock_get_status: MagicMock,
@@ -125,7 +125,7 @@ class TestFastAPIApp:
         # Arrange
         mock_sdtoolplus_app = MagicMock(spec=App)
         with (
-            patch("sdtoolplus.main.App", return_value=mock_sdtoolplus_app),
+            patch("sdtoolplus.api.App", return_value=mock_sdtoolplus_app),
             TestClient(create_app()) as client,
         ):
             # Act
@@ -159,7 +159,7 @@ class TestFastAPIApp:
     ):
         # Arrange
         with (
-            patch("sdtoolplus.main.get_status", return_value=rundb_status),
+            patch("sdtoolplus.api.get_status", return_value=rundb_status),
             TestClient(create_app()) as client,
         ):
             # Act
@@ -172,7 +172,7 @@ class TestFastAPIApp:
     def test_rundb_get_status_on_error(self):
         # Arrange
         with (
-            patch("sdtoolplus.main.get_status", side_effect=SQLAlchemyError()),
+            patch("sdtoolplus.api.get_status", side_effect=SQLAlchemyError()),
             TestClient(create_app()) as client,
         ):
             # Act
