@@ -27,8 +27,8 @@ from sdtoolplus.models import AddressTypeUserKey
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_addresses_update(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
@@ -116,8 +116,8 @@ async def test_addresses_update(
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_addresses_add(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
@@ -192,8 +192,8 @@ def mock_only_sync_line_mgmt_postal_addresses(monkeypatch: MonkeyPatch) -> None:
 @patch("sdtoolplus.main.get_engine")
 @patch("sdtoolplus.sd.importer.get_sd_departments")
 @patch("sdtoolplus.sd.importer.get_sd_organization")
-@patch("sdtoolplus.main.run_db_end_operations")
-@patch("sdtoolplus.main.run_db_start_operations", return_value=None)
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
 async def test_addresses_add_skip_non_line_management(
     mock_run_db_start_operations: MagicMock,
     mock_run_db_end_operations: MagicMock,
