@@ -77,9 +77,6 @@ class SDToolPlusSettings(BaseSettings):
     # something other than the value in SD
     sd_to_mo_ou_name_map: dict[OrgUnitUUID, str] = dict()
 
-    # Configures Sentry error monitoring
-    sentry_dsn: str | None = None
-
     # Credentials, etc. for authenticating against SD and performing SD API calls
     sd_username: str
     sd_institution_identifier: str

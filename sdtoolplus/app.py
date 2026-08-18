@@ -4,7 +4,6 @@ from typing import AsyncIterator
 from uuid import UUID
 
 import httpx
-import sentry_sdk
 import structlog
 from httpx import HTTPStatusError
 from httpx import Response
@@ -104,9 +103,6 @@ class App:
         self.mo_subtree_path_for_root = _get_mo_subtree_path_for_root(
             self.settings, self.current_inst_id
         )
-
-        if self.settings.sentry_dsn:
-            sentry_sdk.init(dsn=self.settings.sentry_dsn)
 
         self.session = get_graphql_client(settings)
 
