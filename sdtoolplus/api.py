@@ -12,6 +12,7 @@ from fastapi import Response
 from fastramqpi.os2mo_dar_client import AsyncDARClient
 from more_itertools import one
 from sdclient.client import SDClient
+from sdclient.exceptions import SDCallError
 from sdclient.exceptions import SDRootElementNotFound
 from sdclient.requests import GetDepartmentRequest
 from sdclient.responses import Department
@@ -258,6 +259,7 @@ async def full_timeline_sync_sd_engagements(
         sync_passive_persons=sync_passive_persons,
     )
 
+    error_cprs: list[str] = []
     for person in sd_persons:
         if person.cpr.endswith("0000"):
             continue
@@ -273,6 +275,10 @@ async def full_timeline_sync_sd_engagements(
                 institution_identifier=institution_identifier,
                 person=person,
             )
+            continue
+        except SDCallError:
+            logger.error("SD call failed", cpr=person.cpr)
+            error_cprs.append(person.cpr)
             continue
         else:
             logger.info("Found engagements", engagements=res)
@@ -292,7 +298,8 @@ async def full_timeline_sync_sd_engagements(
     logger.info(
         f"Done queueing sync for all SD employments in {institution_identifier}"
     )
-    return {"msg": "success"}
+
+    return {"msg": "success", "error_cprs": error_cprs}
 
 
 @router.post("/timeline/sync/engagement/all/mo", status_code=HTTP_200_OK)
