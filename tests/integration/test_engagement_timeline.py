@@ -6245,6 +6245,234 @@ async def test_eng_timeline_elevate_managers_multiple_managers_case(
 @pytest.mark.envvar(
     {
         "APPLY_NY_LOGIC": "false",
+        "ELEVATE_MANAGERS": "true",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
+async def test_eng_timeline_elevate_managers_multiple_managers_non_overlapping(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    The person is a manager for the engagement via two non-overlapping manager
+    objects with a gap between them. `get_manager_timeline` combines all manager
+    objects, so the engagement is elevated to each manager's unit in their
+    respective intervals, and kept in the SD unit in the gap between them.
+
+    Time            --t1-----------t2-----------t3-----------t4-->
+
+    MO manager A      |---dep2-----|
+    MO manager B                                |---dep5-----|
+    MO/SD eng (OU)    |----------------dep3------------------|
+
+    "Assert"          |---dep2-----|---dep3-----|---dep5-----|
+    intervals
+
+    In [t1, t2) the engagement is elevated to manager A's unit (dep2) and in
+    [t3, t4) to manager B's unit (dep5). In the gap [t2, t3) no manager has a
+    value, so the engagement stays in the SD unit (dep3).
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+
+    dep2_uuid = UUID("20000000-0000-0000-0000-000000000000")
+    dep3_uuid = UUID("30000000-0000-0000-0000-000000000000")
+    dep5_uuid = UUID("50000000-0000-0000-0000-000000000000")
+
+    manager_a_uuid = UUID("aaaaaaaa-0000-0000-0000-000000000000")
+    manager_b_uuid = UUID("bbbbbbbb-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (in dep3 according to SD) spanning [t1, t4)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t1, t4),
+                extension_1="name1",
+                extension_4="dep3",
+                extension_5=str(dep3_uuid),
+                person=person_uuid,
+                org_unit=dep3_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    manager_level = await get_class(graphql_client, "manager_level", "afdelingsleder")
+    manager_type = await get_class(graphql_client, "manager_type", "leder")
+    responsibility = await get_class(graphql_client, "responsibility", "personale")
+
+    # Manager A in dep2 during [t1, t2)
+    await graphql_client._testing__create_manager(
+        ManagerCreateInput(
+            uuid=manager_a_uuid,
+            user_key=emp_id,
+            person=person_uuid,
+            responsibility=[responsibility],
+            engagement=eng_uuid,
+            org_unit=dep2_uuid,
+            manager_level=manager_level,
+            manager_type=manager_type,
+            validity=timeline_interval_to_mo_validity(t1, t2),
+        )
+    )
+    # Manager B in dep5 during [t3, t4)
+    await graphql_client._testing__create_manager(
+        ManagerCreateInput(
+            uuid=manager_b_uuid,
+            user_key=emp_id,
+            person=person_uuid,
+            responsibility=[responsibility],
+            engagement=eng_uuid,
+            org_unit=dep5_uuid,
+            manager_level=manager_level,
+            manager_type=manager_type,
+            validity=timeline_interval_to_mo_validity(t3, t4),
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>2003-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>false</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep3</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep3_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2003-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier={cpr}&EmploymentIdentifier={emp_id}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+    assert len(validities) == 3
+
+    # [t1, t2): elevated to manager A's unit (dep2)
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.org_unit_uuid == dep2_uuid
+    assert interval_1.extension_4 == "dep2"
+    assert interval_1.extension_5 == str(dep3_uuid)
+
+    # [t2, t3): no manager, so kept in the SD unit (dep3)
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t2
+    assert mo_end_to_timeline_end(interval_2.validity.to) == t3
+    assert interval_2.org_unit_uuid == dep3_uuid
+    assert interval_2.extension_4 == "dep3"
+    assert interval_2.extension_5 == str(dep3_uuid)
+
+    # [t3, t4): elevated to manager B's unit (dep5)
+    interval_3 = validities[2]
+    assert interval_3.validity.from_ == t3
+    assert mo_end_to_timeline_end(interval_3.validity.to) == t4
+    assert interval_3.org_unit_uuid == dep5_uuid
+    assert interval_3.extension_4 == "dep5"
+    assert interval_3.extension_5 == str(dep3_uuid)
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
     }
 )
