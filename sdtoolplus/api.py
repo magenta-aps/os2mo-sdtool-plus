@@ -280,8 +280,8 @@ async def full_timeline_sync_sd_engagements(
             logger.error("SD call failed", cpr=person.cpr)
             error_cprs.append(person.cpr)
             continue
-        else:
-            logger.info("Found engagements", engagements=res)
+
+        logger.info("Found engagements", engagements=res)
 
         for e in one(res.Person).Employment:
             event = EventSendInput(
