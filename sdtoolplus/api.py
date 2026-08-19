@@ -267,7 +267,6 @@ async def full_timeline_sync_sd_engagements(
                 institution_identifier=institution_identifier,
                 cpr=person.cpr,
             )
-            logger.info("Found engagements", engagements=res)
         except SDRootElementNotFound:
             logger.info(
                 "Person could not be found in sd",
@@ -275,6 +274,8 @@ async def full_timeline_sync_sd_engagements(
                 person=person,
             )
             continue
+        else:
+            logger.info("Found engagements", engagements=res)
 
         for e in one(res.Person).Employment:
             event = EventSendInput(
