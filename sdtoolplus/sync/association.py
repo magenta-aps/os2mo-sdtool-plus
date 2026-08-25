@@ -68,13 +68,20 @@ async def _sync_association_intervals(
             continue
 
         try:
-            is_active = sd_association_timeline.association_active.entity_at(
+            sd_is_active = sd_association_timeline.association_active.entity_at(
                 start
             ).value
         except NoValueError:
-            is_active = False  # type: ignore
+            sd_is_active = False  # type: ignore
 
-        if not is_active:
+        try:
+            mo_is_active = mo_association_timeline.association_active.entity_at(
+                start
+            ).value
+        except NoValueError:
+            mo_is_active = False  # type: ignore
+
+        if not sd_is_active and mo_is_active:
             await terminate_association(
                 gql_client=gql_client,
                 person=person,

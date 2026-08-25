@@ -160,11 +160,16 @@ async def _sync_eng_intervals(
             continue
 
         try:
-            is_active = desired_eng_timeline.eng_active.entity_at(start).value
+            sd_is_active = desired_eng_timeline.eng_active.entity_at(start).value
         except NoValueError:
-            is_active = False  # type: ignore
+            sd_is_active = False  # type: ignore
 
-        if not is_active:
+        try:
+            mo_is_active = mo_eng_timeline.eng_active.entity_at(start).value
+        except NoValueError:
+            mo_is_active = False  # type: ignore
+
+        if not sd_is_active and mo_is_active:
             await terminate_leave_before_engagement_termination(
                 gql_client=gql_client,
                 eng_term_start=start,
