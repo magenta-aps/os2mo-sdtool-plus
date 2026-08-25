@@ -15,9 +15,11 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.sync.leave import _sync_leave_intervals
 
 
+@patch.object(LeaveTimeline, "has_required_mo_values")
 @patch("sdtoolplus.sync.leave.terminate_leave")
 async def test_sync_leave_intervals_no_terminate_when_mo_not_active(
     mock_terminate_leave: AsyncMock,
+    mock_has_required_mo_values: MagicMock,
     sdtoolplus_settings: SDToolPlusSettings,
 ) -> None:
     """
@@ -80,3 +82,6 @@ async def test_sync_leave_intervals_no_terminate_when_mo_not_active(
     # The differing interval [t1, t2) is one where the leave is not active in MO, so
     # it must not be terminated
     mock_terminate_leave.assert_not_awaited()
+    # The 'continue' must short-circuit the interval, so we never reach the
+    # create/update path
+    mock_has_required_mo_values.assert_not_called()

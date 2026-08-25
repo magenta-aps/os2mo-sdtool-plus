@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -18,9 +19,11 @@ from sdtoolplus.models import UnitTimeline
 from sdtoolplus.sync.org_unit import sync_ou_intervals
 
 
+@patch.object(UnitTimeline, "has_required_mo_values")
 @patch("sdtoolplus.sync.org_unit.terminate_ou")
 async def test_sync_ou_intervals_no_terminate_when_mo_not_active(
     mock_terminate_ou: AsyncMock,
+    mock_has_required_mo_values: MagicMock,
     sdtoolplus_settings: SDToolPlusSettings,
 ) -> None:
     """
@@ -96,3 +99,6 @@ async def test_sync_ou_intervals_no_terminate_when_mo_not_active(
     # The only differing interval, [t2, t3), is one where the unit is not active in
     # MO, so it must not be terminated
     mock_terminate_ou.assert_not_awaited()
+    # The 'continue' must short-circuit the interval, so we never reach the
+    # create/update path
+    mock_has_required_mo_values.assert_not_called()

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -22,6 +23,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.sync.engagement import _sync_eng_intervals
 
 
+@patch.object(EngagementTimeline, "has_required_mo_values")
 @patch("sdtoolplus.sync.engagement.terminate_leave_before_engagement_termination")
 @patch("sdtoolplus.sync.engagement.terminate_engagement")
 @patch("sdtoolplus.sync.engagement.get_engagement_types")
@@ -29,6 +31,7 @@ async def test_sync_eng_intervals_no_terminate_when_mo_not_active(
     mock_get_engagement_types: AsyncMock,
     mock_terminate_engagement: AsyncMock,
     mock_terminate_leave: AsyncMock,
+    mock_has_required_mo_values: MagicMock,
     sdtoolplus_settings: SDToolPlusSettings,
 ) -> None:
     """
@@ -130,3 +133,6 @@ async def test_sync_eng_intervals_no_terminate_when_mo_not_active(
     # active in MO, so it must not be terminated
     mock_terminate_engagement.assert_not_awaited()
     mock_terminate_leave.assert_not_awaited()
+    # The 'continue' must short-circuit the interval, so we never reach the
+    # create/update path
+    mock_has_required_mo_values.assert_not_called()

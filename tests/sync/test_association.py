@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from unittest.mock import AsyncMock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -15,6 +16,7 @@ from sdtoolplus.models import Timeline
 from sdtoolplus.sync.association import _sync_association_intervals
 
 
+@patch.object(AssociationTimeline, "has_required_mo_values")
 @patch("sdtoolplus.sync.association.terminate_association")
 @patch("sdtoolplus.sync.association.get_mo_association_timeline")
 @patch("sdtoolplus.sync.association.get_class")
@@ -22,6 +24,7 @@ async def test_sync_association_intervals_no_terminate_when_mo_not_active(
     mock_get_class: AsyncMock,
     mock_get_mo_association_timeline: AsyncMock,
     mock_terminate_association: AsyncMock,
+    mock_has_required_mo_values: MagicMock,
 ) -> None:
     """
     The association must only be terminated in MO if it is actually active there.
@@ -86,3 +89,6 @@ async def test_sync_association_intervals_no_terminate_when_mo_not_active(
     # The only differing interval, [t2, t3), is one where the association is not
     # active in MO, so it must not be terminated
     mock_terminate_association.assert_not_awaited()
+    # The 'continue' must short-circuit the interval, so we never reach the
+    # create/update path
+    mock_has_required_mo_values.assert_not_called()
