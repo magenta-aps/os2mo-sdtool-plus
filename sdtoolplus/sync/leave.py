@@ -90,7 +90,9 @@ async def _sync_leave_intervals(
         except NoValueError:
             mo_is_active = False  # type: ignore
 
-        if not sd_is_active and mo_is_active:
+        if not sd_is_active:
+            if not mo_is_active:
+                continue
             await terminate_leave(
                 gql_client=gql_client,
                 person=person,

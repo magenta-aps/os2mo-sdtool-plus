@@ -169,7 +169,10 @@ async def _sync_eng_intervals(
         except NoValueError:
             mo_is_active = False  # type: ignore
 
-        if not sd_is_active and mo_is_active:
+        if not sd_is_active:
+            if not mo_is_active:
+                logger.info("SD and MO equal (both inactive)")
+                continue
             await terminate_leave_before_engagement_termination(
                 gql_client=gql_client,
                 eng_term_start=start,

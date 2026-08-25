@@ -161,7 +161,9 @@ async def sync_ou_intervals(
         except NoValueError:
             mo_is_active = False  # type: ignore
 
-        if not desired_is_active and mo_is_active:
+        if not desired_is_active:
+            if not mo_is_active:
+                continue
             await terminate_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,
