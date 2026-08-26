@@ -152,6 +152,10 @@ async def _sync_eng_intervals(
     )
     logger.info("List of endpoints", endpoints=endpoints)
 
+    # Collect all operations that actually make changes in MO (create, update or
+    # terminate) so they can be logged at the end
+    changes: list[dict] = []
+
     for end, start in pairwise(endpoints):
         logger.info("Processing endpoint pair", start=start, end=end)
 
@@ -188,6 +192,7 @@ async def _sync_eng_intervals(
                 start=start,
                 end=end,
             )
+            changes.append({"operation": "terminate", "start": start, "end": end})
             continue
 
         if not desired_eng_timeline.has_required_mo_values(start):
@@ -209,6 +214,16 @@ async def _sync_eng_intervals(
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
             )
+            changes.append(
+                {
+                    "operation": "update",
+                    "start": start,
+                    "end": end,
+                    "changed_fields": mo_eng_timeline.difference_at(
+                        start, desired_eng_timeline
+                    ),
+                }
+            )
         else:
             await create_engagement(
                 gql_client=gql_client,
@@ -219,6 +234,23 @@ async def _sync_eng_intervals(
                 desired_eng_timeline=desired_eng_timeline,
                 eng_types=eng_types,
             )
+            changes.append(
+                {
+                    "operation": "create",
+                    "start": start,
+                    "end": end,
+                    "created_fields": mo_eng_timeline.difference_at(
+                        start, desired_eng_timeline
+                    ),
+                }
+            )
+
+    logger.info(
+        "Engagement changes performed in MO",
+        person=str(person),
+        user_key=user_key,
+        changes=changes,
+    )
 
     logger.info(
         "Finished syncing engagement in MO",
