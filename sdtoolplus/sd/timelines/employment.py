@@ -233,7 +233,7 @@ def get_leave_timeline(
     timeline = LeaveTimeline(
         leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
     )
-    logger.info("SD leave timeline", timeline=timeline.dict())
+    logger.debug("SD leave timeline", timeline=timeline.dict())
 
     return timeline
 
@@ -245,6 +245,6 @@ def get_association_timeline(
         association_active=desired_eng_timeline.eng_active,
         association_unit=desired_eng_timeline.eng_sd_unit,
     )
-    logger.info("SD association timeline", timeline=timeline.dict())
+    logger.debug("SD association timeline", timeline=timeline.dict())
 
     return timeline

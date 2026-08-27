@@ -85,6 +85,6 @@ async def get_manager_timeline(
             intervals=combine_intervals(tuple(combined_unit_intervals))
         ),
     )
-    logger.info("MO manager timeline", timeline=timeline.dict())
+    logger.debug("MO manager timeline", timeline=timeline.dict())
 
     return timeline

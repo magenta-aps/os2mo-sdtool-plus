@@ -61,7 +61,7 @@ async def get_leave_timeline(
     timeline = LeaveTimeline(
         leave_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
     )
-    logger.info("MO leave timeline", timeline=timeline.dict())
+    logger.debug("MO leave timeline", timeline=timeline.dict())
 
     return timeline
 
