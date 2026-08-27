@@ -152,11 +152,19 @@ async def sync_ou_intervals(
             continue
 
         try:
-            is_active = desired_unit_timeline.active.entity_at(start).value
+            desired_is_active = desired_unit_timeline.active.entity_at(start).value
         except NoValueError:
-            is_active = False  # type: ignore
+            desired_is_active = False  # type: ignore
 
-        if not is_active:
+        try:
+            mo_is_active = mo_unit_timeline.active.entity_at(start).value
+        except NoValueError:
+            mo_is_active = False  # type: ignore
+
+        if not desired_is_active:
+            if not mo_is_active:
+                logger.info("SD and MO equal (both inactive)")
+                continue
             await terminate_ou(
                 gql_client=gql_client,
                 org_unit=org_unit,

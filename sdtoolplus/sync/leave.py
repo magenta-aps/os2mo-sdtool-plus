@@ -81,11 +81,19 @@ async def _sync_leave_intervals(
             continue
 
         try:
-            is_active = sd_leave_timeline.leave_active.entity_at(start).value
+            sd_is_active = sd_leave_timeline.leave_active.entity_at(start).value
         except NoValueError:
-            is_active = False  # type: ignore
+            sd_is_active = False  # type: ignore
 
-        if not is_active:
+        try:
+            mo_is_active = mo_leave_timeline.leave_active.entity_at(start).value
+        except NoValueError:
+            mo_is_active = False  # type: ignore
+
+        if not sd_is_active:
+            if not mo_is_active:
+                logger.info("SD and MO equal (both inactive)")
+                continue
             await terminate_leave(
                 gql_client=gql_client,
                 person=person,
