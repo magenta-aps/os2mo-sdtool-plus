@@ -163,6 +163,7 @@ async def sync_ou_intervals(
 
         if not desired_is_active:
             if not mo_is_active:
+                logger.info("SD and MO equal (both inactive)")
                 continue
             await terminate_ou(
                 gql_client=gql_client,

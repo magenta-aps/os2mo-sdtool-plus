@@ -92,6 +92,7 @@ async def _sync_leave_intervals(
 
         if not sd_is_active:
             if not mo_is_active:
+                logger.info("SD and MO equal (both inactive)")
                 continue
             await terminate_leave(
                 gql_client=gql_client,
