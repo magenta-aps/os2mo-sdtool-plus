@@ -60,6 +60,10 @@ async def _sync_association_intervals(
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.info("List of endpoints", endpoints=endpoints)
 
+    # Collect all operations that actually make changes in MO (create, update or
+    # terminate) so they can be logged at the end
+    changes: list[dict] = []
+
     for start, end in pairwise(endpoints):
         logger.info("Processing endpoint pair", start=start, end=end)
 
@@ -92,6 +96,7 @@ async def _sync_association_intervals(
                 start=start,
                 end=end,
             )
+            changes.append({"operation": "terminate", "start": start, "end": end})
             continue
 
         if not sd_association_timeline.has_required_mo_values(start):
@@ -116,6 +121,16 @@ async def _sync_association_intervals(
                 end=end,
                 association_type=association_type_uuid,
             )
+            changes.append(
+                {
+                    "operation": "update",
+                    "start": start,
+                    "end": end,
+                    "changed_fields": mo_association_timeline.difference_at(
+                        start, sd_association_timeline
+                    ),
+                }
+            )
         else:
             await create_association(
                 gql_client=gql_client,
@@ -126,6 +141,23 @@ async def _sync_association_intervals(
                 end=end,
                 association_type=association_type_uuid,
             )
+            changes.append(
+                {
+                    "operation": "create",
+                    "start": start,
+                    "end": end,
+                    "created_fields": mo_association_timeline.difference_at(
+                        start, sd_association_timeline
+                    ),
+                }
+            )
+
+    logger.info(
+        "Association changes performed in MO",
+        person=str(person),
+        user_key=user_key,
+        changes=changes,
+    )
 
     logger.info(
         "Finished syncing association in MO",

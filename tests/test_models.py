@@ -500,3 +500,96 @@ def test_is_equal_no_parent():
     assert not ou_timeline.equal_at(t3 - timedelta(days=1), ou_timeline_2)
     # There are no values in either timeline at t3
     assert ou_timeline.equal_at(t3, ou_timeline_2)
+
+
+def test_difference_at():
+    """
+    Test the BaseTimeline.difference_at method.
+
+    Time             t1---------t2---------t3---------t4---------t5----->
+
+    self  (active)   |----T-----|          |----T-----|
+    self  (key)      |----------A----------|
+    self  (name)     |---n1-----|---------n2----------|
+    self  (unit)                |--------------u1----------------|
+
+    other (active)   |---------------T----------------|
+    other (key)      |----A-----|----B-----|
+    other (name)     |--------------n1----------------|
+    other (unit)     |---------u2----------|
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2020, 1, 1, tzinfo=tz)
+    t2 = datetime(2021, 1, 1, tzinfo=tz)
+    t3 = datetime(2022, 1, 1, tzinfo=tz)
+    t4 = datetime(2023, 1, 1, tzinfo=tz)
+    t5 = datetime(2024, 1, 1, tzinfo=tz)
+    u1 = uuid4()
+    u2 = uuid4()
+
+    self_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](
+            intervals=(
+                Active(start=t1, end=t2, value=True),
+                Active(start=t3, end=t4, value=True),
+            )
+        ),
+        eng_key=Timeline[EngagementKey](
+            intervals=(EngagementKey(start=t1, end=t3, value="A"),)
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(
+                EngagementName(start=t1, end=t2, value="n1"),
+                EngagementName(start=t2, end=t4, value="n2"),
+            )
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(EngagementUnit(start=t2, end=t5, value=u1),)
+        ),
+    )
+    other_timeline = EngagementTimeline(
+        eng_active=Timeline[Active](intervals=(Active(start=t1, end=t4, value=True),)),
+        eng_key=Timeline[EngagementKey](
+            intervals=(
+                EngagementKey(start=t1, end=t2, value="A"),
+                EngagementKey(start=t2, end=t3, value="B"),
+            )
+        ),
+        eng_name=Timeline[EngagementName](
+            intervals=(EngagementName(start=t1, end=t4, value="n1"),)
+        ),
+        eng_unit=Timeline[EngagementUnit](
+            intervals=(EngagementUnit(start=t1, end=t3, value=u2),)
+        ),
+    )
+
+    # Act + Assert
+
+    # At t1: active/key/name are equal (skipped); unit only exists in "other"
+    assert self_timeline.difference_at(t1, other_timeline) == [
+        {"field": "eng_unit", "other": u2},
+    ]
+
+    # At t2: active only in "other" (self has a hole); key, name and unit all differ
+    assert self_timeline.difference_at(t2, other_timeline) == [
+        {"field": "eng_active", "other": True},
+        {"field": "eng_key", "self": "A", "other": "B"},
+        {"field": "eng_name", "self": "n2", "other": "n1"},
+        {"field": "eng_unit", "self": u1, "other": u2},
+    ]
+
+    # At t3: active is equal; key is a hole in both; name differs; unit only in "self"
+    assert self_timeline.difference_at(t3, other_timeline) == [
+        {"field": "eng_name", "self": "n2", "other": "n1"},
+        {"field": "eng_unit", "self": u1},
+    ]
+
+    # At t4: only unit still has a value (in "self" only)
+    assert self_timeline.difference_at(t4, other_timeline) == [
+        {"field": "eng_unit", "self": u1},
+    ]
+
+    # At t5: neither timeline has any values -> no differences
+    assert self_timeline.difference_at(t5, other_timeline) == []

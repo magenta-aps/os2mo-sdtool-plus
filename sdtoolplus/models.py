@@ -396,6 +396,35 @@ class BaseTimeline(BaseModel, frozen=True):
                 return False
         return True
 
+    def difference_at(self, timestamp: datetime, other: Self) -> list[dict[str, Any]]:
+        """
+        Return the fields (with their ``self`` and ``other`` values) that differ
+        at the given timestamp.
+        """
+        missing = object()
+        differences: list[dict] = []
+        for (name, self_field), (_, other_field) in zip(iter(self), iter(other)):
+            try:
+                v1: Any = self_field.entity_at(timestamp).value
+            except NoValueError:
+                v1 = missing
+            try:
+                v2 = other_field.entity_at(timestamp).value
+            except NoValueError:
+                v2 = missing
+
+            if v1 == v2:
+                continue
+
+            difference: dict = {"field": name}
+            if v1 is not missing:
+                difference["self"] = v1
+            if v2 is not missing:
+                difference["other"] = v2
+            differences.append(difference)
+
+        return differences
+
     def get_interval_endpoints(self) -> set[datetime]:
         intervals = [
             cast(tuple[Interval, ...], field.intervals) for _, field in iter(self)

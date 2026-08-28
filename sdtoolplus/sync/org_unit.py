@@ -144,6 +144,10 @@ async def sync_ou_intervals(
     endpoints = sorted(sd_interval_endpoints.union(mo_interval_endpoints))
     logger.info("List of endpoints", endpoints=endpoints)
 
+    # Collect all operations that actually make changes in MO (create, update or
+    # terminate) so they can be logged at the end
+    changes: list[dict] = []
+
     for start, end in pairwise(endpoints):
         logger.info("Processing endpoint pair", start=start, end=end)
 
@@ -173,6 +177,7 @@ async def sync_ou_intervals(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            changes.append({"operation": "terminate", "start": start, "end": end})
             continue
 
         if not desired_unit_timeline.has_required_mo_values(start):
@@ -193,6 +198,16 @@ async def sync_ou_intervals(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            changes.append(
+                {
+                    "operation": "update",
+                    "start": start,
+                    "end": end,
+                    "changed_fields": mo_unit_timeline.difference_at(
+                        start, desired_unit_timeline
+                    ),
+                }
+            )
         else:
             await create_ou(
                 gql_client=gql_client,
@@ -204,8 +219,24 @@ async def sync_ou_intervals(
                 institution_identifier=institution_identifier,
                 priority=priority,
             )
+            changes.append(
+                {
+                    "operation": "create",
+                    "start": start,
+                    "end": end,
+                    "created_fields": mo_unit_timeline.difference_at(
+                        start, desired_unit_timeline
+                    ),
+                }
+            )
 
         logger.info("Finished updating unit in interval", org_unit=str(org_unit))
+
+    logger.info(
+        "OU changes performed in MO",
+        org_unit=str(org_unit),
+        changes=changes,
+    )
 
     logger.info("Finished syncing unit", org_unit=str(org_unit))
     return True

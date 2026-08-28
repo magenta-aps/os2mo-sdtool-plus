@@ -88,7 +88,7 @@ async def get_association_timeline(
             intervals=combine_intervals(unit_intervals)
         ),
     )
-    logger.info("MO association timeline", timeline=timeline.dict())
+    logger.debug("MO association timeline", timeline=timeline.dict())
 
     return timeline
 
