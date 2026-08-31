@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
+from datetime import time
 from enum import Enum
 from functools import partial
 from typing import AsyncIterator
@@ -31,6 +33,7 @@ from sdtoolplus.mo_org_unit_importer import OrgUnitNode
 from sdtoolplus.mo_org_unit_importer import OrgUnitUUID
 from sdtoolplus.models import AddressTypeUserKey
 from sdtoolplus.sd.importer import get_sd_units
+from sdtoolplus.sd.tree import ASSUMED_SD_TIMEZONE
 
 DARAddressUUID: TypeAlias = UUID
 
@@ -108,7 +111,10 @@ async def _update_or_add_addresses(
             )
             if not dry_run:
                 await update_address(
-                    gql_client, addr, datetime.now(), sd_unit.validity.to_date
+                    gql_client,
+                    addr,
+                    datetime.combine(date.today(), time.min, ASSUMED_SD_TIMEZONE),
+                    sd_unit.validity.to_date,
                 )
             return_address = addr
             yield AddressOperation.UPDATE, mo_unit, return_address
