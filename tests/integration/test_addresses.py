@@ -1,15 +1,19 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+from datetime import date
 from datetime import datetime
+from datetime import time
 from unittest import skip
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from uuid import UUID
+from zoneinfo import ZoneInfo
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from fastramqpi.pytest_util import retry
 from httpx import AsyncClient
+from more_itertools import first
 from more_itertools import one
 from sdclient.responses import GetDepartmentResponse
 from sdclient.responses import GetOrganizationResponse
@@ -178,6 +182,78 @@ async def test_addresses_add(
             one(actual_postal_addresses.objects).current.addresses  # type: ignore
         )
         assert actual_postal_address.value == "0a3f50bb-de5a-32b8-e044-0003ba298018"
+
+    await verify()
+
+
+@pytest.mark.integration_test
+@patch("sdtoolplus.main.get_engine")
+@patch("sdtoolplus.sd.importer.get_sd_departments")
+@patch("sdtoolplus.sd.importer.get_sd_organization")
+@patch("sdtoolplus.api.run_db_end_operations")
+@patch("sdtoolplus.api.run_db_start_operations", return_value=None)
+async def test_addresses_update_unit_deactivated_today(
+    mock_run_db_start_operations: MagicMock,
+    mock_run_db_end_operations: MagicMock,
+    mock_get_sd_organization: MagicMock,
+    mock_get_sd_departments: MagicMock,
+    mock_get_engine: MagicMock,
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    mock_sd_get_organization_response: GetOrganizationResponse,
+    mock_sd_get_department_response: GetDepartmentResponse,
+) -> None:
+    """
+    We test that an already existing P-number address is updated for a unit
+    whose SD deactivation date is today, i.e. the unit validity ends at
+    midnight today.
+    """
+
+    # Arrange
+    org_uuid = (await graphql_client.get_organization()).uuid
+    mock_sd_get_organization_response.InstitutionUUIDIdentifier = org_uuid
+
+    # Let the SD unit be deactivated today
+    first(mock_sd_get_department_response.Department).DeactivationDate = date.today()
+
+    mock_get_sd_organization.return_value = mock_sd_get_organization_response
+    mock_get_sd_departments.return_value = mock_sd_get_department_response
+
+    # Create a P-number address in Department 1
+    pnumber_addr_type_uuid = await get_address_type_uuid(
+        graphql_client, AddressTypeUserKey.PNUMBER_ADDR.value
+    )
+    await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            value="9876543210",
+            address_type=pnumber_addr_type_uuid,
+            validity=RAValidityInput(
+                from_=datetime.combine(
+                    date(1999, 1, 1), time.min, ZoneInfo("Europe/Copenhagen")
+                )
+            ),
+        )
+    )
+
+    # Act
+    r = await test_client.post("/trigger/addresses")
+
+    # Assert
+    assert r.status_code == 200
+
+    @retry()
+    async def verify() -> None:
+        actual_pnumber_addresses = await graphql_client._testing__get_org_unit_address(
+            org_unit=UUID("10000000-0000-0000-0000-000000000000"),
+            addr_type=pnumber_addr_type_uuid,
+        )
+
+        actual_pnumber_address = one(
+            one(actual_pnumber_addresses.objects).current.addresses  # type: ignore
+        )
+        assert actual_pnumber_address.value == "1234567890"
 
     await verify()
 
