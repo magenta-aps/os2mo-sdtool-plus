@@ -364,6 +364,222 @@ async def test_sync_job_positions_twice(
 
 
 @pytest.mark.integration_test
+async def test_sync_job_positions_keeps_class_of_another_path(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """A class belonging to another path in SD must not be stolen.
+
+    Only the 9101 path has classes in MO already, as left behind by a sync
+    which did not know that 9020 occurs below 9001 too. The 9001 path must get
+    classes of its own, since moving the existing ones from one path to the
+    other would change the job function of the engagements referring to them.
+    """
+    # Arrange
+    engagement_job_function_uuid = one(
+        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
+    ).uuid
+
+    async def create_class(user_key: str, scope: str, parent_uuid: UUID | None) -> UUID:
+        r = await graphql_client.create_class(
+            ClassCreateInput(
+                facet_uuid=engagement_job_function_uuid,
+                user_key=user_key,
+                name=user_key,
+                scope=scope,
+                parent_uuid=parent_uuid,
+                validity=ValidityInput(
+                    from_="2000-01-01T00:00:00+00:00",
+                    to=None,
+                ),
+            )
+        )
+        return r.uuid
+
+    doctors_9101_3 = await create_class("9101", "3", None)
+    more_doctors_9020_2 = await create_class("9020", "2", doctors_9101_3)
+    more_emergency_6030_1 = await create_class("6030", "1", more_doctors_9020_2)
+    more_chief_9021_1 = await create_class("9021", "1", more_doctors_9020_2)
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=PROFESSIONS,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/job-functions/sync",
+        params={"institution_identifier": "II"},
+    )
+    assert r.status_code == 200
+
+    # Assert
+    actual = await graphql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
+            user_keys=["9001", "9020", "9021", "9022", "6030", "95", "9101"],
+        )
+    )
+
+    # The 9001 path has classes of its own, i.e. not the ones of the 9101 path
+    doctors_9001_3 = uuid_of(actual.objects, "9001", "3", None)
+    doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9001_3)
+
+    expected = [
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9001",
+                name="Lægepersonale",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9001_3,
+            current=ClassCurrent.construct(
+                uuid=doctors_9001_3,
+                user_key="9001",
+                name="Lægepersonale",
+                scope="3",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9020_2,
+            current=ClassCurrent.construct(
+                uuid=doctors_9020_2,
+                user_key="9020",
+                name="Lægepersonale",
+                scope="2",
+                parent=Parent.construct(
+                    uuid=doctors_9001_3,
+                    user_key="9001",
+                    scope="3",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="6030",
+                name="Lægevagt",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        # The classes of the 9101 path are the ones which were already in MO
+        Class.construct(
+            uuid=doctors_9101_3,
+            current=ClassCurrent.construct(
+                uuid=doctors_9101_3,
+                user_key="9101",
+                name="Mere lægepersonale",
+                scope="3",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=more_doctors_9020_2,
+            current=ClassCurrent.construct(
+                uuid=more_doctors_9020_2,
+                user_key="9020",
+                name="Lægepersonale",
+                scope="2",
+                parent=Parent.construct(
+                    uuid=doctors_9101_3,
+                    user_key="9101",
+                    scope="3",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=more_emergency_6030_1,
+            current=ClassCurrent.construct(
+                uuid=more_emergency_6030_1,
+                user_key="6030",
+                name="Lægevagt",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=more_chief_9021_1,
+            current=ClassCurrent.construct(
+                uuid=more_chief_9021_1,
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="95",
+                name="3F, SL, FOA",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9022",
+                name="Ingen",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+    ]
+    TestCase().assertCountEqual(actual.objects, expected)
+
+
+@pytest.mark.integration_test
 async def test_sync_job_positions_force_class_start_date(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
