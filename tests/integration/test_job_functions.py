@@ -92,6 +92,21 @@ PROFESSIONS = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+def uuid_of(
+    classes: list[Class], user_key: str, scope: str, parent_uuid: UUID | None
+) -> UUID:
+    """The UUID of the class of the profession below the given parent."""
+    return one(
+        obj.uuid
+        for obj in classes
+        if obj.current is not None
+        and obj.current.user_key == user_key
+        and obj.current.scope == scope
+        and (obj.current.parent.uuid if obj.current.parent is not None else None)
+        == parent_uuid
+    )
+
+
 @pytest.mark.integration_test
 async def test_sync_job_positions(
     test_client: AsyncClient,
@@ -149,23 +164,11 @@ async def test_sync_job_positions(
         )
     )
 
-    def uuid_of(user_key: str, scope: str, parent_uuid: UUID | None) -> UUID:
-        """The UUID of the class of the profession below the given parent."""
-        return one(
-            obj.uuid
-            for obj in actual.objects
-            if obj.current is not None
-            and obj.current.user_key == user_key
-            and obj.current.scope == scope
-            and (obj.current.parent.uuid if obj.current.parent is not None else None)
-            == parent_uuid
-        )
-
     # 9020 - and thereby its children 6030 and 9021 - occurs below 9101 as well
     # as below 9001. Each path is its own class in MO
-    doctors_9101_3 = uuid_of("9101", "3", None)
-    doctors_9020_2 = uuid_of("9020", "2", doctors_9001_3.uuid)
-    more_doctors_9020_2 = uuid_of("9020", "2", doctors_9101_3)
+    doctors_9101_3 = uuid_of(actual.objects, "9101", "3", None)
+    doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9001_3.uuid)
+    more_doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9101_3)
 
     expected = [
         Class.construct(
