@@ -1,18 +1,20 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
+"""
+Sync of the SD profession hierarchy to the job function classes in MO.
+"""
+
 import asyncio
-from collections.abc import Iterator
-from dataclasses import dataclass
-from dataclasses import field
+from collections import defaultdict
 from datetime import date
 from datetime import datetime
 from datetime import time
 from uuid import UUID
-from uuid import uuid4
 
 import structlog
+from anytree import NodeMixin  # type: ignore
 from more_itertools import one
-from more_itertools import only
+from pydantic import BaseModel
 from sdclient.client import SDClient
 from sdclient.requests import GetProfessionRequest
 from sdclient.responses import ProfessionObj
@@ -27,132 +29,175 @@ from sdtoolplus.depends import GraphQLClient
 
 logger = structlog.stdlib.get_logger()
 
-
-@dataclass
-class Class:
-    """Comparable Class model."""
-
-    uuid: UUID = field(
-        compare=False,  # class UUIDs are not imported from SD
-    )
-    user_key: str
-    name: str
-    scope: str | None
-    parent: UUID | None
+# Name of the classes for professions without a JobPositionName in SD
+NO_NAME = "Ingen"
 
 
-async def get_actual(
-    graphql_client: GraphQLClient,
-    mo_engagement_job_function_uuid: UUID,
-    sd_profession: ProfessionObj,
-) -> Class | None:
-    """Get class(es) actually in MO."""
-    mo_classes = await graphql_client.get_class(
-        ClassFilter(
-            facet=FacetFilter(uuids=[mo_engagement_job_function_uuid]),
-            scope=[sd_profession.JobPositionLevelCode],
-            user_keys=[sd_profession.JobPositionIdentifier],
-        )
-    )
-    # (scope, user_key) is assumed unique (and stable)
-    mo_class = only(mo_classes.objects)
-    if mo_class is None:
-        return None
-    assert mo_class.current is not None
-    return Class(
-        uuid=mo_class.uuid,
-        user_key=mo_class.current.user_key,
-        name=mo_class.current.name,
-        scope=mo_class.current.scope,
-        parent=(
-            mo_class.current.parent.uuid
-            if mo_class.current.parent is not None
-            else None
-        ),
-    )
+class ClassKey(BaseModel, frozen=True):
+    """A class in MO, as identified by the SD profession it corresponds to.
 
-
-async def get_desired(
-    graphql_client: GraphQLClient,
-    mo_engagement_job_function_uuid: UUID,
-    sd_parent: ProfessionObj | None,
-    sd_profession: ProfessionObj,
-) -> Class:
-    """Construct desired class based on SD profession."""
-    if sd_parent is None:
-        mo_parent_uuid = None
-    else:
-        mo_parents = await graphql_client.get_class(
-            ClassFilter(
-                facet=FacetFilter(uuids=[mo_engagement_job_function_uuid]),
-                scope=[sd_parent.JobPositionLevelCode],
-                user_keys=[sd_parent.JobPositionIdentifier],
-            )
-        )
-        # The parent should exist in MO since we are creating classes in a
-        # breadth-first manner.
-        mo_parent = one(mo_parents.objects)
-        assert mo_parent.current is not None
-        mo_parent_uuid = mo_parent.current.uuid
-
-    # The JobPositionIdentifier is guaranteed unique *within* each level, not
-    # across levels. An employment always refers to a profession on level 0 in
-    # SD. Level 1-3 are groupings of codes that can be used for statistics or
-    # budgeting, e.g. "all nurses" or "all doctors".
-    # We set user_key=JobPositionIdentifier, scope=JobPositionLevelCode in MO
-    # for a (scope, user_key) compound primary key. Engagements should refer to
-    # the (0, JobPositionIdentifier) class.
-    return Class(
-        uuid=uuid4(),  # UUIDs are not imported from SD
-        user_key=sd_profession.JobPositionIdentifier,
-        name=sd_profession.JobPositionName
-        if sd_profession.JobPositionName is not None
-        else "Ingen",
-        scope=sd_profession.JobPositionLevelCode,
-        parent=mo_parent_uuid,
-    )
-
-
-async def sync(
-    graphql_client: GraphQLClient,
-    mo_engagement_job_function_uuid: UUID,
-    sd_parent: ProfessionObj | None,
-    sd_profession: ProfessionObj,
-    force_class_start_date: date | None = None,
-) -> None:
+    The JobPositionIdentifier is guaranteed unique *within* each level, not
+    across levels, so the level is part of the key.
     """
-    Sync job functions.
+
+    scope: str | None  # JobPositionLevelCode in SD
+    user_key: str  # JobPositionIdentifier in SD
+
+
+class ProfessionNode(NodeMixin):
+    """A profession in the SD hierarchy, or the class it has in MO.
+
+    The root of a tree is an empty node holding the professions at the top of
+    the hierarchy, i.e. the professions without a parent.
+    """
+
+    def __init__(
+        self,
+        user_key: str = "",
+        scope: str | None = None,
+        name: str | None = None,
+        uuid: UUID | None = None,
+        parent: "ProfessionNode | None" = None,
+        children: "list[ProfessionNode] | None" = None,
+    ) -> None:
+        super().__init__()
+        self.user_key: str = user_key
+        self.scope: str | None = scope
+        self.name: str | None = name
+        # The class in MO, None until it has been created
+        self.uuid: UUID | None = uuid
+        self.parent: "ProfessionNode | None" = parent
+        if children:
+            self.children = children
+
+    @property
+    def key(self) -> ClassKey:
+        """The class this profession corresponds to in MO."""
+        return ClassKey(scope=self.scope, user_key=self.user_key)
+
+    @property
+    def parent_uuid(self) -> UUID | None:
+        """The class in MO of the profession this one occurs below.
+
+        None for a profession at the top of the hierarchy, since the root of
+        the tree has no class in MO.
+        """
+        return self.parent.uuid if self.parent is not None else None
+
+    @property
+    def keys(self) -> tuple[ClassKey, ...]:
+        """The path from the top of the hierarchy to this profession"""
+        return tuple(node.key for node in self.path if not node.is_root)
+
+    def __repr__(self) -> str:
+        return (
+            f"ProfessionNode(user_key={self.user_key}, scope={self.scope}, "
+            f"name={self.name}, uuid={self.uuid})"
+        )
+
+
+def _get_sd_tree(sd_professions: list[ProfessionObj]) -> ProfessionNode:
+    """
+    Build the tree of the professions SD returns.
 
     Args:
+        sd_professions: The professions at the top of the SD hierarchy.
+
+    Returns:
+        The root of the tree.
+    """
+
+    def add(parent: ProfessionNode, professions: list[ProfessionObj]) -> None:
+        for profession in professions:
+            node = ProfessionNode(
+                user_key=profession.JobPositionIdentifier,
+                scope=profession.JobPositionLevelCode,
+                # An employment always refers to a profession on level 0 in SD,
+                # where a name is required. Level 1-3 are groupings of codes
+                # used for statistics or budgeting, e.g. "all nurses", and can
+                # be nameless.
+                name=profession.JobPositionName
+                if profession.JobPositionName is not None
+                else NO_NAME,
+                parent=parent,
+            )
+            add(node, profession.Profession)
+
+    root = ProfessionNode()
+    add(root, sd_professions)
+    return root
+
+
+async def _get_mo_tree(
+    graphql_client: GraphQLClient,
+    mo_engagement_job_function_uuid: UUID,
+) -> ProfessionNode:
+    """
+    Build the tree of the job function classes in MO.
+
+    Args:
+        mo_engagement_job_function_uuid: The engagement_job_function facet.
+
+    Returns:
+        The root of the tree.
+    """
+    mo_classes = await graphql_client.get_class(
+        ClassFilter(facet=FacetFilter(uuids=[mo_engagement_job_function_uuid]))
+    )
+    classes = sorted(
+        (obj.current for obj in mo_classes.objects if obj.current is not None),
+        key=lambda mo_class: mo_class.uuid,  # for a deterministic sibling order
+    )
+
+    root = ProfessionNode()
+    nodes = {
+        mo_class.uuid: ProfessionNode(
+            user_key=mo_class.user_key,
+            scope=mo_class.scope,
+            name=mo_class.name,
+            uuid=mo_class.uuid,
+        )
+        for mo_class in classes
+    }
+    for mo_class in classes:
+        parent = (
+            nodes.get(mo_class.parent.uuid) if mo_class.parent is not None else None
+        )
+        # A class below a parent in another facet is treated as a top-level one
+        nodes[mo_class.uuid].parent = parent if parent is not None else root
+    return root
+
+
+async def _sync_profession(
+    graphql_client: GraphQLClient,
+    mo_engagement_job_function_uuid: UUID,
+    sd_node: ProfessionNode,
+    mo_node: ProfessionNode | None,
+    force_class_start_date: date | None = None,
+) -> UUID:
+    """
+    Sync the class of a single profession.
+
+    Args:
+        sd_node: The profession in the SD tree. Its parent must be synced already.
+        mo_node: The class the profession has in MO, if it has one.
         force_class_start_date: Rewind the job function classes start date to this date.
             Old instances of MO may be missing job function classes in the early parts
             of an engagement timeline, since the job function sync per default is
             syncing job functions per todays date. This argument can be used to force
             job function classes to start from the given date. When set, all existing
             job function class validities will be rewinded too.
+
+    Returns:
+        The UUID of the class in MO corresponding to the given profession.
     """
+    mo_parent_uuid = sd_node.parent_uuid  # None at the top of the hierarchy
     logger.info(
         "Synchronising job function",
-        sd_parent=sd_parent.dict() if sd_parent is not None else None,
-        sd_profession=sd_profession.dict(),
+        sd_node=repr(sd_node),
+        mo_node=repr(mo_node),
+        mo_parent_uuid=str(mo_parent_uuid),
     )
-
-    actual = await get_actual(
-        graphql_client,
-        mo_engagement_job_function_uuid,
-        sd_profession,
-    )
-    desired = await get_desired(
-        graphql_client,
-        mo_engagement_job_function_uuid,
-        sd_parent,
-        sd_profession,
-    )
-    logger.debug(actual=actual, desired=desired)
-
-    if actual == desired and force_class_start_date is None:
-        logger.info("Already up to date")
-        return
 
     # MO does not support datetimes with a time 🥲
     class_from = datetime.now(tz=TIMEZONE)
@@ -161,41 +206,86 @@ async def sync(
         class_from = datetime.combine(force_class_start_date, time.min, TIMEZONE)
 
     # Class is missing; create
-    if actual is None:
+    if mo_node is None:
         create_input = ClassCreateInput(
-            uuid=desired.uuid,
             facet_uuid=mo_engagement_job_function_uuid,
-            user_key=desired.user_key,
-            name=desired.name,
-            scope=desired.scope,
-            parent_uuid=desired.parent,
+            user_key=sd_node.user_key,
+            name=sd_node.name,
+            scope=sd_node.scope,
+            parent_uuid=mo_parent_uuid,
             validity=ValidityInput(from_=class_from, to=None),
         )
         logger.info("Creating missing job function", input=create_input)
-        await graphql_client.create_class(create_input)
-        return
+        mo_class = await graphql_client.create_class(create_input)
+        return mo_class.uuid
+
+    assert mo_node.uuid is not None  # a class in MO always has a UUID
+
+    # The class is found by path - or reused, keeping its user_key and scope -
+    # so only the name and the parent can be out of date
+    if (
+        mo_node.name == sd_node.name
+        and mo_node.parent_uuid == mo_parent_uuid
+        and force_class_start_date is None
+    ):
+        logger.info("Already up to date")
+        return mo_node.uuid
 
     # Class is incorrect; update
     update_input = ClassUpdateInput(
-        uuid=actual.uuid,
+        uuid=mo_node.uuid,
         facet_uuid=mo_engagement_job_function_uuid,
-        user_key=desired.user_key,
-        name=desired.name,
-        scope=desired.scope,
-        parent_uuid=desired.parent,
+        user_key=sd_node.user_key,
+        name=sd_node.name,
+        scope=sd_node.scope,
+        parent_uuid=mo_parent_uuid,
         validity=ValidityInput(from_=class_from, to=None),
     )
     logger.info("Updating incorrect job function", input=update_input)
     await graphql_client.update_class(update_input)
+    return mo_node.uuid
 
 
-def walk(
-    parent: ProfessionObj | None, professions: list[ProfessionObj]
-) -> Iterator[tuple[ProfessionObj | None, ProfessionObj]]:
-    """Yield (parent, profession) pairs."""
-    for profession in professions:
-        yield parent, profession
-        yield from walk(parent=profession, professions=profession.Profession)
+async def _sync_tree(
+    graphql_client: GraphQLClient,
+    mo_engagement_job_function_uuid: UUID,
+    sd_root: ProfessionNode,
+    mo_root: ProfessionNode,
+    force_class_start_date: date | None = None,
+) -> None:
+    """
+    Sync the classes in MO to the professions in SD.
+
+    Args:
+        sd_root: The root of the SD tree, see _get_sd_tree().
+        mo_root: The root of the MO tree, see _get_mo_tree().
+    """
+    sd_paths = {sd_node.keys for sd_node in sd_root.descendants}
+    mo_nodes: dict[tuple[ClassKey, ...], ProfessionNode] = {}
+    # Classes which are not at a path SD has are left over from an earlier
+    # sync, e.g. because the profession has been moved in the hierarchy. Such a
+    # class is reused - instead of being left behind as a duplicate - so that
+    # engagements referring to it keep pointing at the right job function.
+    leftovers: dict[ClassKey, list[ProfessionNode]] = defaultdict(list)
+    for mo_node in mo_root.descendants:
+        if mo_node.keys in sd_paths and mo_node.keys not in mo_nodes:
+            mo_nodes[mo_node.keys] = mo_node
+        else:
+            leftovers[mo_node.key].append(mo_node)
+
+    # descendants yields parents before their children, which is required since
+    # a class must exist in MO before it can be referred to as a parent
+    for sd_node in sd_root.descendants:
+        mo_node = mo_nodes.get(sd_node.keys)
+        if mo_node is None and leftovers[sd_node.key]:
+            mo_node = leftovers[sd_node.key].pop(0)
+        sd_node.uuid = await _sync_profession(
+            graphql_client,
+            mo_engagement_job_function_uuid,
+            sd_node,
+            mo_node,
+            force_class_start_date,
+        )
 
 
 async def sync_professions(
@@ -212,13 +302,10 @@ async def sync_professions(
         sd_client.get_profession,
         GetProfessionRequest(InstitutionIdentifier=institution_identifier),
     )
-    for sd_parent, sd_profession in walk(
-        parent=None, professions=sd_professions.Profession
-    ):
-        await sync(
-            graphql_client,
-            mo_engagement_job_function_uuid,
-            sd_parent,
-            sd_profession,
-            force_class_start_date,
-        )
+    await _sync_tree(
+        graphql_client,
+        mo_engagement_job_function_uuid,
+        _get_sd_tree(sd_professions.Profession),
+        await _get_mo_tree(graphql_client, mo_engagement_job_function_uuid),
+        force_class_start_date,
+    )
