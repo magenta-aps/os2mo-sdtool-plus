@@ -571,6 +571,204 @@ async def test_sync_job_positions_keeps_class_of_another_path(
 
 
 @pytest.mark.integration_test
+async def test_sync_job_positions_keeps_class_of_moved_profession(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """A profession which has moved in the SD hierarchy keeps its class.
+
+    9021 used to occur directly below 9001, but occurs below 9020 in SD now.
+    The class must be moved along, rather than a new one being created, so the
+    engagements referring to it follow the profession.
+    """
+    # Arrange
+    doctors_9001_3 = await create_class(graphql_client, "9001", "wrong name", "3")
+    chief_9021_1 = await create_class(
+        graphql_client,
+        "9021",
+        "wrong name",
+        "1",
+        doctors_9001_3,  # where 9021 used to occur in SD
+    )
+
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=PROFESSIONS,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/job-functions/sync",
+        params={"institution_identifier": "II"},
+    )
+    assert r.status_code == 200
+
+    # Assert
+    actual = await graphql_client.get_class(
+        ClassFilter(
+            facet=FacetFilter(user_keys=["engagement_job_function"]),
+            user_keys=["9001", "9020", "9021", "9022", "6030", "95", "9101"],
+        )
+    )
+    doctors_9101_3 = uuid_of(actual.objects, "9101", "3", None)
+    doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9001_3)
+    more_doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9101_3)
+
+    expected = [
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9001",
+                name="Lægepersonale",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9001_3,
+            current=ClassCurrent.construct(
+                uuid=doctors_9001_3,
+                user_key="9001",
+                name="Lægepersonale",
+                scope="3",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9020_2,
+            current=ClassCurrent.construct(
+                uuid=doctors_9020_2,
+                user_key="9020",
+                name="Lægepersonale",
+                scope="2",
+                parent=Parent.construct(
+                    uuid=doctors_9001_3,
+                    user_key="9001",
+                    scope="3",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="6030",
+                name="Lægevagt",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        # The class of 9021 is the one which was already in MO, now below 9020
+        Class.construct(
+            uuid=chief_9021_1,
+            current=ClassCurrent.construct(
+                uuid=chief_9021_1,
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9101_3,
+            current=ClassCurrent.construct(
+                uuid=doctors_9101_3,
+                user_key="9101",
+                name="Mere lægepersonale",
+                scope="3",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=more_doctors_9020_2,
+            current=ClassCurrent.construct(
+                uuid=more_doctors_9020_2,
+                user_key="9020",
+                name="Lægepersonale",
+                scope="2",
+                parent=Parent.construct(
+                    uuid=doctors_9101_3,
+                    user_key="9101",
+                    scope="3",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="6030",
+                name="Lægevagt",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="95",
+                name="3F, SL, FOA",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9022",
+                name="Ingen",
+                scope="0",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+    ]
+    TestCase().assertCountEqual(actual.objects, expected)
+
+
+@pytest.mark.integration_test
 async def test_sync_job_positions_force_class_start_date(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
