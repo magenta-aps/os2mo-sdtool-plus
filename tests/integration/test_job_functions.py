@@ -92,6 +92,33 @@ PROFESSIONS = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+async def create_class(
+    graphql_client: GraphQLClient,
+    user_key: str,
+    name: str,
+    scope: str,
+    parent_uuid: UUID | None = None,
+) -> UUID:
+    """Create a job function class in MO, as left behind by an earlier sync."""
+    facet_uuid = one(
+        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
+    ).uuid
+    mo_class = await graphql_client.create_class(
+        ClassCreateInput(
+            facet_uuid=facet_uuid,
+            user_key=user_key,
+            name=name,
+            scope=scope,
+            parent_uuid=parent_uuid,
+            validity=ValidityInput(
+                from_="2000-01-01T00:00:00+00:00",
+                to=None,
+            ),
+        )
+    )
+    return mo_class.uuid
+
+
 def uuid_of(
     classes: list[Class], user_key: str, scope: str, parent_uuid: UUID | None
 ) -> UUID:
@@ -113,35 +140,13 @@ async def test_sync_job_positions(
     graphql_client: GraphQLClient,
     respx_mock: MockRouter,
 ):
-    engagement_job_function_uuid = one(
-        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
-    ).uuid
-
-    doctors_9001_3 = await graphql_client.create_class(
-        ClassCreateInput(
-            facet_uuid=engagement_job_function_uuid,
-            user_key="9001",
-            name="wrong name",
-            scope="3",
-            parent_uuid=None,
-            validity=ValidityInput(
-                from_="2000-01-01T00:00:00+00:00",
-                to=None,
-            ),
-        )
-    )
-    unions_95_0 = await graphql_client.create_class(
-        ClassCreateInput(
-            facet_uuid=engagement_job_function_uuid,
-            user_key="95",
-            name="3F, SL, FOA",
-            scope="0",
-            parent_uuid=doctors_9001_3.uuid,  # wrong parent
-            validity=ValidityInput(
-                from_="2000-01-01T00:00:00+00:00",
-                to=None,
-            ),
-        )
+    doctors_9001_3 = await create_class(graphql_client, "9001", "wrong name", "3")
+    unions_95_0 = await create_class(
+        graphql_client,
+        "95",
+        "3F, SL, FOA",
+        "0",
+        doctors_9001_3,  # wrong parent
     )
 
     respx_mock.get(
@@ -167,7 +172,7 @@ async def test_sync_job_positions(
     # 9020 - and thereby its children 6030 and 9021 - occurs below 9101 as well
     # as below 9001. Each path is its own class in MO
     doctors_9101_3 = uuid_of(actual.objects, "9101", "3", None)
-    doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9001_3.uuid)
+    doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9001_3)
     more_doctors_9020_2 = uuid_of(actual.objects, "9020", "2", doctors_9101_3)
 
     expected = [
@@ -183,9 +188,9 @@ async def test_sync_job_positions(
             ),
         ),
         Class.construct(
-            uuid=doctors_9001_3.uuid,
+            uuid=doctors_9001_3,
             current=ClassCurrent.construct(
-                uuid=doctors_9001_3.uuid,
+                uuid=doctors_9001_3,
                 user_key="9001",
                 name="Lægepersonale",
                 scope="3",
@@ -201,7 +206,7 @@ async def test_sync_job_positions(
                 name="Lægepersonale",
                 scope="2",
                 parent=Parent.construct(
-                    uuid=doctors_9001_3.uuid,
+                    uuid=doctors_9001_3,
                     user_key="9001",
                     scope="3",
                 ),
@@ -239,9 +244,9 @@ async def test_sync_job_positions(
             ),
         ),
         Class.construct(
-            uuid=unions_95_0.uuid,
+            uuid=unions_95_0,
             current=ClassCurrent.construct(
-                uuid=unions_95_0.uuid,
+                uuid=unions_95_0,
                 user_key="95",
                 name="3F, SL, FOA",
                 scope="0",
@@ -377,30 +382,16 @@ async def test_sync_job_positions_keeps_class_of_another_path(
     other would change the job function of the engagements referring to them.
     """
     # Arrange
-    engagement_job_function_uuid = one(
-        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
-    ).uuid
-
-    async def create_class(user_key: str, scope: str, parent_uuid: UUID | None) -> UUID:
-        r = await graphql_client.create_class(
-            ClassCreateInput(
-                facet_uuid=engagement_job_function_uuid,
-                user_key=user_key,
-                name=user_key,
-                scope=scope,
-                parent_uuid=parent_uuid,
-                validity=ValidityInput(
-                    from_="2000-01-01T00:00:00+00:00",
-                    to=None,
-                ),
-            )
-        )
-        return r.uuid
-
-    doctors_9101_3 = await create_class("9101", "3", None)
-    more_doctors_9020_2 = await create_class("9020", "2", doctors_9101_3)
-    more_emergency_6030_1 = await create_class("6030", "1", more_doctors_9020_2)
-    more_chief_9021_1 = await create_class("9021", "1", more_doctors_9020_2)
+    doctors_9101_3 = await create_class(graphql_client, "9101", "wrong name", "3")
+    more_doctors_9020_2 = await create_class(
+        graphql_client, "9020", "wrong name", "2", doctors_9101_3
+    )
+    more_emergency_6030_1 = await create_class(
+        graphql_client, "6030", "wrong name", "1", more_doctors_9020_2
+    )
+    more_chief_9021_1 = await create_class(
+        graphql_client, "9021", "wrong name", "1", more_doctors_9020_2
+    )
 
     respx_mock.get(
         "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
@@ -586,35 +577,13 @@ async def test_sync_job_positions_force_class_start_date(
     respx_mock: MockRouter,
 ):
     # Arrange
-    engagement_job_function_uuid = one(
-        (await graphql_client.get_facet_uuid("engagement_job_function")).objects
-    ).uuid
-
-    doctors_9001_3 = await graphql_client.create_class(
-        ClassCreateInput(
-            facet_uuid=engagement_job_function_uuid,
-            user_key="9001",
-            name="wrong name",
-            scope="3",
-            parent_uuid=None,
-            validity=ValidityInput(
-                from_="2000-01-01T00:00:00+00:00",
-                to=None,
-            ),
-        )
-    )
-    await graphql_client.create_class(
-        ClassCreateInput(
-            facet_uuid=engagement_job_function_uuid,
-            user_key="95",
-            name="3F, SL, FOA",
-            scope="0",
-            parent_uuid=doctors_9001_3.uuid,  # wrong parent
-            validity=ValidityInput(
-                from_="2000-01-01T00:00:00+00:00",
-                to=None,
-            ),
-        )
+    doctors_9001_3 = await create_class(graphql_client, "9001", "wrong name", "3")
+    await create_class(
+        graphql_client,
+        "95",
+        "3F, SL, FOA",
+        "0",
+        doctors_9001_3,  # wrong parent
     )
 
     respx_mock.get(
