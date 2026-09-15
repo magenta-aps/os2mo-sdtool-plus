@@ -3,6 +3,7 @@
 from datetime import date
 from unittest import TestCase
 from unittest.mock import ANY
+from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
@@ -97,6 +98,26 @@ async def test_sync_job_positions(
               </Profession>
             </Profession>
             <Profession>
+              <JobPositionIdentifier>9101</JobPositionIdentifier>
+              <JobPositionName>Mere lægepersonale</JobPositionName>
+              <JobPositionLevelCode>3</JobPositionLevelCode>
+              <Profession>
+                <JobPositionIdentifier>9020</JobPositionIdentifier>
+                <JobPositionName>Lægepersonale</JobPositionName>
+                <JobPositionLevelCode>2</JobPositionLevelCode>
+                <Profession>
+                  <JobPositionIdentifier>6030</JobPositionIdentifier>
+                  <JobPositionName>Lægevagt</JobPositionName>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
+                </Profession>
+                <Profession>
+                  <JobPositionIdentifier>9021</JobPositionIdentifier>
+                  <JobPositionName>Lægelig chef</JobPositionName>
+                  <JobPositionLevelCode>1</JobPositionLevelCode>
+                </Profession>
+              </Profession>
+            </Profession>
+            <Profession>
               <JobPositionIdentifier>95</JobPositionIdentifier>
               <JobPositionName>3F, SL, FOA</JobPositionName>
               <JobPositionLevelCode>0</JobPositionLevelCode>
@@ -119,9 +140,28 @@ async def test_sync_job_positions(
     actual = await graphql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=["9001", "9020", "9021", "9022", "6030", "95"],
+            user_keys=["9001", "9020", "9021", "9022", "6030", "95", "9101"],
         )
     )
+
+    def uuid_of(user_key: str, scope: str, parent_uuid: UUID | None) -> UUID:
+        """The UUID of the class of the profession below the given parent."""
+        return one(
+            obj.uuid
+            for obj in actual.objects
+            if obj.current is not None
+            and obj.current.user_key == user_key
+            and obj.current.scope == scope
+            and (obj.current.parent.uuid if obj.current.parent is not None else None)
+            == parent_uuid
+        )
+
+    # 9020 - and thereby its children 6030 and 9021 - occurs below 9101 as well
+    # as below 9001. Each path is its own class in MO
+    doctors_9101_3 = uuid_of("9101", "3", None)
+    doctors_9020_2 = uuid_of("9020", "2", doctors_9001_3.uuid)
+    more_doctors_9020_2 = uuid_of("9020", "2", doctors_9101_3)
+
     expected = [
         Class.construct(
             uuid=ANY,
@@ -146,9 +186,9 @@ async def test_sync_job_positions(
             ),
         ),
         Class.construct(
-            uuid=ANY,
+            uuid=doctors_9020_2,
             current=ClassCurrent.construct(
-                uuid=ANY,
+                uuid=doctors_9020_2,
                 user_key="9020",
                 name="Lægepersonale",
                 scope="2",
@@ -168,7 +208,7 @@ async def test_sync_job_positions(
                 name="Lægevagt",
                 scope="1",
                 parent=Parent.construct(
-                    uuid=ANY,
+                    uuid=doctors_9020_2,
                     user_key="9020",
                     scope="2",
                 ),
@@ -183,7 +223,7 @@ async def test_sync_job_positions(
                 name="Lægelig chef",
                 scope="1",
                 parent=Parent.construct(
-                    uuid=ANY,
+                    uuid=doctors_9020_2,
                     user_key="9020",
                     scope="2",
                 ),
@@ -209,6 +249,62 @@ async def test_sync_job_positions(
                 name="Ingen",
                 scope="0",
                 parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=doctors_9101_3,
+            current=ClassCurrent.construct(
+                uuid=doctors_9101_3,
+                user_key="9101",
+                name="Mere lægepersonale",
+                scope="3",
+                parent=None,
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=more_doctors_9020_2,
+            current=ClassCurrent.construct(
+                uuid=more_doctors_9020_2,
+                user_key="9020",
+                name="Lægepersonale",
+                scope="2",
+                parent=Parent.construct(
+                    uuid=doctors_9101_3,
+                    user_key="9101",
+                    scope="3",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="6030",
+                name="Lægevagt",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
+                validity=ANY,
+            ),
+        ),
+        Class.construct(
+            uuid=ANY,
+            current=ClassCurrent.construct(
+                uuid=ANY,
+                user_key="9021",
+                name="Lægelig chef",
+                scope="1",
+                parent=Parent.construct(
+                    uuid=more_doctors_9020_2,
+                    user_key="9020",
+                    scope="2",
+                ),
                 validity=ANY,
             ),
         ),
