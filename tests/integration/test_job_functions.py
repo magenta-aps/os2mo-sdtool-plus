@@ -318,6 +318,49 @@ async def test_sync_job_positions(
 
 
 @pytest.mark.integration_test
+async def test_sync_job_positions_twice(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """Syncing the same professions again must not change the classes in MO."""
+    # Arrange
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=PROFESSIONS,
+    )
+
+    class_filter = ClassFilter(
+        facet=FacetFilter(user_keys=["engagement_job_function"]),
+        user_keys=["9001", "9020", "9021", "9022", "6030", "95", "9101"],
+    )
+
+    r = await test_client.post(
+        "/job-functions/sync",
+        params={"institution_identifier": "II"},
+    )
+    assert r.status_code == 200
+    classes = await graphql_client.get_class(class_filter)
+    after_first_sync = sorted(classes.objects, key=lambda obj: obj.uuid)
+    # Each occurrence of a profession has a class, i.e. 9020, 6030 and 9021
+    # have one below 9001 and one below 9101
+    assert len(after_first_sync) == 11
+
+    # Act
+    r = await test_client.post(
+        "/job-functions/sync",
+        params={"institution_identifier": "II"},
+    )
+    assert r.status_code == 200
+
+    # Assert
+    classes = await graphql_client.get_class(class_filter)
+    assert sorted(classes.objects, key=lambda obj: obj.uuid) == after_first_sync
+
+
+@pytest.mark.integration_test
 async def test_sync_job_positions_force_class_start_date(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
