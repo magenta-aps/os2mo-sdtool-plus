@@ -31,12 +31,12 @@ from .db.rundb import get_status
 from .db.rundb import run_db_end_operations
 from .db.rundb import run_db_start_operations
 from .exceptions import UnknownNYLevel
-from .job_positions import sync_professions
 from .mo_class import MOOrgUnitLevelMap
 from .models import OrgGraphQLEvent
 from .models import PersonAndEmploymentGraphQLEvent
 from .sd.person import get_all_sd_persons
 from .sd.person import get_sd_person_engagements
+from .sync.job_functions import sync_professions
 from .tree_tools import tree_as_string
 
 logger = structlog.stdlib.get_logger()
