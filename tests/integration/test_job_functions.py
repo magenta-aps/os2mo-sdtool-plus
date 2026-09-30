@@ -136,7 +136,7 @@ async def test_sync_job_positions(
             user_key="95",
             name="3F, SL, FOA",
             scope="0",
-            parent_uuid=doctors_9001_3.uuid,  # wrong parent
+            parent_uuid=doctors_9001_3.uuid,  # a path SD does not have
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
                 to=None,
@@ -621,13 +621,13 @@ async def test_sync_job_positions_force_class_start_date(
             ),
         )
     )
-    await graphql_client.create_class(
+    unions_95_0 = await graphql_client.create_class(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
             user_key="95",
             name="3F, SL, FOA",
             scope="0",
-            parent_uuid=doctors_9001_3.uuid,  # wrong parent
+            parent_uuid=doctors_9001_3.uuid,  # a path SD does not have
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
                 to=None,
@@ -689,7 +689,7 @@ async def test_sync_job_positions_force_class_start_date(
     job_function_classes = await graphql_client.get_class(
         ClassFilter(
             facet=FacetFilter(user_keys=["engagement_job_function"]),
-            user_keys=["9001", "9020", "9021", "6030", "95"],
+            user_keys=["9001", "9020", "9021", "6030"],
         )
     )
 
@@ -697,3 +697,11 @@ async def test_sync_job_positions_force_class_start_date(
         assert obj.current is not None
         assert obj.current.validity.from_ is not None
         assert obj.current.validity.from_.date() == date(1930, 1, 1)
+
+    # The class below 9001 is not on a path in SD, so the sync leaves it alone
+    untouched = one(
+        (await graphql_client.get_class(ClassFilter(uuids=[unions_95_0.uuid]))).objects
+    )
+    assert untouched.current is not None
+    assert untouched.current.validity.from_ is not None
+    assert untouched.current.validity.from_.date() == date(2000, 1, 1)
