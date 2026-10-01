@@ -7,6 +7,8 @@ from unittest.mock import patch
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+from sdclient.client import SDClient
+
 from sdtoolplus.config import SDToolPlusSettings
 from sdtoolplus.depends import GraphQLClient
 from sdtoolplus.models import Active
@@ -16,6 +18,7 @@ from sdtoolplus.models import UnitLevel
 from sdtoolplus.models import UnitName
 from sdtoolplus.models import UnitParent
 from sdtoolplus.models import UnitTimeline
+from sdtoolplus.sync.org_unit import sync_ou
 from sdtoolplus.sync.org_unit import sync_ou_intervals
 
 
@@ -102,3 +105,37 @@ async def test_sync_ou_intervals_no_terminate_when_mo_not_active(
     # The 'continue' must short-circuit the interval, so we never reach the
     # create/update path
     mock_has_required_mo_values.assert_not_called()
+
+
+@patch("sdtoolplus.sync.org_unit.get_department")
+async def test_sync_ou_skips_sd_institution_unit(
+    mock_get_department: AsyncMock,
+    sdtoolplus_settings: SDToolPlusSettings,
+) -> None:
+    """
+    The SD institution units (the last elements of the subtree paths) must not
+    be synced, so we must never look them up in SD.
+    """
+    # Arrange
+    institution_unit = uuid4()
+    settings = sdtoolplus_settings.copy(
+        update={
+            "mo_subtree_paths_for_root": {
+                "II": [uuid4(), institution_unit],
+                "JJ": [uuid4(), uuid4()],
+            }
+        }
+    )
+
+    # Act
+    await sync_ou(
+        sd_client=MagicMock(spec=SDClient),
+        gql_client=AsyncMock(spec=GraphQLClient),
+        institution_identifier="II",
+        org_unit=institution_unit,
+        settings=settings,
+        priority=9000,
+    )
+
+    # Assert
+    mock_get_department.assert_not_awaited()

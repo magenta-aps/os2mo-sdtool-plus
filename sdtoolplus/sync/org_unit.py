@@ -4,7 +4,6 @@ from itertools import pairwise
 
 import structlog
 from fastramqpi.ramqp.depends import handle_exclusively_decorator
-from more_itertools import last
 from sdclient.client import SDClient
 from sdclient.responses import GetDepartmentResponse
 
@@ -38,6 +37,7 @@ from sdtoolplus.models import UnitPNumber
 from sdtoolplus.models import UnitPostalAddress
 from sdtoolplus.models import UnitTimeline
 from sdtoolplus.models import combine_intervals
+from sdtoolplus.sd.org_unit import get_sd_institution_unit_uuids
 from sdtoolplus.sd.timelines.address import sd_postal_address_strategy
 from sdtoolplus.sd.timelines.org_unit import get_department
 from sdtoolplus.sd.timelines.org_unit import get_department_timeline
@@ -374,6 +374,13 @@ async def sync_ou(
         org_uuid=str(org_unit),
     )
 
+    # Ensure that we do not process SD institution units
+    if org_unit in get_sd_institution_unit_uuids(settings):
+        logger.warning(
+            "Unit is an SD institution unit. Skipping", org_uuid=str(org_unit)
+        )
+        return
+
     department = await get_department(
         sd_client=sd_client,
         institution_identifier=institution_identifier,
@@ -393,7 +400,6 @@ async def sync_ou(
     desired_unit_timeline = patch_missing_parents(settings, desired_unit_timeline)
     desired_unit_timeline = patch_missing_names(desired_unit_timeline)
 
-    assert settings.mo_subtree_paths_for_root is not None
     mo_unit_timeline = await get_ou_timeline(
         gql_client,
         OrganisationUnitFilter(
@@ -401,10 +407,7 @@ async def sync_ou(
             from_date=None,
             to_date=None,
             ancestor=OrganisationUnitFilter(
-                uuids=[
-                    last(subtree_path)
-                    for inst_id, subtree_path in settings.mo_subtree_paths_for_root.items()
-                ]
+                uuids=get_sd_institution_unit_uuids(settings)
             ),
         ),
     )

@@ -26,7 +26,6 @@ from fastapi import Depends
 from fastapi import HTTPException
 from fastramqpi.context import Context
 from fastramqpi.events import Event
-from more_itertools import last
 from more_itertools import one
 from more_itertools import only
 from pydantic import Json
@@ -44,6 +43,7 @@ from sdtoolplus.models import OrgAMQPEvent
 from sdtoolplus.models import OrgGraphQLEvent
 from sdtoolplus.models import PersonAMQPEvent
 from sdtoolplus.models import PersonAndEmploymentGraphQLEvent
+from sdtoolplus.sd.org_unit import get_sd_institution_unit_uuids
 from sdtoolplus.sync.common import split_engagement_user_key
 from sdtoolplus.sync.engagement import sync_engagement
 from sdtoolplus.sync.engagement import sync_person_and_engagement
@@ -387,7 +387,6 @@ async def _mo_org_unit(
     mo_org_unit_uuid = event.subject
     logger.info("Received MO OU event", uuid=str(mo_org_unit_uuid))
 
-    assert settings.mo_subtree_paths_for_root is not None
     mo_org_units = await gql_client.get_org_unit_user_keys(
         input=OrganisationUnitFilter(
             from_date=None,
@@ -395,9 +394,7 @@ async def _mo_org_unit(
             uuids=[mo_org_unit_uuid],
             ancestor=OrganisationUnitFilter(
                 # Ensure that we only process units from SD
-                uuids=[
-                    last(path) for path in settings.mo_subtree_paths_for_root.values()
-                ],
+                uuids=get_sd_institution_unit_uuids(settings),
             ),
         )
     )
