@@ -374,6 +374,18 @@ async def sync_ou(
         org_uuid=str(org_unit),
     )
 
+    # Ensure that we do not process SD institution units
+    assert settings.mo_subtree_paths_for_root is not None
+    institution_units = {
+        last(subtree_path)
+        for subtree_path in settings.mo_subtree_paths_for_root.values()
+    }
+    if org_unit in institution_units:
+        logger.warning(
+            "Unit is an SD institution unit. Skipping", org_uuid=str(org_unit)
+        )
+        return
+
     department = await get_department(
         sd_client=sd_client,
         institution_identifier=institution_identifier,
