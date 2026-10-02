@@ -2632,9 +2632,6 @@ async def test_ou_timeline_no_address_sync_when_disabled(
     assert addresses.objects == []
 
 
-# This test is currently skipped due to
-# https://www.klimadatastyrelsen.dk/om-klimadatastyrelsen/nyheder/nyhedsarkiv/2026/jul/dawa-lukker-d-1-oktober-2026
-@pytest.mark.skip(reason="Due to breaking changes in the DAR API")
 @pytest.mark.integration_test
 @pytest.mark.envvar(
     {
