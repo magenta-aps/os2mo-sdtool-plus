@@ -9,10 +9,14 @@ from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
 from ._testing__create_engagement import TestingCreateEngagementEngagementCreate
+from ._testing__create_facet import TestingCreateFacet
+from ._testing__create_facet import TestingCreateFacetFacetCreate
 from ._testing__create_manager import TestingCreateManager
 from ._testing__create_manager import TestingCreateManagerManagerCreate
 from ._testing__create_org_unit import TestingCreateOrgUnit
 from ._testing__create_org_unit import TestingCreateOrgUnitOrgUnitCreate
+from ._testing__create_root_org import TestingCreateRootOrg
+from ._testing__create_root_org import TestingCreateRootOrgOrgCreate
 from ._testing__get_org_unit import TestingGetOrgUnit
 from ._testing__get_org_unit import TestingGetOrgUnitOrgUnits
 from ._testing__get_org_unit_address import TestingGetOrgUnitAddress
@@ -111,6 +115,7 @@ from .input_types import EngagementFilter
 from .input_types import EngagementTerminateInput
 from .input_types import EngagementUpdateInput
 from .input_types import EventSendInput
+from .input_types import FacetCreateInput
 from .input_types import FullEventFilter
 from .input_types import LeaveCreateInput
 from .input_types import LeaveFilter
@@ -1302,3 +1307,33 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return TestingUpdateManager.parse_obj(data).manager_update
+
+    async def _testing__create_root_org(
+        self, municipality_code: Union[Optional[int], UnsetType] = UNSET
+    ) -> TestingCreateRootOrgOrgCreate:
+        query = gql("""
+            mutation _Testing_CreateRootOrg($municipality_code: Int) {
+              org_create(input: {municipality_code: $municipality_code}) {
+                uuid
+              }
+            }
+            """)
+        variables: dict[str, object] = {"municipality_code": municipality_code}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TestingCreateRootOrg.parse_obj(data).org_create
+
+    async def _testing__create_facet(
+        self, input: FacetCreateInput
+    ) -> TestingCreateFacetFacetCreate:
+        query = gql("""
+            mutation _Testing_CreateFacet($input: FacetCreateInput!) {
+              facet_create(input: $input) {
+                uuid
+              }
+            }
+            """)
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return TestingCreateFacet.parse_obj(data).facet_create
