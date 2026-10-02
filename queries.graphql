@@ -667,3 +667,15 @@ mutation _Testing_UpdateManager($input: ManagerUpdateInput!) {
     uuid
   }
 }
+
+mutation _Testing_CreateRootOrg($municipality_code: Int) {
+  org_create(input: { municipality_code: $municipality_code }) {
+    uuid
+  }
+}
+
+mutation _Testing_CreateFacet($input: FacetCreateInput!) {
+  facet_create(input: $input) {
+    uuid
+  }
+}
