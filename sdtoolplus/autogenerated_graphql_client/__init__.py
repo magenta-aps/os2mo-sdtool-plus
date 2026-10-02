@@ -2,10 +2,14 @@ from ._testing__create_employee import TestingCreateEmployee
 from ._testing__create_employee import TestingCreateEmployeeEmployeeCreate
 from ._testing__create_engagement import TestingCreateEngagement
 from ._testing__create_engagement import TestingCreateEngagementEngagementCreate
+from ._testing__create_facet import TestingCreateFacet
+from ._testing__create_facet import TestingCreateFacetFacetCreate
 from ._testing__create_manager import TestingCreateManager
 from ._testing__create_manager import TestingCreateManagerManagerCreate
 from ._testing__create_org_unit import TestingCreateOrgUnit
 from ._testing__create_org_unit import TestingCreateOrgUnitOrgUnitCreate
+from ._testing__create_root_org import TestingCreateRootOrg
+from ._testing__create_root_org import TestingCreateRootOrgOrgCreate
 from ._testing__get_org_unit import TestingGetOrgUnit
 from ._testing__get_org_unit import TestingGetOrgUnitOrgUnits
 from ._testing__get_org_unit import TestingGetOrgUnitOrgUnitsObjects
@@ -638,10 +642,14 @@ __all__ = [
     "TestingCreateEmployeeEmployeeCreate",
     "TestingCreateEngagement",
     "TestingCreateEngagementEngagementCreate",
+    "TestingCreateFacet",
+    "TestingCreateFacetFacetCreate",
     "TestingCreateManager",
     "TestingCreateManagerManagerCreate",
     "TestingCreateOrgUnit",
     "TestingCreateOrgUnitOrgUnitCreate",
+    "TestingCreateRootOrg",
+    "TestingCreateRootOrgOrgCreate",
     "TestingGetOrgUnit",
     "TestingGetOrgUnitAddress",
     "TestingGetOrgUnitAddressOrgUnits",
