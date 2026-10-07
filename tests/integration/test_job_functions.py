@@ -635,6 +635,21 @@ async def test_sync_job_positions_force_class_start_date(
         )
     )
 
+    # A class which already matches SD, and is rewinded nonetheless
+    await graphql_client.create_class(
+        ClassCreateInput(
+            facet_uuid=engagement_job_function_uuid,
+            user_key="9001",
+            name="Lægepersonale",
+            scope="0",
+            parent_uuid=None,
+            validity=ValidityInput(
+                from_="2000-01-01T00:00:00+00:00",
+                to=None,
+            ),
+        )
+    )
+
     respx_mock.get(
         "https://service.sd.dk/sdws/GetProfession20080201?InstitutionIdentifier=II"
     ).respond(
