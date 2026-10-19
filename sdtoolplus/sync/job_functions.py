@@ -190,6 +190,13 @@ async def _create_and_update_classes(
     if force_class_start_date is not None:
         class_from = datetime.combine(force_class_start_date, time.min, TIMEZONE)
 
+    # An employment in SD always refers to a profession at level 0, and a class
+    # at this scope is looked up by its user_key alone when syncing engagements,
+    # so there must only ever be one class per key at the scope
+    mo_level_zero_nodes = {
+        node.key: node for node in mo_tree.descendants if node.scope == "0"
+    }
+
     mo_resolver = Resolver(pathattr="path_key", relax=True)
     for sd_node in PreOrderIter(sd_tree):
         if sd_node.is_root:
@@ -208,6 +215,18 @@ async def _create_and_update_classes(
         mo_parent_node = mo_resolver.get(mo_tree, parent_path)
         assert mo_parent_node is not None
 
+        if mo_node is None and sd_node.scope == "0":
+            # The profession is not on this path in MO, but a class with the
+            # key may exist elsewhere in the tree. Reuse it - and thereby its
+            # UUID - rather than creating a second class with the same key
+            mo_node = mo_level_zero_nodes.get(sd_node.key)
+            if mo_node is not None:
+                logger.info(
+                    "Reusing the job function class found elsewhere in MO",
+                    path=path,
+                    class_uuid=str(mo_node.uuid),
+                )
+
         if mo_node is None:
             # Create node in MO
             logger.info("Job function not found in the MO tree", path=path)
@@ -222,16 +241,24 @@ async def _create_and_update_classes(
                 from_date=class_from,
             )
 
-            JobFunctionNode(
+            mo_node = JobFunctionNode(
                 key=sd_node.key,
                 scope=sd_node.scope,
                 name=sd_node.name,
                 uuid=mo_class_uuid,
                 parent=mo_parent_node,
             )
+            if sd_node.scope == "0":
+                # The class must be reused, not created once more, if SD has
+                # the profession elsewhere in the hierarchy as well
+                mo_level_zero_nodes[mo_node.key] = mo_node
             continue
 
-        if sd_node.attributes_equal(mo_node) and force_class_start_date is None:
+        if (
+            sd_node.attributes_equal(mo_node)
+            and mo_node.parent is mo_parent_node
+            and force_class_start_date is None
+        ):
             # Nodes identical
             continue
 
@@ -247,10 +274,12 @@ async def _create_and_update_classes(
             from_date=class_from,
         )
 
-        # The class is already in the MO tree, in the right place, so only the
-        # name has to be brought up to date. The key and the scope make up the
-        # path_key the node was found by, and are therefore identical already.
+        # Bring the node in the MO tree up to date with the class in MO. The
+        # key and the scope are identical already, either because they make up
+        # the path_key the node was found by, or because the class was reused
+        # for the very same key. A reused class moves to the path SD has.
         mo_node.name = sd_node.name
+        mo_node.parent = mo_parent_node
 
 
 async def sync_professions(

@@ -238,20 +238,9 @@ async def test_sync_job_positions(
                 validity=ANY,
             ),
         ),
-        # 95 is at the top of the hierarchy in SD, so a class is created
-        # there. Job function classes are never terminated, so the one below
-        # 9001 is left as it is
-        Class.construct(
-            uuid=ANY,
-            current=ClassCurrent.construct(
-                uuid=ANY,
-                user_key="95",
-                name="3F, SL, FOA",
-                scope="0",
-                parent=None,
-                validity=ANY,
-            ),
-        ),
+        # 95 is at the top of the hierarchy in SD. The class below 9001 is a
+        # level zero class, so it is moved there, keeping its UUID, rather
+        # than a second class with the same user_key being created
         Class.construct(
             uuid=unions_95_0.uuid,
             current=ClassCurrent.construct(
@@ -259,11 +248,7 @@ async def test_sync_job_positions(
                 user_key="95",
                 name="3F, SL, FOA",
                 scope="0",
-                parent=Parent.construct(
-                    uuid=doctors_9001_3.uuid,
-                    user_key="9001",
-                    scope="3",
-                ),
+                parent=None,
                 validity=ANY,
             ),
         ),
@@ -608,7 +593,7 @@ async def test_sync_job_positions_force_class_start_date(
         (await graphql_client.get_facet_uuid("engagement_job_function")).objects
     ).uuid
 
-    doctors_9001_3 = await graphql_client.create_class(
+    await graphql_client.create_class(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
             user_key="9001",
@@ -621,13 +606,13 @@ async def test_sync_job_positions_force_class_start_date(
             ),
         )
     )
-    unions_95_0 = await graphql_client.create_class(
+    old_grouping_9000_3 = await graphql_client.create_class(
         ClassCreateInput(
             facet_uuid=engagement_job_function_uuid,
-            user_key="95",
-            name="3F, SL, FOA",
-            scope="0",
-            parent_uuid=doctors_9001_3.uuid,  # a path SD does not have
+            user_key="9000",
+            name="Gammel gruppering",
+            scope="3",  # a grouping SD does not have at all
+            parent_uuid=None,
             validity=ValidityInput(
                 from_="2000-01-01T00:00:00+00:00",
                 to=None,
@@ -713,9 +698,13 @@ async def test_sync_job_positions_force_class_start_date(
         assert obj.current.validity.from_ is not None
         assert obj.current.validity.from_.date() == date(1930, 1, 1)
 
-    # The class below 9001 is not on a path in SD, so the sync leaves it alone
+    # The grouping is not on a path in SD, so the sync leaves it alone
     untouched = one(
-        (await graphql_client.get_class(ClassFilter(uuids=[unions_95_0.uuid]))).objects
+        (
+            await graphql_client.get_class(
+                ClassFilter(uuids=[old_grouping_9000_3.uuid])
+            )
+        ).objects
     )
     assert untouched.current is not None
     assert untouched.current.validity.from_ is not None
