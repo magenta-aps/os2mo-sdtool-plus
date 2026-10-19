@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 import json
 from datetime import datetime
+from datetime import timedelta
 from uuid import UUID
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -3563,3 +3564,138 @@ async def test_ou_timeline_terminate_unit_no_longer_in_sd(
         OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
     )
     assert updated_unit.objects == []
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "MODE": "region",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+        "APPLY_NY_LOGIC": "false",
+        "MO_SUBTREE_PATHS_FOR_ROOT": '{"II": ["12121212-1212-1212-1212-121212121212", "10000000-0000-0000-0000-000000000000"]}',
+        "PREFIX_ENGAGEMENT_USER_KEYS": "true",
+    }
+)
+async def test_ou_timeline_terminate_future_unit_with_address_no_longer_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    org_unit_type: OrgUnitUUID,
+    org_unit_levels: dict[str, OrgUnitLevelUUID],
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing that a future unit with addresses can be terminated (along with the
+    address) when the unit no longer exists in SD.
+
+    Time  --------now--------t1---------------------------------------------->
+
+    MO (active)              |---------------------name1---------------------
+    MO (postal addr)         |-----------Kung Fu Street 1, 1000, Andeby------
+    SD                       (unit does not exist in SD)
+
+    "Assert"                 (unit and address are terminated in MO)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime.now(tz=tz) + timedelta(days=365)
+
+    unit_uuid = UUID("11111111-1111-1111-1111-111111111111")
+
+    # Create a future unit in MO
+    await graphql_client._testing__create_org_unit(
+        uuid=unit_uuid,
+        name="name1",
+        user_key="II-ABCD",
+        org_unit_type=org_unit_type,
+        org_unit_level=org_unit_levels["NY0-niveau"],
+        from_date=t1,
+        parent=OrgUnitUUID("10000000-0000-0000-0000-000000000000"),
+    )
+
+    # Get the address visibility UUID
+    visibility_class_uuid = one(
+        (
+            await graphql_client.get_class(
+                ClassFilter(
+                    facet=FacetFilter(user_keys=["visibility"]),
+                    user_keys=["Intern"],
+                )
+            )
+        ).objects
+    ).uuid
+
+    # Get the postal address type UUID
+    postal_address_type_uuid = one(
+        (
+            await graphql_client.get_class(
+                ClassFilter(
+                    facet=FacetFilter(user_keys=["org_unit_address_type"]),
+                    user_keys=["AdresseSDOrgUnit"],
+                )
+            )
+        ).objects
+    ).uuid
+
+    # Create a future postal address starting on the same date as the unit
+    postal_address = await graphql_client.create_address(
+        AddressCreateInput(
+            org_unit=unit_uuid,
+            visibility=visibility_class_uuid,
+            validity=timeline_interval_to_mo_validity(t1, POSITIVE_INFINITY),
+            user_key="Kung Fu Street 1, 1000, Andeby",
+            value="Kung Fu Street 1, 1000, Andeby",
+            address_type=postal_address_type_uuid,
+        )
+    )
+    postal_address_uuid = postal_address.uuid
+
+    # The SD GetDepartment endpoint responds with a "department not found" fault
+    sd_dep_resp = """<?xml version="1.0" encoding="UTF-8"?>
+        <Envelope>
+          <Body>
+            <Fault>
+              <faultcode>soapenv:soapenvClient.ParameterError</faultcode>
+              <faultstring>DepartmentUUIDIdentifier was not found.</faultstring>
+              <faultactor>dk.eg.sd.loen.webservices.web.sdws.BusinessHandler.qm.GetDepartment20111201BO</faultactor>
+              <detail>
+                <string>Missing or invalid parameter from client: "DepartmentUUIDIdentifier was not found."</string>
+              </detail>
+            </Fault>
+          </Body>
+        </Envelope>
+    """
+
+    respx_mock.get(
+        f"https://service.sd.dk/sdws/GetDepartment20111201?InstitutionIdentifier=II&DepartmentUUIDIdentifier={str(unit_uuid)}&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&ContactInformationIndicator=True&DepartmentNameIndicator=True&PostalAddressIndicator=True&ProductionUnitIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_dep_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/org",
+        json={
+            "subject": json.dumps(
+                {"institution_identifier": "II", "org_unit": str(unit_uuid)}
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    # The unit is terminated, i.e. it no longer has any validities
+    updated_unit = await graphql_client.get_org_unit_timeline(
+        OrganisationUnitFilter(uuids=[unit_uuid], from_date=None, to_date=None)
+    )
+    assert updated_unit.objects == []
+
+    # The address is terminated, i.e. it no longer has any validities
+    updated_postal_address = await graphql_client.get_address_timeline(
+        AddressFilter(uuids=[postal_address_uuid], from_date=None, to_date=None)
+    )
+    assert updated_postal_address.objects == []
