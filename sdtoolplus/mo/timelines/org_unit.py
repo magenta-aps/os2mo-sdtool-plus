@@ -567,8 +567,7 @@ async def terminate_ou(
             from_date=mo_validity.from_,
             to_date=mo_validity.to,
         ),
-        # The nested addresses are only fetched at the current date unless we
-        # provide a date interval (which would leave out e.g. future addresses)
+        # Provide a date interval to fetch the all addresses, not just the current.
         addr_from_date=mo_validity.from_,
         addr_to_date=mo_validity.to,
     )
