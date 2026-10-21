@@ -566,18 +566,26 @@ async def terminate_ou(
             uuids=[org_unit],
             from_date=mo_validity.from_,
             to_date=mo_validity.to,
-        )
+        ),
+        # Provide a date interval to fetch the all addresses, not just the current.
+        addr_from_date=mo_validity.from_,
+        addr_to_date=mo_validity.to,
     )
+    # The same address can occur in several of the unit validities
+    address_uuids = {
+        address.uuid
+        for validity in one(mo_unit.objects).validities
+        for address in validity.addresses
+    }
 
     if mo_validity.to is not None:
         addr_term_payloads = [
             AddressTerminateInput(
-                uuid=address.uuid,
+                uuid=address_uuid,
                 from_=mo_validity.from_,
                 to=mo_validity.to,
             )
-            for validity in one(mo_unit.objects).validities
-            for address in validity.addresses
+            for address_uuid in address_uuids
         ]
         payload = OrganisationUnitTerminateInput(
             uuid=org_unit,
@@ -587,13 +595,12 @@ async def terminate_ou(
     else:
         addr_term_payloads = [
             AddressTerminateInput(
-                uuid=address.uuid,
+                uuid=address_uuid,
                 # Converting from "from" to "to" due to the wierd way terminations in MO
                 # work
                 to=mo_validity.from_ - timedelta(days=1),
             )
-            for validity in one(mo_unit.objects).validities
-            for address in validity.addresses
+            for address_uuid in address_uuids
         ]
         payload = OrganisationUnitTerminateInput(
             uuid=org_unit,

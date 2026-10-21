@@ -419,10 +419,13 @@ class GraphQLClient(AsyncBaseClient):
         return GetUnit.parse_obj(data).org_units
 
     async def get_org_unit_timeline(
-        self, filter: OrganisationUnitFilter
+        self,
+        filter: OrganisationUnitFilter,
+        addr_from_date: Union[Optional[datetime], UnsetType] = UNSET,
+        addr_to_date: Union[Optional[datetime], UnsetType] = UNSET,
     ) -> GetOrgUnitTimelineOrgUnits:
         query = gql("""
-            query GetOrgUnitTimeline($filter: OrganisationUnitFilter!) {
+            query GetOrgUnitTimeline($filter: OrganisationUnitFilter!, $addr_from_date: DateTime, $addr_to_date: DateTime) {
               org_units(filter: $filter) {
                 objects {
                   validities {
@@ -440,7 +443,7 @@ class GraphQLClient(AsyncBaseClient):
                     org_unit_hierarchy
                     time_planning_uuid
                     parent_uuid
-                    addresses {
+                    addresses(filter: {from_date: $addr_from_date, to_date: $addr_to_date}) {
                       uuid
                       name
                       user_key
@@ -458,7 +461,11 @@ class GraphQLClient(AsyncBaseClient):
               }
             }
             """)
-        variables: dict[str, object] = {"filter": filter}
+        variables: dict[str, object] = {
+            "filter": filter,
+            "addr_from_date": addr_from_date,
+            "addr_to_date": addr_to_date,
+        }
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return GetOrgUnitTimeline.parse_obj(data).org_units

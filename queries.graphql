@@ -152,7 +152,11 @@ query GetUnit($uuid: UUID!) {
   }
 }
 
-query GetOrgUnitTimeline($filter: OrganisationUnitFilter!) {
+query GetOrgUnitTimeline(
+  $filter: OrganisationUnitFilter!
+  $addr_from_date: DateTime
+  $addr_to_date: DateTime
+) {
   org_units(filter: $filter) {
     objects {
       validities {
@@ -170,7 +174,7 @@ query GetOrgUnitTimeline($filter: OrganisationUnitFilter!) {
         org_unit_hierarchy
         time_planning_uuid
         parent_uuid
-        addresses {
+        addresses(filter: { from_date: $addr_from_date, to_date: $addr_to_date }) {
           uuid
           name
           user_key
