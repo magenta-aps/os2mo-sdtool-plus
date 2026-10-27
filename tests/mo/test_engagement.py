@@ -51,6 +51,7 @@ def test__is_active_in_entire_interval_returns_false_when_intervals_too_long(
             engagement_type_uuid=ENGAGEMENT_TYPE_UUID,
             job_function_uuid=JOB_FUNCTION_UUID,
             primary_uuid=None,
+            explicit_manager=None,
         )
     ]
 
@@ -71,6 +72,7 @@ def test__is_active_in_entire_interval_returns_false_for_multiple_active_interva
             engagement_type_uuid=ENGAGEMENT_TYPE_UUID,
             job_function_uuid=JOB_FUNCTION_UUID,
             primary_uuid=None,
+            explicit_manager=None,
         ),
         GetEngagementTimelineEngagementsObjectsValidities(
             user_key="II-12345",
@@ -82,6 +84,7 @@ def test__is_active_in_entire_interval_returns_false_for_multiple_active_interva
             engagement_type_uuid=ENGAGEMENT_TYPE_UUID,
             job_function_uuid=JOB_FUNCTION_UUID,
             primary_uuid=None,
+            explicit_manager=None,
         ),
     ]
 
