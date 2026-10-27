@@ -12,8 +12,12 @@ from .base_model import UNSET
 from .base_model import BaseModel
 from .base_model import UnsetType
 from .enums import AccessLogModel
+from .enums import Collection
 from .enums import FileStore
+from .enums import GraphQLVersion
+from .enums import Mutator
 from .enums import OwnerInferencePriority
+from .enums import PolicySelectorKind
 
 
 class AccessLogFilter(BaseModel):
@@ -23,6 +27,10 @@ class AccessLogFilter(BaseModel):
     models: Optional[List[AccessLogModel]] = None
     start: Optional[datetime] = None
     end: Optional[datetime] = None
+
+
+class ActorFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
 
 
 class AddressCreateInput(BaseModel):
@@ -140,6 +148,10 @@ class AssociationUpdateInput(BaseModel):
     association_type: Optional[UUID] = None
 
 
+class CPRFilter(BaseModel):
+    cpr_number: str
+
+
 class ClassCreateInput(BaseModel):
     uuid: Optional[UUID] = None
     name: str
@@ -192,6 +204,7 @@ class ClassOwnerFilter(BaseModel):
     descendant: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     engagement: Optional["EngagementFilter"] = None
+    owner: Optional["OwnerFilter"] = None
     include_none: bool = False
 
 
@@ -231,13 +244,106 @@ class DescendantParentBoundOrganisationUnitFilter(BaseModel):
     registration: Optional["OrganisationUnitRegistrationFilter"] = None
     query: Optional[str] | UnsetType = UNSET
     names: Optional[List[str]] | UnsetType = UNSET
-    parents: Optional[List[UUID]] | UnsetType = UNSET
     child: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     hierarchy: Optional["ClassFilter"] = None
     hierarchies: Optional[List[UUID]] = None
-    subtree: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     engagement: Optional["EngagementFilter"] = None
+    owner: Optional["OwnerFilter"] = None
+
+
+class EmployeeBoundAddressFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["AddressRegistrationFilter"] = None
+    address_type: Optional["ClassFilter"] = None
+    address_types: Optional[List[UUID]] = None
+    address_type_user_keys: Optional[List[str]] = None
+    engagement: Optional["EngagementFilter"] = None
+    engagements: Optional[List[UUID]] = None
+    ituser: Optional["ITUserFilter"] = None
+    visibility: Optional["ClassFilter"] = None
+
+
+class EmployeeBoundAssociationFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["AssociationRegistrationFilter"] = None
+    association_type: Optional["ClassFilter"] = None
+    association_types: Optional[List[UUID]] = None
+    association_type_user_keys: Optional[List[str]] = None
+    it_association: Optional[bool] = None
+
+
+class EmployeeBoundEngagementFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["EngagementRegistrationFilter"] = None
+    job_function: Optional["ClassFilter"] = None
+    engagement_type: Optional["ClassFilter"] = None
+    explicit_manager: Optional["ManagerFilter"] | UnsetType = UNSET
+    ituser: Optional["ITUserFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
+
+
+class EmployeeBoundITUserFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["ITUserRegistrationFilter"] = None
+    itsystem: Optional["ITSystemFilter"] = None
+    itsystem_uuids: Optional[List[UUID]] = None
+    engagement: Optional["EngagementFilter"] = None
+    rolebinding: Optional["RoleBindingFilter"] | UnsetType = UNSET
+    external_ids: Optional[List[str]] | UnsetType = UNSET
+    binding_types: Optional[List[str]] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
+
+
+class EmployeeBoundLeaveFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["LeaveRegistrationFilter"] = None
+
+
+class EmployeeBoundManagerFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
+    registration: Optional["ManagerRegistrationFilter"] = None
+    engagement: Optional["EngagementFilter"] = None
+    responsibility: Optional["ClassFilter"] = None
+    manager_type: Optional["ClassFilter"] = None
+    exclude: Optional["EmployeeFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class EmployeeCreateInput(BaseModel):
@@ -260,6 +366,8 @@ class EmployeeFilter(BaseModel):
     registration: Optional["EmployeeRegistrationFilter"] = None
     query: Optional[str] | UnsetType = UNSET
     cpr_numbers: Optional[List[CPRNumber]] = None
+    owner: Optional["OwnerFilter"] = None
+    ituser: Optional["ITUserFilter"] | UnsetType = UNSET
 
 
 class EmployeeRegistrationFilter(BaseModel):
@@ -287,113 +395,41 @@ class EmployeeUpdateInput(BaseModel):
     validity: "RAValidityInput"
 
 
-class EmployeesBoundAddressFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+class EngagementBoundAddressFilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["AddressRegistrationFilter"] = None
     address_type: Optional["ClassFilter"] = None
     address_types: Optional[List[UUID]] = None
     address_type_user_keys: Optional[List[str]] = None
-    engagement: Optional["EngagementFilter"] = None
-    engagements: Optional[List[UUID]] = None
     ituser: Optional["ITUserFilter"] = None
     visibility: Optional["ClassFilter"] = None
 
 
-class EmployeesBoundAssociationFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["AssociationRegistrationFilter"] = None
-    association_type: Optional["ClassFilter"] = None
-    association_types: Optional[List[UUID]] = None
-    association_type_user_keys: Optional[List[str]] = None
-    it_association: Optional[bool] = None
-
-
-class EmployeesBoundEngagementFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["EngagementRegistrationFilter"] = None
-    job_function: Optional["ClassFilter"] = None
-    engagement_type: Optional["ClassFilter"] = None
-
-
-class EmployeesBoundITUserFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["ITUserRegistrationFilter"] = None
-    itsystem: Optional["ITSystemFilter"] = None
-    itsystem_uuids: Optional[List[UUID]] = None
-    engagement: Optional["EngagementFilter"] = None
-    external_ids: Optional[List[str]] = None
-
-
-class EmployeesBoundLeaveFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["LeaveRegistrationFilter"] = None
-
-
-class EmployeesBoundManagerFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["ManagerRegistrationFilter"] = None
-    engagement: Optional["EngagementFilter"] = None
-    responsibility: Optional["ClassFilter"] = None
-    manager_type: Optional["ClassFilter"] = None
-    exclude: Optional["EmployeeFilter"] = None
-
-
 class EngagementBoundITUserFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
     employee: Optional["EmployeeFilter"] | UnsetType = UNSET
     employees: Optional[List[UUID]] = None
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["ITUserRegistrationFilter"] = None
     itsystem: Optional["ITSystemFilter"] = None
     itsystem_uuids: Optional[List[UUID]] = None
-    external_ids: Optional[List[str]] = None
+    rolebinding: Optional["RoleBindingFilter"] | UnsetType = UNSET
+    external_ids: Optional[List[str]] | UnsetType = UNSET
+    binding_types: Optional[List[str]] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class EngagementCreateInput(BaseModel):
@@ -412,6 +448,7 @@ class EngagementCreateInput(BaseModel):
     extension_8: Optional[str] = None
     extension_9: Optional[str] = None
     extension_10: Optional[str] = None
+    explicit_manager: Optional[UUID] = None
     employee: Optional[UUID] = None
     person: Optional[UUID] = None
     org_unit: UUID
@@ -432,6 +469,9 @@ class EngagementFilter(BaseModel):
     registration: Optional["EngagementRegistrationFilter"] = None
     job_function: Optional["ClassFilter"] = None
     engagement_type: Optional["ClassFilter"] = None
+    explicit_manager: Optional["ManagerFilter"] | UnsetType = UNSET
+    ituser: Optional["ITUserFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class EngagementRegistrationFilter(BaseModel):
@@ -448,9 +488,9 @@ class EngagementTerminateInput(BaseModel):
 
 class EngagementUpdateInput(BaseModel):
     uuid: UUID
+    validity: "RAValidityInput"
     user_key: Optional[str] = None
     primary: Optional[UUID] = None
-    validity: "RAValidityInput"
     fraction: Optional[int] = None
     extension_1: Optional[str] = None
     extension_2: Optional[str] = None
@@ -467,14 +507,27 @@ class EngagementUpdateInput(BaseModel):
     org_unit: Optional[UUID] = None
     engagement_type: Optional[UUID] = None
     job_function: Optional[UUID] = None
+    explicit_manager: Optional[UUID] | UnsetType = UNSET
 
 
 class EventAcknowledgeInput(BaseModel):
     token: Any
 
 
+class EventCreatedAtFilter(BaseModel):
+    start: Optional[datetime] = None
+    end: Optional[datetime] = None
+
+
 class EventFilter(BaseModel):
     listener: UUID
+
+
+class EventRerunInput(BaseModel):
+    listeners: Optional["ListenerFilter"] = None
+    subjects: Optional[List[str]] = None
+    priorities: Optional[List[int]] = None
+    silenced: Optional[bool] = None
 
 
 class EventSendInput(BaseModel):
@@ -493,6 +546,22 @@ class EventUnsilenceInput(BaseModel):
     listeners: Optional["ListenerFilter"] = None
     subjects: Optional[List[str]] = None
     priorities: Optional[List[int]] = None
+
+
+class FacetBoundClassFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    registration: Optional["ClassRegistrationFilter"] = None
+    name: Optional[List[str]] = None
+    parent: Optional["ClassFilter"] = None
+    parents: Optional[List[UUID]] = None
+    parent_user_keys: Optional[List[str]] = None
+    it_system: Optional["ITSystemFilter"] = None
+    owner: Optional["ClassOwnerFilter"] = None
+    scope: Optional[List[str]] = None
 
 
 class FacetCreateInput(BaseModel):
@@ -533,27 +602,10 @@ class FacetUpdateInput(BaseModel):
     validity: "ValidityInput"
 
 
-class FacetsBoundClassFilter(BaseModel):
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["ClassRegistrationFilter"] = None
-    name: Optional[List[str]] = None
-    facet: Optional["FacetFilter"] = None
-    facet_user_keys: Optional[List[str]] = None
-    parent: Optional["ClassFilter"] = None
-    parents: Optional[List[UUID]] = None
-    parent_user_keys: Optional[List[str]] = None
-    it_system: Optional["ITSystemFilter"] = None
-    owner: Optional["ClassOwnerFilter"] = None
-    scope: Optional[List[str]] = None
-
-
 class FileFilter(BaseModel):
     file_store: FileStore
     file_names: Optional[List[str]] = None
+    file_name_contains: Optional[str] = None
 
 
 class FullEventFilter(BaseModel):
@@ -561,6 +613,7 @@ class FullEventFilter(BaseModel):
     subjects: Optional[List[str]] = None
     priorities: Optional[List[int]] = None
     silenced: Optional[bool] = None
+    created_at: Optional["EventCreatedAtFilter"] = None
 
 
 class HealthFilter(BaseModel):
@@ -632,6 +685,7 @@ class ITSystemUpdateInput(BaseModel):
 class ITUserCreateInput(BaseModel):
     uuid: Optional[UUID] = None
     external_id: Optional[str] = None
+    binding_type: Optional[str] = None
     primary: Optional[UUID] = None
     person: Optional[UUID] = None
     org_unit: Optional[UUID] = None
@@ -657,7 +711,10 @@ class ITUserFilter(BaseModel):
     itsystem: Optional["ITSystemFilter"] = None
     itsystem_uuids: Optional[List[UUID]] = None
     engagement: Optional["EngagementFilter"] = None
-    external_ids: Optional[List[str]] = None
+    rolebinding: Optional["RoleBindingFilter"] | UnsetType = UNSET
+    external_ids: Optional[List[str]] | UnsetType = UNSET
+    binding_types: Optional[List[str]] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class ITUserRegistrationFilter(BaseModel):
@@ -675,6 +732,7 @@ class ITUserTerminateInput(BaseModel):
 class ITUserUpdateInput(BaseModel):
     uuid: UUID
     external_id: Optional[str] = None
+    binding_type: Optional[str] = None
     primary: Optional[UUID] = None
     person: Optional[UUID] = None
     org_unit: Optional[UUID] = None
@@ -705,15 +763,15 @@ class ItSystemboundclassfilter(BaseModel):
 
 
 class ItuserBoundAddressFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["AddressRegistrationFilter"] = None
     address_type: Optional["ClassFilter"] = None
     address_types: Optional[List[UUID]] = None
@@ -724,13 +782,13 @@ class ItuserBoundAddressFilter(BaseModel):
 
 
 class ItuserBoundRoleBindingFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["RoleRegistrationFilter"] = None
     role: Optional["ClassFilter"] = None
 
@@ -842,6 +900,7 @@ class ListenersBoundFullEventFilter(BaseModel):
     subjects: Optional[List[str]] = None
     priorities: Optional[List[int]] = None
     silenced: Optional[bool] = None
+    created_at: Optional["EventCreatedAtFilter"] = None
 
 
 class ManagerCreateInput(BaseModel):
@@ -853,6 +912,7 @@ class ManagerCreateInput(BaseModel):
     org_unit: UUID
     manager_level: UUID
     manager_type: UUID
+    primary: Optional[UUID] = None
     validity: "RAValidityInput"
 
 
@@ -871,6 +931,7 @@ class ManagerFilter(BaseModel):
     responsibility: Optional["ClassFilter"] = None
     manager_type: Optional["ClassFilter"] = None
     exclude: Optional["EmployeeFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class ManagerRegistrationFilter(BaseModel):
@@ -895,6 +956,7 @@ class ManagerUpdateInput(BaseModel):
     org_unit: Optional[UUID] = None
     manager_type: Optional[UUID] = None
     manager_level: Optional[UUID] = None
+    primary: Optional[UUID] | UnsetType = UNSET
 
 
 class ModelsUuidsBoundRegistrationFilter(BaseModel):
@@ -925,15 +987,14 @@ class NamespacesBoundListenerFilter(BaseModel):
     routing_keys: Optional[List[str]] = None
 
 
-class OrgUnitsboundaddressfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundaddressfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["AddressRegistrationFilter"] = None
     address_type: Optional["ClassFilter"] = None
     address_types: Optional[List[UUID]] = None
@@ -944,15 +1005,14 @@ class OrgUnitsboundaddressfilter(BaseModel):
     visibility: Optional["ClassFilter"] = None
 
 
-class OrgUnitsboundassociationfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundassociationfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["AssociationRegistrationFilter"] = None
     association_type: Optional["ClassFilter"] = None
     association_types: Optional[List[UUID]] = None
@@ -960,38 +1020,41 @@ class OrgUnitsboundassociationfilter(BaseModel):
     it_association: Optional[bool] = None
 
 
-class OrgUnitsboundengagementfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundengagementfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["EngagementRegistrationFilter"] = None
     job_function: Optional["ClassFilter"] = None
     engagement_type: Optional["ClassFilter"] = None
+    explicit_manager: Optional["ManagerFilter"] | UnsetType = UNSET
+    ituser: Optional["ITUserFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
-class OrgUnitsboundituserfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundituserfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["ITUserRegistrationFilter"] = None
     itsystem: Optional["ITSystemFilter"] = None
     itsystem_uuids: Optional[List[UUID]] = None
     engagement: Optional["EngagementFilter"] = None
-    external_ids: Optional[List[str]] = None
+    rolebinding: Optional["RoleBindingFilter"] | UnsetType = UNSET
+    external_ids: Optional[List[str]] | UnsetType = UNSET
+    binding_types: Optional[List[str]] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
-class OrgUnitsboundklefilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
+class OrgUnitboundklefilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
@@ -1000,36 +1063,45 @@ class OrgUnitsboundklefilter(BaseModel):
     registration: Optional["KLERegistrationFilter"] = None
 
 
-class OrgUnitsboundleavefilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundleavefilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["LeaveRegistrationFilter"] = None
 
 
-class OrgUnitsboundmanagerfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
+class OrgUnitboundmanagerfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
     registration: Optional["ManagerRegistrationFilter"] = None
     engagement: Optional["EngagementFilter"] = None
     responsibility: Optional["ClassFilter"] = None
     manager_type: Optional["ClassFilter"] = None
     exclude: Optional["EmployeeFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
-class OrgUnitsboundrelatedunitfilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
+class OrgUnitboundownerfilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    owner: Optional["EmployeeFilter"] = None
+
+
+class OrgUnitboundrelatedunitfilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
@@ -1071,6 +1143,7 @@ class OrganisationUnitFilter(BaseModel):
     descendant: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     engagement: Optional["EngagementFilter"] = None
+    owner: Optional["OwnerFilter"] = None
 
 
 class OrganisationUnitRegistrationFilter(BaseModel):
@@ -1148,26 +1221,7 @@ class OwnersBoundNamespaceFilter(BaseModel):
     public: Optional[bool] = None
 
 
-class ParentBoundOrganisationUnitFilter(BaseModel):
-    uuids: Optional[List[UUID]] = None
-    user_keys: Optional[List[str]] = None
-    from_date: Optional[datetime] | UnsetType = UNSET
-    to_date: Optional[datetime] | UnsetType = UNSET
-    registration_time: Optional[datetime] = None
-    registration: Optional["OrganisationUnitRegistrationFilter"] = None
-    query: Optional[str] | UnsetType = UNSET
-    names: Optional[List[str]] | UnsetType = UNSET
-    parents: Optional[List[UUID]] | UnsetType = UNSET
-    child: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
-    hierarchy: Optional["ClassFilter"] = None
-    hierarchies: Optional[List[UUID]] = None
-    subtree: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
-    descendant: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
-    ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
-    engagement: Optional["EngagementFilter"] = None
-
-
-class ParentsBoundClassFilter(BaseModel):
+class ParentBoundClassFilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
@@ -1178,22 +1232,71 @@ class ParentsBoundClassFilter(BaseModel):
     facet: Optional["FacetFilter"] = None
     facets: Optional[List[UUID]] = None
     facet_user_keys: Optional[List[str]] = None
-    parent: Optional["ClassFilter"] = None
-    parent_user_keys: Optional[List[str]] = None
     it_system: Optional["ITSystemFilter"] = None
     owner: Optional["ClassOwnerFilter"] = None
     scope: Optional[List[str]] = None
 
 
-class ParentsBoundFacetFilter(BaseModel):
+class ParentBoundFacetFilter(BaseModel):
     uuids: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
     registration: Optional["FacetRegistrationFilter"] = None
-    parent: Optional["FacetFilter"] = None
-    parent_user_keys: Optional[List[str]] = None
+
+
+class ParentBoundOrganisationUnitFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    user_keys: Optional[List[str]] = None
+    from_date: Optional[datetime] | UnsetType = UNSET
+    to_date: Optional[datetime] | UnsetType = UNSET
+    registration_time: Optional[datetime] = None
+    registration: Optional["OrganisationUnitRegistrationFilter"] = None
+    query: Optional[str] | UnsetType = UNSET
+    names: Optional[List[str]] | UnsetType = UNSET
+    child: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
+    hierarchy: Optional["ClassFilter"] = None
+    hierarchies: Optional[List[UUID]] = None
+    subtree: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
+    descendant: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
+    ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
+    engagement: Optional["EngagementFilter"] = None
+    owner: Optional["OwnerFilter"] = None
+
+
+class PolicyFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    names: Optional[List[str]] = None
+    selectors: Optional[List["PolicySelectorInput"]] = None
+    active: Optional[bool] = None
+
+
+class PolicyReadRuleInput(BaseModel):
+    collection: Collection
+    fields: List[str]
+    condition: Any = "true"
+    graphql_version: GraphQLVersion
+
+
+class PolicySelectorInput(BaseModel):
+    kind: PolicySelectorKind
+    value: str
+
+
+class PolicyStateInput(BaseModel):
+    name: str
+    selectors: List["PolicySelectorInput"]
+    description: str = ""
+    active: bool = True
+    read_rules: List["PolicyReadRuleInput"] = Field(default_factory=lambda: [])
+    write_rules: List["PolicyWriteRuleInput"] = Field(default_factory=lambda: [])
+
+
+class PolicyWriteRuleInput(BaseModel):
+    mutator: Mutator
+    condition: Any = "true"
+    graphql_version: GraphQLVersion
 
 
 class RAOpenValidityInput(BaseModel):
@@ -1274,6 +1377,32 @@ class RoleRegistrationFilter(BaseModel):
     end: Optional[datetime] = None
 
 
+class RolebindingRuleCreateInput(BaseModel):
+    name: str
+    role: UUID
+    expression: Any
+    active: bool = True
+
+
+class RolebindingRuleDeleteInput(BaseModel):
+    uuid: UUID
+
+
+class RolebindingRuleFilter(BaseModel):
+    uuids: Optional[List[UUID]] = None
+    names: Optional[List[str]] = None
+    roles: Optional[List[UUID]] = None
+    active: Optional[bool] = None
+
+
+class RolebindingRuleUpdateInput(BaseModel):
+    uuid: UUID
+    name: Optional[str] | UnsetType = UNSET
+    role: Optional[UUID] | UnsetType = UNSET
+    expression: Optional[Any] | UnsetType = UNSET
+    active: Optional[bool] | UnsetType = UNSET
+
+
 class UuidsBoundClassFilter(BaseModel):
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
@@ -1300,20 +1429,25 @@ class UuidsBoundEmployeeFilter(BaseModel):
     registration: Optional["EmployeeRegistrationFilter"] = None
     query: Optional[str] | UnsetType = UNSET
     cpr_numbers: Optional[List[CPRNumber]] = None
+    owner: Optional["OwnerFilter"] = None
+    ituser: Optional["ITUserFilter"] | UnsetType = UNSET
 
 
 class UuidsBoundEngagementFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["EngagementRegistrationFilter"] = None
     job_function: Optional["ClassFilter"] = None
     engagement_type: Optional["ClassFilter"] = None
+    explicit_manager: Optional["ManagerFilter"] | UnsetType = UNSET
+    ituser: Optional["ITUserFilter"] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class UuidsBoundFacetFilter(BaseModel):
@@ -1336,30 +1470,33 @@ class UuidsBoundITSystemFilter(BaseModel):
 
 
 class UuidsBoundITUserFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["ITUserRegistrationFilter"] = None
     itsystem: Optional["ITSystemFilter"] = None
     itsystem_uuids: Optional[List[UUID]] = None
     engagement: Optional["EngagementFilter"] = None
-    external_ids: Optional[List[str]] = None
+    rolebinding: Optional["RoleBindingFilter"] | UnsetType = UNSET
+    external_ids: Optional[List[str]] | UnsetType = UNSET
+    binding_types: Optional[List[str]] = None
+    primary: Optional["ClassFilter"] | UnsetType = UNSET
 
 
 class UuidsBoundLeaveFilter(BaseModel):
-    org_unit: Optional["OrganisationUnitFilter"] = None
-    org_units: Optional[List[UUID]] = None
-    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
-    employees: Optional[List[UUID]] = None
     user_keys: Optional[List[str]] = None
     from_date: Optional[datetime] | UnsetType = UNSET
     to_date: Optional[datetime] | UnsetType = UNSET
     registration_time: Optional[datetime] = None
+    employee: Optional["EmployeeFilter"] | UnsetType = UNSET
+    employees: Optional[List[UUID]] = None
+    org_unit: Optional["OrganisationUnitFilter"] = None
+    org_units: Optional[List[UUID]] = None
     registration: Optional["LeaveRegistrationFilter"] = None
 
 
@@ -1380,6 +1517,7 @@ class UuidsBoundOrganisationUnitFilter(BaseModel):
     descendant: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     ancestor: Optional["OrganisationUnitFilter"] | UnsetType = UNSET
     engagement: Optional["EngagementFilter"] = None
+    owner: Optional["OwnerFilter"] = None
 
 
 class ValidityInput(BaseModel):
@@ -1388,6 +1526,7 @@ class ValidityInput(BaseModel):
 
 
 AccessLogFilter.update_forward_refs()
+ActorFilter.update_forward_refs()
 AddressCreateInput.update_forward_refs()
 AddressFilter.update_forward_refs()
 AddressRegistrationFilter.update_forward_refs()
@@ -1398,6 +1537,7 @@ AssociationFilter.update_forward_refs()
 AssociationRegistrationFilter.update_forward_refs()
 AssociationTerminateInput.update_forward_refs()
 AssociationUpdateInput.update_forward_refs()
+CPRFilter.update_forward_refs()
 ClassCreateInput.update_forward_refs()
 ClassFilter.update_forward_refs()
 ClassOwnerFilter.update_forward_refs()
@@ -1405,17 +1545,18 @@ ClassRegistrationFilter.update_forward_refs()
 ClassTerminateInput.update_forward_refs()
 ClassUpdateInput.update_forward_refs()
 DescendantParentBoundOrganisationUnitFilter.update_forward_refs()
+EmployeeBoundAddressFilter.update_forward_refs()
+EmployeeBoundAssociationFilter.update_forward_refs()
+EmployeeBoundEngagementFilter.update_forward_refs()
+EmployeeBoundITUserFilter.update_forward_refs()
+EmployeeBoundLeaveFilter.update_forward_refs()
+EmployeeBoundManagerFilter.update_forward_refs()
 EmployeeCreateInput.update_forward_refs()
 EmployeeFilter.update_forward_refs()
 EmployeeRegistrationFilter.update_forward_refs()
 EmployeeTerminateInput.update_forward_refs()
 EmployeeUpdateInput.update_forward_refs()
-EmployeesBoundAddressFilter.update_forward_refs()
-EmployeesBoundAssociationFilter.update_forward_refs()
-EmployeesBoundEngagementFilter.update_forward_refs()
-EmployeesBoundITUserFilter.update_forward_refs()
-EmployeesBoundLeaveFilter.update_forward_refs()
-EmployeesBoundManagerFilter.update_forward_refs()
+EngagementBoundAddressFilter.update_forward_refs()
 EngagementBoundITUserFilter.update_forward_refs()
 EngagementCreateInput.update_forward_refs()
 EngagementFilter.update_forward_refs()
@@ -1423,16 +1564,18 @@ EngagementRegistrationFilter.update_forward_refs()
 EngagementTerminateInput.update_forward_refs()
 EngagementUpdateInput.update_forward_refs()
 EventAcknowledgeInput.update_forward_refs()
+EventCreatedAtFilter.update_forward_refs()
 EventFilter.update_forward_refs()
+EventRerunInput.update_forward_refs()
 EventSendInput.update_forward_refs()
 EventSilenceInput.update_forward_refs()
 EventUnsilenceInput.update_forward_refs()
+FacetBoundClassFilter.update_forward_refs()
 FacetCreateInput.update_forward_refs()
 FacetFilter.update_forward_refs()
 FacetRegistrationFilter.update_forward_refs()
 FacetTerminateInput.update_forward_refs()
 FacetUpdateInput.update_forward_refs()
-FacetsBoundClassFilter.update_forward_refs()
 FileFilter.update_forward_refs()
 FullEventFilter.update_forward_refs()
 HealthFilter.update_forward_refs()
@@ -1476,14 +1619,15 @@ NamespaceCreateInput.update_forward_refs()
 NamespaceDeleteInput.update_forward_refs()
 NamespaceFilter.update_forward_refs()
 NamespacesBoundListenerFilter.update_forward_refs()
-OrgUnitsboundaddressfilter.update_forward_refs()
-OrgUnitsboundassociationfilter.update_forward_refs()
-OrgUnitsboundengagementfilter.update_forward_refs()
-OrgUnitsboundituserfilter.update_forward_refs()
-OrgUnitsboundklefilter.update_forward_refs()
-OrgUnitsboundleavefilter.update_forward_refs()
-OrgUnitsboundmanagerfilter.update_forward_refs()
-OrgUnitsboundrelatedunitfilter.update_forward_refs()
+OrgUnitboundaddressfilter.update_forward_refs()
+OrgUnitboundassociationfilter.update_forward_refs()
+OrgUnitboundengagementfilter.update_forward_refs()
+OrgUnitboundituserfilter.update_forward_refs()
+OrgUnitboundklefilter.update_forward_refs()
+OrgUnitboundleavefilter.update_forward_refs()
+OrgUnitboundmanagerfilter.update_forward_refs()
+OrgUnitboundownerfilter.update_forward_refs()
+OrgUnitboundrelatedunitfilter.update_forward_refs()
 OrganisationCreate.update_forward_refs()
 OrganisationUnitCreateInput.update_forward_refs()
 OrganisationUnitFilter.update_forward_refs()
@@ -1496,9 +1640,14 @@ OwnerTerminateInput.update_forward_refs()
 OwnerUpdateInput.update_forward_refs()
 OwnersBoundListenerFilter.update_forward_refs()
 OwnersBoundNamespaceFilter.update_forward_refs()
+ParentBoundClassFilter.update_forward_refs()
+ParentBoundFacetFilter.update_forward_refs()
 ParentBoundOrganisationUnitFilter.update_forward_refs()
-ParentsBoundClassFilter.update_forward_refs()
-ParentsBoundFacetFilter.update_forward_refs()
+PolicyFilter.update_forward_refs()
+PolicyReadRuleInput.update_forward_refs()
+PolicySelectorInput.update_forward_refs()
+PolicyStateInput.update_forward_refs()
+PolicyWriteRuleInput.update_forward_refs()
 RAOpenValidityInput.update_forward_refs()
 RAValidityInput.update_forward_refs()
 RegistrationFilter.update_forward_refs()
@@ -1509,6 +1658,10 @@ RoleBindingFilter.update_forward_refs()
 RoleBindingTerminateInput.update_forward_refs()
 RoleBindingUpdateInput.update_forward_refs()
 RoleRegistrationFilter.update_forward_refs()
+RolebindingRuleCreateInput.update_forward_refs()
+RolebindingRuleDeleteInput.update_forward_refs()
+RolebindingRuleFilter.update_forward_refs()
+RolebindingRuleUpdateInput.update_forward_refs()
 UuidsBoundClassFilter.update_forward_refs()
 UuidsBoundEmployeeFilter.update_forward_refs()
 UuidsBoundEngagementFilter.update_forward_refs()

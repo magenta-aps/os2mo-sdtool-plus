@@ -39,6 +39,9 @@ class GetEngagementTimelineEngagementsObjectsValidities(BaseModel):
     org_unit_uuid: UUID
     engagement_type_uuid: UUID
     job_function_uuid: UUID
+    explicit_manager: Optional[
+        "GetEngagementTimelineEngagementsObjectsValiditiesExplicitManager"
+    ]
 
 
 class GetEngagementTimelineEngagementsObjectsValiditiesValidity(BaseModel):
@@ -46,8 +49,13 @@ class GetEngagementTimelineEngagementsObjectsValiditiesValidity(BaseModel):
     to: Optional[datetime]
 
 
+class GetEngagementTimelineEngagementsObjectsValiditiesExplicitManager(BaseModel):
+    uuid: UUID
+
+
 GetEngagementTimeline.update_forward_refs()
 GetEngagementTimelineEngagements.update_forward_refs()
 GetEngagementTimelineEngagementsObjects.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValidities.update_forward_refs()
 GetEngagementTimelineEngagementsObjectsValiditiesValidity.update_forward_refs()
+GetEngagementTimelineEngagementsObjectsValiditiesExplicitManager.update_forward_refs()

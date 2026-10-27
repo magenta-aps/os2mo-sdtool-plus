@@ -353,6 +353,10 @@ async def update_engagement(
                 ],
                 job_function=job_function_uuid,
             )
+            # Only send the explicit manager if it is set, since writing null
+            # prevents MO from consolidating the validity with its neighbours
+            if validity.explicit_manager is not None:
+                payload.explicit_manager = validity.explicit_manager.uuid
             logger.info(
                 "Update engagement in validity interval",
                 payload=payload.dict(),
