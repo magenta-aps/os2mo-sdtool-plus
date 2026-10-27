@@ -520,7 +520,7 @@ async def _sync_person(
     ):
         await update_person(
             gql_client=gql_client,
-            uuid=mo_person_object.uuid,
+            mo_person_object=mo_person_object,
             start=datetime.today(),
             person=sd_person,
         )

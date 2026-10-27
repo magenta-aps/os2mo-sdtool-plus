@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from typing import List
 from typing import Optional
 from uuid import UUID
@@ -23,6 +24,10 @@ class GetPersonTimelineEmployeesObjects(BaseModel):
 
 
 class GetPersonTimelineEmployeesObjectsValidities(BaseModel):
+    user_key: str
+    nickname_given_name: Optional[str]
+    nickname_surname: Optional[str]
+    seniority: Optional[Any]
     cpr_number: Optional[CPRNumber]
     given_name: str
     surname: str
