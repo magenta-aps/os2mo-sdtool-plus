@@ -422,6 +422,72 @@ async def test_person_timeline_update(
 
 
 @pytest.mark.integration_test
+async def test_person_update_preserves_fields_not_in_sd(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    respx_mock: MockRouter,
+):
+    """
+    Test that the person fields not managed by SD (user_key, nicknames and
+    seniority) are preserved when the person name is updated in MO.
+    """
+    # Arrange
+    person_uuid = uuid4()
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            user_key="chuck",
+            nickname_given_name="Walker",
+            nickname_surname="Texas Ranger",
+            seniority=date(1993, 4, 21),
+            cpr_number=CPR,
+            given_name="Buck",
+            surname="Lorris",
+        )
+    )
+    respx_mock.get(GETPERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=SD_RESP,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": CPR,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    mo_person = await graphql_client.get_person_timeline(
+        EmployeeFilter(uuids=[person_uuid], from_date=None, to_date=None)
+    )
+    validities = one(mo_person.objects).validities
+    assert len(validities) == 2
+
+    for validity in validities:
+        assert validity.user_key == "chuck"
+        assert validity.nickname_given_name == "Walker"
+        assert validity.nickname_surname == "Texas Ranger"
+        assert validity.seniority == "1993-04-21"
+        assert validity.cpr_number == CPR
+
+    old, new = validities
+    assert old.given_name == "Buck"
+    assert old.surname == "Lorris"
+    assert new.given_name == "Chuck"
+    assert new.surname == "Norris"
+
+
+@pytest.mark.integration_test
 async def test_person_skip_0000_cprs(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
