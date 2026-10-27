@@ -645,6 +645,10 @@ class GraphQLClient(AsyncBaseClient):
                 objects {
                   uuid
                   validities {
+                    user_key
+                    nickname_given_name
+                    nickname_surname
+                    seniority
                     cpr_number
                     given_name
                     surname
