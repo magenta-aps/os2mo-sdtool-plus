@@ -724,6 +724,244 @@ async def test_eng_timeline_where_patch_interval_is_longer_than_update_interval(
         "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
     }
 )
+async def test_eng_timeline_preserves_explicit_manager(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    job_function_9000: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    We are testing this scenario:
+
+    Time  --------t1--------t2------------------------------------------------------>
+
+    MO (name)     |-----------------------------name1--------------------------------
+    MO (key)      |------------------------------1234--------------------------------
+    MO (unit)     |------------------------------dep1--------------------------------
+    MO (expl_mgr) |----m1---|-------------------------m2-----------------------------
+
+    "Arrange"     |----1----|-------------------------2------------------------------
+    intervals
+
+    SD (name)     |-----------------------------name2--------------------------------
+    SD (key)      |------------------------------9000--------------------------------
+    SD (unit)     |------------------------------dep2--------------------------------
+    SD (active)   |-------------------------------1----------------------------------
+
+    "Assert"      |----1----|-------------------------2------------------------------
+    intervals
+
+    The explicit manager is not part of the SD data, so it must be preserved
+    when the engagement is updated.
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+
+    # Units
+    dep1_uuid = UUID("10000000-0000-0000-0000-000000000000")
+    dep2_uuid = UUID("20000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create (vacant) managers to be used as explicit managers
+    manager_level = await get_class(graphql_client, "manager_level", "afdelingsleder")
+    manager_type = await get_class(graphql_client, "manager_type", "leder")
+    responsibility = await get_class(graphql_client, "responsibility", "personale")
+
+    manager_1_uuid = (
+        await graphql_client._testing__create_manager(
+            ManagerCreateInput(
+                responsibility=[responsibility],
+                org_unit=dep1_uuid,
+                manager_level=manager_level,
+                manager_type=manager_type,
+                validity=RAValidityInput(from_=t1, to=None),
+            )
+        )
+    ).uuid
+
+    manager_2_uuid = (
+        await graphql_client._testing__create_manager(
+            ManagerCreateInput(
+                responsibility=[responsibility],
+                org_unit=dep1_uuid,
+                manager_level=manager_level,
+                manager_type=manager_type,
+                validity=RAValidityInput(from_=t1, to=None),
+            )
+        )
+    ).uuid
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement (arrange interval 1)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=RAValidityInput(from_=t1, to=None),
+                extension_1="name1",
+                extension_4="dep1",
+                explicit_manager=manager_1_uuid,
+                person=person_uuid,
+                org_unit=dep1_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Update engagement (arrange interval 2)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=RAValidityInput(from_=t2, to=None),
+            extension_1="name1",
+            extension_4="dep1",
+            explicit_manager=manager_2_uuid,
+            person=person_uuid,
+            org_unit=dep1_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>{cpr}</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep2</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep2_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>9000</JobPositionIdentifier>
+                <EmploymentName>name2</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>1.0000</OccupationRate>
+                <SalaryRate>1.0000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    validities = one(updated_eng.objects).validities
+
+    assert len(validities) == 2
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t2
+    assert interval_1.extension_1 == "name2"
+    assert interval_1.extension_4 == "dep2"
+    assert interval_1.org_unit_uuid == dep2_uuid
+    assert interval_1.job_function_uuid == job_function_9000
+    assert interval_1.explicit_manager is not None
+    assert interval_1.explicit_manager.uuid == manager_1_uuid
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t2
+    assert interval_2.validity.to is None
+    assert interval_2.extension_1 == "name2"
+    assert interval_2.extension_4 == "dep2"
+    assert interval_2.org_unit_uuid == dep2_uuid
+    assert interval_2.job_function_uuid == job_function_9000
+    assert interval_2.explicit_manager is not None
+    assert interval_2.explicit_manager.uuid == manager_2_uuid
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
 async def test_eng_timeline_create_new_engagement(
     test_client: AsyncClient,
     graphql_client: GraphQLClient,
