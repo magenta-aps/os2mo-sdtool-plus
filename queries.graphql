@@ -567,6 +567,17 @@ mutation SendEvent($input: EventSendInput!) {
   event_send(input: $input)
 }
 
+mutation RerunEvents($input: EventRerunInput!) {
+  event_rerun(input: $input) {
+    subject
+    priority
+    silenced
+    listener {
+      user_key
+    }
+  }
+}
+
 mutation _Testing_UpdateRelatedUnits($input: RelatedUnitsUpdateInput!) {
   related_units_update(input: $input) {
     uuid
