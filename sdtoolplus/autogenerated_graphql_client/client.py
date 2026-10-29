@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+from typing import List
 from typing import Optional
 from typing import Union
 from uuid import UUID
@@ -114,6 +115,7 @@ from .input_types import EngagementCreateInput
 from .input_types import EngagementFilter
 from .input_types import EngagementTerminateInput
 from .input_types import EngagementUpdateInput
+from .input_types import EventRerunInput
 from .input_types import EventSendInput
 from .input_types import FacetCreateInput
 from .input_types import FullEventFilter
@@ -132,6 +134,8 @@ from .input_types import RelatedUnitFilter
 from .input_types import RelatedUnitsUpdateInput
 from .refresh_engagements import RefreshEngagements
 from .refresh_engagements import RefreshEngagementsEngagementRefresh
+from .rerun_events import RerunEvents
+from .rerun_events import RerunEventsEventRerun
 from .send_event import SendEvent
 from .terminate_address import TerminateAddress
 from .terminate_address import TerminateAddressAddressTerminate
@@ -1141,6 +1145,24 @@ class GraphQLClient(AsyncBaseClient):
         response = await self.execute(query=query, variables=variables)
         data = self.get_data(response)
         return SendEvent.parse_obj(data).event_send
+
+    async def rerun_events(self, input: EventRerunInput) -> List[RerunEventsEventRerun]:
+        query = gql("""
+            mutation RerunEvents($input: EventRerunInput!) {
+              event_rerun(input: $input) {
+                subject
+                priority
+                silenced
+                listener {
+                  user_key
+                }
+              }
+            }
+            """)
+        variables: dict[str, object] = {"input": input}
+        response = await self.execute(query=query, variables=variables)
+        data = self.get_data(response)
+        return RerunEvents.parse_obj(data).event_rerun
 
     async def _testing__update_related_units(
         self, input: RelatedUnitsUpdateInput
