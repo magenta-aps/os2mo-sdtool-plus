@@ -242,7 +242,7 @@ async def get_engagement_timeline(
             start=obj.validity.from_,
             end=mo_end_to_timeline_end(obj.validity.to),
             # MO stores the engagement fraction as an integer between 0 and
-            # 1000000
+            # 1_000_000
             value=(
                 Decimal(obj.fraction) / 1_000_000 if obj.fraction is not None else None
             ),
