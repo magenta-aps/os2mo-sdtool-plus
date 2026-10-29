@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
 from datetime import timedelta
+from decimal import Decimal
 from uuid import UUID
 
 import structlog
@@ -23,6 +24,7 @@ from sdtoolplus.mo.timelines.common import get_patch_validity
 from sdtoolplus.mo.timelines.common import mo_end_to_timeline_end
 from sdtoolplus.mo.timelines.common import timeline_interval_to_mo_validity
 from sdtoolplus.models import Active
+from sdtoolplus.models import EngagementFraction
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementSDUnit
@@ -225,6 +227,19 @@ async def get_engagement_timeline(
             )
         )
 
+    fraction_intervals = tuple(
+        EngagementFraction(
+            start=obj.validity.from_,
+            end=mo_end_to_timeline_end(obj.validity.to),
+            # MO stores the engagement fraction as an integer between 0 and
+            # 1000000
+            value=(
+                Decimal(obj.fraction) / 1_000_000 if obj.fraction is not None else None
+            ),
+        )
+        for obj in validities
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(activity_intervals)),
         eng_key=Timeline[EngagementKey](
@@ -240,6 +255,9 @@ async def get_engagement_timeline(
         ),
         eng_type=Timeline[EngagementType](
             intervals=combine_intervals(tuple(type_intervals))
+        ),
+        eng_fraction=Timeline[EngagementFraction](
+            intervals=combine_intervals(fraction_intervals)
         ),
     )
     logger.info("MO engagement timeline", timeline=timeline.dict())
