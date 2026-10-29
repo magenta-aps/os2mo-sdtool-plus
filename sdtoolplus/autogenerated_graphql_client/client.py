@@ -795,6 +795,7 @@ class GraphQLClient(AsyncBaseClient):
                     org_unit_uuid
                     engagement_type_uuid
                     job_function_uuid
+                    fraction
                     explicit_manager {
                       uuid
                     }

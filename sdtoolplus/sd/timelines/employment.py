@@ -10,6 +10,7 @@ from sdtoolplus.exceptions import MoreThanOneEngagementError
 from sdtoolplus.exceptions import MoreThanOnePersonError
 from sdtoolplus.models import Active
 from sdtoolplus.models import AssociationTimeline
+from sdtoolplus.models import EngagementFraction
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementSDUnit
@@ -178,6 +179,19 @@ def get_employment_timeline(
         use_sd_status_codes_as_engagement_types=use_sd_status_codes_as_engagement_types,
     )
 
+    eng_fraction_intervals = (
+        tuple(
+            EngagementFraction(
+                start=sd_start_to_timeline_start(working_time.ActivationDate),
+                end=sd_end_to_timeline_end(working_time.DeactivationDate),
+                value=working_time.OccupationRate,
+            )
+            for working_time in employment.WorkingTime
+        )
+        if employment.WorkingTime
+        else tuple()
+    )
+
     timeline = EngagementTimeline(
         eng_active=Timeline[Active](intervals=combine_intervals(active_intervals)),
         eng_key=Timeline[EngagementKey](intervals=combine_intervals(eng_key_intervals)),
@@ -195,6 +209,9 @@ def get_employment_timeline(
         ),
         eng_type=Timeline[EngagementType](
             intervals=combine_intervals(eng_type_intervals)
+        ),
+        eng_fraction=Timeline[EngagementFraction](
+            intervals=combine_intervals(eng_fraction_intervals)
         ),
     )
     logger.info("SD engagement timeline", timeline=timeline.dict())

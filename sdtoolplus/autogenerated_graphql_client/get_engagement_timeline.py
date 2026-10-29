@@ -39,6 +39,7 @@ class GetEngagementTimelineEngagementsObjectsValidities(BaseModel):
     org_unit_uuid: UUID
     engagement_type_uuid: UUID
     job_function_uuid: UUID
+    fraction: Optional[int]
     explicit_manager: Optional[
         "GetEngagementTimelineEngagementsObjectsValiditiesExplicitManager"
     ]

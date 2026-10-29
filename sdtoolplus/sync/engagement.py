@@ -317,6 +317,7 @@ async def engagement_ou_strategy_elevate_to_ny_level(
         eng_sd_unit=sd_eng_timeline.eng_sd_unit,
         eng_unit_id=sd_eng_timeline.eng_unit_id,
         eng_type=sd_eng_timeline.eng_type,
+        eng_fraction=sd_eng_timeline.eng_fraction,
     )
 
     logger.debug(
@@ -425,6 +426,7 @@ async def engagement_ou_strategy_elevate_managers(
             intervals=combine_intervals(tuple(unit_id_intervals))
         ),
         eng_type=sd_eng_timeline.eng_type,
+        eng_fraction=sd_eng_timeline.eng_fraction,
     )
 
     logger.debug(
@@ -563,6 +565,7 @@ async def engagement_ou_strategy_region(
         eng_sd_unit=sd_eng_timeline.eng_sd_unit,
         eng_unit_id=sd_eng_timeline.eng_unit_id,
         eng_type=sd_eng_timeline.eng_type,
+        eng_fraction=sd_eng_timeline.eng_fraction,
     )
     logger.debug(
         "Desired engagement timeline", desired_timeline=desired_timeline.dict()
@@ -660,6 +663,7 @@ async def fix_missing_job_functions(
         eng_sd_unit=sd_eng_timeline.eng_sd_unit,
         eng_unit_id=sd_eng_timeline.eng_unit_id,
         eng_type=sd_eng_timeline.eng_type,
+        eng_fraction=sd_eng_timeline.eng_fraction,
     )
 
     return desired_eng_timeline
@@ -740,6 +744,7 @@ async def fix_too_narrow_ou_validities(
         eng_sd_unit=desired_eng_timeline.eng_sd_unit,
         eng_unit_id=desired_eng_timeline.eng_unit_id,
         eng_type=desired_eng_timeline.eng_type,
+        eng_fraction=desired_eng_timeline.eng_fraction,
     )
 
     logger.info("Done fixing too narrow OU validities")

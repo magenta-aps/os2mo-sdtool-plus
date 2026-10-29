@@ -11,6 +11,7 @@ from sdclient.responses import WorkingTime
 
 from sdtoolplus.models import POSITIVE_INFINITY
 from sdtoolplus.models import Active
+from sdtoolplus.models import EngagementFraction
 from sdtoolplus.models import EngagementKey
 from sdtoolplus.models import EngagementName
 from sdtoolplus.models import EngagementTimeline
@@ -137,6 +138,16 @@ async def test_get_engagement_timeline(mock_sd_employment_response_dict):
                 start=datetime(2022, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
                 end=POSITIVE_INFINITY,
                 value=EngType.MONTHLY_FULL_TIME,
+            ),
+        )
+    )
+
+    assert engagement_timeline.eng_fraction == Timeline[EngagementFraction](
+        intervals=(
+            EngagementFraction(
+                start=datetime(2000, 1, 1, tzinfo=ASSUMED_SD_TIMEZONE),
+                end=POSITIVE_INFINITY,
+                value=Decimal("1.0000"),
             ),
         )
     )
