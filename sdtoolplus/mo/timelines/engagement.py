@@ -126,7 +126,7 @@ def get_engagement_filter(
 def _get_mo_fraction(eng_timeline: EngagementTimeline, at: datetime) -> int | None:
     """
     Get the engagement fraction at the given time converted from the SD scale (0-1)
-    to the MO scale (0-1000000)
+    to the MO scale (0-1_000_000)
     """
     fraction = cast(Decimal | None, eng_timeline.eng_fraction.entity_at(at).value)
     return int(fraction * 1_000_000) if fraction is not None else None
