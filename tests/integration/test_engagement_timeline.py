@@ -984,6 +984,7 @@ async def test_eng_timeline_create_new_engagement(
     SD (unit ID)  |---dep1--|-------------------dep2---------------------------------
     SD (active)   |---------1----------|-------3------|---8--|-----------1-----------
     SD (eng_type) |--------part--------|-------------------full----------------------
+    SD (fraction) |--------0.5---------|--------------------1.0----------------------
 
     "Assert"      |----1----|-----2----|------3-------|      |------------4----------
     intervals
@@ -1098,7 +1099,7 @@ async def test_eng_timeline_create_new_engagement(
               <WorkingTime>
                 <ActivationDate>2001-01-01</ActivationDate>
                 <DeactivationDate>2002-12-31</DeactivationDate>
-                <OccupationRate>1.0000</OccupationRate>
+                <OccupationRate>0.5000</OccupationRate>
                 <SalaryRate>1.0000</SalaryRate>
                 <SalariedIndicator>true</SalariedIndicator>
                 <FullTimeIndicator>false</FullTimeIndicator>
@@ -1163,6 +1164,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_1.job_function_uuid == job_function_9000
     assert interval_1.org_unit_uuid == dep1_uuid
     assert interval_1.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_1.fraction == 500_000
 
     interval_2 = validities[1]
     assert interval_2.validity.from_ == t2
@@ -1173,6 +1175,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_2.job_function_uuid == job_function_9000
     assert interval_2.org_unit_uuid == dep2_uuid
     assert interval_2.engagement_type_uuid == eng_types[EngType.MONTHLY_PART_TIME]
+    assert interval_2.fraction == 500_000
 
     interval_3 = validities[2]
     assert interval_3.validity.from_ == t3
@@ -1183,6 +1186,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_3.job_function_uuid == job_function_9000
     assert interval_3.org_unit_uuid == dep2_uuid
     assert interval_3.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_3.fraction == 1_000_000
 
     interval_4 = validities[3]
     assert interval_4.validity.from_ == t6
@@ -1193,6 +1197,7 @@ async def test_eng_timeline_create_new_engagement(
     assert interval_4.job_function_uuid == job_function_9000
     assert interval_4.org_unit_uuid == dep2_uuid
     assert interval_4.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+    assert interval_4.fraction == 1_000_000
 
 
 @pytest.mark.integration_test
@@ -4142,6 +4147,253 @@ async def test_get_engagement_timeline_unit_id_null_in_timeline_interval(
             ),
         )
     )
+
+
+@pytest.mark.integration_test
+@pytest.mark.envvar(
+    {
+        "APPLY_NY_LOGIC": "false",
+        "UNKNOWN_UNIT": str(UNKNOWN_UNIT),
+    }
+)
+async def test_eng_timeline_fraction(
+    test_client: AsyncClient,
+    graphql_client: GraphQLClient,
+    base_tree_builder: TestingCreateOrgUnitOrgUnitCreate,
+    job_function_1234: UUID,
+    respx_mock: MockRouter,
+):
+    """
+    Test that the engagement fraction is synced from SD to MO, where all other
+    engagement fields are already in sync, and that these other fields are left
+    untouched. SD has no WorkingTime between t3 and t4, so the engagement is left
+    untouched in MO in this interval.
+
+    Time  --------t1----------t2---------t3----------t4----------------------------->
+
+    MO (fraction) |---null----|--500000--|-----------------1000000-------------------
+    MO (ext_7)    |-------------------------------v1---------------------------------
+
+    "Arrange"     |-----1-----|----2-----|-----------------3-------------------------
+    intervals
+
+    SD (fraction) |---------0.5----------|  (missing)  |-----------0.75--------------
+
+    "Assert"      |----------1-----------|------2------|-----------3-----------------
+    intervals
+
+    MO consolidates arrange intervals 1 and 2, since they become identical.
+
+    In SD: fraction = OccupationRate
+    In MO: fraction = fraction (between 0 and 1000000)
+    """
+    # Arrange
+    tz = ZoneInfo("Europe/Copenhagen")
+
+    t1 = datetime(2001, 1, 1, tzinfo=tz)
+    t2 = datetime(2002, 1, 1, tzinfo=tz)
+    t3 = datetime(2003, 1, 1, tzinfo=tz)
+    t4 = datetime(2004, 1, 1, tzinfo=tz)
+
+    # Units
+    dep4_uuid = UUID("40000000-0000-0000-0000-000000000000")
+
+    eng_types = await get_engagement_types(graphql_client)
+
+    # Create person
+    person_uuid = uuid4()
+    cpr = "0101011234"
+    emp_id = "12345"
+
+    await graphql_client.create_person(
+        EmployeeCreateInput(
+            uuid=person_uuid,
+            cpr_number=CPRNumber(cpr),
+            given_name="Chuck",
+            surname="Norris",
+        )
+    )
+
+    # Create engagement without a fraction (arrange interval 1)
+    eng_uuid = (
+        await graphql_client.create_engagement(
+            EngagementCreateInput(
+                user_key=emp_id,
+                validity=timeline_interval_to_mo_validity(t1, t2),
+                extension_1="name1",
+                extension_4="dep4",
+                extension_5=str(dep4_uuid),
+                extension_7="v1",
+                person=person_uuid,
+                org_unit=dep4_uuid,
+                engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+                job_function=job_function_1234,
+            )
+        )
+    ).uuid
+
+    # Update engagement (arrange interval 2)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t2, t3),
+            extension_1="name1",
+            extension_4="dep4",
+            extension_5=str(dep4_uuid),
+            extension_7="v1",
+            person=person_uuid,
+            org_unit=dep4_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+            fraction=500_000,
+        )
+    )
+
+    # Update engagement (arrange interval 3)
+    await graphql_client.update_engagement(
+        EngagementUpdateInput(
+            uuid=eng_uuid,
+            user_key=emp_id,
+            validity=timeline_interval_to_mo_validity(t3, POSITIVE_INFINITY),
+            extension_1="name1",
+            extension_4="dep4",
+            extension_5=str(dep4_uuid),
+            extension_7="v1",
+            person=person_uuid,
+            org_unit=dep4_uuid,
+            engagement_type=eng_types[EngType.MONTHLY_FULL_TIME],
+            job_function=job_function_1234,
+            fraction=1_000_000,
+        )
+    )
+
+    sd_resp = f"""<?xml version="1.0" encoding="UTF-8"?>
+        <GetEmploymentChanged20111201 creationDateTime="2025-03-10T13:50:06">
+          <RequestStructure>
+            <InstitutionIdentifier>II</InstitutionIdentifier>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <ActivationDate>2001-01-01</ActivationDate>
+            <DeactivationDate>9999-12-31</DeactivationDate>
+            <DepartmentIndicator>true</DepartmentIndicator>
+            <EmploymentStatusIndicator>true</EmploymentStatusIndicator>
+            <ProfessionIndicator>true</ProfessionIndicator>
+            <SalaryAgreementIndicator>false</SalaryAgreementIndicator>
+            <SalaryCodeGroupIndicator>false</SalaryCodeGroupIndicator>
+            <WorkingTimeIndicator>true</WorkingTimeIndicator>
+            <UUIDIndicator>true</UUIDIndicator>
+          </RequestStructure>
+          <Person>
+            <PersonCivilRegistrationIdentifier>0101011234</PersonCivilRegistrationIdentifier>
+            <Employment>
+              <EmploymentIdentifier>{emp_id}</EmploymentIdentifier>
+              <EmploymentDate>2001-01-01</EmploymentDate>
+              <AnniversaryDate>2001-01-01</AnniversaryDate>
+              <EmploymentDepartment>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <DepartmentIdentifier>dep4</DepartmentIdentifier>
+                <DepartmentUUIDIdentifier>{str(dep4_uuid)}</DepartmentUUIDIdentifier>
+              </EmploymentDepartment>
+              <Profession>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <JobPositionIdentifier>1234</JobPositionIdentifier>
+                <EmploymentName>name1</EmploymentName>
+                <AppointmentCode>0</AppointmentCode>
+              </Profession>
+              <EmploymentStatus>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <EmploymentStatusCode>1</EmploymentStatusCode>
+              </EmploymentStatus>
+              <WorkingTime>
+                <ActivationDate>2001-01-01</ActivationDate>
+                <DeactivationDate>2002-12-31</DeactivationDate>
+                <OccupationRate>0.5000</OccupationRate>
+                <SalaryRate>0.5000</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+              <WorkingTime>
+                <ActivationDate>2004-01-01</ActivationDate>
+                <DeactivationDate>9999-12-31</DeactivationDate>
+                <OccupationRate>0.7500</OccupationRate>
+                <SalaryRate>0.7500</SalaryRate>
+                <SalariedIndicator>true</SalariedIndicator>
+                <FullTimeIndicator>true</FullTimeIndicator>
+              </WorkingTime>
+            </Employment>
+          </Person>
+        </GetEmploymentChanged20111201>
+    """
+
+    respx_mock.get(GET_PERSON_URL).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=GET_PERSON_SD_RESP,
+    )
+    respx_mock.get(
+        "https://service.sd.dk/sdws/GetEmploymentChanged20111201?InstitutionIdentifier=II&PersonCivilRegistrationIdentifier=0101011234&EmploymentIdentifier=12345&ActivationDate=01.01.0001&DeactivationDate=31.12.9999&DepartmentIndicator=True&EmploymentStatusIndicator=True&ProfessionIndicator=True&SalaryAgreementIndicator=False&SalaryCodeGroupIndicator=False&WorkingTimeIndicator=True&UUIDIndicator=True"
+    ).respond(
+        content_type="text/xml;charset=UTF-8",
+        content=sd_resp,
+    )
+
+    # Act
+    r = await test_client.post(
+        "/events/sd/person-and-employment",
+        json={
+            "subject": json.dumps(
+                {
+                    "institution_identifier": "II",
+                    "cpr": cpr,
+                    "employment_identifier": emp_id,
+                }
+            ),
+            "priority": 9000,
+        },
+    )
+
+    # Assert
+    assert r.status_code == 200
+
+    updated_eng = await graphql_client.get_engagement_timeline(
+        get_engagement_filter(
+            person=person_uuid, user_key=emp_id, from_date=None, to_date=None
+        )
+    )
+    eng = one(updated_eng.objects)
+    assert eng.uuid == eng_uuid
+
+    validities = eng.validities
+    assert len(validities) == 3
+
+    # The fields other than the fraction are not touched
+    for validity in validities:
+        assert validity.user_key == emp_id
+        assert validity.employee_uuid == person_uuid
+        assert validity.extension_1 == "name1"
+        assert validity.extension_4 == "dep4"
+        assert validity.extension_5 == str(dep4_uuid)
+        assert validity.extension_7 == "v1"
+        assert validity.org_unit_uuid == dep4_uuid
+        assert validity.engagement_type_uuid == eng_types[EngType.MONTHLY_FULL_TIME]
+        assert validity.job_function_uuid == job_function_1234
+
+    interval_1 = validities[0]
+    assert interval_1.validity.from_ == t1
+    assert mo_end_to_timeline_end(interval_1.validity.to) == t3
+    assert interval_1.fraction == 500_000
+
+    interval_2 = validities[1]
+    assert interval_2.validity.from_ == t3
+    assert mo_end_to_timeline_end(interval_2.validity.to) == t4
+    assert interval_2.fraction == 1_000_000
+
+    interval_3 = validities[2]
+    assert interval_3.validity.from_ == t4
+    assert mo_end_to_timeline_end(interval_3.validity.to) == POSITIVE_INFINITY
+    assert interval_3.fraction == 750_000
 
 
 @pytest.mark.integration_test
