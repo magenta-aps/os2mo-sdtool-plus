@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Magenta ApS <https://magenta.dk>
 # SPDX-License-Identifier: MPL-2.0
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from itertools import chain
 from itertools import pairwise
@@ -258,6 +259,10 @@ class EngagementType(Interval[EngType]):
     pass
 
 
+class EngagementFraction(Interval[Optional[Decimal]]):
+    pass
+
+
 class ManagerUserKey(Interval[str]):
     pass
 
@@ -460,6 +465,7 @@ class EngagementTimeline(BaseTimeline):
     eng_sd_unit: Timeline[EngagementSDUnit] = Timeline[EngagementSDUnit]()
     eng_unit_id: Timeline[EngagementUnitId] = Timeline[EngagementUnitId]()
     eng_type: Timeline[EngagementType] = Timeline[EngagementType]()
+    eng_fraction: Timeline[EngagementFraction] = Timeline[EngagementFraction]()
 
     def has_required_mo_values(self, timestamp: datetime) -> bool:
         try:
@@ -470,6 +476,7 @@ class EngagementTimeline(BaseTimeline):
             self.eng_sd_unit.entity_at(timestamp)
             self.eng_unit_id.entity_at(timestamp)
             self.eng_type.entity_at(timestamp)
+            self.eng_fraction.entity_at(timestamp)
             return True
         except NoValueError:
             return False
