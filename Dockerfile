@@ -30,6 +30,7 @@ COPY scripts ./scripts
 COPY sdtoolplus ./sdtoolplus
 
 RUN install -m 755 /app/scripts/sd-sync.sh /usr/local/bin/sd-sync
+RUN install -m 755 /app/scripts/sd-event.sh /usr/local/bin/sd-event
 
 ENV ENVIRONMENT=production \
     RUN_ALEMBIC_MIGRATIONS=true
